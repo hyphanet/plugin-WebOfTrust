@@ -242,6 +242,10 @@ public final class IdentityDownloaderFast implements
 		return false;
 	}
 
+	// FIXME: The same FIXME as at {@link #storeAbortFetchCommandWithoutCommit(Identity)}
+	// applies, in reverse: If an Identity was already eligible for download in general but not by
+	// this class then this won't be called if it becomes of interest to this class when an
+	// OwnIdentity starts trusting it.
 	@Override public void storeStartFetchCommandWithoutCommit(Identity identity) {
 		// While a call to this function means that any OwnIdentity wants it to be downloaded
 		// indeed we do *not* know whether that desire is due to a direct trust value from any
@@ -287,6 +291,8 @@ public final class IdentityDownloaderFast implements
 	// Identity is deleted but the Identity is still trusted due to indirect trusts.
 	// But in that case this fetcher is not responsible for fetching this Identity anymore!
 	// Thus we need to introduce a new callback to handle that case, e.g. "onTrustDeleted()".
+	// Also see the similar FIXME at storeStartFetchCommandWithoutCommit(). Both can be resolved
+	// together by moving their core logic to storeTrustChangedCommandWithoutCommit().
 	@Override public void storeAbortFetchCommandWithoutCommit(Identity identity) {
 		DownloadSchedulerCommand c = getQueuedCommand(identity);
 		
@@ -341,6 +347,12 @@ public final class IdentityDownloaderFast implements
 		}
 	}
 
+	@Override public void storeTrustChangedCommandWithoutCommit(Trust oldTrust, Trust newTrust) {
+		// FIXME: Implement to resolve the FIXMEs at storeStartFetchCommandWithoutCommit() and
+		// storeAbortFetchCommandWithoutCommit()
+	}
+
+	/** This callback is not used by this class. */
 	@Override public void storeNewEditionHintCommandWithoutCommit(EditionHint hint) {
 		// This callback isn't subject of our interest - it is completely handled by class
 		// IdentityDownloaderSlow.

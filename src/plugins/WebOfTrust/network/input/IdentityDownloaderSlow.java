@@ -952,6 +952,10 @@ public final class IdentityDownloaderSlow implements
 		Logger.normal(this, "storeAbortFetchCommandWithoutCommit() finished");
 	}
 
+	/** This callback is not used by this class. */
+	@Override public void storeTrustChangedCommandWithoutCommit(Trust oldTrust, Trust newTrust) {
+	}
+
 	@Override public void storeNewEditionHintCommandWithoutCommit(EditionHint newHint) {
 		if(logMINOR)
 			Logger.minor(this, "storeNewEditionHintCommandWithoutCommit()...");

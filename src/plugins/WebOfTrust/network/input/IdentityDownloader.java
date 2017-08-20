@@ -11,6 +11,7 @@ import plugins.WebOfTrust.IdentityFileQueue;
 import plugins.WebOfTrust.OwnIdentity;
 import plugins.WebOfTrust.Persistent;
 import plugins.WebOfTrust.Score;
+import plugins.WebOfTrust.SubscriptionManager;
 import plugins.WebOfTrust.Trust;
 import plugins.WebOfTrust.WebOfTrust;
 import plugins.WebOfTrust.util.Daemon;
@@ -84,6 +85,30 @@ public interface IdentityDownloader extends Daemon {
 	 * synchronized(WebOfTrust.getIdentityDownloaderController())
 	 * synchronized(Persistent.transactionLock(WebOfTrust.getDatabase())) */
 	void storeAbortFetchCommandWithoutCommit(Identity identity);
+
+	/**
+	 * FIXME: Document and change WoT to call it once the implementation of this callback
+	 * {@link IdentityDownloaderFast#storeTrustChangedCommandWithoutCommit(Trust, Trust)}
+	 * is finished and hence the requirements are clear:
+	 * - Can this be called at the very same point as
+	 *   {@link SubscriptionManager#storeTrustChangedNotificationWithoutCommit()} and hence
+	 *   the doc can just point to that function (and we're prepared for in the future replacing all
+	 *   callbacks with new code in the SubscriptionManager for allowing WoT to use it internally,
+	 *   there's a bugtracker entry for that) ?
+	 *   Notice: The required locks will be different, e.g. the same as with the other callbacks of
+	 *   this interface. But they likely should already be held by all callers of the
+	 *   SubscriptionManager callback so while the doc would be different we could still at least
+	 *   put the calls to this callback in the same places - it saves quite a bit of work to now
+	 *   the places where to put the calls at.
+	 * - Does this need the Score database to be up to date like the other callbacks of this
+	 *   interface? If yes then it cannot be called at the very same points as SubscriptionManager's
+	 *   callback (Score updates are a result of Trust updates so the SubscriptionManager's callback
+	 *   is called before the one for Scores, otherwise clients couldn't see the cause of the
+	 *   Score events before their effect which logically doesn't make sense).
+	 *   But at least you could still find the proper place to put the calls at by looking at the
+	 *   areas close to what calls the SubscriptionManager's callback.
+	 */
+	void storeTrustChangedCommandWithoutCommit(Trust oldTrust, Trust newTrust);
 
 	/**
 	 * Called by {@link WebOfTrust} when we've downloaded the list of {@link Trust} values of a

@@ -9,6 +9,7 @@ import plugins.WebOfTrust.Identity;
 import plugins.WebOfTrust.IdentityFetcher;
 import plugins.WebOfTrust.IdentityFetcher.IdentityFetcherCommand;
 import plugins.WebOfTrust.IdentityFileQueue;
+import plugins.WebOfTrust.Trust;
 import plugins.WebOfTrust.WebOfTrust;
 import plugins.WebOfTrust.util.Daemon;
 import freenet.pluginmanager.PluginRespirator;
@@ -114,6 +115,11 @@ public final class IdentityDownloaderController implements IdentityDownloader, D
 	@Override public void storeAbortFetchCommandWithoutCommit(Identity identity) {
 		for(IdentityDownloader d : mDownloaders)
 			d.storeAbortFetchCommandWithoutCommit(identity);
+	}
+
+	@Override public void storeTrustChangedCommandWithoutCommit(Trust oldTrust, Trust newTrust) {
+		for(IdentityDownloader d : mDownloaders)
+			d.storeTrustChangedCommandWithoutCommit(oldTrust, newTrust);
 	}
 
 	@Override public void storeNewEditionHintCommandWithoutCommit(EditionHint hint) {

@@ -489,7 +489,11 @@ public final class IdentityFetcher implements
 			scheduleCommandProcessing();
 		}
 	}
-	
+
+	/** This callback is not used by this class. */
+	@Override public void storeTrustChangedCommandWithoutCommit(Trust oldTrust, Trust newTrust) {
+	}
+
     /**
      * Synchronization:<br>
      * This function does neither lock the database nor commit the transaction. You have to surround
