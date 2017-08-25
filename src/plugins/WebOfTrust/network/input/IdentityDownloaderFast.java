@@ -26,6 +26,7 @@ import plugins.WebOfTrust.WebOfTrust;
 import plugins.WebOfTrust.XMLTransformer;
 import plugins.WebOfTrust.exceptions.DuplicateObjectException;
 import plugins.WebOfTrust.exceptions.NotTrustedException;
+import plugins.WebOfTrust.exceptions.UnknownIdentityException;
 import plugins.WebOfTrust.introduction.IntroductionPuzzle;
 import plugins.WebOfTrust.util.Daemon;
 import plugins.WebOfTrust.util.IdentifierHashSet;
@@ -348,8 +349,80 @@ public final class IdentityDownloaderFast implements
 	}
 
 	@Override public void storeTrustChangedCommandWithoutCommit(Trust oldTrust, Trust newTrust) {
-		// FIXME: Implement to resolve the FIXMEs at storeStartFetchCommandWithoutCommit() and
-		// storeAbortFetchCommandWithoutCommit()
+		assert(oldTrust != null || newTrust != null);
+		// The newTrust must be about the same truster and trustee Identitys. The Trust's ID
+		// contains their IDs so we can compare it to check the Identitys. We must do that as the
+		// object references of the Identitys aren't the same as oldTrust is a clone().
+		assert(oldTrust != null && newTrust != null ? newTrust.getID().equals(oldTrust.getID())
+			: true /* To emulate "assert(if())" using the ternary operator */);
+		
+		
+		// Check whether the Trust change could cause our "download the trustee?" decision to
+		// change, if not return. This is only "maybe" because there may be other Trusts to the
+		// trustee.
+		
+		boolean maybeWouldDownloadBefore =
+		    (oldTrust != null && oldTrust.getTruster() instanceof OwnIdentity
+		  && oldTrust.getValue() >= 0);
+		
+		boolean maybeWouldDownloadNow =
+		    (newTrust != null && newTrust.getTruster() instanceof OwnIdentity
+		  && newTrust.getValue() >= 0);
+		
+		if(maybeWouldDownloadBefore == maybeWouldDownloadNow)
+			return;
+		
+		Identity identity;
+		if(newTrust != null)
+			identity = newTrust.getTrustee();
+		else {
+			// The oldTrust is a clone() so its getTrustee() also is a clone().
+			// Our callees will store a reference to the Identity object in the database so to avoid
+			// its duplication we must re-query the original object from the database by ID.
+			try {
+				identity = mWoT.getIdentityByID(oldTrust.getTrustee().getID());
+			} catch(UnknownIdentityException e) {
+				throw new RuntimeException("Called with a Trust to an inexistent identity!", e);
+			}
+		}
+		
+		// The value of maybeWouldDownloadNow was computed only considering the single Trust we are
+		// looking at here. So even if doesn't justify downloading the Identity a Trust of another
+		// OwnIdentity may justify downloading it, so then we must use shouldDownload() to check
+		// all Trusts.
+		// ATTENTION: For performance reasons shouldDownload() uses not only the Trust but also the
+		// Score database, so this function must only be called when the Score database has already
+		// been updated to reflect the changes due to the changed Trust.
+		//
+		// TODO: It may be possible that the Score database is actually irrelevant:
+		// shouldDownload() is only used if the "download it?" decision changed from true to false
+		// (due to opportunistic one-sided evaluation of "||") - which can only be due to a Trust
+		// removal or distrust. But one OwnIdentity removing a trust or distrusting an Identity
+		// cannot cause another OwnIdentity's direct trusts to change.
+		// So the idea to require the Score database to be up-to-date is merely from a theoretical
+		// point of view of code-cleanness: Treating shouldDownload() as a black box only determines
+		// it uses the Score database, not how.
+		// Making this function not require the Score database to be fully correct could be of great
+		// benefit when we split the trust list import transaction from Score processing as
+		// will likely be a result of implementing https://bugs.freenetproject.org/view.php?id=6848
+		// When you change the above comment to not require the Score database to be up to date
+		// ensure to also update the JavaDoc of this function which is the main point where it is
+		// demanded. Further amend the JavaDoc to state that this callback is suitable to have
+		// its calling mechanism changed to be empowered by SubscriptionManager, as that has also
+		// a "Trust has changed!" callback which is called when the Scores are not yet updated.
+		boolean reallyWouldDownloadNow = maybeWouldDownloadNow || shouldDownload(identity);
+		
+		// FIXME: These functions will duplicate some of the checks we already did here.
+		// Extract their core functionality into a sub-function which can be used both by this
+		// function here and as new backend of the functions below.
+		// FIXME: If you don't implement the above before release: At least make sure that these
+		// functions are as-is actually even suitable to be used here, I didn't check that yet!
+		// While doing that also remove the FIXMEs there which requested to implement a mechanism
+		// like this function here.
+		if(reallyWouldDownloadNow)
+			storeStartFetchCommandWithoutCommit(identity);
+		else
+			storeAbortFetchCommandWithoutCommit(identity);
 	}
 
 	/** This callback is not used by this class. */
