@@ -348,6 +348,27 @@ public final class IdentityDownloaderFast implements
 		}
 	}
 
+	/**
+	 * By implementing this callback we're targeting the following events:
+	 * - {@link #storeStartFetchCommandWithoutCommit()} was already called for the {@link Identity}
+	 *   because a non-own Identity's {@link Trust} caused it to be trusted enough for being
+	 *   downloaded by WoT in general BUT as it was a non-own Trust this class wasn't interested in
+	 *   downloading it and thus its storeStartFetchCommandWithoutCommit() didn't start the
+	 *   download.
+	 *   If an {@link OwnIdentity} starts trusting the Identity now and it thus becomes eligible
+	 *   for download by this class then storeStartFetchCommandWithoutCommit() won't be called again
+	 *   by the WebOfTrust as the Identity was already eligible for download in general - just not
+	 *   by this class, which the WebOfTrust doesn't care about when deciding whether to deploy
+	 *   the callback.
+	 *   So to be able to notice such changes we must process Trust changes as well which is
+	 *   what this callback deals with.
+	 * - An Identity was eligible for download by this class due to being directly trusted by an
+	 *   OwnIdentity. Now the Trust of the OwnIdentity is removed and it thus isn't eligible anymore
+	 *   for download by this class but {@link #storeAbortFetchCommandWithoutCommit(Identity)} is
+	 *   not called by the WebOfTrust because the Identity is still eligible to be downloaded in
+	 *   general due to indirect Trusts, i.e. Trusts of non-own Identitys.
+	 *   This callback must hence stop the download by observing Trust removal of OwnIdentitys.
+	 *   (Notice that this is sort of the inverse of the above case.) */
 	@Override public void storeTrustChangedCommandWithoutCommit(Trust oldTrust, Trust newTrust) {
 		assert(oldTrust != null || newTrust != null);
 		// The newTrust must be about the same truster and trustee Identitys. The Trust's ID
