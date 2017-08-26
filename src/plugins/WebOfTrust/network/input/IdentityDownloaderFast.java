@@ -424,6 +424,9 @@ public final class IdentityDownloaderFast implements
 		// (due to opportunistic one-sided evaluation of "||") - which can only be due to a Trust
 		// removal or distrust. But one OwnIdentity removing a trust or distrusting an Identity
 		// cannot cause another OwnIdentity's direct trusts to change.
+		//   EDIT: The above isn't true for our below call to storeStartFetchCommandWithoutCommit(),
+		//   it does always call shouldDownload() - but that's redundant as we already checked
+		//   this here, so we could remove the shouldDownload() call by duplicating the function.
 		// So the idea to require the Score database to be up-to-date is merely from a theoretical
 		// point of view of code-cleanness: Treating shouldDownload() as a black box only determines
 		// it uses the Score database, not how.
