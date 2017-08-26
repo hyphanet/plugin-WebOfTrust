@@ -243,14 +243,18 @@ public final class IdentityDownloaderFast implements
 		return false;
 	}
 
-	// FIXME: The same FIXME as at {@link #storeAbortFetchCommandWithoutCommit(Identity)}
-	// applies, in reverse: If an Identity was already eligible for download in general but not by
-	// this class then this won't be called if it becomes of interest to this class when an
-	// OwnIdentity starts trusting it.
+	/**
+	 * NOTICE: If an Identity was already eligible for download in general previously but not by
+	 * this class then this won't be called again by {@link WebOfTrust} if it becomes of interest to
+	 * this class when an OwnIdentity starts trusting it.
+	 * See {@link #storeTrustChangedCommandWithoutCommit(Trust, Trust)} which handles that case. */
 	@Override public void storeStartFetchCommandWithoutCommit(Identity identity) {
-		// While a call to this function means that any OwnIdentity wants it to be downloaded
-		// indeed we do *not* know whether that desire is due to a direct trust value from any
-		// OwnIdentity. Thus we need to check with shouldDownload().
+		// While a call to this function as by the interface specification (but not as by this
+		// class, see storeTrustChangedCommandWithoutCommit()) means that an OwnIdentity wants the 
+		// Identity to be downloaded indeed we do *not* know whether that desire is due to a direct
+		// Trust value from an OwnIdentity (which is this class' sole target set of Identitys):
+		// The interface only demands that WoT should want to download the Identity in general, it
+		// may be due to a non-own Identity's Trust. Thus we need to check with shouldDownload().
 		if(shouldDownload(identity)) {
 			DownloadSchedulerCommand c = getQueuedCommand(identity);
 			
