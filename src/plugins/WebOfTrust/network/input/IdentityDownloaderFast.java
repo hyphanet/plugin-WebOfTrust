@@ -394,7 +394,7 @@ public final class IdentityDownloaderFast implements
 		    (newTrust != null && newTrust.getTruster() instanceof OwnIdentity
 		  && newTrust.getValue() >= 0);
 		
-		if(maybeWouldDownloadBefore == maybeWouldDownloadNow)
+		if(maybeWouldDownloadNow == maybeWouldDownloadBefore)
 			return;
 		
 		Identity identity;
