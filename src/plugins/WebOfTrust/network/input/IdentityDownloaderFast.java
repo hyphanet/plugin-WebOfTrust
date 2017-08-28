@@ -411,10 +411,11 @@ public final class IdentityDownloaderFast implements
 			}
 		}
 		
-		// The value of maybeWouldDownloadNow was computed only considering the single Trust we are
-		// looking at here. So even if doesn't justify downloading the Identity a Trust of another
-		// OwnIdentity may justify downloading it, so then we must use shouldDownload() to check
-		// all Trusts.
+		// As an optimization he value of maybeWouldDownloadNow was for now computed only
+		// considering the single Trust we are looking at here. So even if doesn't justify
+		// downloading the Identity a Trust of another OwnIdentity may justify downloading it, so to
+		// validate the imprecise preliminary value we must now using the more expensive
+		// shouldDownload() to check all Trusts.
 		// ATTENTION: For performance reasons shouldDownload() uses not only the Trust but also the
 		// Score database, so this function must only be called when the Score database has already
 		// been updated to reflect the changes due to the changed Trust.
