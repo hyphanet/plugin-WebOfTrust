@@ -441,6 +441,9 @@ public final class IdentityDownloaderFast implements
 		// a "Trust has changed!" callback which is called when the Scores are not yet updated.
 		boolean reallyWouldDownloadNow = maybeWouldDownloadNow || shouldDownload(identity);
 		
+		if(reallyWouldDownloadNow == maybeWouldDownloadBefore)
+			return;
+		
 		// FIXME: These functions will duplicate some of the checks we already did here.
 		// Extract their core functionality into a sub-function which can be used both by this
 		// function here and as new backend of the functions below.
