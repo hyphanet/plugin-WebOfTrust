@@ -249,10 +249,10 @@ public final class IdentityDownloaderFast implements
 	 * this class when an OwnIdentity starts trusting it.
 	 * See {@link #storeTrustChangedCommandWithoutCommit(Trust, Trust)} which handles that case. */
 	@Override public void storeStartFetchCommandWithoutCommit(Identity identity) {
-		// While a call to this function as by the interface specification (but not as by this
-		// class, see storeTrustChangedCommandWithoutCommit()) means that an OwnIdentity wants the 
-		// Identity to be downloaded indeed we do *not* know whether that desire is due to a direct
-		// Trust value from an OwnIdentity (which is this class' sole target set of Identitys):
+		// While a call to this function as by the interface specification means that an OwnIdentity
+		// wants the Identity to be downloaded indeed we do *not* know whether that desire is due
+		// to a direct Trust value from an OwnIdentity (which is this class' sole target set of
+		// Identitys):
 		// The interface only demands that WoT should want to download the Identity in general, it
 		// may be due to a non-own Identity's Trust. Thus we need to check with shouldDownload().
 		if(shouldDownload(identity)) {
@@ -290,6 +290,40 @@ public final class IdentityDownloaderFast implements
 			
 			mDownloadSchedulerThread.triggerExecution();
 		}
+	}
+
+	/**
+	 * Similar to {@link #storeStartFetchCommandWithoutCommit(Identity)}. Differences:
+	 * - "Checked" means that we for sure know that this class wants to download the Identity.
+	 *   However callers still don't need to ensure that no download for it is running yet / no
+	 *   command is queued to start one.
+	 * - This function is not to be used for handling {@link Identity#markForRefetch()}.
+	 * - This is a private function, not a public callback. Intended to be used by
+	 *   {@link #storeTrustChangedCommandWithoutCommit(Trust, Trust)}. */
+	private void storeStartFetchCommandWithoutCommit_Checked(Identity identity) {
+		DownloadSchedulerCommand c = getQueuedCommand(identity);
+		
+		if(c != null) {
+			if(c instanceof StartDownloadCommand) {
+				// From the perspective of our caller storeTrustChangedCommandWithoutCommit() it is
+				// not an error to already have a command stored:
+				// We don't know for sure whether we didn't want to download the Identity before
+				// the Trust changed: It may have been eligible for download due to a different
+				// Trust.
+				return;
+			}
+			
+			if(c instanceof StopDownloadCommand) {
+				c.deleteWithoutCommit();
+				assert(mDownloads.containsKey(identity.getID()));
+				return;
+			}
+		}
+		
+		c = new StartDownloadCommand(mWoT, identity);
+		c.storeWithoutCommit();
+		
+		mDownloadSchedulerThread.triggerExecution();
 	}
 
 	// FIXME: This is NOT called if the sole direct Trust from an OwnIdenity to the given
@@ -444,15 +478,29 @@ public final class IdentityDownloaderFast implements
 		if(reallyWouldDownloadNow == maybeWouldDownloadBefore)
 			return;
 		
-		// FIXME: These functions will duplicate some of the checks we already did here.
-		// Extract their core functionality into a sub-function which can be used both by this
-		// function here and as new backend of the functions below.
-		// FIXME: If you don't implement the above before release: At least make sure that these
-		// functions are as-is actually even suitable to be used here, I didn't check that yet!
-		// While doing that also remove the FIXMEs there which requested to implement a mechanism
+		// What we know now:
+		// - reallyWouldDownloadNow for sure is equal to whether we should download the Identity.
+		// - If reallyWouldDownloadNow is true, then maybeWouldDownloadBefore must have been
+		//   false, otherwise we would have returned. Thus the new Trust is a positive one which
+		//   might have been the first to request downloading the Identity. However there may also
+		//   have already been another Trust which triggered downloading it before. In other words:
+		//   If reallyWouldDownloadNow is true we should try starting a download but expect that
+		//   the download may already been running / a command for starting it may already be
+		//   scheduled.
+		//   This is obeyed by storeStartFetchCommandWithoutCommit_Checked().
+		
+		// FIXME: storeAbortFetchCommandWithoutCommit() will duplicate some of the checks we already did here.
+		// Extract its core functionality into a sub-function which can be used both by this
+		// function here and maybe also as new backend of the original function (though I didn't do
+		// the latter for the case of storeStartFetchCommand...() as it would have reduced the
+		// readability too much, duplicating it made more sense, and might also make more sense for
+		// the ...Abort...() version.)
+		// FIXME: If you don't implement the above before release: At least make sure that this
+		// function is as-is actually even suitable to be used here, I didn't check that yet!
+		// While doing that also remove the FIXME there which requests to implement a mechanism
 		// like this function here.
 		if(reallyWouldDownloadNow)
-			storeStartFetchCommandWithoutCommit(identity);
+			storeStartFetchCommandWithoutCommit_Checked(identity);
 		else
 			storeAbortFetchCommandWithoutCommit(identity);
 	}
