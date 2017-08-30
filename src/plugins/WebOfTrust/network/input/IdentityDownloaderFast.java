@@ -330,6 +330,18 @@ public final class IdentityDownloaderFast implements
 			}
 		}
 		
+		// Again: This function can be called if the download is already running (for purposes of
+		// storeTrustChangedCommandWithoutCommit()) so we must return if it is (- not only for
+		// performance reasons but also to not wrongly signal Identity.markForRefetch() if the
+		// download is already running, not returning and thus storing a secondary
+		// StartDownloadCommand would do that!)
+		// In other words: The pre-existing StartDownloadCommand we checked for above may have
+		// already been processed and caused a download to be in mDownloads.
+		// (mDownloads is valid to use from a concurrency perspective, is guarded by mLock which
+		// callers are required to hold.)
+		if(mDownloads.containsKey(identity.getID()))
+			return;
+		
 		c = new StartDownloadCommand(mWoT, identity);
 		c.storeWithoutCommit();
 		
