@@ -293,7 +293,8 @@ public final class IdentityDownloaderFast implements
 	}
 
 	/**
-	 * Similar to {@link #storeStartFetchCommandWithoutCommit(Identity)}. Differences:
+	 * Same specification and requirements as
+	 * {@link #storeStartFetchCommandWithoutCommit(Identity)} except for these differences:
 	 * - "Checked" means that we for sure know that this class wants to download the Identity.
 	 *   However callers still don't need to ensure that no download for it is running yet / no
 	 *   command is queued to start one.
@@ -326,12 +327,11 @@ public final class IdentityDownloaderFast implements
 		mDownloadSchedulerThread.triggerExecution();
 	}
 
-	// FIXME: This is NOT called if the sole direct Trust from an OwnIdenity to the given
-	// Identity is deleted but the Identity is still trusted due to indirect trusts.
-	// But in that case this fetcher is not responsible for fetching this Identity anymore!
-	// Thus we need to introduce a new callback to handle that case, e.g. "onTrustDeleted()".
-	// Also see the similar FIXME at storeStartFetchCommandWithoutCommit(). Both can be resolved
-	// together by moving their core logic to storeTrustChangedCommandWithoutCommit().
+	/**
+	 * NOTICE: This is NOT called if the sole direct Trust from an OwnIdenity to the given Identity
+	 * is deleted but the Identity is still trusted due to indirect trusts - but in that case this
+	 * downloader is not responsible for fetching this Identity anymore!
+	 * {@link #storeTrustChangedCommandWithoutCommit(Trust, Trust)} handles that case. */
 	@Override public void storeAbortFetchCommandWithoutCommit(Identity identity) {
 		DownloadSchedulerCommand c = getQueuedCommand(identity);
 		
@@ -339,7 +339,8 @@ public final class IdentityDownloaderFast implements
 			if(c instanceof StopDownloadCommand) {
 				// Score computation should only call this when the "should fetch?" state changes
 				// from true to false, but it can only do so once, not twice in a row, so it
-				// shouldn't call us twice.
+				// shouldn't call us twice and we shouldn't observe a StopDownloadCommand already
+				// existing here.
 				// I'm however not sure whether this is an error - I think it may be possible that
 				// the current implementation of Score computation is written in a way which can
 				// cause this to happen for valid reasons.
@@ -367,11 +368,72 @@ public final class IdentityDownloaderFast implements
 		// we do *not* know whether the previous desire to download it was due to a direct trust
 		// value from any OwnIdentity, i.e. we don't know whether we were actually responsible
 		// for downloading it and thus whether there even could be a download to cancel.
+		// Also as we did not return if a pre-existing StartDownloadCommand wasn't processed yet
+		// a download may not have been started yet.
 		// Thus we should check with mDownloads before uselessly invoking the DownloadScheduler
 		// for Identitys which weren't interesting to us anyway.
 		// (This variable is valid to use here from a concurrency perspective as the interface
 		// specification ensures that our mLock is held while we are called - which is also the lock
 		// which guards mDownloads.)
+		if(mDownloads.containsKey(identity.getID())) {
+			// We cannot just cancel the running download here:
+			// This function is being called as part of an unfinished transaction which may still be
+			// rolled back after we return, and that would mean that the download needs to continue.
+			// Thus we need to cancel the download in a separate transaction, which is what the
+			// DownloadScheduler does.
+			
+			new StopDownloadCommand(mWoT, identity)
+				.storeWithoutCommit();
+			
+			mDownloadSchedulerThread.triggerExecution();
+		}
+	}
+
+	/**
+	 * Same specification and requirements as
+	 * {@link #storeAbortFetchCommandWithoutCommit(Identity)} except for these differences:
+	 * - "Checked" means that that this function *is* guaranteed to be called when this class
+	 *   doesn't want to download the Identity anymore - in opposite to the other function which is
+	 *   only called when the whole of WoT doesn't want to download it anymore.
+	 *   However callers still don't need to ensure that the download wasn't already aborted yet /
+	 *   no command is queued to abort it already.
+	 * - This is a private function, not a public callback. Intended to be used by
+	 *   {@link #storeTrustChangedCommandWithoutCommit(Trust, Trust)}. */
+	private void storeAbortFetchCommandWithoutCommit_Checked(Identity identity) {
+		DownloadSchedulerCommand c = getQueuedCommand(identity);
+		
+		if(c != null) {
+			if(c instanceof StopDownloadCommand) {
+				// This function should only be called when the "should fetch?" state changes from
+				// true to false, but it can only do so once, not twice in a row, so we shouldn't
+				// be called twice and we shouldn't observe a StopDownloadCommand already existing
+				// here.
+				// However we're called by storeTrustChangedCommandWithoutCommit(), which is called
+				// *after* Score computation is finished, so we may already have received a
+				// StopDownloadCommand by storeAbortFetchCommandWithoutCommit() which was called
+				// by Score computation before storeTrustChangedCommandWithoutCommit().
+				// Thus this is not an error.
+				return;
+			}
+			
+			if(c instanceof StartDownloadCommand) {
+				c.deleteWithoutCommit();
+				// At first glance we'd put a "return;" here since the StartDownloadCommand
+				// wasn't processed yet and thus there seems to be no need to store a
+				// StopDownloadCommand to stop the download as it not seems to be running yet.
+				// But a second StartDownloadCommand is also used for the purpose of handling
+				// Identity.markForRefetch() when a download is already running so one could be
+				// running already indeed and thus we do need to store a StopDownloadCommand and
+				// cannot return.
+			}
+		}
+		
+		// As we did not return if a pre-existing StartDownloadCommand wasn't processed yet a
+		// download may not have been started yet.
+		// Thus we should check with mDownloads before uselessly invoking the DownloadScheduler
+		// for Identitys which weren't interesting to us anyway.
+		// (mDownloads is valid to use from a concurrency perspective, is guarded by mLock which
+		// callers are required to hold.)
 		if(mDownloads.containsKey(identity.getID())) {
 			// We cannot just cancel the running download here:
 			// This function is being called as part of an unfinished transaction which may still be
@@ -488,21 +550,22 @@ public final class IdentityDownloaderFast implements
 		//   the download may already been running / a command for starting it may already be
 		//   scheduled.
 		//   This is obeyed by storeStartFetchCommandWithoutCommit_Checked().
+		// - If reallyWouldDownloadNow is false, then maybeWouldDownloadBefore must have been true.
+		//   In that case we did check shouldDownload() and it returned false to indicate no other
+		//   Trust justifies downloading the Identity, so we know that the removed Trust was the
+		//   only reason for wanting to download the Identity. In other words:
+		//   If reallyWouldDownloadNow is false, then we must abort the download and not expect it
+		//   to be queued for aborting yet.
+		//   However in practice this is invalidated by the fact that this function is called before
+		//   Score computation and Score computation may have already aborted the download by
+		//   storeAbortFetchCommandWithoutCommit() if the Trust was the only reason the Identity
+		//   was being downloaded.
+		//   This is obeyed by storeAbortFetchCommandWithoutCommit_Checked().
 		
-		// FIXME: storeAbortFetchCommandWithoutCommit() will duplicate some of the checks we already did here.
-		// Extract its core functionality into a sub-function which can be used both by this
-		// function here and maybe also as new backend of the original function (though I didn't do
-		// the latter for the case of storeStartFetchCommand...() as it would have reduced the
-		// readability too much, duplicating it made more sense, and might also make more sense for
-		// the ...Abort...() version.)
-		// FIXME: If you don't implement the above before release: At least make sure that this
-		// function is as-is actually even suitable to be used here, I didn't check that yet!
-		// While doing that also remove the FIXME there which requests to implement a mechanism
-		// like this function here.
 		if(reallyWouldDownloadNow)
 			storeStartFetchCommandWithoutCommit_Checked(identity);
 		else
-			storeAbortFetchCommandWithoutCommit(identity);
+			storeAbortFetchCommandWithoutCommit_Checked(identity);
 	}
 
 	/** This callback is not used by this class. */
