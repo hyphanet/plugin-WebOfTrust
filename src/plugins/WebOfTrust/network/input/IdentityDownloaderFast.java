@@ -295,9 +295,11 @@ public final class IdentityDownloaderFast implements
 	/**
 	 * Same specification and requirements as
 	 * {@link #storeStartFetchCommandWithoutCommit(Identity)} except for these differences:
-	 * - "Checked" means that we for sure know that this class wants to download the Identity.
+	 * - "Checked" means that we for sure know that this class wants to download the Identity and
+	 *   that this function is guaranteed to be called when an Identity becomes of interest for this
+	 *   class to download, not just when it becomes of interest for the whole of WoT to download.
 	 *   However callers still don't need to ensure that no download for it is running yet / no
-	 *   command is queued to start one.
+	 *   command is already queued to start one.
 	 * - This function is not to be used for handling {@link Identity#markForRefetch()}.
 	 * - This is a private function, not a public callback. Intended to be used by
 	 *   {@link #storeTrustChangedCommandWithoutCommit(Trust, Trust)}. */
@@ -392,11 +394,11 @@ public final class IdentityDownloaderFast implements
 	/**
 	 * Same specification and requirements as
 	 * {@link #storeAbortFetchCommandWithoutCommit(Identity)} except for these differences:
-	 * - "Checked" means that that this function *is* guaranteed to be called when this class
-	 *   doesn't want to download the Identity anymore - in opposite to the other function which is
-	 *   only called when the whole of WoT doesn't want to download it anymore.
+	 * - "Checked" means that we for sure know that this class wanted to download the Identity and
+	 *   that this function is guaranteed to be called when an Identity stops being of interest for
+	 *   this class to download, not just when the whole of WoT wants to stop downloading it.
 	 *   However callers still don't need to ensure that the download wasn't already aborted yet /
-	 *   no command is queued to abort it already.
+	 *   no command is already queued to abort it.
 	 * - This is a private function, not a public callback. Intended to be used by
 	 *   {@link #storeTrustChangedCommandWithoutCommit(Trust, Trust)}. */
 	private void storeAbortFetchCommandWithoutCommit_Checked(Identity identity) {
