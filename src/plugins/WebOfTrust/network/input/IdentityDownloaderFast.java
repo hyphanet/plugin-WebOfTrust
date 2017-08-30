@@ -156,10 +156,15 @@ public final class IdentityDownloaderFast implements
 	 * FIXME: Document similarly to {@link IdentityDownloaderSlow#mJob}.
 	 * FIXME: Initialize & implement.
 	 * 
+	 * Concurrent write access to this variable is guarded by {@link #mLock}. 
+	 * 
 	 * @see DownloadScheduler */
 	private volatile DelayedBackgroundJob mDownloadSchedulerThread = null;
 
-	/** Key = {@link Identity#getID()}. */
+	/**
+	 * Key = {@link Identity#getID()}.
+	 * 
+	 * Concurrent read/write access to the HashMap is guarded by {@link #mLock}. */
 	private final HashMap<String, USKRetriever> mDownloads = new HashMap<>();
 
 
@@ -318,6 +323,8 @@ public final class IdentityDownloaderFast implements
 			
 			if(c instanceof StopDownloadCommand) {
 				c.deleteWithoutCommit();
+				// mDownloads is valid to use from a concurrency perspective, is guarded by mLock
+				// which callers are required to hold.
 				assert(mDownloads.containsKey(identity.getID()));
 				return;
 			}
@@ -374,9 +381,8 @@ public final class IdentityDownloaderFast implements
 		// a download may not have been started yet.
 		// Thus we should check with mDownloads before uselessly invoking the DownloadScheduler
 		// for Identitys which weren't interesting to us anyway.
-		// (This variable is valid to use here from a concurrency perspective as the interface
-		// specification ensures that our mLock is held while we are called - which is also the lock
-		// which guards mDownloads.)
+		// (mDownloads is valid to use from a concurrency perspective, is guarded by mLock which
+		// callers are required to hold.)
 		if(mDownloads.containsKey(identity.getID())) {
 			// We cannot just cancel the running download here:
 			// This function is being called as part of an unfinished transaction which may still be
