@@ -3246,14 +3246,22 @@ public final class WebOfTrust extends WebOfTrustInterface
 			if(valueChanged) {
 				if(logDEBUG) Logger.debug(this, "Updated trust value ("+ trust +"), now updating Score.");
 				updateScoresWithoutCommit(oldTrust, trust);
+				
+				// In opposite to SubscriptionManager's callback this must be called *after* Scores
+				// are updated, and here only is interested to be called if the value changed.
+				mFetcher.storeTrustChangedCommandWithoutCommit(oldTrust, trust);
 			}
 		} catch (NotTrustedException e) {
 			trust = new Trust(this, truster, trustee, newValue, newComment);
 			trust.setTrusteeEdition(trusteeEditionHint);
 			trust.storeWithoutCommit();
+			
 			mSubscriptionManager.storeTrustChangedNotificationWithoutCommit(null, trust);
+			
 			if(logDEBUG) Logger.debug(this, "New trust value ("+ trust +"), now updating Score.");
 			updateScoresWithoutCommit(null, trust);
+			
+			mFetcher.storeTrustChangedCommandWithoutCommit(null, trust);
 		} 
 
 		truster.updated();
