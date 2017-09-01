@@ -102,6 +102,11 @@ public interface IdentityDownloader extends Daemon {
 	 *   However the existing implementation of this callback here don't care about this, and in
 	 *   fact it does need the Scores, so this difference is hereby required.
 	 * 
+	 * - May not be called for all changes to attributes of the Trust but will be called upon:
+	 *   * {@link Trust#getValue()} changes.
+	 *   * {@link Trust#getTruster()} changes its type from OwnIdentity to Identity or vice versa.
+	 *   * a Trust is created or deleted.
+	 * 
 	 * - Synchronization requirements:
 	 *   This function is guaranteed to be called while the following locks are being held in the
 	 *   given order:
