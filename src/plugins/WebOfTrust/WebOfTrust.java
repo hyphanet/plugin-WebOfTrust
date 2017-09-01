@@ -3341,6 +3341,9 @@ public final class WebOfTrust extends WebOfTrustInterface
 		trust.deleteWithoutCommit();
 		mSubscriptionManager.storeTrustChangedNotificationWithoutCommit(trust, null);
 		updateScoresWithoutCommit(trust, null);
+		// In opposite to SubscriptionManager's callback this must be called *after* Scores
+		// are updated.
+		mFetcher.storeTrustChangedCommandWithoutCommit(trust, null);
 	}
 
 	/**
