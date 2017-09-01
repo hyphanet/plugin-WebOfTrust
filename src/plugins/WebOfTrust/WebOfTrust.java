@@ -3269,6 +3269,8 @@ public final class WebOfTrust extends WebOfTrustInterface
 		
 		// TODO: Mabye notify clients about this. IMHO it would create too much notifications on trust list import so we don't.
 		// As soon as we have notification-coalescing we might do it.
+		// EDIT: This is not necessary for trust list import, XMLTransformer.importIdentity() calls
+		// it once and for all at the end of the import.
 		// mSubscriptionManager.storeIdentityChangedNotificationWithoutCommit(truster);
 		
 		return trust;
