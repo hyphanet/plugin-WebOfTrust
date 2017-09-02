@@ -2131,7 +2131,7 @@ public final class WebOfTrust extends WebOfTrustInterface
 
 	/**
 	 * ATTENTION: If you add new code which terminates threads, you must make sure that they are
-	 * terminated in {@link AbstractSingleNodeTest#setUpNode()} as well.
+	 * terminated in {@link AbstractMultiNodeTest#setUpNode()} as well.
 	 */
 	@Override
 	public void terminate() {
