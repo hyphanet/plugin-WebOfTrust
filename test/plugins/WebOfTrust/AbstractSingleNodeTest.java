@@ -5,12 +5,8 @@ package plugins.WebOfTrust;
 
 import org.junit.Ignore;
 
-/**
- * Version of {@link AbstractMultiNodeTest} which only runs a single node.
- * 
- * FIXME: Code quality: The name of this only made sense when the base class AbstractMultiNodeTest
- * did not exist yet. Thus rename to AbstractSingleNodeTest. */
+/** Version of {@link AbstractMultiNodeTest} which only runs a single node. */
 @Ignore("Is ignored so it can be abstract. Contained self-tests will be run by child classes.")
-public abstract class AbstractFullNodeTest extends AbstractMultiNodeTest {
+public abstract class AbstractSingleNodeTest extends AbstractMultiNodeTest {
 
 }

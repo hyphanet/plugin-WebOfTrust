@@ -45,7 +45,7 @@ import freenet.support.SimpleFieldSet;
  * @see FCPClientReferenceImplementation This class can do an online test which is similar to this unit test.
  * @author xor (xor@freenetproject.org)
  */
-public final class SubscriptionManagerFCPTest extends AbstractFullNodeTest {
+public final class SubscriptionManagerFCPTest extends AbstractSingleNodeTest {
 
 	/**
 	 * This test acts as a client to the WOT FCP server subscription code.
