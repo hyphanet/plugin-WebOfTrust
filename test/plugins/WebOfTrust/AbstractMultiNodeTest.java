@@ -164,8 +164,7 @@ public abstract class AbstractMultiNodeTest
         
         File database = mWebOfTrust.getDatabaseFile();
         mNode.getPluginManager().killPlugin(mWebOfTrust, Long.MAX_VALUE);
-        mWebOfTrust = null;
-        
+       
         // The following commented-out assert would yield a false failure:
         // - setUpNode() already called terminate() upon various subsystems of WoT.
         // - When killPlugin() calls WebOfTrust.terminate(), that function will try to terminate()
@@ -181,6 +180,8 @@ public abstract class AbstractMultiNodeTest
         // to make testTerminate() cause the subsystem threads to all run, in parallel of
         // terminate(). 
         /* assertTrue(mWebOfTrust.isTerminated()); */
+        
+        mWebOfTrust = null;
         
         WebOfTrust reopened = new WebOfTrust(database.toString());
         assertTrue(reopened.verifyDatabaseIntegrity());
