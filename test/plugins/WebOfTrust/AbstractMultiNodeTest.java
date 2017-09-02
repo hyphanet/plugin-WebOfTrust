@@ -46,8 +46,7 @@ import freenet.support.PooledExecutor;
  * 
  * @author xor (xor@freenetproject.org
  */
-@Ignore("Is ignored so it can be abstract. If you need to add self-tests, use member classes, "
-    +   "they likely won't be ignored. But then also check that to make sure.")
+@Ignore("Is ignored so it can be abstract. Contained self-tests will be run by child classes.")
 public abstract class AbstractMultiNodeTest
         extends AbstractJUnit4BaseTest {
     
