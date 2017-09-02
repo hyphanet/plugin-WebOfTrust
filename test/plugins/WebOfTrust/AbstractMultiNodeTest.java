@@ -154,6 +154,9 @@ public abstract class AbstractMultiNodeTest
         assertTrue(mWebOfTrust.isTerminated());
     }
 
+    /**
+     * {@link AbstractJUnit4BaseTest#testDatabaseIntegrityAfterTermination()} is based on this,
+     * please apply changes there as well. */
     @After
     @Override
     public final void testDatabaseIntegrityAfterTermination() {
@@ -187,6 +190,7 @@ public abstract class AbstractMultiNodeTest
         assertTrue(reopened.verifyDatabaseIntegrity());
         assertTrue(reopened.verifyAndCorrectStoredScores());
         reopened.terminate();
+        assertTrue(reopened.isTerminated());
     }
 
     @Override

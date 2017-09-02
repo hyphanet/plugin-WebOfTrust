@@ -109,6 +109,9 @@ public abstract class AbstractJUnit4BaseTest {
     	}
     }
 
+    /**
+     * Based on {@link AbstractMultiNodeTest#testDatabaseIntegrityAfterTermination()}, please
+     * apply changes there as well. */
     @After public void testDatabaseIntegrityAfterTermination() {
         WebOfTrust wot = getWebOfTrust();
         if(wot == null) // For testSetupUncaughtExceptionHandler() for example.
