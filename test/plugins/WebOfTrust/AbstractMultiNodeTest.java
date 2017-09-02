@@ -30,22 +30,22 @@ import freenet.support.LoggerHook.InvalidThresholdException;
 import freenet.support.PooledExecutor;
 
 /**
- * A base class for WOT unit tests.<br>
- * As opposed to regular WOT unit tests based upon {@link AbstractJUnit4BaseTest}, this test runs the
- * unit tests inside a full Freenet node:<br>
- * WOT is loaded as a regular plugin instead of executing the tests directly without Freenet.<br>
- * <br>
+ * A base class for WoT unit tests.
+ * As opposed to regular WoT unit tests based upon {@link AbstractJUnit4BaseTest}, this test runs
+ * the unit tests inside one or multiple full Freenet nodes:
+ * WoT is loaded as a regular plugin instead of executing the tests directly without Freenet.
  * 
- * This has the advantage of allowing more complex tests:<br>
- * - The {@link PluginRespirator} is available<br>
- * - FCP can be used.<br><br>
+ * This has the advantage of allowing more complex tests:
+ * - The {@link PluginRespirator} is available.
+ * - FCP can be used.
+ * - Real network traffic can happen if more than one node is used.
  * 
- * The price is that it is much more heavy to initialize and thus has a higher execution time.<br>
+ * The price is that it is much more heavy to initialize and thus has a higher execution time.
  * Thus, please only use it as a base class if what {@link AbstractJUnit4BaseTest} provides is not
- * sufficient.<br>
+ * sufficient.
  * 
- * @author xor (xor@freenetproject.org
- */
+ * FIXME: This is at progress of being adapted from previously only being intended to run a single
+ * node to supporting multiple nodes. See the Git history. */
 @Ignore("Is ignored so it can be abstract. Contained self-tests will be run by child classes.")
 public abstract class AbstractMultiNodeTest
         extends AbstractJUnit4BaseTest {
