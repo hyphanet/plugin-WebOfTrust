@@ -7,6 +7,7 @@ import static java.lang.Math.abs;
 import static java.lang.Math.max;
 import static java.util.Arrays.copyOfRange;
 import static java.util.Arrays.sort;
+import static plugins.WebOfTrust.XMLTransformer.MAX_IDENTITY_XML_TRUSTEE_AMOUNT;
 
 import java.io.File;
 import java.io.IOException;
@@ -2734,14 +2735,25 @@ public final class WebOfTrust extends WebOfTrustInterface
 				}
 			}
 
+			// While deleting Trusts now we will preserve them here as we will need to pass them to
+			// mFetcher after Scores are updated.
+			ArrayList<Trust> receivedTrusts = new ArrayList<>(MAX_IDENTITY_XML_TRUSTEE_AMOUNT);
+			ArrayList<Trust> givenTrusts = new ArrayList<>(MAX_IDENTITY_XML_TRUSTEE_AMOUNT);
+			
 			if(logDEBUG) Logger.debug(this, "Deleting received trusts...");
 			for(Trust trust : getReceivedTrusts(identity)) {
+				// Besides the fact that mFetcher will want a clone() anyway, we must also clone it
+				// because after deleting it it won't anymore be possible to activate() it
+				// = load its members from the database.
+				receivedTrusts.add(trust.clone());
+				
 				trust.deleteWithoutCommit();
 				mSubscriptionManager.storeTrustChangedNotificationWithoutCommit(trust, null);
 			}
 
 			if(logDEBUG) Logger.debug(this, "Deleting given trusts...");
 			for(Trust givenTrust : getGivenTrusts(identity)) {
+				givenTrusts.add(givenTrust.clone());
 				givenTrust.deleteWithoutCommit();
 				mSubscriptionManager.storeTrustChangedNotificationWithoutCommit(givenTrust, null);
 				// We call computeAllScores anyway so we do not use removeTrustWithoutCommit()
@@ -2766,6 +2778,8 @@ public final class WebOfTrust extends WebOfTrustInterface
 				// may be possible as we anyway are holding the required locks at this point
 				// probably. Further review all other similar callers of storeAbortFetchCommand...()
 				// to do the same, e.g. deleteOwnIdentity() / restoreOwnIdentity().
+				// EDIT: This FIXME also applies to the below deployments of the
+				// mFetcher.storeTrustChangedCommandWithoutCommit() callbacks.
 				mFetcher.storeAbortFetchCommandWithoutCommit(identity);
 			}
 		
@@ -2776,6 +2790,28 @@ public final class WebOfTrust extends WebOfTrustInterface
 			
 			if(!trustListImportWasInProgress)
 				finishTrustListImport();
+			
+			if(mFetcher != null) {
+				// In opposite to SubscriptionManager's callback the callback we deploy now must be
+				// called *after* Scores are updated.
+				
+				// TODO: Performance: In theory we don't need to tell it about the deleted received
+				// Trusts as that effect is already covered by having already called
+				// storeAbortFetchCommandWithoutCommit() above.
+				// However such hacks should first be explicitely allowed in the interface
+				// specification of IdentityDownloader. As this function here is for debug purposes
+				// mostly currently it's not worth doing that now.
+				for(Trust t : receivedTrusts)
+					mFetcher.storeTrustChangedCommandWithoutCommit(t, null);
+				
+				// TODO: Performance: In theory this only needs to be called if the trust giver
+				// was an OwnIdentity, otherwise the only current implementation of
+				// IdentityDownloader which uses this callback - IdentityDownloaderFast - wduldn't
+				// have used the trust as a reason to download anything anyway.
+				// However the same concerns about resolving this TODO apply as at the above TODO.
+				for(Trust t : givenTrusts)
+					mFetcher.storeTrustChangedCommandWithoutCommit(t, null);
+			}
 		}
 		catch(RuntimeException e) {
 			if(!trustListImportWasInProgress)
@@ -3340,6 +3376,14 @@ public final class WebOfTrust extends WebOfTrustInterface
 	 * 
 	 */
 	protected void removeTrustWithoutCommit(Trust trust) {
+		// FIXME: We must clone() the Trust before deleting it, see the comment at
+		// deleteWithoutCommit(Identity) which was added by the same commit as this comment here.
+		// When fixing this please:
+		// 1) think about whether existing databases could have corruption which needs repair code
+		//    as the SubscriptionManager has been deployed in several releases already. However its
+		//    unlikely as its objects are deleted from the database at every restart currently.
+		// 2) review other calls of the SubscriptionManager's callbacks for the same issue.
+		
 		trust.deleteWithoutCommit();
 		mSubscriptionManager.storeTrustChangedNotificationWithoutCommit(trust, null);
 		updateScoresWithoutCommit(trust, null);
