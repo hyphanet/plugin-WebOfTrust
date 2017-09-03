@@ -136,6 +136,10 @@ public abstract class AbstractMultiNodeTest
         return node;
     }
 
+    public Node getNode() {
+        return mNode;
+    }
+
     /**
      * {@link AbstractJUnit4BaseTest#testDatabaseIntegrityAfterTermination()} is based on this,
      * please apply changes there as well. */

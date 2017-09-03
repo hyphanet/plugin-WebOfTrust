@@ -8,6 +8,7 @@ import static org.junit.Assert.assertTrue;
 
 import org.junit.Test;
 
+import freenet.node.Node;
 import freenet.pluginmanager.FredPlugin;
 import freenet.pluginmanager.PluginManager;
 
@@ -26,7 +27,10 @@ public final class AbstractMultiNodeTestSelfTest extends AbstractSingleNodeTest 
 	 * - Checks whether {@link WebOfTrust#isTerminated()} reports successful shutdown. */
 	@Test
 	public final void testTerminate() {
-		PluginManager pm = mNode.getPluginManager();
+		Node node = getNode();
+		WebOfTrust wot = getWebOfTrust();
+		
+		PluginManager pm = node.getPluginManager();
 		
 		// Before doing the actual test of killPlugin(...); assertTrue(mWebOfTrust.isTerminated()),
 		// we must restart WoT. Instead this would happen:
@@ -35,17 +39,17 @@ public final class AbstractMultiNodeTestSelfTest extends AbstractSingleNodeTest 
 		//   those subsystems again. This will fail because they are terminated already.
 		// - WebOfTrust.terminate() will mark termination as failed due to subsystem termination
 		//   failure. Thus, isTerminated() will return false.
-		pm.killPlugin(mWebOfTrust, Long.MAX_VALUE);
-		mWebOfTrust = null;
+		pm.killPlugin(wot, Long.MAX_VALUE);
+		wot = null; // FIXME: Should we null it at AbstractMultiNodeTest's member variable as well?
 		assertEquals(0, pm.getPlugins().size());
-		mWebOfTrust
+		wot
 			= (WebOfTrust)pm.startPluginFile(System.getProperty("WOT_test_jar"), false).getPlugin();
 		assertEquals(1, pm.getPlugins().size());
 		
 		// The actual test
-		mNode.getPluginManager().killPlugin(mWebOfTrust, Long.MAX_VALUE);
+		node.getPluginManager().killPlugin(wot, Long.MAX_VALUE);
 		assertEquals(0, pm.getPlugins().size());
-		assertTrue(mWebOfTrust.isTerminated());
+		assertTrue(wot.isTerminated());
 	}
 
 }
