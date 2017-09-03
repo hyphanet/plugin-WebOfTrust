@@ -57,9 +57,18 @@ public abstract class AbstractMultiNodeTest
     protected Node mNode; 
     
     protected WebOfTrust mWebOfTrust;
-    
-    
-    @Before public final void setUpNode()
+
+
+    @Before public final void setUpNodes()
+            throws NodeInitException, InvalidThresholdException, IOException {
+        
+        mNode = setUpNode();
+        mWebOfTrust = (WebOfTrust) mNode.getPluginManager()
+            .getPluginInfoByClassName(WebOfTrust.class.getName()).getPlugin();
+        assertNotNull(mWebOfTrust);
+    }
+
+    private Node setUpNode()
             throws NodeInitException, InvalidThresholdException, IOException {
         
         File nodeFolder = mTempFolder.newFolder();
@@ -103,8 +112,8 @@ public abstract class AbstractMultiNodeTest
             sGlobalTestInitDone = true;
         }
 
-        mNode = NodeStarter.createTestNode(params);
-        mNode.start(!params.enableSwapping);
+        Node node = NodeStarter.createTestNode(params);
+        node.start(!params.enableSwapping);
 
         String wotFilename = System.getProperty("WOT_test_jar");
         
@@ -112,17 +121,19 @@ public abstract class AbstractMultiNodeTest
             + "'java -DWOT_test_jar=...'",  wotFilename);
         
         PluginInfoWrapper wotWrapper = 
-            mNode.getPluginManager().startPluginFile(wotFilename, false);
+            node.getPluginManager().startPluginFile(wotFilename, false);
         
-        mWebOfTrust = (WebOfTrust) wotWrapper.getPlugin();
+        WebOfTrust wot = (WebOfTrust) wotWrapper.getPlugin();
         
         // Prevent unit tests from having to do thread synchronization by terminating all WOT
         // subsystems which run their own thread.
-        mWebOfTrust.getIntroductionClient().terminate();
-        mWebOfTrust.getIntroductionServer().terminate();
-        mWebOfTrust.getIdentityInserter().terminate();
-        mWebOfTrust.getIdentityFetcher().stop();
-        mWebOfTrust.getSubscriptionManager().stop();
+        wot.getIntroductionClient().terminate();
+        wot.getIntroductionServer().terminate();
+        wot.getIdentityInserter().terminate();
+        wot.getIdentityFetcher().stop();
+        wot.getSubscriptionManager().stop();
+        
+        return node;
     }
 
     /**
