@@ -197,36 +197,37 @@ public abstract class AbstractMultiNodeTest
      */
     protected final void deleteSeedIdentities()
             throws UnknownIdentityException, MalformedURLException {
+        WebOfTrust wot = getWebOfTrust();
         
-        // Properly ordered combination of locks needed for mWebOftrust.beginTrustListImport(),
-        // mWebOfTrust.deleteWithoutCommit(Identity) and Persistent.checkedCommit().
+        // Properly ordered combination of locks needed for wot.beginTrustListImport(),
+        // wot.deleteWithoutCommit(Identity) and Persistent.checkedCommit().
         // We normally don't synchronize in unit tests but this is a base class for all WOT unit
         // tests so side effects of not locking cannot be known here.
         // Calling this now already so our assert..() are guaranteed to be coherent as well.
         // Also, taking all those locks at once for proper anti-deadlock order.
-        synchronized(mWebOfTrust) {
-        synchronized(mWebOfTrust.getIntroductionPuzzleStore()) {
-        synchronized(mWebOfTrust.getIdentityFetcher()) {
-        synchronized(mWebOfTrust.getSubscriptionManager()) {
-        synchronized(Persistent.transactionLock(mWebOfTrust.getDatabase()))  {
+        synchronized(wot) {
+        synchronized(wot.getIntroductionPuzzleStore()) {
+        synchronized(wot.getIdentityFetcher()) {
+        synchronized(wot.getSubscriptionManager()) {
+        synchronized(Persistent.transactionLock(wot.getDatabase()))  {
 
-        assertEquals(WebOfTrust.SEED_IDENTITIES.length, mWebOfTrust.getAllIdentities().size());
+        assertEquals(WebOfTrust.SEED_IDENTITIES.length, wot.getAllIdentities().size());
         
         // The function for deleting identities deleteWithoutCommit() is mostly a debug function
         // and thus shouldn't be used upon complex databases. See its JavaDoc.
         assertEquals(
               "This function might have side effects upon databases which contain more than"
             + " just the seed identities, so please do not use it upon such databases.",
-            0, mWebOfTrust.getAllTrusts().size() + mWebOfTrust.getAllScores().size());
+            0, wot.getAllTrusts().size() + wot.getAllScores().size());
         
-        mWebOfTrust.beginTrustListImport();
+        wot.beginTrustListImport();
         for(String seedURI : WebOfTrust.SEED_IDENTITIES) {
-            mWebOfTrust.deleteWithoutCommit(mWebOfTrust.getIdentityByURI(new FreenetURI(seedURI)));
+            wot.deleteWithoutCommit(wot.getIdentityByURI(new FreenetURI(seedURI)));
         }
-        mWebOfTrust.finishTrustListImport();
-        Persistent.checkedCommit(mWebOfTrust.getDatabase(), mWebOfTrust);
+        wot.finishTrustListImport();
+        Persistent.checkedCommit(wot.getDatabase(), wot);
         
-        assertEquals(0, mWebOfTrust.getAllIdentities().size());
+        assertEquals(0, wot.getAllIdentities().size());
 
         }}}}}
     }
