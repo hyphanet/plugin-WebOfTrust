@@ -185,7 +185,7 @@ public abstract class AbstractMultiNodeTest
     }
 
     /**
-     * {@link AbstractJUnit4BaseTest} loads WOT as a real plugin just as if it was running in
+     * {@link AbstractMultiNodeTest} loads WOT as a real plugin just as if it was running in
      * a regular node. This will cause WOT to create the seed identities.<br>
      * If you need to do a test upon a really empty database, use this function to delete them.
      * 
