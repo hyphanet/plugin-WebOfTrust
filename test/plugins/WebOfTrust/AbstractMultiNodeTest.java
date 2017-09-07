@@ -153,38 +153,40 @@ public abstract class AbstractMultiNodeTest
     @Override
     public final void testDatabaseIntegrityAfterTermination() {
         for(Node node : mNodes) {
-        // We cannot use Node.exit() because it would terminate the whole JVM.
-        // TODO: Code quality: Once fred supports shutting down a Node without killing the JVM,
-        // use that instead of only unloading WoT. https://bugs.freenetproject.org/view.php?id=6683
-        /* node.exit("JUnit tearDown()"); */
-        
-        WebOfTrust wot = getWebOfTrust(node);
-        File database = wot.getDatabaseFile();
-        node.getPluginManager().killPlugin(wot, Long.MAX_VALUE);
-       
-        // The following commented-out assert would yield a false failure:
-        // - setUpNode() already called terminate() upon various subsystems of WoT.
-        // - When killPlugin() calls WebOfTrust.terminate(), that function will try to terminate()
-        //   those subsystems again. This will fail because they are terminated already.
-        // - WebOfTrust.terminate() will mark termination as failed due to subsystem termination
-        //   failure. Thus, isTerminated() will return false.
-        // The compensation for having this assert commented out is the function testTerminate() at
-        // AbstractMultiNodeTestSelfTest.
-        // TODO: Code quality: It would nevertheless be a good idea to find a way to enable this
-        // assert since testTerminate() does not cause load upon the subsystems of WoT. This
-        // function here however is an @After test, so it will be run after the child test classes'
-        // tests, which can cause sophisticated load. An alternate solution would be to find a way
-        // to make testTerminate() cause the subsystem threads to all run, in parallel of
-        // terminate(). 
-        /* assertTrue(wot.isTerminated()); */
-        
-        wot = null;
-        
-        WebOfTrust reopened = new WebOfTrust(database.toString());
-        assertTrue(reopened.verifyDatabaseIntegrity());
-        assertTrue(reopened.verifyAndCorrectStoredScores());
-        reopened.terminate();
-        assertTrue(reopened.isTerminated());
+            // We cannot use Node.exit() because it would terminate the whole JVM.
+            // TODO: Code quality: Once fred supports shutting down a Node without killing the JVM,
+            // use that instead of only unloading WoT.
+            // https://bugs.freenetproject.org/view.php?id=6683
+            /* node.exit("JUnit tearDown()"); */
+            
+            WebOfTrust wot = getWebOfTrust(node);
+            File database = wot.getDatabaseFile();
+            node.getPluginManager().killPlugin(wot, Long.MAX_VALUE);
+            
+            // The following commented-out assert would yield a false failure:
+            // - setUpNode() already called terminate() upon various subsystems of WoT.
+            // - When killPlugin() calls WebOfTrust.terminate(), that function will try to
+            //   terminate() those subsystems again. This will fail because they are terminated
+            //   already.
+            // - WebOfTrust.terminate() will mark termination as failed due to subsystem termination
+            //   failure. Thus, isTerminated() will return false.
+            // The compensation for having this assert commented out is the function testTerminate()
+            // at AbstractMultiNodeTestSelfTest.
+            // TODO: Code quality: It would nevertheless be a good idea to find a way to enable this
+            // assert since testTerminate() does not cause load upon the subsystems of WoT. This
+            // function here however is an @After test, so it will be run after the child test
+            // classes' tests, which can cause sophisticated load. An alternate solution would be to
+            // find a way to make testTerminate() cause the subsystem threads to all run, in
+            // parallel of terminate(). 
+            /* assertTrue(wot.isTerminated()); */
+            
+            wot = null;
+            
+            WebOfTrust reopened = new WebOfTrust(database.toString());
+            assertTrue(reopened.verifyDatabaseIntegrity());
+            assertTrue(reopened.verifyAndCorrectStoredScores());
+            reopened.terminate();
+            assertTrue(reopened.isTerminated());
         }
     }
 
