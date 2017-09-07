@@ -220,38 +220,38 @@ public abstract class AbstractMultiNodeTest
             throws UnknownIdentityException, MalformedURLException {
         
         for(Node node : mNodes) {
-        WebOfTrust wot = getWebOfTrust(node);
-        // Properly ordered combination of locks needed for wot.beginTrustListImport(),
-        // wot.deleteWithoutCommit(Identity) and Persistent.checkedCommit().
-        // We normally don't synchronize in unit tests but this is a base class for all WOT unit
-        // tests so side effects of not locking cannot be known here.
-        // Calling this now already so our assert..() are guaranteed to be coherent as well.
-        // Also, taking all those locks at once for proper anti-deadlock order.
-        synchronized(wot) {
-        synchronized(wot.getIntroductionPuzzleStore()) {
-        synchronized(wot.getIdentityFetcher()) {
-        synchronized(wot.getSubscriptionManager()) {
-        synchronized(Persistent.transactionLock(wot.getDatabase()))  {
-
-        assertEquals(WebOfTrust.SEED_IDENTITIES.length, wot.getAllIdentities().size());
-        
-        // The function for deleting identities deleteWithoutCommit() is mostly a debug function
-        // and thus shouldn't be used upon complex databases. See its JavaDoc.
-        assertEquals(
-              "This function might have side effects upon databases which contain more than"
-            + " just the seed identities, so please do not use it upon such databases.",
-            0, wot.getAllTrusts().size() + wot.getAllScores().size());
-        
-        wot.beginTrustListImport();
-        for(String seedURI : WebOfTrust.SEED_IDENTITIES) {
-            wot.deleteWithoutCommit(wot.getIdentityByURI(new FreenetURI(seedURI)));
-        }
-        wot.finishTrustListImport();
-        Persistent.checkedCommit(wot.getDatabase(), wot);
-        
-        assertEquals(0, wot.getAllIdentities().size());
-
-        }}}}}
+            WebOfTrust wot = getWebOfTrust(node);
+            // Properly ordered combination of locks needed for wot.beginTrustListImport(),
+            // wot.deleteWithoutCommit(Identity) and Persistent.checkedCommit().
+            // We normally don't synchronize in unit tests but this is a base class for all WOT unit
+            // tests so side effects of not locking cannot be known here.
+            // Calling this now already so our assert..() are guaranteed to be coherent as well.
+            // Also, taking all those locks at once for proper anti-deadlock order.
+            synchronized(wot) {
+            synchronized(wot.getIntroductionPuzzleStore()) {
+            synchronized(wot.getIdentityFetcher()) {
+            synchronized(wot.getSubscriptionManager()) {
+            synchronized(Persistent.transactionLock(wot.getDatabase()))  {
+            
+            assertEquals(WebOfTrust.SEED_IDENTITIES.length, wot.getAllIdentities().size());
+            
+            // The function for deleting identities deleteWithoutCommit() is mostly a debug function
+            // and thus shouldn't be used upon complex databases. See its JavaDoc.
+            assertEquals(
+                  "This function might have side effects upon databases which contain more than"
+                + " just the seed identities, so please do not use it upon such databases.",
+                0, wot.getAllTrusts().size() + wot.getAllScores().size());
+            
+            wot.beginTrustListImport();
+            for(String seedURI : WebOfTrust.SEED_IDENTITIES) {
+                wot.deleteWithoutCommit(wot.getIdentityByURI(new FreenetURI(seedURI)));
+            }
+            wot.finishTrustListImport();
+            Persistent.checkedCommit(wot.getDatabase(), wot);
+            
+            assertEquals(0, wot.getAllIdentities().size());
+            
+            }}}}}
         }
     }
 }
