@@ -87,14 +87,11 @@ public abstract class AbstractMultiNodeTest
         // TODO: As of 2014-09-30, TestNodeParameters does not provide any defaults, so we have to
         // set all of its values to something reasonable. Please check back whether it supports
         // defaults in the future and use them.
-        // The current parameters are basically set to disable anything which can be disabled
-        // so the test runs as fast as possible, even if it might break stuff.
-        // The exception is FCP since WOT has FCP tests.
         TestNodeParameters params = new TestNodeParameters();
         params.port = mRandom.nextInt((65535 - 1024) + 1) + 1024;
         params.opennetPort = mRandom.nextInt((65535 - 1024) + 1) + 1024;
         params.baseDirectory = nodeFolder;
-        params.disableProbabilisticHTLs = true;
+        params.disableProbabilisticHTLs = false;
         params.maxHTL = 18;
         params.dropProb = 0;
         params.random = mRandom;
@@ -102,24 +99,28 @@ public abstract class AbstractMultiNodeTest
         params.threadLimit = 256;
         params.storeSize = 16 * 1024 * 1024;
         params.ramStore = true;
-        params.enableSwapping = false;
-        params.enableARKs = false;
-        params.enableULPRs = false;
-        params.enablePerNodeFailureTables = false;
-        params.enableSwapQueueing = false;
-        params.enablePacketCoalescing = false;
-        params.outputBandwidthLimit = 0;
-        params.enableFOAF = false;
-        params.connectToSeednodes = false;
+        params.enableSwapping = true;
+        params.enableARKs = false; // We only connect the nodes locally, address lookup not needed
+        params.enableULPRs = true;
+        params.enablePerNodeFailureTables = true;
+        params.enableSwapQueueing = true;
+        params.enablePacketCoalescing = false; // Decrease latency for faster tests
+        params.outputBandwidthLimit = 0; // = (Almost) unlimited, see NodeStarter.createTestNode()
+        params.enableFOAF = true;
+        params.connectToSeednodes = false; // We will only create a small darknet of our local nodes
         params.longPingTimes = true;
-        params.useSlashdotCache = false;
+        params.useSlashdotCache = false; // Cannot be configured to be RAM-only so disable it.
         params.ipAddressOverride = null;
-        params.enableFCP = true;
+        params.enableFCP = true; // WoT has FCP
         params.enablePlugins = true;
 
         if(!sGlobalTestInitDone) {
             // NodeStarter.createTestNode() will throw if we do not do this before
-            NodeStarter.globalTestInit(nodeFolder, false, LogLevel.WARNING, "", true, mRandom);
+            NodeStarter.globalTestInit(nodeFolder, false, LogLevel.WARNING,
+                "freenet:NONE" /* Don't print noisy fred core logging to stdout */,
+                true /* Disable DNS because we will only connect our nodes locally */,
+                mRandom);
+            
             sGlobalTestInitDone = true;
         }
 
