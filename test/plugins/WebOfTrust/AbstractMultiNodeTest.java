@@ -199,10 +199,10 @@ public abstract class AbstractMultiNodeTest
     }
 
     protected static final WebOfTrust getWebOfTrust(Node node) {
-        WebOfTrust wot = (WebOfTrust) node.getPluginManager()
-            .getPluginInfoByClassName(WebOfTrust.class.getName()).getPlugin();
-        assertNotNull(wot);
-        return wot;
+        PluginInfoWrapper pluginInfo =
+            node.getPluginManager().getPluginInfoByClassName(WebOfTrust.class.getName());
+        assertNotNull("Plugin shouldn't be unloaded yet!", pluginInfo);
+        return (WebOfTrust)pluginInfo.getPlugin();
     }
 
     /**
