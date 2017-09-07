@@ -168,8 +168,8 @@ public abstract class AbstractMultiNodeTest
         //   those subsystems again. This will fail because they are terminated already.
         // - WebOfTrust.terminate() will mark termination as failed due to subsystem termination
         //   failure. Thus, isTerminated() will return false.
-        // The compensation for having this assert commented out is the above function
-        // testTerminate().
+        // The compensation for having this assert commented out is the function testTerminate() at
+        // AbstractMultiNodeTestSelfTest.
         // TODO: Code quality: It would nevertheless be a good idea to find a way to enable this
         // assert since testTerminate() does not cause load upon the subsystems of WoT. This
         // function here however is an @After test, so it will be run after the child test classes'
