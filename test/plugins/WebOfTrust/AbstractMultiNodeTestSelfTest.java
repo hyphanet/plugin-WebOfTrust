@@ -40,7 +40,9 @@ public final class AbstractMultiNodeTestSelfTest extends AbstractSingleNodeTest 
 		// - WebOfTrust.terminate() will mark termination as failed due to subsystem termination
 		//   failure. Thus, isTerminated() will return false.
 		pm.killPlugin(wot, Long.MAX_VALUE);
-		wot = null; // FIXME: Should we null it at AbstractMultiNodeTest's member variable as well?
+		// Pointer of AbstractSingleNodeTest. AbstractMultiNodeTest doesn't keep one.
+		this.mWebOfTrust = null;
+		wot = null;
 		assertEquals(0, pm.getPlugins().size());
 		wot
 			= (WebOfTrust)pm.startPluginFile(System.getProperty("WOT_test_jar"), false).getPlugin();

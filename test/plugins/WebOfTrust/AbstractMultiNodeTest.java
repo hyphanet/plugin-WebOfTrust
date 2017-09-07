@@ -54,18 +54,21 @@ public abstract class AbstractMultiNodeTest
      *  boolean, RandomSource) only once per VM as it requires that. */
     private static boolean sGlobalTestInitDone = false;
 
-    protected Node mNode; 
-    
-    protected WebOfTrust mWebOfTrust;
+    private Node[] mNodes;
 
+
+    /**
+     * Implementing child classes shall make this return the desired amount of nodes which
+     * AbstractMultiNodeTest will create at startup and load the WoT plugin into. */
+    public abstract int getNodeCount();
 
     @Before public final void setUpNodes()
             throws NodeInitException, InvalidThresholdException, IOException {
         
-        mNode = setUpNode();
-        mWebOfTrust = (WebOfTrust) mNode.getPluginManager()
-            .getPluginInfoByClassName(WebOfTrust.class.getName()).getPlugin();
-        assertNotNull(mWebOfTrust);
+        mNodes = new Node[getNodeCount()];
+        
+        for(int i = 0; i < mNodes.length; ++i)
+        	mNodes[i] = setUpNode();
     }
 
     private Node setUpNode()
@@ -137,7 +140,10 @@ public abstract class AbstractMultiNodeTest
     }
 
     public Node getNode() {
-        return mNode;
+        if(mNodes.length > 1)
+            throw new UnsupportedOperationException("Running more than one Node!");
+        
+        return mNodes[0];
     }
 
     /**
@@ -181,7 +187,17 @@ public abstract class AbstractMultiNodeTest
 
     @Override
     protected final WebOfTrust getWebOfTrust() {
-        return mWebOfTrust;
+        if(mNodes.length > 1)
+            throw new UnsupportedOperationException("Running more than one WebOfTrust!");
+        
+        return getWebOfTrust(mNodes[0]);
+    }
+
+    protected static final WebOfTrust getWebOfTrust(Node node) {
+        WebOfTrust wot = (WebOfTrust) node.getPluginManager()
+            .getPluginInfoByClassName(WebOfTrust.class.getName()).getPlugin();
+        assertNotNull(wot);
+        return wot;
     }
 
     /**
