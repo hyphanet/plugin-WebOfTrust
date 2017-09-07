@@ -218,8 +218,9 @@ public abstract class AbstractMultiNodeTest
      */
     protected final void deleteSeedIdentities()
             throws UnknownIdentityException, MalformedURLException {
-        WebOfTrust wot = getWebOfTrust();
         
+        for(Node node : mNodes) {
+        WebOfTrust wot = getWebOfTrust(node);
         // Properly ordered combination of locks needed for wot.beginTrustListImport(),
         // wot.deleteWithoutCommit(Identity) and Persistent.checkedCommit().
         // We normally don't synchronize in unit tests but this is a base class for all WOT unit
@@ -251,5 +252,6 @@ public abstract class AbstractMultiNodeTest
         assertEquals(0, wot.getAllIdentities().size());
 
         }}}}}
+        }
     }
 }
