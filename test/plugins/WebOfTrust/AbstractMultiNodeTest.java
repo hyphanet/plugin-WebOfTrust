@@ -152,13 +152,15 @@ public abstract class AbstractMultiNodeTest
     @After
     @Override
     public final void testDatabaseIntegrityAfterTermination() {
+        for(Node node : mNodes) {
         // We cannot use Node.exit() because it would terminate the whole JVM.
         // TODO: Code quality: Once fred supports shutting down a Node without killing the JVM,
         // use that instead of only unloading WoT. https://bugs.freenetproject.org/view.php?id=6683
-        /* mNode.exit("JUnit tearDown()"); */
+        /* node.exit("JUnit tearDown()"); */
         
-        File database = mWebOfTrust.getDatabaseFile();
-        mNode.getPluginManager().killPlugin(mWebOfTrust, Long.MAX_VALUE);
+        WebOfTrust wot = getWebOfTrust(node);
+        File database = wot.getDatabaseFile();
+        node.getPluginManager().killPlugin(wot, Long.MAX_VALUE);
        
         // The following commented-out assert would yield a false failure:
         // - setUpNode() already called terminate() upon various subsystems of WoT.
@@ -174,15 +176,16 @@ public abstract class AbstractMultiNodeTest
         // tests, which can cause sophisticated load. An alternate solution would be to find a way
         // to make testTerminate() cause the subsystem threads to all run, in parallel of
         // terminate(). 
-        /* assertTrue(mWebOfTrust.isTerminated()); */
+        /* assertTrue(wot.isTerminated()); */
         
-        mWebOfTrust = null;
+        wot = null;
         
         WebOfTrust reopened = new WebOfTrust(database.toString());
         assertTrue(reopened.verifyDatabaseIntegrity());
         assertTrue(reopened.verifyAndCorrectStoredScores());
         reopened.terminate();
         assertTrue(reopened.isTerminated());
+        }
     }
 
     @Override
