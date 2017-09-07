@@ -49,7 +49,15 @@ import freenet.support.PooledExecutor;
 @Ignore("Is ignored so it can be abstract. Self-tests are at class AbstractMultiNodeTestSelfTest.")
 public abstract class AbstractMultiNodeTest
         extends AbstractJUnit4BaseTest {
-    
+
+    /** Path of the WoT plugin JAR which will be loaded into the test's nodes. */
+    public static final String WOT_JAR_FILE = System.getProperty("WOT_test_jar");
+
+    static {
+        assertNotNull("Please specify the path of the WOT unit test JAR to the JVM via "
+            + "'java -DWOT_test_jar=...'",  WOT_JAR_FILE);
+    }
+
     /** Needed for calling {@link NodeStarter#globalTestInit(File, boolean, LogLevel, String,
      *  boolean, RandomSource) only once per VM as it requires that. */
     private static boolean sGlobalTestInitDone = false;
@@ -117,14 +125,9 @@ public abstract class AbstractMultiNodeTest
 
         Node node = NodeStarter.createTestNode(params);
         node.start(!params.enableSwapping);
-
-        String wotFilename = System.getProperty("WOT_test_jar");
-        
-        assertNotNull("Please specify the name of the WOT unit test JAR to the JVM via "
-            + "'java -DWOT_test_jar=...'",  wotFilename);
         
         PluginInfoWrapper wotWrapper = 
-            node.getPluginManager().startPluginFile(wotFilename, false);
+            node.getPluginManager().startPluginFile(WOT_JAR_FILE, false);
         
         WebOfTrust wot = (WebOfTrust) wotWrapper.getPlugin();
         

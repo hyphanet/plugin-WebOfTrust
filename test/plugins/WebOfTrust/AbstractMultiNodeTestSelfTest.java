@@ -45,7 +45,7 @@ public final class AbstractMultiNodeTestSelfTest extends AbstractSingleNodeTest 
 		wot = null;
 		assertEquals(0, pm.getPlugins().size());
 		wot
-			= (WebOfTrust)pm.startPluginFile(System.getProperty("WOT_test_jar"), false).getPlugin();
+			= (WebOfTrust)pm.startPluginFile(WOT_JAR_FILE, false).getPlugin();
 		assertEquals(1, pm.getPlugins().size());
 		
 		// The actual test
