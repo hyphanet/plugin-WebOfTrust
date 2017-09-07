@@ -91,7 +91,7 @@ public abstract class AbstractMultiNodeTest
             connectNodes();
     }
 
-    private Node setUpNode()
+    private final Node setUpNode()
             throws NodeInitException, InvalidThresholdException, IOException {
         
         File nodeFolder = mTempFolder.newFolder();
@@ -155,7 +155,7 @@ public abstract class AbstractMultiNodeTest
         return node;
     }
 
-    public Node getNode() {
+    public final Node getNode() {
         if(mNodes.length > 1)
             throw new UnsupportedOperationException("Running more than one Node!");
         
@@ -166,7 +166,7 @@ public abstract class AbstractMultiNodeTest
      * Connect every node to every other node by darknet.
      * TODO: Performance: The topology of this may suck. If it doesn't work then see what fred's
      * {@link RealNodeTest} does. */
-    private void connectNodes()
+    private final void connectNodes()
             throws FSParseException, PeerParseException, ReferenceSignatureVerificationException,
                    PeerTooOldException {
         
