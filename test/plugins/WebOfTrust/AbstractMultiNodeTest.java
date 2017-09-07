@@ -15,11 +15,18 @@ import org.junit.Ignore;
 
 import plugins.WebOfTrust.exceptions.UnknownIdentityException;
 import freenet.crypt.RandomSource;
+import freenet.io.comm.PeerParseException;
+import freenet.io.comm.ReferenceSignatureVerificationException;
 import freenet.keys.FreenetURI;
+import freenet.node.DarknetPeerNode.FRIEND_TRUST;
+import freenet.node.DarknetPeerNode.FRIEND_VISIBILITY;
+import freenet.node.FSParseException;
 import freenet.node.Node;
 import freenet.node.NodeInitException;
 import freenet.node.NodeStarter;
 import freenet.node.NodeStarter.TestNodeParameters;
+import freenet.node.PeerTooOldException;
+import freenet.node.simulator.RealNodeTest;
 import freenet.pluginmanager.PluginInfoWrapper;
 import freenet.pluginmanager.PluginRespirator;
 import freenet.support.Logger.LogLevel;
@@ -71,12 +78,17 @@ public abstract class AbstractMultiNodeTest
     public abstract int getNodeCount();
 
     @Before public final void setUpNodes()
-            throws NodeInitException, InvalidThresholdException, IOException {
+            throws NodeInitException, InvalidThresholdException, IOException, FSParseException,
+                   PeerParseException, ReferenceSignatureVerificationException, PeerTooOldException
+    {
         
         mNodes = new Node[getNodeCount()];
         
         for(int i = 0; i < mNodes.length; ++i)
         	mNodes[i] = setUpNode();
+        
+        if(mNodes.length > 1)
+            connectNodes();
     }
 
     private Node setUpNode()
@@ -148,6 +160,28 @@ public abstract class AbstractMultiNodeTest
             throw new UnsupportedOperationException("Running more than one Node!");
         
         return mNodes[0];
+    }
+
+    /**
+     * Connect every node to every other node by darknet.
+     * TODO: Performance: The topology of this may suck. If it doesn't work then see what fred's
+     * {@link RealNodeTest} does. */
+    private void connectNodes()
+            throws FSParseException, PeerParseException, ReferenceSignatureVerificationException,
+                   PeerTooOldException {
+        
+        for(int i = 0; i < mNodes.length; ++i) {
+            for(int j = 0; j < mNodes.length; ++j) {
+                if(j == i)
+                    continue;
+                
+                // The choice of loop boundaries means that for a pair of nodes (a,b) we will both
+                // call a.connect(b) AND b.connect(a).
+                // This is intentional: As of fred build01478 its class RealNodeTest, which was used
+                // as an inspiration for this code, does just that.
+                mNodes[i].connect(mNodes[j], FRIEND_TRUST.HIGH, FRIEND_VISIBILITY.YES);
+            }
+        }
     }
 
     /**
