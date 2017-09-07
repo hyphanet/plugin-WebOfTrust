@@ -49,9 +49,13 @@ public final class AbstractMultiNodeTestSelfTest extends AbstractSingleNodeTest 
 		assertEquals(1, pm.getPlugins().size());
 		
 		// The actual test
-		node.getPluginManager().killPlugin(wot, Long.MAX_VALUE);
+		pm.killPlugin(wot, Long.MAX_VALUE);
 		assertEquals(0, pm.getPlugins().size());
 		assertTrue(wot.isTerminated());
+		
+		// The @After test AbstractMultiNodeTest.testDatabaseIntegrityAfterTermination() expects the
+		// WoT plugin to still be loaded after this test is finished so we need to load it again.
+		pm.startPluginFile(WOT_JAR_FILE, false);
 	}
 
 }
