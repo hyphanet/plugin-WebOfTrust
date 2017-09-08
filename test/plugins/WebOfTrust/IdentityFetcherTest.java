@@ -3,6 +3,7 @@
  * any later version). See http://www.gnu.org/ for details of the GPL. */
 package plugins.WebOfTrust;
 
+import static java.lang.Thread.sleep;
 import static org.junit.Assert.*;
 
 import java.net.MalformedURLException;
@@ -80,10 +81,10 @@ public final class IdentityFetcherTest extends AbstractMultiNodeTest {
 				
 				if(i.getLastInsertDate().after(new Date(0)))
 					inserted = true;
-				
-				if(!inserted)
-					Thread.sleep(1000);
-			}
+			} // Must not keep the lock while sleeping to allow WoT's threads to acquire it!
+			
+			if(!inserted)
+				sleep(1000);
 		} while(!inserted);
 		System.out.println("IdentityFetcherTest: Identity inserted! Time: " + time);
 		
@@ -96,10 +97,10 @@ public final class IdentityFetcherTest extends AbstractMultiNodeTest {
 				
 				if(remoteView.getCurrentEditionFetchState() == FetchState.Fetched)
 					fetched = true;
-				
-				if(!fetched)
-					Thread.sleep(1000);
 			}
+			
+			if(!fetched)
+				sleep(1000);
 		} while(!fetched);
 		System.out.println("IdentityFetcherTest: Identity fetched! Time: " + time);
 		
