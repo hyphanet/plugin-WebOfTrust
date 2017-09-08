@@ -69,6 +69,15 @@ public abstract class AbstractMultiNodeTest
             + "'java -DWOT_test_jar=...'",  WOT_JAR_FILE);
     }
 
+    /**
+     * We generate an ideal topology, no swapping needed.
+     * 
+     * This constant is not intended to be used, it really shouldn't exist and be hardcoded at our
+     * {@link #setUpNode()} instead. But it's needed to make the flag accessible in a different
+     * place of this class due to {@link Node#start(boolean)} wanting the value again even though we
+     * already told it by {@link TestNodeParameters}. */
+    private static final boolean ENABLE_SWAPPING = false;
+
     /** Needed for calling {@link NodeStarter#globalTestInit(File, boolean, LogLevel, String,
      *  boolean, RandomSource)} only once per VM as it requires that. */
     private static boolean sGlobalTestInitDone = false;
@@ -82,7 +91,11 @@ public abstract class AbstractMultiNodeTest
 
     /**
      * Implementing child classes shall make this return the desired amount of nodes which
-     * AbstractMultiNodeTest will create at startup and load the WoT plugin into. */
+     * AbstractMultiNodeTest will create at startup and load the WoT plugin into.
+     * 
+     * If you want to do networking, i.e. use a value greater than 1, be aware that the node
+     * configuration settings which this class uses have been chosen and tested with a value of 100
+     * nodes. */
     public abstract int getNodeCount();
 
     /**
@@ -140,21 +153,18 @@ public abstract class AbstractMultiNodeTest
         params.opennetPort = mRandom.nextInt((65535 - 1024) + 1) + 1024;
         params.baseDirectory = sNodeFolder;
         params.disableProbabilisticHTLs = false;
-        // We usually have much less nodes than the default HTL of 18 - then set it to the maximum
-        // distance inside the node graph, i.e. length of a path across all nodes, excluding the
-        // node where the request started.
-        params.maxHTL = mNodes.length <= 18 ? (short)(mNodes.length - 1) : 18;
+        params.maxHTL = 5; // From RealNodeRequestInsertTest of fred build01478, for 100 nodes.
         params.dropProb = 0;
         params.random = mRandom;
         params.executor = new PooledExecutor();
         params.threadLimit = 256;
         params.storeSize = 16 * 1024 * 1024; // Is not preallocated so a high value doesn't hurt
         params.ramStore = true;
-        params.enableSwapping = true;
+        params.enableSwapping = ENABLE_SWAPPING;
         params.enableARKs = false; // We only connect the nodes locally, address lookup not needed
         params.enableULPRs = true;
         params.enablePerNodeFailureTables = true;
-        params.enableSwapQueueing = true;
+        params.enableSwapQueueing = ENABLE_SWAPPING;
         params.enablePacketCoalescing = false; // Decrease latency for faster tests
         params.outputBandwidthLimit = 0; // = (Almost) unlimited, see NodeStarter.createTestNode()
         params.enableFOAF = true;
@@ -174,11 +184,10 @@ public abstract class AbstractMultiNodeTest
             
             sGlobalTestInitDone = true;
         }
-
-        Node node = NodeStarter.createTestNode(params);
-        node.start(!params.enableSwapping);
-
-        return node;
+        
+        // Don't call Node.start() yet, we do it after creating darknet connections instead.
+        // - That's how RealNodeRequestInsertTest does it.
+        return NodeStarter.createTestNode(params);
     }
 
     private final void loadWoT(Node node) {
@@ -215,23 +224,18 @@ public abstract class AbstractMultiNodeTest
      * {@link RealNodeTest} does. */
     private final void connectNodes()
             throws FSParseException, PeerParseException, ReferenceSignatureVerificationException,
-                   PeerTooOldException, InterruptedException {
+                   PeerTooOldException, InterruptedException, NodeInitException {
         
         System.out.println("AbstractMultiNodeTest: Creating darknet connections...");
         StopWatch time = new StopWatch();
-        for(int i = 0; i < mNodes.length; ++i) {
-            for(int j = 0; j < mNodes.length; ++j) {
-                if(j == i)
-                    continue;
-                
-                // The choice of loop boundaries means that for a pair of nodes (a,b) we will both
-                // call a.connect(b) AND b.connect(a).
-                // This is intentional: As of fred build01478 its class RealNodeTest, which was used
-                // as an inspiration for this code, does just that.
-                mNodes[i].connect(mNodes[j], FRIEND_TRUST.HIGH, FRIEND_VISIBILITY.YES);
-            }
-        }
+        makeKleinbergNetwork(mNodes);
         System.out.println("AbstractMultiNodeTest: Darknet connections created! Time: " + time);
+        
+        System.out.println("AbstractMultiNodeTest: Starting nodes...");
+        time = new StopWatch();
+        for(Node n : mNodes)
+            n.start(!ENABLE_SWAPPING);
+        System.out.println("AbstractMultiNodeTest: Nodes started! Time: " + time);
         
         System.out.println("AbstractMultiNodeTest: Waiting for nodes to connect...");
         time = new StopWatch();
@@ -239,7 +243,7 @@ public abstract class AbstractMultiNodeTest
         do {
             connected = true;
             for(Node n : mNodes) {
-                if(n.peers.countConnectedDarknetPeers() != (mNodes.length - 1)) {
+                if(n.peers.countConnectedDarknetPeers() < n.peers.countValidPeers()) {
                     connected = false;
                     break;
                 }
@@ -248,7 +252,6 @@ public abstract class AbstractMultiNodeTest
             if(!connected)
                 sleep(100);
         } while(!connected);
-        
         System.out.println("AbstractMultiNodeTest: Nodes connected! Time: " + time);
     }
 
