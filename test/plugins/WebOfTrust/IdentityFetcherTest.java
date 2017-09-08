@@ -8,6 +8,7 @@ import static org.junit.Assert.*;
 import java.net.MalformedURLException;
 import java.util.Date;
 
+import org.junit.Before;
 import org.junit.Test;
 
 import plugins.WebOfTrust.Identity.FetchState;
@@ -25,6 +26,10 @@ public final class IdentityFetcherTest extends AbstractMultiNodeTest {
 
 	@Override public boolean shouldTerminateAllWoTThreads() {
 		return false;
+	}
+
+	@Before public void setUp() throws MalformedURLException, UnknownIdentityException {
+		deleteSeedIdentities();
 	}
 
 	@Test public void testInsertAndFetch()
