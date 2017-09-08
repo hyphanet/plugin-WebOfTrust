@@ -23,6 +23,7 @@ import freenet.keys.FreenetURI;
 import freenet.node.DarknetPeerNode.FRIEND_TRUST;
 import freenet.node.DarknetPeerNode.FRIEND_VISIBILITY;
 import freenet.node.FSParseException;
+import freenet.node.Location;
 import freenet.node.Node;
 import freenet.node.NodeInitException;
 import freenet.node.NodeStarter;
@@ -250,6 +251,85 @@ public abstract class AbstractMultiNodeTest
         
         System.out.println("AbstractMultiNodeTest: Nodes connected! Time: " + time);
     }
+
+	/**
+	 * TODO: Code quality: This function is an amended copy-paste of
+	 * {@link RealNodeTest#makeKleinbergNetwork(Node[], boolean, int, boolean, RandomSource)} of
+	 * fred tag build01478. Make it public there, backport the changes and re-use it instead.
+	 * 
+	 * Borrowed from mrogers simulation code (February 6, 2008)
+	 * 
+	 * FIXME: May not generate good networks. Presumably this is because the arrays are always
+	 * scanned [0..n], some nodes tend to have *much* higher connections than the degree (the first
+	 * few), starving the latter ones. */
+	private final void makeKleinbergNetwork(Node[] nodes) {
+		// These three values are taken from RealNodeRequestInsertTest
+		boolean idealLocations = true;
+		int degree = 10;
+		boolean forceNeighbourConnections = true;
+		
+		if(idealLocations) {
+			// First set the locations up so we don't spend a long time swapping just to stabilise
+			// each network.
+			double div = 1.0 / nodes.length;
+			double loc = 0.0;
+			for (int i=0; i<nodes.length; i++) {
+				nodes[i].setLocation(loc);
+				loc += div;
+			}
+		}
+		if(forceNeighbourConnections) {
+			for(int i=0;i<nodes.length;i++) {
+				int next = (i+1) % nodes.length;
+				connect(nodes[i], nodes[next]);
+				
+			}
+		}
+		for (int i=0; i<nodes.length; i++) {
+			Node a = nodes[i];
+			// Normalise the probabilities
+			double norm = 0.0;
+			for (int j=0; j<nodes.length; j++) {
+				Node b = nodes[j];
+				if (a.getLocation() == b.getLocation()) continue;
+				norm += 1.0 / distance (a, b);
+			}
+			// Create degree/2 outgoing connections
+			for (int k=0; k<nodes.length; k++) {
+				Node b = nodes[k];
+				if (a.getLocation() == b.getLocation()) continue;
+				double p = 1.0 / distance (a, b) / norm;
+				for (int n = 0; n < degree / 2; n++) {
+					if (mRandom.nextFloat() < p) {
+						connect(a, b);
+						break;
+					}
+				}
+			}
+		}
+	}
+
+	/**
+	 * TODO: Code quality: This function is an amended copypaste of
+	 * {@link RealNodeTest#connect(Node, Node)}. Make it public there, backport the changes and
+	 * re-use it instead. */
+	private static final void connect(Node a, Node b) {
+		try {
+			a.connect(b, FRIEND_TRUST.HIGH, FRIEND_VISIBILITY.YES);
+			b.connect(a, FRIEND_TRUST.HIGH, FRIEND_VISIBILITY.YES);
+		} catch (FSParseException | PeerParseException | ReferenceSignatureVerificationException
+				| PeerTooOldException e) {
+			throw new RuntimeException(e);
+		}
+	}
+
+	/** TODO: Code quality: This function was copy-pasted from {@link RealNodeTest#distance(Node,
+	 *  Node)}. Make it public there and re-use it instead. */
+	private static final double distance(Node a, Node b) {
+		double aL=a.getLocation();
+		double bL=b.getLocation();
+		return Location.distance(aL, bL);
+	}
 
     /**
      * {@link AbstractJUnit4BaseTest#testDatabaseIntegrityAfterTermination()} is based on this,
