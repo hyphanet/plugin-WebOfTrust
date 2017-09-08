@@ -22,6 +22,10 @@ public final class IdentityFetcherTest extends AbstractMultiNodeTest {
 		return 2;
 	}
 
+	@Override public boolean shouldTerminateAllWoTThreads() {
+		return false;
+	}
+
 	@Test public void testInsertAndFetch()
 			throws MalformedURLException, InvalidParameterException, NumberFormatException,
 			UnknownIdentityException, InterruptedException {
@@ -30,22 +34,38 @@ public final class IdentityFetcherTest extends AbstractMultiNodeTest {
 		WebOfTrust insertingWoT = getWebOfTrust(nodes[0]);
 		WebOfTrust fetchingWoT  = getWebOfTrust(nodes[1]);
 		
-		// clone() as workaround for https://bugs.freenetproject.org/view.php?id=6247
-		OwnIdentity insertedIdentity = insertingWoT.createOwnIdentity("i1", true, null).clone();
-		OwnIdentity trustingIdentity = fetchingWoT.createOwnIdentity("i2", true, null).clone();
+		OwnIdentity insertedIdentity;
+		OwnIdentity trustingIdentity;
 		
-		fetchingWoT.addIdentity(insertedIdentity.getRequestURI().toString());
-		fetchingWoT.setTrust(trustingIdentity.getID(), insertedIdentity.getID(), (byte)100, "");
+		// synchronized & clone() as workaround for https://bugs.freenetproject.org/view.php?id=6247
+		synchronized(insertingWoT) {
+		synchronized(fetchingWoT) {
+			insertedIdentity = insertingWoT.createOwnIdentity("i1", true, null).clone();
+			trustingIdentity = fetchingWoT.createOwnIdentity("i2", true, null).clone();
+			
+			fetchingWoT.addIdentity(insertedIdentity.getRequestURI().toString());
+		}}
 		
-		// This will be equals after the identity was inserted & fetched.
-		assertNotEquals(
-			insertingWoT.getIdentityByID(insertedIdentity.getID()),
-			fetchingWoT.getIdentityByID(insertedIdentity.getID()));
+		// synchronized for concurrency, inserts & fetch could complete as soon as setTrust() is
+		// done which would break the assertNotEquals().
+		synchronized(insertingWoT) {
+		synchronized(fetchingWoT) {
+			// The Identity has to receive a Trust, otherwise it won't be eligible for download.
+			fetchingWoT.setTrust(trustingIdentity.getID(), insertedIdentity.getID(), (byte)100, "");
+			
+			// This will be equals after the identity was inserted & fetched.
+			assertNotEquals(
+				insertingWoT.getIdentityByID(insertedIdentity.getID()),
+				fetchingWoT.getIdentityByID(insertedIdentity.getID()));
+		}}
 		
 		StopWatch time = new StopWatch();
 		
-		insertingWoT.getIdentityInserter().iterate();
-		fetchingWoT.getIdentityFetcher().run();
+		// Automatically scheduled for execution on a Thread by createOwnIdentity().
+		/* insertingWoT.getIdentityInserter().iterate(); */
+		
+		// Automatically scheduled for execution by setTrust()'s callees.
+		/* fetchingWoT.getIdentityFetcher().run(); */
 		
 		// FIXME: Code quality: Also add a wait loop for the insert so if this doesn't complete it
 		// is easier to tell whether inserts or fetches do not work.
@@ -66,12 +86,17 @@ public final class IdentityFetcherTest extends AbstractMultiNodeTest {
 		
 		System.out.println("IdentityFetcherTest: Identity inserted and fetched! Time: " + time);
 		
+		// Prevent further modifications while we check results...
 		insertingWoT.getIdentityInserter().terminate();
 		fetchingWoT.getIdentityFetcher().stop();
 		
-		assertEquals(
-			insertingWoT.getIdentityByID(insertedIdentity.getID()),
-			fetchingWoT.getIdentityByID(insertedIdentity.getID()));
+		// ... and nevertheless synchronize because there are other threads in WoT.
+		synchronized(insertingWoT) {
+		synchronized(fetchingWoT) {
+			assertEquals(
+				insertingWoT.getIdentityByID(insertedIdentity.getID()),
+				fetchingWoT.getIdentityByID(insertedIdentity.getID()));
+		}}
 	}
 
 }

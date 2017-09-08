@@ -79,6 +79,20 @@ public abstract class AbstractMultiNodeTest
      * AbstractMultiNodeTest will create at startup and load the WoT plugin into. */
     public abstract int getNodeCount();
 
+    /**
+     * Implementations shall return true if the instances of the WoT plugin which are loaded into
+     * the nodes shall have all their subsystem threads terminated before running tests to allow
+     * the tests to not have any concurrency measures.
+     * This currently includes:
+     * 
+     * - WebOfTrust.getIntroductionClient()
+     * - WebOfTrust.getIntroductionServer()
+     * - WebOfTrust.getIdentityInserter()
+     * - WebOfTrust.getIdentityFetcher()
+     * - WebOfTrust.getSubscriptionManager() */
+    public abstract boolean shouldTerminateAllWoTThreads();
+
+
     @Before public final void setUpNodes()
             throws NodeInitException, InvalidThresholdException, IOException, FSParseException,
                    PeerParseException, ReferenceSignatureVerificationException, PeerTooOldException,
@@ -148,11 +162,13 @@ public abstract class AbstractMultiNodeTest
         
         // Prevent unit tests from having to do thread synchronization by terminating all WOT
         // subsystems which run their own thread.
-        wot.getIntroductionClient().terminate();
-        wot.getIntroductionServer().terminate();
-        wot.getIdentityInserter().terminate();
-        wot.getIdentityFetcher().stop();
-        wot.getSubscriptionManager().stop();
+        if(shouldTerminateAllWoTThreads()) {
+            wot.getIntroductionClient().terminate();
+            wot.getIntroductionServer().terminate();
+            wot.getIdentityInserter().terminate();
+            wot.getIdentityFetcher().stop();
+            wot.getSubscriptionManager().stop();
+        }
         
         return node;
     }
@@ -287,7 +303,8 @@ public abstract class AbstractMultiNodeTest
             // Properly ordered combination of locks needed for wot.beginTrustListImport(),
             // wot.deleteWithoutCommit(Identity) and Persistent.checkedCommit().
             // We normally don't synchronize in unit tests but this is a base class for all WOT unit
-            // tests so side effects of not locking cannot be known here.
+            // tests so side effects of not locking cannot be known here, especially considering
+            // that we ask child classes to implement shouldTerminateAllWoTThreads() as they please.
             // Calling this now already so our assert..() are guaranteed to be coherent as well.
             // Also, taking all those locks at once for proper anti-deadlock order.
             synchronized(wot) {
