@@ -211,8 +211,8 @@ public abstract class AbstractMultiNodeTest
             throws FSParseException, PeerParseException, ReferenceSignatureVerificationException,
                    PeerTooOldException, InterruptedException {
         
-        StopWatch setupTime = new StopWatch();
-        
+        System.out.println("AbstractMultiNodeTest: Creating darknet connections...");
+        StopWatch time = new StopWatch();
         for(int i = 0; i < mNodes.length; ++i) {
             for(int j = 0; j < mNodes.length; ++j) {
                 if(j == i)
@@ -225,8 +225,10 @@ public abstract class AbstractMultiNodeTest
                 mNodes[i].connect(mNodes[j], FRIEND_TRUST.HIGH, FRIEND_VISIBILITY.YES);
             }
         }
+        System.out.println("AbstractMultiNodeTest: Darknet connections created! Time: " + time);
         
         System.out.println("AbstractMultiNodeTest: Waiting for nodes to connect...");
+        time = new StopWatch();
         boolean connected;
         do {
             connected = true;
@@ -241,7 +243,7 @@ public abstract class AbstractMultiNodeTest
                 sleep(100);
         } while(!connected);
         
-        System.out.println("AbstractMultiNodeTest: Nodes connected! Time: " + setupTime);
+        System.out.println("AbstractMultiNodeTest: Nodes connected! Time: " + time);
     }
 
     /**
