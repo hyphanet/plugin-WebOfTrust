@@ -120,7 +120,10 @@ public abstract class AbstractMultiNodeTest
         params.opennetPort = mRandom.nextInt((65535 - 1024) + 1) + 1024;
         params.baseDirectory = nodeFolder;
         params.disableProbabilisticHTLs = false;
-        params.maxHTL = 18;
+        // We usually have much less nodes than the default HTL of 18 - then set it to the maximum
+        // distance inside the node graph, i.e. length of a path across all nodes, excluding the
+        // node where the request started.
+        params.maxHTL = mNodes.length <= 18 ? (short)(mNodes.length - 1) : 18;
         params.dropProb = 0;
         params.random = mRandom;
         params.executor = new PooledExecutor();
