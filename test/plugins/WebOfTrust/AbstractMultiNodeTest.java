@@ -3,6 +3,7 @@
  * any later version). See http://www.gnu.org/ for details of the GPL. */
 package plugins.WebOfTrust;
 
+import static java.lang.Thread.sleep;
 import static org.junit.Assert.*;
 
 import java.io.File;
@@ -14,6 +15,7 @@ import org.junit.Before;
 import org.junit.Ignore;
 
 import plugins.WebOfTrust.exceptions.UnknownIdentityException;
+import plugins.WebOfTrust.util.StopWatch;
 import freenet.crypt.RandomSource;
 import freenet.io.comm.PeerParseException;
 import freenet.io.comm.ReferenceSignatureVerificationException;
@@ -79,8 +81,8 @@ public abstract class AbstractMultiNodeTest
 
     @Before public final void setUpNodes()
             throws NodeInitException, InvalidThresholdException, IOException, FSParseException,
-                   PeerParseException, ReferenceSignatureVerificationException, PeerTooOldException
-    {
+                   PeerParseException, ReferenceSignatureVerificationException, PeerTooOldException,
+                   InterruptedException {
         
         mNodes = new Node[getNodeCount()];
         
@@ -168,7 +170,9 @@ public abstract class AbstractMultiNodeTest
      * {@link RealNodeTest} does. */
     private final void connectNodes()
             throws FSParseException, PeerParseException, ReferenceSignatureVerificationException,
-                   PeerTooOldException {
+                   PeerTooOldException, InterruptedException {
+        
+        StopWatch setupTime = new StopWatch();
         
         for(int i = 0; i < mNodes.length; ++i) {
             for(int j = 0; j < mNodes.length; ++j) {
@@ -182,6 +186,23 @@ public abstract class AbstractMultiNodeTest
                 mNodes[i].connect(mNodes[j], FRIEND_TRUST.HIGH, FRIEND_VISIBILITY.YES);
             }
         }
+        
+        System.out.println("AbstractMultiNodeTest: Waiting for nodes to connect...");
+        boolean connected;
+        do {
+            connected = true;
+            for(Node n : mNodes) {
+                if(n.peers.countConnectedDarknetPeers() != (mNodes.length - 1)) {
+                    connected = false;
+                    break;
+                }
+            }
+            
+            if(!connected)
+                sleep(100);
+        } while(!connected);
+        
+        System.out.println("AbstractMultiNodeTest: Nodes connected! Time: " + setupTime);
     }
 
     /**
