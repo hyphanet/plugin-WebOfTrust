@@ -128,7 +128,7 @@ public abstract class AbstractMultiNodeTest
         params.random = mRandom;
         params.executor = new PooledExecutor();
         params.threadLimit = 256;
-        params.storeSize = 16 * 1024 * 1024;
+        params.storeSize = 16 * 1024 * 1024; // Is not preallocated so a high value doesn't hurt
         params.ramStore = true;
         params.enableSwapping = true;
         params.enableARKs = false; // We only connect the nodes locally, address lookup not needed
