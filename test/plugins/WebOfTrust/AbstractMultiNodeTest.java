@@ -164,6 +164,10 @@ public abstract class AbstractMultiNodeTest
         return mNodes[0];
     }
 
+    public final Node[] getNodes() {
+        return mNodes;
+    }
+
     /**
      * Connect every node to every other node by darknet.
      * TODO: Performance: The topology of this may suck. If it doesn't work then see what fred's
