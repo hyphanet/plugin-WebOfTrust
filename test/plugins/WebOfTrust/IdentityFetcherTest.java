@@ -76,37 +76,39 @@ public final class IdentityFetcherTest extends AbstractMultiNodeTest {
 		// Automatically scheduled for execution by setTrust()'s callees.
 		/* fetchingWoT.getIdentityFetcher().run(); */
 		
-		System.out.println("IdentityFetcherTest: Waiting for Identity to be inserted...");
-		StopWatch time = new StopWatch();
+		System.out.println("IdentityFetcherTest: Waiting for Identity to be inserted/fetched...");
+		StopWatch insertTime = new StopWatch();
+		StopWatch fetchTime = new StopWatch();
 		boolean inserted = false;
-		do {
-			synchronized(insertingWoT) {
-				OwnIdentity i = insertingWoT.getOwnIdentityByID(insertedIdentity.getID());
-				
-				if(i.getLastInsertDate().after(new Date(0)))
-					inserted = true;
-			} // Must not keep the lock while sleeping to allow WoT's threads to acquire it!
-			
-			if(!inserted)
-				sleep(1000);
-		} while(!inserted);
-		System.out.println("IdentityFetcherTest: Identity inserted! Time: " + time);
-		
-		System.out.println("IdentityFetcherTest: Waiting for Identity to be fetched...");
-		time = new StopWatch();
 		boolean fetched = false;
 		do {
+			// Check whether Identity was inserted and print the time it took to insert it.
+			// Notice: We intentionally don't wait for this in a separate loop before waiting for it
+			// to be fetched: Due to redundancy of inserts fred's "insert finished!" callbacks can
+			// happen AFTER the remote node's "fetch finished!" callbacks have alreadyd returned.
+			if(!inserted) {
+				synchronized(insertingWoT) {
+					OwnIdentity i = insertingWoT.getOwnIdentityByID(insertedIdentity.getID());
+					
+					if(i.getLastInsertDate().after(new Date(0))) {
+						inserted = true;
+						System.out.println(
+							"IdentityFetcherTest: Identity inserted! Time: " + insertTime);
+					}
+				}
+			}
+			
 			synchronized(fetchingWoT) {
 				Identity remoteView = fetchingWoT.getIdentityByID(insertedIdentity.getID());
 				
 				if(remoteView.getCurrentEditionFetchState() == FetchState.Fetched)
 					fetched = true;
-			}
+			} // Must not keep the lock while sleeping to allow WoT's threads to acquire it!
 			
 			if(!fetched)
 				sleep(1000);
 		} while(!fetched);
-		System.out.println("IdentityFetcherTest: Identity fetched! Time: " + time);
+		System.out.println("IdentityFetcherTest: Identity fetched! Time: " + fetchTime);
 		
 		// Prevent further modifications while we check results...
 		// FIXME: Code quality: Extract a function for this from AbstractMultiNodeTest.loadWoT(),
