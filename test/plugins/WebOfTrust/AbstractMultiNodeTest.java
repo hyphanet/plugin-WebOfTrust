@@ -69,8 +69,12 @@ public abstract class AbstractMultiNodeTest
     }
 
     /** Needed for calling {@link NodeStarter#globalTestInit(File, boolean, LogLevel, String,
-     *  boolean, RandomSource) only once per VM as it requires that. */
+     *  boolean, RandomSource)} only once per VM as it requires that. */
     private static boolean sGlobalTestInitDone = false;
+
+    /** {@link NodeStarter#globalTestInit(File, boolean, LogLevel, String,
+     *  boolean, RandomSource)} wants all nodes of a VM to be in the same dir, so this is it. */
+    private static File sNodeFolder = null;
 
     private Node[] mNodes;
 
@@ -124,15 +128,16 @@ public abstract class AbstractMultiNodeTest
     private final Node setUpNode()
             throws NodeInitException, InvalidThresholdException, IOException {
         
-        File nodeFolder = mTempFolder.newFolder();
-
+        if(sNodeFolder == null)
+             sNodeFolder = mTempFolder.newFolder();
+        
         // TODO: As of 2014-09-30, TestNodeParameters does not provide any defaults, so we have to
         // set all of its values to something reasonable. Please check back whether it supports
         // defaults in the future and use them.
         TestNodeParameters params = new TestNodeParameters();
         params.port = mRandom.nextInt((65535 - 1024) + 1) + 1024;
         params.opennetPort = mRandom.nextInt((65535 - 1024) + 1) + 1024;
-        params.baseDirectory = nodeFolder;
+        params.baseDirectory = sNodeFolder;
         params.disableProbabilisticHTLs = false;
         // We usually have much less nodes than the default HTL of 18 - then set it to the maximum
         // distance inside the node graph, i.e. length of a path across all nodes, excluding the
@@ -161,7 +166,7 @@ public abstract class AbstractMultiNodeTest
 
         if(!sGlobalTestInitDone) {
             // NodeStarter.createTestNode() will throw if we do not do this before
-            NodeStarter.globalTestInit(nodeFolder, false, LogLevel.WARNING,
+            NodeStarter.globalTestInit(sNodeFolder, false, LogLevel.WARNING,
                 "freenet:NONE" /* Don't print noisy fred core logging to stdout */,
                 true /* Disable DNS because we will only connect our nodes locally */,
                 mRandom);
