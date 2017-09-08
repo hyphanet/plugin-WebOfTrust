@@ -25,6 +25,10 @@ public final class IdentityFetcherTest extends AbstractMultiNodeTest {
 		return 2;
 	}
 
+	@Override public int getWoTCount() {
+		return 2;
+	}
+
 	@Override public boolean shouldTerminateAllWoTThreads() {
 		return false;
 	}

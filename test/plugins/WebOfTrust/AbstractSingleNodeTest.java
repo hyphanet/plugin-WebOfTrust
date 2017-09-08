@@ -21,6 +21,10 @@ public abstract class AbstractSingleNodeTest extends AbstractMultiNodeTest {
 		return 1;
 	}
 
+	@Override public int getWoTCount() {
+		return 1;
+	}
+
 	@Override public boolean shouldTerminateAllWoTThreads() {
 		return true;
 	}

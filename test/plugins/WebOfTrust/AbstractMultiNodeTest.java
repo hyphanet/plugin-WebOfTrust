@@ -80,6 +80,14 @@ public abstract class AbstractMultiNodeTest
     public abstract int getNodeCount();
 
     /**
+     * How many instances of the WoT plugin to load into the nodes.
+     * The first node of {@link #getNodes()} will receive the first instance, the second will get
+     * the second, and so on.
+     * Can be used if you want to have a high {@link #getNodeCount()} for a better network topology
+     * but only need a few WoT instances. */
+    public abstract int getWoTCount();
+
+    /**
      * Implementations shall return true if the instances of the WoT plugin which are loaded into
      * the nodes shall have all their subsystem threads terminated before running tests to allow
      * the tests to not have any concurrency measures.
@@ -105,6 +113,11 @@ public abstract class AbstractMultiNodeTest
         
         if(mNodes.length > 1)
             connectNodes();
+        
+        assertTrue(getWoTCount() <= mNodes.length);
+        
+        for(int i = 0; i < getWoTCount(); ++i)
+            loadWoT(mNodes[i]);
     }
 
     private final Node setUpNode()
@@ -157,7 +170,11 @@ public abstract class AbstractMultiNodeTest
 
         Node node = NodeStarter.createTestNode(params);
         node.start(!params.enableSwapping);
-        
+
+        return node;
+    }
+
+    private final void loadWoT(Node node) {
         PluginInfoWrapper wotWrapper = 
             node.getPluginManager().startPluginFile(WOT_JAR_FILE, false);
         
@@ -172,8 +189,6 @@ public abstract class AbstractMultiNodeTest
             wot.getIdentityFetcher().stop();
             wot.getSubscriptionManager().stop();
         }
-        
-        return node;
     }
 
     public final Node getNode() {
@@ -234,7 +249,9 @@ public abstract class AbstractMultiNodeTest
     @After
     @Override
     public final void testDatabaseIntegrityAfterTermination() {
-        for(Node node : mNodes) {
+        for(int i = 0; i < getWoTCount(); ++i) {
+            Node node = mNodes[i];
+            
             // We cannot use Node.exit() because it would terminate the whole JVM.
             // TODO: Code quality: Once fred supports shutting down a Node without killing the JVM,
             // use that instead of only unloading WoT.
@@ -301,7 +318,8 @@ public abstract class AbstractMultiNodeTest
     protected final void deleteSeedIdentities()
             throws UnknownIdentityException, MalformedURLException {
         
-        for(Node node : mNodes) {
+        for(int i = 0; i < getWoTCount(); ++i) {
+            Node node = mNodes[i];
             WebOfTrust wot = getWebOfTrust(node);
             // Properly ordered combination of locks needed for wot.beginTrustListImport(),
             // wot.deleteWithoutCommit(Identity) and Persistent.checkedCommit().
