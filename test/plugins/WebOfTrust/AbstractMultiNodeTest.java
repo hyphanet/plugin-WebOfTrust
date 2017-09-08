@@ -45,9 +45,10 @@ import freenet.support.PooledExecutor;
  * - The {@link PluginRespirator} is available.
  * - FCP can be used.
  * - Real network traffic can happen if more than one node is used.
- *   ATTENTION: This class' {@link #setUpNode()} stops all of WoT's networking threads to ensure
- *   tests don't have to deal with concurrency. To issue network traffic you have to manually call
- *   their functions for uploading/downloading stuff.
+ *   ATTENTION: If your {@link #shouldTerminateAllWoTThreads()} implementation returns true, then
+ *   this class' {@link #loadWoT(Node)} stops all of WoT's networking threads to ensure tests don't
+ *   have to deal with concurrency. To issue network traffic you then have to manually call their
+ *   functions for uploading/downloading stuff.
  * 
  * The price is that it is much more heavy to initialize and thus has a higher execution time.
  * Thus, please only use it as a base class if what {@link AbstractJUnit4BaseTest} provides is not
