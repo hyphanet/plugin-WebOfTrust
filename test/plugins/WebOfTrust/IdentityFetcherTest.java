@@ -109,6 +109,8 @@ public final class IdentityFetcherTest extends AbstractMultiNodeTest {
 		System.out.println("IdentityFetcherTest: Identity fetched! Time: " + time);
 		
 		// Prevent further modifications while we check results...
+		// FIXME: Code quality: Extract a function for this from AbstractMultiNodeTest.loadWoT(),
+		// perhaps even put it into class WebOfTrust.
 		insertingWoT.getIdentityInserter().terminate();
 		fetchingWoT.getIdentityFetcher().stop();
 		
