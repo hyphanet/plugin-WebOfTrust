@@ -6,6 +6,7 @@ package plugins.WebOfTrust;
 import static org.junit.Assert.*;
 
 import java.net.MalformedURLException;
+import java.util.Date;
 
 import org.junit.Test;
 
@@ -59,18 +60,30 @@ public final class IdentityFetcherTest extends AbstractMultiNodeTest {
 				fetchingWoT.getIdentityByID(insertedIdentity.getID()));
 		}}
 		
-		StopWatch time = new StopWatch();
-		
 		// Automatically scheduled for execution on a Thread by createOwnIdentity().
 		/* insertingWoT.getIdentityInserter().iterate(); */
 		
 		// Automatically scheduled for execution by setTrust()'s callees.
 		/* fetchingWoT.getIdentityFetcher().run(); */
 		
-		// FIXME: Code quality: Also add a wait loop for the insert so if this doesn't complete it
-		// is easier to tell whether inserts or fetches do not work.
-		System.out.println(
-			"IdentityFetcherTest: Waiting for Identity to be inserted and fetched...");
+		System.out.println("IdentityFetcherTest: Waiting for Identity to be inserted...");
+		StopWatch time = new StopWatch();
+		boolean inserted = false;
+		do {
+			synchronized(insertingWoT) {
+				OwnIdentity i = insertingWoT.getOwnIdentityByID(insertedIdentity.getID());
+				
+				if(i.getLastInsertDate().after(new Date(0)))
+					inserted = true;
+				
+				if(!inserted)
+					Thread.sleep(1000);
+			}
+		} while(!inserted);
+		System.out.println("IdentityFetcherTest: Identity inserted! Time: " + time);
+		
+		System.out.println("IdentityFetcherTest: Waiting for Identity to be fetched...");
+		time = new StopWatch();
 		boolean fetched = false;
 		do {
 			synchronized(fetchingWoT) {
@@ -83,8 +96,7 @@ public final class IdentityFetcherTest extends AbstractMultiNodeTest {
 					Thread.sleep(1000);
 			}
 		} while(!fetched);
-		
-		System.out.println("IdentityFetcherTest: Identity inserted and fetched! Time: " + time);
+		System.out.println("IdentityFetcherTest: Identity fetched! Time: " + time);
 		
 		// Prevent further modifications while we check results...
 		insertingWoT.getIdentityInserter().terminate();
