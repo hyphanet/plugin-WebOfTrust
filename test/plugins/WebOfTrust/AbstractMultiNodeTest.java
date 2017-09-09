@@ -8,7 +8,10 @@ import static org.junit.Assert.*;
 
 import java.io.File;
 import java.io.IOException;
+import java.net.DatagramSocket;
 import java.net.MalformedURLException;
+import java.net.SocketException;
+import java.util.ArrayList;
 
 import org.junit.After;
 import org.junit.Before;
@@ -149,8 +152,10 @@ public abstract class AbstractMultiNodeTest
         // set all of its values to something reasonable. Please check back whether it supports
         // defaults in the future and use them.
         TestNodeParameters params = new TestNodeParameters();
-        params.port = mRandom.nextInt((65535 - 1024) + 1) + 1024;
-        params.opennetPort = mRandom.nextInt((65535 - 1024) + 1) + 1024;
+        // TODO: Also set a random TCP port for FCP
+        ArrayList<Integer> ports = getFreeUDPPorts(2);
+        params.port = ports.get(0);
+        params.opennetPort = ports.get(1);
         params.baseDirectory = sNodeFolder;
         params.disableProbabilisticHTLs = false;
         params.maxHTL = 5; // From RealNodeRequestInsertTest of fred build01478, for 100 nodes.
@@ -189,6 +194,39 @@ public abstract class AbstractMultiNodeTest
         // - That's how RealNodeRequestInsertTest does it.
         return NodeStarter.createTestNode(params);
     }
+
+
+	/**
+	 * TODO: Code quality: Move to {@link TestNodeParameters} and make it allocate node ports (and
+	 * FCP ports if enabled!) automatically if the user chooses none (as indicated by choosing a
+	 * port of 0, which in networking usually means to auto allocate one). */
+	private final ArrayList<Integer> getFreeUDPPorts(int amount) {
+		ArrayList<Integer> result = new ArrayList<>(amount);
+		do {
+			int candidate = getFreeUDPPort();
+			// Avoid returning the same port twice.
+			// TODO: Code quality: Use ArraySet once we have one.
+			if(!result.contains(candidate))
+				result.add(candidate);
+		} while(result.size() != amount);
+		return result;
+	}
+
+	private final int getFreeUDPPort() {
+		while(true) {
+			int port = mRandom.nextInt((65535 - 1024) + 1) + 1024;
+			DatagramSocket socket = null;
+			try {
+				socket = new DatagramSocket(port);
+				return port;
+			} catch(SocketException e) {
+				// Not free, try next one.
+			} finally {
+				if(socket != null)
+					socket.close();
+			}
+		}
+	}
 
     private final void loadWoT(Node node) {
         PluginInfoWrapper wotWrapper = 
