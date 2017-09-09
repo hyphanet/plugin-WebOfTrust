@@ -3,6 +3,7 @@
  * any later version). See http://www.gnu.org/ for details of the GPL. */
 package plugins.WebOfTrust;
 
+import static java.lang.Math.round;
 import static java.lang.Thread.sleep;
 import static org.junit.Assert.*;
 
@@ -30,6 +31,7 @@ import freenet.node.Location;
 import freenet.node.Node;
 import freenet.node.NodeInitException;
 import freenet.node.NodeStarter;
+import freenet.node.NodeStats;
 import freenet.node.NodeStarter.TestNodeParameters;
 import freenet.node.PeerTooOldException;
 import freenet.node.simulator.RealNodeRequestInsertTest;
@@ -271,6 +273,43 @@ public abstract class AbstractMultiNodeTest
     public final Node[] getNodes() {
         return mNodes;
     }
+
+	/**
+	 * Can be used to assess the health of the simulated network:
+	 * - is the thread limit high enough?
+	 * - are nodes signaling overload by marking a large percentage of their peers as backed off?
+	 * - is the ping time of the nodes sufficiently low?
+	 * 
+	 * TODO: Code quality: Extract functions for computing each value and add asserts to an
+	 * @After function to test whether the values are in a reasonable range. E.g. check whether
+	 * thread count is 30% below the limit, backoff percentage is below 30%, and ping time is below
+	 * the default soft ping time limit of fred {@link NodeStats#DEFAULT_SUB_MAX_PING_TIME}. */
+	public final void printNodeStatistics() {
+		System.out.println(""); // For readability when being called repeatedly.
+		
+		// All nodes share the same executor so the value of one node should represent all of them.
+		int runningThreads = mNodes[0].nodeStats.getActiveThreadCount();
+		System.out.println("AbstractMultiNodeTest: Running Node threads: " + runningThreads
+			+ "; limit: " + mThreadLimit);
+		
+		float averageBackoffPercentage = 0;
+		for(Node n : mNodes) {
+			float backoffQuota = (float)n.peers.countBackedOffPeers(false)
+				/ (float)n.peers.countValidPeers();
+			averageBackoffPercentage += backoffQuota * 100;
+		}
+		averageBackoffPercentage /= mNodes.length;
+		System.out.println("AbstractMultiNodeTest: Average bulk backoff percentage: "
+			+ round(averageBackoffPercentage));
+		
+		double averagePingTime = 0;
+		for(Node n : mNodes) {
+			averagePingTime += n.nodeStats.getNodeAveragePingTime();
+		}
+		averagePingTime /= mNodes.length;
+		System.out.println("AbstractMultiNodeTest: Average Node ping time: "
+			+ round(averagePingTime));
+	}
 
     /**
      * Connect every node to every other node by darknet.
