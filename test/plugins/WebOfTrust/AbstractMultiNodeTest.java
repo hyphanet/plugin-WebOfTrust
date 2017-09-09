@@ -32,6 +32,7 @@ import freenet.node.NodeInitException;
 import freenet.node.NodeStarter;
 import freenet.node.NodeStarter.TestNodeParameters;
 import freenet.node.PeerTooOldException;
+import freenet.node.simulator.RealNodeRequestInsertTest;
 import freenet.node.simulator.RealNodeTest;
 import freenet.pluginmanager.PluginInfoWrapper;
 import freenet.pluginmanager.PluginRespirator;
@@ -90,6 +91,21 @@ public abstract class AbstractMultiNodeTest
     private static File sNodeFolder = null;
 
     private Node[] mNodes;
+
+	/**
+	 * We use one Executor for all Nodes we create so they can share the thread pool and we thus
+	 * avoid having to create very many excess threads.
+	 * This is inspired by fred's {@link RealNodeRequestInsertTest} as of fred build01478: it does
+	 * that as well so it probably is OK to do. */
+	private final PooledExecutor mExecutor = new PooledExecutor();
+
+	/**
+	 * Thread limit which is given to each Node.
+	 * A single node as of build01478 will have about 64 threads when idle.
+	 * All nodes share the executor {@link #mExecutor} so multiply the expected minimal thread count
+	 * for one node by their amount, and divide it by the arbitrary value of 2 to compensate for
+	 * the fact that each node can use the unused threads of all other nodes. */
+	private final int mThreadLimit = 64 * getNodeCount() / 2;
 
 
     /**
@@ -161,8 +177,8 @@ public abstract class AbstractMultiNodeTest
         params.maxHTL = 5; // From RealNodeRequestInsertTest of fred build01478, for 100 nodes.
         params.dropProb = 0;
         params.random = mRandom;
-        params.executor = new PooledExecutor();
-        params.threadLimit = 256;
+        params.executor = mExecutor;
+        params.threadLimit = mThreadLimit;
         params.storeSize = 16 * 1024 * 1024; // Is not preallocated so a high value doesn't hurt
         params.ramStore = true;
         params.enableSwapping = ENABLE_SWAPPING;
