@@ -197,7 +197,12 @@
 			running them is a very bad idea!"/>
 		
 		<!-- Regular non-benchmark unit tests. -->
-		<junit printsummary="yes" fork="yes" haltonfailure="yes" unless:true="${test.benchmark}">
+		<!-- The 4GB memory limit was chosen for IdentityFetcherTest. FIXME: May work with less.
+		     showoutput was also enabled for that test so you can watch its progress on stdout while
+		     it is still running instead of only getting it shown after it's finished. -->
+		<junit printsummary="yes" fork="yes" haltonfailure="yes" unless:true="${test.benchmark}"
+				maxmemory="4096m" showoutput="yes">
+			
 			<classpath>
 				<path refid="lib.path"/>
 				<pathelement location="${build-test-jar}"/>

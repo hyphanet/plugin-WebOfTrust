@@ -22,7 +22,8 @@ import freenet.node.Node;
 public final class IdentityFetcherTest extends AbstractMultiNodeTest {
 
 	@Override public int getNodeCount() {
-		return 2;
+		// As recommended by the specification of this function at AbstractMultiNodeTest.
+		return 100;
 	}
 
 	@Override public int getWoTCount() {
@@ -121,6 +122,10 @@ public final class IdentityFetcherTest extends AbstractMultiNodeTest {
 		// ... and nevertheless synchronize because there are other threads in WoT.
 		synchronized(insertingWoT) {
 		synchronized(fetchingWoT) {
+			// For Identity.equals() to succeed the source Identity we compare it to must not
+			// be an OwnIdentity. deleteOwnIdentity() will replace the OwnIdentity with a
+			// non-own one.
+			insertingWoT.deleteOwnIdentity(insertedIdentity.getID());
 			assertEquals(
 				insertingWoT.getIdentityByID(insertedIdentity.getID()),
 				fetchingWoT.getIdentityByID(insertedIdentity.getID()));
