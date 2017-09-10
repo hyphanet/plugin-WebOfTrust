@@ -280,35 +280,50 @@ public abstract class AbstractMultiNodeTest
 	 * - are nodes signaling overload by marking a large percentage of their peers as backed off?
 	 * - is the ping time of the nodes sufficiently low?
 	 * 
-	 * TODO: Code quality: Extract functions for computing each value and add asserts to an
-	 * @After function to test whether the values are in a reasonable range. E.g. check whether
-	 * thread count is 30% below the limit, backoff percentage is below 30%, and ping time is below
-	 * the default soft ping time limit of fred {@link NodeStats#DEFAULT_SUB_MAX_PING_TIME}. */
+	 * TODO: Code quality: Add asserts to an @After function to test whether the values are in a
+	 * reasonable range. E.g. check whether thread count is 30% below the limit, backoff percentage
+	 * is below 30%, and ping time is below the default soft ping time limit of fred
+	 * {@link NodeStats#DEFAULT_SUB_MAX_PING_TIME}. */
 	public final void printNodeStatistics() {
 		System.out.println(""); // For readability when being called repeatedly.
-		
-		// All nodes share the same executor so the value of one node should represent all of them.
-		int runningThreads = mNodes[0].nodeStats.getActiveThreadCount();
-		System.out.println("AbstractMultiNodeTest: Running Node threads: " + runningThreads
+
+		System.out.println("AbstractMultiNodeTest: Running Node threads: " + getRunningThreadCount()
 			+ "; limit: " + mThreadLimit);
 		
+		System.out.println("AbstractMultiNodeTest: Average bulk backoff percentage: "
+			+ getAverageBackoffPercentage(false));
+
+		System.out.println("AbstractMultiNodeTest: Average Node ping time: "
+			+ getAveragePingTime());
+	}
+
+	public final int getRunningThreadCount() {
+		// All nodes share the mExecutor so the value of one node should represent all of them.
+		return mNodes[0].nodeStats.getActiveThreadCount();
+	}
+
+	public final int getAverageBackoffPercentage(boolean realtimeTraffic) {
 		float averageBackoffPercentage = 0;
 		for(Node n : mNodes) {
-			float backoffQuota = (float)n.peers.countBackedOffPeers(false)
+			float backoffQuota = (float)n.peers.countBackedOffPeers(realtimeTraffic)
 				/ (float)n.peers.countValidPeers();
 			averageBackoffPercentage += backoffQuota * 100;
 		}
 		averageBackoffPercentage /= mNodes.length;
-		System.out.println("AbstractMultiNodeTest: Average bulk backoff percentage: "
-			+ round(averageBackoffPercentage));
-		
+		return round(averageBackoffPercentage);
+	}
+
+	/** Returns the average node ping time in milliseconds. */
+	public final int getAveragePingTime() {
 		double averagePingTime = 0;
 		for(Node n : mNodes) {
 			averagePingTime += n.nodeStats.getNodeAveragePingTime();
 		}
 		averagePingTime /= mNodes.length;
-		System.out.println("AbstractMultiNodeTest: Average Node ping time: "
-			+ round(averagePingTime));
+		// Even though getNodeAveragePingTime() returns a double it is a millisecond value in the
+		// hundreds usually so we can cut off the decimals by rounding it to a long and even cast
+		// it to an integer.
+		return (int)round(averagePingTime); 
 	}
 
     /**
