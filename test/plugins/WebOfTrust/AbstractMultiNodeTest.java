@@ -364,6 +364,25 @@ public abstract class AbstractMultiNodeTest
                 sleep(100);
         } while(!connected);
         System.out.println("AbstractMultiNodeTest: Nodes connected! Time: " + time);
+        
+        // Don't wait for the network to settle, e.g. backoff to reduce:
+        // While this does speed up the inserts/requests of e.g. IdentityFetcherTest a bit as of
+        // fred build01478 (latest at 2017-09) the speedup isn't enough to compensate for the time
+        // it takes for the network to settle (= 2 minutes for 100 nodes on my machine).
+        /*
+        System.out.println("AbstractMultiNodeTest: Waiting for network to settle...");
+        time = new StopWatch();
+        while(true) {
+            // Don't wait for pings to settle: setUpNode() sets TestNodeParameters.longPingTimes
+            if(getAverageBackoffPercentage(false) < 30) {
+                // && getAveragePingTime() < NodeStats.DEFAULT_SUB_MAX_PING_TIME) {
+                break;
+            }
+            
+            sleep(1000);
+        }
+        System.out.println("AbstractMultiNodeTest: Network settled! Time: " + time);
+        */
     }
 
 	/**
