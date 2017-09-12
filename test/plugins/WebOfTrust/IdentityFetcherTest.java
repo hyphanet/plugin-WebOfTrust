@@ -34,6 +34,14 @@ public final class IdentityFetcherTest extends AbstractMultiNodeTest {
 		return false;
 	}
 
+	@Override public String getDetailedLogLevel() {
+		// Enable DEBUG logging for the inserter/fetcher so you can watch progress on stdout while
+		// the test is running.
+		return "freenet:NONE,"
+		     + "plugins.WebOfTrust.IdentityInserter:DEBUG,"
+		     + "plugins.WebOfTrust.IdentityFetcher:DEBUG";
+	}
+
 	@Before public void setUp() throws MalformedURLException, UnknownIdentityException {
 		deleteSeedIdentities();
 	}

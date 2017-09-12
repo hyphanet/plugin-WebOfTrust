@@ -140,6 +140,22 @@ public abstract class AbstractMultiNodeTest
      * - WebOfTrust.getSubscriptionManager() */
     public abstract boolean shouldTerminateAllWoTThreads();
 
+	/**
+	 * Child classes can override this to set a detailed log level to override the default
+	 * {@link LogLevel#WARNING} which this class passes to the "logThreshold" parameter of
+	 * {@link NodeStarter#globalTestInit(File, boolean, LogLevel, String, boolean, RandomSource)}.
+	 * For example:
+	 *     "freenet.SOME_PACKAGE:NONE,plugins.WebOfTrust.SOME_CLASS:DEBUG"
+	 * 
+	 * Notice that this is passed as the "details" parameter to the function, i.e. is a secondary
+	 * parameter in addition to the logThreshold parameter.
+	 * Defaults to "freenet:NONE".
+	 * 
+	 * As a result by default WARNING and ERROR messages are logged of all classes of WoT, and no
+	 * messages are logged of the fred core. */
+	public String getDetailedLogLevel() {
+		return "freenet:NONE";
+	}
 
     @Before public final void setUpNodes()
             throws NodeInitException, InvalidThresholdException, IOException, FSParseException,
@@ -204,7 +220,7 @@ public abstract class AbstractMultiNodeTest
         if(!sGlobalTestInitDone) {
             // NodeStarter.createTestNode() will throw if we do not do this before
             NodeStarter.globalTestInit(sNodeFolder, false, LogLevel.WARNING,
-                "freenet:NONE" /* Don't print noisy fred core logging to stdout */,
+                getDetailedLogLevel(),
                 true /* Disable DNS because we will only connect our nodes locally */,
                 mRandom);
             
