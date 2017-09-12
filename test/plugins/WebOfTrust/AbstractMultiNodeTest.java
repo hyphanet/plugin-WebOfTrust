@@ -148,8 +148,11 @@ public abstract class AbstractMultiNodeTest
         
         mNodes = new Node[getNodeCount()];
         
+        System.out.println("AbstractMultiNodeTest: Creating Nodes...");
+        StopWatch time = new StopWatch();
         for(int i = 0; i < mNodes.length; ++i)
         	mNodes[i] = setUpNode();
+        System.out.println("AbstractMultiNodeTest: Finished creating Nodes! Time: " + time);
         
         if(mNodes.length > 1)
             connectNodes();
