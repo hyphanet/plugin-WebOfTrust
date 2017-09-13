@@ -88,10 +88,6 @@ public abstract class AbstractMultiNodeTest
      *  boolean, RandomSource)} only once per VM as it requires that. */
     private static boolean sGlobalTestInitDone = false;
 
-    /** {@link NodeStarter#globalTestInit(File, boolean, LogLevel, String,
-     *  boolean, RandomSource)} wants all nodes of a VM to be in the same dir, so this is it. */
-    private static File sNodeFolder = null;
-
     private Node[] mNodes;
 
 	/**
@@ -188,9 +184,6 @@ public abstract class AbstractMultiNodeTest
     private final Node setUpNode()
             throws NodeInitException, InvalidThresholdException, IOException {
         
-        if(sNodeFolder == null)
-             sNodeFolder = mTempFolder.newFolder();
-        
         // TODO: As of 2014-09-30, TestNodeParameters does not provide any defaults, so we have to
         // set all of its values to something reasonable. Please check back whether it supports
         // defaults in the future and use them.
@@ -199,7 +192,7 @@ public abstract class AbstractMultiNodeTest
         ArrayList<Integer> ports = getFreeUDPPorts(2);
         params.port = ports.get(0);
         params.opennetPort = ports.get(1);
-        params.baseDirectory = sNodeFolder;
+        params.baseDirectory = mTempFolder.newFolder();
         params.disableProbabilisticHTLs = false;
         params.maxHTL = 5; // From RealNodeRequestInsertTest of fred build01478, for 100 nodes.
         params.dropProb = 0;
@@ -224,8 +217,26 @@ public abstract class AbstractMultiNodeTest
         params.enablePlugins = true;
 
         if(!sGlobalTestInitDone) {
-            // NodeStarter.createTestNode() will throw if we do not do this before
-            NodeStarter.globalTestInit(sNodeFolder, false, LogLevel.WARNING,
+            // NodeStarter.createTestNode() will throw if we do not call globalTestInit() before.
+            //
+            // NOTICE: We intentionally violate what the JavaDoc of globalTestInit() requests:
+            // The directory we pass as baseDirectory is NOT passed as TestNodeParameters.params
+            // to all of our nodes. In fact it isn't used at all.
+            // This has to be done because JUnit's TemporaryFolder class will delete the temporary
+            // folders between execution of each @Test, but the static fields of this class will
+            // stay as is as the classloader isn't re-instantiated between test executions - so if
+            // we wanted to store the baseDirectory in a static field so we can truly re-use it for
+            // all other @Tests of the same VM as globalTestInit() demands it then that wouldn't be
+            // possible.
+            // The way to go is adding a new globalTestInit() to NodeStarter which does NOT require
+            // passing a directory - the current implementation as of fred build01478 doesn't use
+            // the directory for anything anyway, it doesn't even store it in a variable. The
+            // current demand to use this directory as a base directory where all the nodes are
+            // subdirs is likely only for beauty, it doesn't seem to serve a practical purpose.
+            // Perhaps ask toad_ about it for safety nevertheless, i.e. ask whether a node will
+            // somehow need to be able to interfere with the other nodes in the baseDirectory.
+            // This has been documented at: https://bugs.freenetproject.org/view.php?id=6957
+            NodeStarter.globalTestInit(mTempFolder.newFolder(), false, LogLevel.WARNING,
                 getDetailedLogLevel(),
                 true /* Disable DNS because we will only connect our nodes locally */,
                 mRandom);
