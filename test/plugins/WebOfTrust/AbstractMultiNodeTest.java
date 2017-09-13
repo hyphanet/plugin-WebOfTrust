@@ -162,21 +162,27 @@ public abstract class AbstractMultiNodeTest
                    PeerParseException, ReferenceSignatureVerificationException, PeerTooOldException,
                    InterruptedException {
         
-        mNodes = new Node[getNodeCount()];
+        System.out.println("AbstractMultiNodeTest: setUpNodes()...");
+        StopWatch totalTime = new StopWatch();
         
         System.out.println("AbstractMultiNodeTest: Creating Nodes...");
         StopWatch time = new StopWatch();
+        mNodes = new Node[getNodeCount()];
         for(int i = 0; i < mNodes.length; ++i)
         	mNodes[i] = setUpNode();
-        System.out.println("AbstractMultiNodeTest: Finished creating Nodes! Time: " + time);
+        System.out.println("AbstractMultiNodeTest: Creating Nodes done! Time: " + time);
         
         if(mNodes.length > 1)
             connectNodes();
         
+        System.out.println("AbstractMultiNodeTest: Loading WoT into Nodes...");
+        time = new StopWatch();
         assertTrue(getWoTCount() <= mNodes.length);
-        
         for(int i = 0; i < getWoTCount(); ++i)
             loadWoT(mNodes[i]);
+        System.out.println("AbstractMultiNodeTest: Loading WoT into Nodes done. Time: " + time);
+        
+        System.out.println("AbstractMultiNodeTest: setUpNodes() done! Time: " + totalTime);
     }
 
     private final Node setUpNode()
