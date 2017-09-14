@@ -206,7 +206,7 @@ public abstract class AbstractMultiNodeTest
         params.enableULPRs = true;
         params.enablePerNodeFailureTables = true;
         params.enableSwapQueueing = ENABLE_SWAPPING;
-        params.enablePacketCoalescing = false; // Decrease latency for faster tests
+        params.enablePacketCoalescing = true; // On to keep CPU load lower as that's our bottleneck
         params.outputBandwidthLimit = 0; // = (Almost) unlimited, see NodeStarter.createTestNode()
         params.enableFOAF = true;
         params.connectToSeednodes = false; // We will only create a small darknet of our local nodes
