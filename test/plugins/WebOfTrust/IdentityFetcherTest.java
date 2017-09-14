@@ -18,7 +18,14 @@ import plugins.WebOfTrust.exceptions.UnknownIdentityException;
 import plugins.WebOfTrust.util.StopWatch;
 import freenet.node.Node;
 
-/** Tests class {@link IdentityFetcher} with a real small darknet of two Freenet {@link Node}s. */
+/**
+ * Tests class {@link IdentityFetcher} and {@link IdentityInserter} with a real small darknet of
+ * ten Freenet {@link Node}s:
+ * - Creates an {@link OwnIdentity} on node #1 and has the IdentityInserter insert it into Freenet.
+ * - Creates another OwnIdentity on node #2 which adds the remote Identity by its URI and sets a
+ *   positive trust to it.
+ * - Waits until the remote Identity is successfully fetched and imported by the IdentityFetcher
+ *   and validates its attributes are equal to the original. */
 public final class IdentityFetcherTest extends AbstractMultiNodeTest {
 
 	@Override public int getNodeCount() {
@@ -96,7 +103,7 @@ public final class IdentityFetcherTest extends AbstractMultiNodeTest {
 			// Check whether Identity was inserted and print the time it took to insert it.
 			// Notice: We intentionally don't wait for this in a separate loop before waiting for it
 			// to be fetched: Due to redundancy of inserts fred's "insert finished!" callbacks can
-			// happen AFTER the remote node's "fetch finished!" callbacks have alreadyd returned.
+			// happen AFTER the remote node's "fetch finished!" callbacks have already returned.
 			if(!inserted) {
 				synchronized(insertingWoT) {
 					OwnIdentity i = insertingWoT.getOwnIdentityByID(insertedIdentity.getID());
