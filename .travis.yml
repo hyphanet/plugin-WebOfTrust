@@ -38,6 +38,10 @@ before_install:
   - mkdir dist && cd dist && ln -s ../build/libs/freenet.jar && cd ..
   - cd lib/freenet && ln -s ../freenet-ext.jar && cd ../..
   - cd "$TRAVIS_BUILD_DIR"
+  # Print the checksums of the WoT dependencies - for debugging
+  - sha256sum ../fred/dist/freenet.jar
+  - sha256sum ../fred/lib/freenet/freenet-ext.jar
+  - sha256sum ../fred/lib/bcprov.jar
 
 script: ant
 
