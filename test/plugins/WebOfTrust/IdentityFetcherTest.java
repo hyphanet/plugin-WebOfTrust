@@ -30,7 +30,7 @@ public final class IdentityFetcherTest extends AbstractMultiNodeTest {
 
 	@Override public int getNodeCount() {
 		// As recommended by the specification of this function at AbstractMultiNodeTest.
-		return 100;
+		return 10;
 	}
 
 	@Override public int getWoTCount() {
