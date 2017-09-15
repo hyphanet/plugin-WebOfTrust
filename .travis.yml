@@ -38,7 +38,7 @@ before_install:
   # Create symlink to JARs in the places where they used to be with the old
   # Ant builder so WoT finds them.
   - if [ ! -e dist/freenet.jar ]; then mkdir -p dist && cd dist && ln -s ../build/libs/freenet.jar && cd .. ; fi
-  - if [ ! -e lib/freenet/freenet-ext.jar ]; then cd lib/freenet && ln -s ../freenet-ext.jar && cd ../.. ; fi
+  - if [ ! -e lib/freenet/freenet-ext.jar ]; then mkdir -p lib/freenet && cd lib/freenet && ln -s ../freenet-ext.jar && cd ../.. ; fi
   - cd "$TRAVIS_BUILD_DIR"
   # Print the checksums of the WoT dependencies - for debugging
   - sha256sum ../fred/dist/freenet.jar
