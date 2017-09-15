@@ -49,5 +49,6 @@ script: ant
 
 jdk:
   - oraclejdk8
-  - oraclejdk7
+  # Not supported anymore I guess: https://github.com/travis-ci/travis-ci/issues/7884#issuecomment-308451879
+  # - oraclejdk7
   - openjdk7
