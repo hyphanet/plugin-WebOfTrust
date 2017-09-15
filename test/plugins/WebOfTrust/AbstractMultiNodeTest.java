@@ -204,7 +204,7 @@ public abstract class AbstractMultiNodeTest
         params.enableSwapping = ENABLE_SWAPPING;
         params.enableARKs = false; // We only connect the nodes locally, address lookup not needed
         params.enableULPRs = true;
-        params.enablePerNodeFailureTables = true;
+        params.enablePerNodeFailureTables = false; // l10n says cooldown is 10m -> too long -> Off
         params.enableSwapQueueing = ENABLE_SWAPPING;
         params.enablePacketCoalescing = true; // On to keep CPU load lower as that's our bottleneck
         params.outputBandwidthLimit = 0; // = (Almost) unlimited, see NodeStarter.createTestNode()
