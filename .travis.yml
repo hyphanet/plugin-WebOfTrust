@@ -32,7 +32,11 @@ before_install:
   - if [ ! -e fred/src ]; then git clone https://github.com/freenet/fred.git --branch next --single-branch fred ; else cd fred ; git pull ; cd .. ; fi
   - cd fred
   - echo -e "org.gradle.parallel = true\norg.gradle.jvmargs=-Xms256m -Xmx1024m\norg.gradle.configureondemand=true\ntasks.withType(Test) {\n maxParallelForks = Runtime.runtime.availableProcessors()\n}" > gradle.properties
-  - gradle clean && gradle jar -x test && cd ..
+  - gradle clean && gradle jar -x test
+  # Create symlink to JARs in the places where they used to be with the old
+  # Ant builder so WoT finds them.
+  - cd dist && ln -s ../build/libs/freenet.jar && cd ..
+  - cd lib && mkdir freenet && cd freenet && ln -s ../freenet-ext.jar && cd ../..
   - cd "$TRAVIS_BUILD_DIR"
 
 script: ant
