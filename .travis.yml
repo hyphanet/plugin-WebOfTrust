@@ -34,7 +34,7 @@ before_install:
   - echo -e "org.gradle.parallel = true\norg.gradle.jvmargs=-Xms256m -Xmx1024m\norg.gradle.configureondemand=true\ntasks.withType(Test) {\n maxParallelForks = Runtime.runtime.availableProcessors()\n}" > gradle.properties
   - gradle clean && gradle jar -x test
   # FIXME: For debugging, remove
-  - ls -alR lib/
+  - find ../ -iname '*freenet-ext*'
   # Create symlink to JARs in the places where they used to be with the old
   # Ant builder so WoT finds them.
   - if [ ! -e dist/freenet.jar ]; then mkdir -p dist && cd dist && ln -s ../build/libs/freenet.jar && cd .. ; fi
