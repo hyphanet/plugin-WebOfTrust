@@ -38,14 +38,13 @@ before_install:
   # Create symlink to JARs in the places where they used to be with the old
   # Ant builder so WoT finds them.
   - if [ ! -e dist/freenet.jar ]; then mkdir -p dist && cd dist && ln -s ../build/libs/freenet.jar && cd .. ; fi
-  # FIXME: Code quality: How to obtain this Gradle path in a clean way without hardcoding it?
+  # FIXME: Code quality: How to obtain these two paths in a clean way without hardcoding them?
+  - if [ ! -e lib/bcprov.jar ]; then mkdir -p lib && cd lib && ln -s $HOME/.gradle/caches/modules-2/files-2.1/org.bouncycastle/bcprov-jdk15on/1.57/*/bcprov-jdk15on-1.57.jar bcprov.jar && cd .. ; fi
   - if [ ! -e lib/freenet/freenet-ext.jar ]; then mkdir -p lib/freenet && cd lib/freenet && ln -s $HOME/.gradle/caches/modules-2/files-2.1/org.freenetproject/freenet-ext/29/*/freenet-ext-29.jar freenet-ext.jar && cd ../.. ; fi
   - cd "$TRAVIS_BUILD_DIR"
   # Print the checksums of the WoT dependencies - for debugging
   - sha256sum ../fred/dist/freenet.jar
   - sha256sum ../fred/lib/freenet/freenet-ext.jar
-  # FIXME: For debugging, remove!
-  - find "$HOME" -type f -iname '*bcprov*jar'
   - sha256sum ../fred/lib/bcprov.jar
 
 script: ant
