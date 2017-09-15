@@ -33,12 +33,11 @@ before_install:
   - cd fred
   - echo -e "org.gradle.parallel = true\norg.gradle.jvmargs=-Xms256m -Xmx1024m\norg.gradle.configureondemand=true\ntasks.withType(Test) {\n maxParallelForks = Runtime.runtime.availableProcessors()\n}" > gradle.properties
   - gradle clean && gradle jar -x test
-  # FIXME: For debugging, remove
-  - find / -type f -iname '*freenet*ext*'
   # Create symlink to JARs in the places where they used to be with the old
   # Ant builder so WoT finds them.
   - if [ ! -e dist/freenet.jar ]; then mkdir -p dist && cd dist && ln -s ../build/libs/freenet.jar && cd .. ; fi
-  - if [ ! -e lib/freenet/freenet-ext.jar ]; then mkdir -p lib/freenet && cd lib/freenet && ln -s ../freenet-ext.jar && cd ../.. ; fi
+  # FIXME: Code quality: How to obtain this Gradle path in a clean way without hardcoding it?
+  - if [ ! -e lib/freenet/freenet-ext.jar ]; then mkdir -p lib/freenet && cd lib/freenet && ln -s $HOME/.gradle/caches/modules-2/files-2.1/org.freenetproject/freenet-ext/29/*/freenet-ext-29.jar freenet-ext.jar && cd ../.. ; fi
   - cd "$TRAVIS_BUILD_DIR"
   # Print the checksums of the WoT dependencies - for debugging
   - sha256sum ../fred/dist/freenet.jar
