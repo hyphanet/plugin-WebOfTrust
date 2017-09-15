@@ -44,6 +44,8 @@ before_install:
   # Print the checksums of the WoT dependencies - for debugging
   - sha256sum ../fred/dist/freenet.jar
   - sha256sum ../fred/lib/freenet/freenet-ext.jar
+  # FIXME: For debugging, remove!
+  - find "$HOME" -type f -iname '*bcprov*jar'
   - sha256sum ../fred/lib/bcprov.jar
 
 script: ant
