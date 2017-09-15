@@ -32,7 +32,9 @@ before_install:
   - if [ ! -e fred/src ]; then git clone https://github.com/freenet/fred.git --branch next --single-branch --depth 1 fred ; else cd fred ; git pull ; cd .. ; fi
   - cd fred
   - echo -e "org.gradle.parallel = true\norg.gradle.jvmargs=-Xms256m -Xmx1024m\norg.gradle.configureondemand=true\ntasks.withType(Test) {\n maxParallelForks = Runtime.runtime.availableProcessors()\n}" > gradle.properties
-  - gradle clean && gradle jar -x test
+  # FIXME: Do we also need to do "gradle clean" or is Gradle smart 
+  # enough to notice if Git changed things? I suppose it is?
+  - gradle jar -x test
   # Create symlink to JARs in the places where they used to be with the old
   # Ant builder so WoT finds them.
   - if [ ! -e dist/freenet.jar ]; then mkdir -p dist && cd dist && ln -s ../build/libs/freenet.jar && cd .. ; fi
