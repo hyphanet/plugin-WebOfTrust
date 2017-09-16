@@ -38,7 +38,7 @@ before_install:
   # Create symlink to JARs in the places where they used to be with the old
   # Ant builder so WoT finds them.
   - if [ ! -e dist/freenet.jar ]; then mkdir -p dist && cd dist && ln -s ../build/libs/freenet.jar && cd .. ; fi
-  # FIXME: Code quality: How to obtain these two paths in a clean way without hardcoding them?
+  # FIXME: Code quality: How to obtain these paths in a clean way without hardcoding them?
   - if [ ! -e lib/bcprov.jar ]; then mkdir -p lib && cd lib && ln -s $HOME/.gradle/caches/modules-2/files-2.1/org.bouncycastle/bcprov-jdk15on/1.57/*/bcprov-jdk15on-1.57.jar bcprov.jar && cd .. ; fi
   - if [ ! -e lib/freenet/freenet-ext.jar ]; then mkdir -p lib/freenet && cd lib/freenet && ln -s $HOME/.gradle/caches/modules-2/files-2.1/org.freenetproject/freenet-ext/29/*/freenet-ext-29.jar freenet-ext.jar && cd ../.. ; fi
   - if [ ! -e lib/jna.jar ]; then mkdir -p lib && cd lib && ln -s $HOME/.gradle/caches/modules-2/files-2.1/net.java.dev.jna/jna/4.2.2/*/jna-4.2.2.jar jna.jar && cd .. ; fi
