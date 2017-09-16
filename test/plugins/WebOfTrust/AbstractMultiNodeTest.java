@@ -59,10 +59,7 @@ import freenet.support.PooledExecutor;
  * 
  * The price is that it is much more heavy to initialize and thus has a higher execution time.
  * Thus, please only use it as a base class if what {@link AbstractJUnit4BaseTest} provides is not
- * sufficient.
- * 
- * FIXME: This is at progress of being adapted from previously only being intended to run a single
- * node to supporting multiple nodes. See the Git history. */
+ * sufficient. */
 @Ignore("Is ignored so it can be abstract. Self-tests are at class AbstractMultiNodeTestSelfTest.")
 public abstract class AbstractMultiNodeTest
         extends AbstractJUnit4BaseTest {
