@@ -98,8 +98,6 @@ public final class IdentityFetcherTest extends AbstractMultiNodeTest {
 		boolean inserted = false;
 		boolean fetched = false;
 		do {
-			printNodeStatistics();
-			
 			// Check whether Identity was inserted and print the time it took to insert it.
 			// Notice: We intentionally don't wait for this in a separate loop before waiting for it
 			// to be fetched: Due to redundancy of inserts fred's "insert finished!" callbacks can
@@ -127,6 +125,7 @@ public final class IdentityFetcherTest extends AbstractMultiNodeTest {
 				sleep(1000);
 		} while(!fetched);
 		System.out.println("IdentityFetcherTest: Identity fetched! Time: " + fetchTime);
+		printNodeStatistics();
 		
 		// Prevent further modifications while we check results...
 		// FIXME: Code quality: Extract a function for this from AbstractMultiNodeTest.loadWoT(),
