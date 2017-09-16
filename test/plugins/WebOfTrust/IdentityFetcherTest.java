@@ -127,15 +127,10 @@ public final class IdentityFetcherTest extends AbstractMultiNodeTest {
 		System.out.println("IdentityFetcherTest: Identity fetched! Time: " + fetchTime);
 		printNodeStatistics();
 		
-		// Prevent further modifications while we check results...
-		// FIXME: Code quality: Extract a function for this from AbstractMultiNodeTest.loadWoT(),
-		// perhaps even put it into class WebOfTrust.
-		insertingWoT.getIdentityInserter().terminate();
-		fetchingWoT.getIdentityFetcher().stop();
+		// Prevent further modifications while we check results.
+		insertingWoT.terminateSubsystemThreads();
+		fetchingWoT.terminateSubsystemThreads();
 		
-		// ... and nevertheless synchronize because there are other threads in WoT.
-		synchronized(insertingWoT) {
-		synchronized(fetchingWoT) {
 			// For Identity.equals() to succeed the source Identity we compare it to must not
 			// be an OwnIdentity. deleteOwnIdentity() will replace the OwnIdentity with a
 			// non-own one.
@@ -143,7 +138,6 @@ public final class IdentityFetcherTest extends AbstractMultiNodeTest {
 			assertEquals(
 				insertingWoT.getIdentityByID(insertedIdentity.getID()),
 				fetchingWoT.getIdentityByID(insertedIdentity.getID()));
-		}}
 	}
 
 }

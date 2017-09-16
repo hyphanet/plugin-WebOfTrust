@@ -122,15 +122,8 @@ public abstract class AbstractMultiNodeTest
 
     /**
      * Implementations shall return true if the instances of the WoT plugin which are loaded into
-     * the nodes shall have all their subsystem threads terminated before running tests to allow
-     * the tests to not have any concurrency measures.
-     * This currently includes:
-     * 
-     * - WebOfTrust.getIntroductionClient()
-     * - WebOfTrust.getIntroductionServer()
-     * - WebOfTrust.getIdentityInserter()
-     * - WebOfTrust.getIdentityFetcher()
-     * - WebOfTrust.getSubscriptionManager() */
+     * the nodes shall have all threads stopped by {@link WebOfTrust#terminateSubsystemThreads()}
+     * before running tests to allow the tests to not have any concurrency measures. */
     public abstract boolean shouldTerminateAllWoTThreads();
 
 	/**
@@ -287,13 +280,8 @@ public abstract class AbstractMultiNodeTest
         
         // Prevent unit tests from having to do thread synchronization by terminating all WOT
         // subsystems which run their own thread.
-        if(shouldTerminateAllWoTThreads()) {
-            wot.getIntroductionClient().terminate();
-            wot.getIntroductionServer().terminate();
-            wot.getIdentityInserter().terminate();
-            wot.getIdentityFetcher().stop();
-            wot.getSubscriptionManager().stop();
-        }
+        if(shouldTerminateAllWoTThreads())
+            wot.terminateSubsystemThreads();
     }
 
     public final Node getNode() {
@@ -515,7 +503,7 @@ public abstract class AbstractMultiNodeTest
             node.getPluginManager().killPlugin(wot, Long.MAX_VALUE);
             
             // The following commented-out assert would yield a false failure:
-            // - setUpNode() already called terminate() upon various subsystems of WoT.
+            // - setUpNode() already called WebOfTrust.terminateSubsystemThreads().
             // - When killPlugin() calls WebOfTrust.terminate(), that function will try to
             //   terminate() those subsystems again. This will fail because they are terminated
             //   already.
