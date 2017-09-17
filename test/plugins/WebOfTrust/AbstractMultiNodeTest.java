@@ -570,13 +570,11 @@ public abstract class AbstractMultiNodeTest
         for(int i = 0; i < getWoTCount(); ++i) {
             Node node = mNodes[i];
             WebOfTrust wot = getWebOfTrust(node);
-            // Properly ordered combination of locks needed for wot.beginTrustListImport(),
-            // wot.deleteWithoutCommit(Identity) and Persistent.checkedCommit().
-            // We normally don't synchronize in unit tests but this is a base class for all WOT unit
-            // tests so side effects of not locking cannot be known here, especially considering
-            // that we ask child classes to implement shouldTerminateAllWoTThreads() as they please.
-            // Calling this now already so our assert..() are guaranteed to be coherent as well.
-            // Also, taking all those locks at once for proper anti-deadlock order.
+            // Properly ordered combination of locks needed for wot.getAllIdentities(),
+            // getAllTrusts(), getAllScores(), beginTrustListImport(), deleteWithoutCommit(Identity)
+            // and Persistent.checkedCommit().
+            // We need to synchronize because WoT runs its own threads if a child class implements
+            // shouldTerminateAllWoTThreads() to return false.
             synchronized(wot) {
             synchronized(wot.getIntroductionPuzzleStore()) {
             synchronized(wot.getIdentityFetcher()) {
