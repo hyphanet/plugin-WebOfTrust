@@ -10,8 +10,8 @@ Outlook blah blah.
 
 CHANGELOG - prefixed with the bugtracker issue number:
 
-- 0000001: title_of_issue_1.............................................
-           more_lines_of_title..........................................
+- 0000001: [category_of_issue_1] title_of_issue_1.......................
+           more_lines_of_title (developer_of_issue_1)...................
 
   Blah.
   Blah.
@@ -24,7 +24,7 @@ CHANGELOG - prefixed with the bugtracker issue number:
   Blah.
   Blah.
 
-- 0006835: Merge random nickname improvement (ArneBab)
+- 0006835: [Features] Merge random nickname improvement (ArneBab)
 
   Some very short name templates such as "D" or "CNR" were removed to
   make the names more pleasant.
@@ -44,7 +44,8 @@ CHANGELOG - prefixed with the bugtracker issue number:
 
 CHANGELOG about stuff only interesting for developers:
 
-- 0006895: (Almost) Full unit test coverage for class Score
+- 0006895: [Code quality] (Almost) Full unit test coverage for class
+           Score (xor)
 
   Thanks to the Cobertura test coverage analysis tool which WoT supports
   since the previous release, efforts have begun towards achieving 100%
