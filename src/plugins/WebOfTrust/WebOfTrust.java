@@ -2292,23 +2292,26 @@ public final class WebOfTrust extends WebOfTrustInterface
 		}
 		
 		if(!threadsOnly) {
-		try {
-			if(mDB != null) {
-				/* TODO: At 2009-06-15, it does not seem possible to ask db4o for whether a transaction is pending.
-				 * If it becomes possible some day, we should check that here, and log an error if there is an uncommitted transaction. 
-				 * - All transactions should be committed after obtaining the lock() on the database. */
-				synchronized(Persistent.transactionLock(mDB)) {
-					System.gc();
-					mDB.rollback();
-					System.gc(); 
-					mDB.close();
+			try {
+				if(mDB != null) {
+					// TODO: At 2009-06-15, it does not seem possible to ask db4o for whether a
+					// transaction is pending.
+					// If it becomes possible some day, we should check that here, and log an error
+					// if there is an uncommitted transaction. 
+					// - All transactions should be committed after obtaining the lock() on the
+					// database.
+					synchronized(Persistent.transactionLock(mDB)) {
+						System.gc();
+						mDB.rollback();
+						System.gc(); 
+						mDB.close();
+					}
 				}
 			}
-		}
-		catch(Exception e) {
-			Logger.error(this, "Error during termination.", e);
-			success.set(false);
-		}
+			catch(Exception e) {
+				Logger.error(this, "Error during termination.", e);
+				success.set(false);
+			}
 		}
 
 		mIsTerminated = success.get();
