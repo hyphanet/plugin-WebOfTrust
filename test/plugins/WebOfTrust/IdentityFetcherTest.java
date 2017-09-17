@@ -127,13 +127,17 @@ public final class IdentityFetcherTest extends AbstractMultiNodeTest {
 		System.out.println("IdentityFetcherTest: Identity fetched! Time: " + fetchTime);
 		printNodeStatistics();
 		
+		// For Identity.equals() to succeed the source Identity we compare it to must not be an
+		// OwnIdentity. deleteOwnIdentity() will replace the OwnIdentity with a non-own one.
+		// (We have to do this before terminating subsystems - otherwise an assert at the beginning
+		// of deleteOwnIdentity() will fail because it detects that the IdentityFetcher wasn't
+		// trying to download the OwnIdentity anymore like it should have been.)
+		insertingWoT.deleteOwnIdentity(insertedIdentity.getID());
+		
 		// Prevent further modifications while we check results.
 		insertingWoT.terminateSubsystemThreads();
 		fetchingWoT.terminateSubsystemThreads();
 		
-		// For Identity.equals() to succeed the source Identity we compare it to must not be an
-		// OwnIdentity. deleteOwnIdentity() will replace the OwnIdentity with a non-own one.
-		insertingWoT.deleteOwnIdentity(insertedIdentity.getID());
 		assertEquals(
 		    insertingWoT.getIdentityByID(insertedIdentity.getID()),
 		     fetchingWoT.getIdentityByID(insertedIdentity.getID()));
