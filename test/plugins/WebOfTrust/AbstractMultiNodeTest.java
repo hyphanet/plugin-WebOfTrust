@@ -56,6 +56,15 @@ import freenet.support.PooledExecutor;
  *   this class' {@link #loadWoT(Node)} stops all of WoT's networking threads to ensure tests don't
  *   have to deal with concurrency. To issue network traffic you then have to manually call their
  *   functions for uploading/downloading stuff.
+ *   ATTENTION: Due to the Node's disability to be terminated without killing the whole JVM
+ *   (see https://bugs.freenetproject.org/view.php?id=6683) this doesn't contain @After code to
+ *   terminate the nodes. As Ant's JUnit will not terminate the JVM when running multiple @Tests of
+ *   a single test class for tests which create many nodes you should typically only include a
+ *   single test in one child class of this to prevent the nodes of the previous tests from slowing
+ *   down the current one.
+ *   If you because of this do create multiple classes which would actually belong into a single one
+ *   please file bug to merge them once the said issue is resolved and set it as related to the
+ *   issue so whoever fixes it does notice.
  * 
  * The price is that it is much more heavy to initialize and thus has a higher execution time.
  * Thus, please only use it as a base class if what {@link AbstractJUnit4BaseTest} provides is not
