@@ -206,7 +206,9 @@ public final class SubscriptionManagerFCPTest extends AbstractSingleNodeTest {
 		final String id = subscription.params.get("SubscriptionID");
 		UUID.fromString(id); // Throws if invalid
 		
-		mWebOfTrust.getSubscriptionManager().run(); // Has no Ticker so we need to run() it manually
+		// Our parent class terminates all subsystem threads of WoT so we have to manually invoke
+		// the SubscriptionManager's thread to deploy notifications.
+		mWebOfTrust.getSubscriptionManager().run();
 		
 	    // Second message is the "BeginSynchronizationEvent"
         final FCPPluginMessage beginSync = mReplyReceiver.getNextResult();
@@ -274,7 +276,9 @@ public final class SubscriptionManagerFCPTest extends AbstractSingleNodeTest {
 		testWhetherReceivedDataMatchesMainDatabase();
 		
 		doRandomChangesToWOT(eventCount);
-		mWebOfTrust.getSubscriptionManager().run(); // Has no Ticker so we need to run() it manually
+		// Our parent class terminates all subsystem threads of WoT so we have to manually invoke
+		// the SubscriptionManager's thread to deploy notifications.
+		mWebOfTrust.getSubscriptionManager().run();
 		importObjectChangedEvents();
         assertFalse(mReplyReceiver.hasNextResult());
 
@@ -319,7 +323,9 @@ public final class SubscriptionManagerFCPTest extends AbstractSingleNodeTest {
         final String id = subscription.params.get("SubscriptionID");
         UUID.fromString(id); // Throws if invalid
         
-        mWebOfTrust.getSubscriptionManager().run(); // Has no Ticker so we need to run() it manually
+        // Our parent class terminates all subsystem threads of WoT so we have to manually invoke
+        // the SubscriptionManager's thread to deploy notifications.
+        mWebOfTrust.getSubscriptionManager().run();
         
         // Second message is the "BeginSynchronizationEvent"
         final FCPPluginMessage beginSync = mReplyReceiver.getNextResult();
