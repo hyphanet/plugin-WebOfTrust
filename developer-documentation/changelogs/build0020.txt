@@ -7,6 +7,10 @@ Summary blah blah. Blah blah reference to link [1].
 
 Outlook blah blah.
 
+Thanks to the Cobertura test coverage analysis tool which WoT supports
+since the previous release, efforts have begun towards achieving 100%
+test coverage in WoT.
+
 
 CHANGELOG - prefixed with the bugtracker issue number:
 
@@ -44,15 +48,23 @@ CHANGELOG - prefixed with the bugtracker issue number:
 
 CHANGELOG about stuff only interesting for developers:
 
-- 0006895: [Code quality] (Almost) Full unit test coverage for class
-           Score (xor)
+- 0006804: [Code quality] Unit tests: Recycle fred simulator code to
+           allow tests which do real inserts/fetches (xor)
 
-  Thanks to the Cobertura test coverage analysis tool which WoT supports
-  since the previous release, efforts have begun towards achieving 100%
-  test coverage in WoT.
+  FIXME
 
-  Thus as a first step this release delivers a rewrite of the test for
-  class Score, which is one of the most important core classes.
+- 0006950: [Code quality] Unit tests: Networked tests for class
+           IdentityFetcher (xor)
+
+  FIXME
+
+- 0006895: [Code quality] Unit tests: (Almost) Full coverage for class
+           Score
+
+  This release delivers a rewrite of the test for class Score, which is
+  one of the core storage classes of WoT's data model.
+  It is a simple class but used very much so decent tests are still a
+  good idea.
   It has got 94% line coverage and 89 % branch coverage.
   Previously line coverage of this was 75%, branch coverage 58%.
   The new test is 1190 lines long itself, the old one was merely 138.
