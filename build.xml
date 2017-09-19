@@ -7,6 +7,7 @@
 	<property name="freenet-cvs-snapshot.location" location="../fred/dist/freenet.jar"/>
 	<property name="freenet-ext.location" location="../fred/lib/freenet/freenet-ext.jar"/>
 	<property name="bcprov.location" location="../fred/lib/bcprov.jar"/>
+	<property name="jna.location" location="../fred/lib/jna.jar"/>
 	<property name="debug-node-wot-plugin.location" location="../fred/plugins/WebOfTrust.jar"/>
 	<property name="svn.revision" value="@custom@"/>
 	<property name="source-version" value="1.7"/>
@@ -32,6 +33,7 @@
 
 	<path id="lib.path">
 		<pathelement location="${bcprov.location}"/>
+		<pathelement location="${jna.location}"/>
 		<pathelement location="${freenet-ext.location}"/>
 		<pathelement location="${freenet-cvs-snapshot.location}"/>
 	</path>
@@ -82,6 +84,7 @@
 		<echo message="Using ${freenet-cvs-snapshot.location} as freenet-cvs-snapshot.jar"/>
 		<echo message="Using ${freenet-ext.location} as freenet-ext.jar"/>
 		<echo message="Using ${bcprov.location} as bcprov.jar"/>
+		<echo message="Using ${jna.location} as jna.jar"/>
 		<echo message="Using ${cobertura.location} as cobertura.jar"/>
 	</target>
 
