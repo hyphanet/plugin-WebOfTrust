@@ -99,9 +99,28 @@ CHANGELOG about stuff only interesting for developers:
   test code for it shows that the metric for how long full unit tests
   are typically may be "twice as much as the tested code itself."
 
+- 0006929: [Bugs] Travis CI builds fail due to changes at fred (xor)
+
+  The .travis.yml configuration of Travis CI has been fixed to be
+  compatible to the huge changeset of the Freenet core fred which is
+  being developed on fred's next branch.
+  Specifically it was adapted to be compatible with the new Gradle
+  builder of fred which has replaced Ant there - while keeping Ant at
+  WoT so we don't have too much migration efforts going on for now.
+
+  The unit tests of WoT branch next do succeed against the new fred code
+  so hopefully WoT won't delay the release of the fred changes any
+  further than they have already been delayed.
+  This also the first time where the "CI" = continuous integration
+  in Travis CI is really happening to meet its definition:
+  I don't have a Gradle build setup for fred branch next yet so it is of
+  true benefit to be able to test it elsewhere :)
+  Thanks to nextgens for insipiring this by setting up Travis CI at
+  fred!
 
 Thanks to:
   - ArneBab
+  - nextgens
 
 Links:
   [1] https://...

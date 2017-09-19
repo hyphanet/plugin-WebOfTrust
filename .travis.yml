@@ -14,22 +14,46 @@ addons:
   # TODO: Code quality: Remove this workaround for https://github.com/travis-ci/travis-ci/issues/5227
   hostname: freenet-plugin-WebOfTrust
 
+before_cache:
+  - rm -f  $HOME/.gradle/caches/modules-2/modules-2.lock
+  - rm -f  $HOME/.gradle/caches/jars-2/jars-2.lock
+  - rm -fr $HOME/.gradle/caches/*/plugin-resolution/
+
 cache:
   apt: true
   directories:
   - $TRAVIS_BUILD_DIR/../fred/
+  - $HOME/.m2
+  - $HOME/.gradle/caches/
+  - $HOME/.gradle/wrapper/
 
 before_install:
   - cd "$TRAVIS_BUILD_DIR"/..
-  - if [ ! -e fred/src ]; then git clone https://github.com/freenet/fred.git --branch next --single-branch fred ; else cd fred ; git pull ; cd .. ; fi
-  - if [ ! -e fred/lib/bcprov-jdk15on-154.jar ]; then cd fred/lib ; wget -c --no-check-certificate https://bouncycastle.org/download/bcprov-jdk15on-154.jar; cd ../.. ; fi
-  - cd fred/lib ; rm -f bcprov.jar ; ln -s bcprov-jdk15on-154.jar bcprov.jar ; cd ../..
-  - cd fred && ant clean && ant -Dlib.contrib.get=true -Dtest.skip=true && cd ..
+  - if [ ! -e fred/src ]; then git clone https://github.com/freenet/fred.git --branch next --single-branch --depth 1 fred ; else cd fred ; git pull ; cd .. ; fi
+  - cd fred
+  - echo -e "org.gradle.parallel = true\norg.gradle.jvmargs=-Xms256m -Xmx1024m\norg.gradle.configureondemand=true\ntasks.withType(Test) {\n maxParallelForks = Runtime.runtime.availableProcessors()\n}" > gradle.properties
+  # TODO: Code quality: Do we also need to do "gradle clean" or is
+  # Gradle smart enough to notice if Git changed things? I suppose it
+  # is?
+  - gradle jar -x test
+  # Create symlink to JARs in the places where they used to be with the old
+  # Ant builder so WoT finds them.
+  - if [ ! -e dist/freenet.jar ]; then mkdir -p dist && cd dist && ln -s ../build/libs/freenet.jar && cd .. ; fi
+  # TODO: Code quality: How to obtain these paths in a clean way without hardcoding them?
+  - if [ ! -e lib/bcprov.jar ]; then mkdir -p lib && cd lib && ln -s $HOME/.gradle/caches/modules-2/files-2.1/org.bouncycastle/bcprov-jdk15on/1.57/*/bcprov-jdk15on-1.57.jar bcprov.jar && cd .. ; fi
+  - if [ ! -e lib/freenet/freenet-ext.jar ]; then mkdir -p lib/freenet && cd lib/freenet && ln -s $HOME/.gradle/caches/modules-2/files-2.1/org.freenetproject/freenet-ext/29/*/freenet-ext-29.jar freenet-ext.jar && cd ../.. ; fi
+  - if [ ! -e lib/jna.jar ]; then mkdir -p lib && cd lib && ln -s $HOME/.gradle/caches/modules-2/files-2.1/net.java.dev.jna/jna/4.2.2/*/jna-4.2.2.jar jna.jar && cd .. ; fi
   - cd "$TRAVIS_BUILD_DIR"
+  # Print the checksums of the WoT dependencies - for debugging
+  - sha256sum ../fred/dist/freenet.jar
+  - sha256sum ../fred/lib/freenet/freenet-ext.jar
+  - sha256sum ../fred/lib/bcprov.jar
+  - sha256sum ../fred/lib/jna.jar
 
 script: ant
 
 jdk:
   - oraclejdk8
-  - oraclejdk7
+  # Not supported anymore I guess: https://github.com/travis-ci/travis-ci/issues/7884#issuecomment-308451879
+  # - oraclejdk7
   - openjdk7
