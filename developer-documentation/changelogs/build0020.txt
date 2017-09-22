@@ -73,10 +73,34 @@ CHANGELOG about stuff only interesting for developers:
   WoT works as intended, some of which have already been implemented,
   see the following issues.
 
-- 0006950: [Code quality] Unit tests: Networked tests for class
-           IdentityFetcher (xor)
+- 0006950: [Code quality] Unit tests: Networked tests for classes
+           IdentityFetcher and IdentityInserter (xor)
 
-  FIXME
+  While the primary goal of this release is to replace the legacy class
+  IdentityFetcher with a much faster new implementation (classes
+  IdentityDownloader*), the legacy class was nevertheless preserved so
+  we can keep it as a reference implementation for a while to have
+  something to test the new code against.
+
+  It was decided to use the legacy class as a first subject to test with
+  the new code for networked tests as described by the aforementioned
+  issue 0006804. It is a good idea to test the legacy class because:
+  - it had to be modified by this release to take account for the
+    changes to the WoT core which had to be made to power the new
+    implementation. These modifications could have caused bugs.
+  - it is more easy to understand than the new implementation and thus
+    serves well as a simple example of how to do networked tests.
+
+  Class IdentityFetcherTest was added which tests IdentityFetcher -
+  and also the IdentityInserter as a side effect - like this:
+  - Creates two WoT instances connected by network.
+  - Creates an identity on WoT #1 and has the IdentityInserter insert
+    it into the local Freenet network.
+  - Creates another identity on WoT #2 which adds the remote identity
+    by its URI and sets a positive trust to it.
+  - Waits until the remote identity is successfully fetched and imported
+    by the IdentityFetcher and validates its attributes are equal to the
+    original.
 
 - 0006895: [Code quality] Unit tests: (Almost) Full coverage for class
            Score
