@@ -51,7 +51,27 @@ CHANGELOG about stuff only interesting for developers:
 - 0006804: [Code quality] Unit tests: Recycle fred simulator code to
            allow tests which do real inserts/fetches (xor)
 
-  FIXME
+  Previously WoT unit tests have not been testing the code for
+  uploading/downloading to/from the Freenet network at all.
+  They only tested the core which processes the transferred data.
+
+  Now the unit tests use the Freenet core code to create multiple real
+  Freenet instances on the local machine which connect to each other,
+  and run the WoT plugin on multiple of those nodes to test network
+  traffic between instances of WoT.
+  This does not involve the public network, all traffic is strictly
+  local.
+
+  Surprisingly this does not require much computing power:
+  Hundreds of test runs have shown that it does reliably complete with
+  only 10 nodes. Dozens of runs validated that it requires as little as
+  512 MB of RAM given to Java, it may possibly even work with 256 MB.
+  A simple upload/download test run completes within 167 seconds on my
+  10 years old 2.4 GHz Core 2 Duo.
+
+  This allows us to do really sophisticated high level tests of whether
+  WoT works as intended, some of which have already been implemented,
+  see the following issues.
 
 - 0006950: [Code quality] Unit tests: Networked tests for class
            IdentityFetcher (xor)
