@@ -25,6 +25,7 @@ import plugins.WebOfTrust.exceptions.DuplicateTrustException;
 import plugins.WebOfTrust.exceptions.InvalidParameterException;
 import plugins.WebOfTrust.exceptions.NotTrustedException;
 import plugins.WebOfTrust.exceptions.UnknownIdentityException;
+import plugins.WebOfTrust.ui.fcp.DebugFCPClient;
 import plugins.WebOfTrust.ui.fcp.FCPClientReferenceImplementation;
 import plugins.WebOfTrust.ui.fcp.FCPClientReferenceImplementation.ChangeSet;
 import plugins.WebOfTrust.ui.fcp.FCPClientReferenceImplementation.FCPEventSourceContainerParser;
@@ -42,7 +43,7 @@ import freenet.support.SimpleFieldSet;
  * TODO: New test: For each type of {@link Notification}, check whether it gets resent properly if
  * we reply with a {@link FCPPluginMessage#success}==false.
  * 
- * @see FCPClientReferenceImplementation This class can do an online test which is similar to this unit test.
+ * @see DebugFCPClient This class can do an online test which is similar to this unit test.
  * @author xor (xor@freenetproject.org)
  */
 public final class SubscriptionManagerFCPTest extends AbstractSingleNodeTest {
