@@ -25,6 +25,7 @@ import plugins.WebOfTrust.exceptions.DuplicateTrustException;
 import plugins.WebOfTrust.exceptions.InvalidParameterException;
 import plugins.WebOfTrust.exceptions.NotTrustedException;
 import plugins.WebOfTrust.exceptions.UnknownIdentityException;
+import plugins.WebOfTrust.ui.fcp.DebugFCPClient;
 import plugins.WebOfTrust.ui.fcp.FCPClientReferenceImplementation;
 import plugins.WebOfTrust.ui.fcp.FCPClientReferenceImplementation.ChangeSet;
 import plugins.WebOfTrust.ui.fcp.FCPClientReferenceImplementation.FCPEventSourceContainerParser;
@@ -42,10 +43,10 @@ import freenet.support.SimpleFieldSet;
  * TODO: New test: For each type of {@link Notification}, check whether it gets resent properly if
  * we reply with a {@link FCPPluginMessage#success}==false.
  * 
- * @see FCPClientReferenceImplementation This class can do an online test which is similar to this unit test.
+ * @see DebugFCPClient This class can do an online test which is similar to this unit test.
  * @author xor (xor@freenetproject.org)
  */
-public final class SubscriptionManagerFCPTest extends AbstractFullNodeTest {
+public final class SubscriptionManagerFCPTest extends AbstractSingleNodeTest {
 
 	/**
 	 * This test acts as a client to the WOT FCP server subscription code.
@@ -206,7 +207,9 @@ public final class SubscriptionManagerFCPTest extends AbstractFullNodeTest {
 		final String id = subscription.params.get("SubscriptionID");
 		UUID.fromString(id); // Throws if invalid
 		
-		mWebOfTrust.getSubscriptionManager().run(); // Has no Ticker so we need to run() it manually
+		// Our parent class terminates all subsystem threads of WoT so we have to manually invoke
+		// the SubscriptionManager's thread to deploy notifications.
+		mWebOfTrust.getSubscriptionManager().run();
 		
 	    // Second message is the "BeginSynchronizationEvent"
         final FCPPluginMessage beginSync = mReplyReceiver.getNextResult();
@@ -274,7 +277,9 @@ public final class SubscriptionManagerFCPTest extends AbstractFullNodeTest {
 		testWhetherReceivedDataMatchesMainDatabase();
 		
 		doRandomChangesToWOT(eventCount);
-		mWebOfTrust.getSubscriptionManager().run(); // Has no Ticker so we need to run() it manually
+		// Our parent class terminates all subsystem threads of WoT so we have to manually invoke
+		// the SubscriptionManager's thread to deploy notifications.
+		mWebOfTrust.getSubscriptionManager().run();
 		importObjectChangedEvents();
         assertFalse(mReplyReceiver.hasNextResult());
 
@@ -319,7 +324,9 @@ public final class SubscriptionManagerFCPTest extends AbstractFullNodeTest {
         final String id = subscription.params.get("SubscriptionID");
         UUID.fromString(id); // Throws if invalid
         
-        mWebOfTrust.getSubscriptionManager().run(); // Has no Ticker so we need to run() it manually
+        // Our parent class terminates all subsystem threads of WoT so we have to manually invoke
+        // the SubscriptionManager's thread to deploy notifications.
+        mWebOfTrust.getSubscriptionManager().run();
         
         // Second message is the "BeginSynchronizationEvent"
         final FCPPluginMessage beginSync = mReplyReceiver.getNextResult();

@@ -23,7 +23,7 @@ import plugins.WebOfTrust.exceptions.UnknownIdentityException;
 import plugins.WebOfTrust.ui.terminal.WOTUtil;
 import plugins.WebOfTrust.util.StopWatch;
 
-public final class ScoreComputationBenchmark extends AbstractFullNodeTest {
+public final class ScoreComputationBenchmark extends AbstractSingleNodeTest {
 
 	/**
 	 * ATTENTION: File will not be deleted, it will be appended to so you can average multiple runs

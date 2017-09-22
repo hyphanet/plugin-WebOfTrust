@@ -2129,12 +2129,23 @@ public final class WebOfTrust extends WebOfTrustInterface
 		}
 	}
 
+	@Override public void terminate() {
+		terminate(false);
+	}
+
 	/**
-	 * ATTENTION: If you add new code which terminates threads, you must make sure that they are
-	 * terminated in {@link AbstractFullNodeTest#setUpNode()} as well.
-	 */
-	@Override
-	public void terminate() {
+	 * ATTENTION: For unit test purposes only!
+	 * 
+	 * Version of {@link #terminate()} which only halts all threads of WoT while still not
+	 * terminating the whole plugin and thus allowing unit tests to keep doing e.g. database
+	 * queries. This is intended to allow unit tests to call it right after startup so they do not
+	 * have to contain code to deal with concurrency. */
+	void terminateSubsystemThreads() {
+		terminate(true);
+	}
+
+	/** @param threadsOnly See {@link #terminateSubsystemThreads()}. */
+	private void terminate(boolean threadsOnly) {
 		Logger.normal(this, "Web Of Trust plugin terminating ...");
 		
 		assert(!mIsTerminated);
@@ -2280,23 +2291,27 @@ public final class WebOfTrust extends WebOfTrustInterface
 			success.set(false);
 		}
 		
-		
-		try {
-			if(mDB != null) {
-				/* TODO: At 2009-06-15, it does not seem possible to ask db4o for whether a transaction is pending.
-				 * If it becomes possible some day, we should check that here, and log an error if there is an uncommitted transaction. 
-				 * - All transactions should be committed after obtaining the lock() on the database. */
-				synchronized(Persistent.transactionLock(mDB)) {
-					System.gc();
-					mDB.rollback();
-					System.gc(); 
-					mDB.close();
+		if(!threadsOnly) {
+			try {
+				if(mDB != null) {
+					// TODO: At 2009-06-15, it does not seem possible to ask db4o for whether a
+					// transaction is pending.
+					// If it becomes possible some day, we should check that here, and log an error
+					// if there is an uncommitted transaction. 
+					// - All transactions should be committed after obtaining the lock() on the
+					// database.
+					synchronized(Persistent.transactionLock(mDB)) {
+						System.gc();
+						mDB.rollback();
+						System.gc(); 
+						mDB.close();
+					}
 				}
 			}
-		}
-		catch(Exception e) {
-			Logger.error(this, "Error during termination.", e);
-			success.set(false);
+			catch(Exception e) {
+				Logger.error(this, "Error during termination.", e);
+				success.set(false);
+			}
 		}
 
 		mIsTerminated = success.get();
