@@ -81,9 +81,12 @@ public final class IdentityFetcherTest extends AbstractMultiNodeTest {
 			fetchingWoT.setTrust(trustingIdentity.getID(), insertedIdentity.getID(), (byte)100, "");
 			
 			// This will be equals after the identity was inserted & fetched.
+			// (Checking equals() of the whole Identity wouldn't make sense here because comparing
+			// an OwnIdentity against a non-own Identity will always return false, so only check
+			// the nickname!)
 			assertNotEquals(
-				insertingWoT.getIdentityByID(insertedIdentity.getID()),
-				fetchingWoT.getIdentityByID(insertedIdentity.getID()));
+				insertingWoT.getIdentityByID(insertedIdentity.getID()).getNickname(),
+				 fetchingWoT.getIdentityByID(insertedIdentity.getID()).getNickname());
 		}}
 		
 		// Automatically scheduled for execution on a Thread by createOwnIdentity().
@@ -138,9 +141,13 @@ public final class IdentityFetcherTest extends AbstractMultiNodeTest {
 		insertingWoT.terminateSubsystemThreads();
 		fetchingWoT.terminateSubsystemThreads();
 		
-		assertEquals(
-		    insertingWoT.getIdentityByID(insertedIdentity.getID()),
-		     fetchingWoT.getIdentityByID(insertedIdentity.getID()));
+		Identity originalIdentity   = insertingWoT.getIdentityByID(insertedIdentity.getID());
+		Identity downloadedIdentity =  fetchingWoT.getIdentityByID(insertedIdentity.getID());
+		
+		// Our previous equals()-check of the nickname should now succeed...
+		assertEquals(originalIdentity.getNickname(), downloadedIdentity.getNickname());
+		// ... and also even equals()-checking the whole identity!
+		assertEquals(originalIdentity, downloadedIdentity);
 	}
 
 }
