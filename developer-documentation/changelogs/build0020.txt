@@ -112,7 +112,7 @@ CHANGELOG about stuff only interesting for developers:
   previous release, see "ant -projecthelp".)
 
 - 0006895: [Code quality] Unit tests: (Almost) Full coverage for class
-           Score
+           Score (xor)
 
   This release delivers a rewrite of the test for class Score, which is
   one of the core storage classes of WoT's data model.
@@ -164,6 +164,30 @@ CHANGELOG about stuff only interesting for developers:
   itself is 540 lines of code. Comparing that to the 1190 lines of
   test code for it shows that the metric for how long full unit tests
   are typically may be "twice as much as the tested code itself."
+
+- 0006967: [Code quality] Unit tests: Introduce finite memory limit of
+           512 MB (xor)
+
+  Previously there was no memory limit for the unit tests at all, they
+  could consume as much memory as they pleased / as the default Java
+  memory limit of the current machine allowed them to.
+
+  The 512 MB memory limit was determined by running ~ 10 iterations of
+  the tests with 4GB, 512 MB, 384 MB and 256 MB.
+
+  The runtime average wasn't significantly different for any of those
+  so there is no excessive garbage collection happening and 512 MB
+  should be  enough for now and leave some leeway for new tests.
+
+  This is also intended as a service to people who use Freenet on a
+  Raspberry Pi - being able to build WoT there is a first step towards
+  ensuring it works with the hardware constraints of the Pi.
+  Along with the decrease of memory / CPU usage because of the
+  IdentityFetcher-rewrite of this release WoT may nowadays actually just
+  work fine on a Pi. Feedback is welcome :)
+
+  FYI you can use e.g. jVisualVM to watch the memory usage and GC
+  activity of Freenet.
 
 - 0006929: [Bugs] Travis CI builds fail due to changes at fred (xor)
 
