@@ -19,13 +19,13 @@ import plugins.WebOfTrust.util.StopWatch;
 import freenet.node.Node;
 
 /**
- * Tests class {@link IdentityFetcher} and {@link IdentityInserter} with a real small darknet of
- * ten Freenet {@link Node}s:
- * - Creates an {@link OwnIdentity} on node #1 and has the IdentityInserter insert it into Freenet.
- * - Creates another OwnIdentity on node #2 which adds the remote Identity by its URI and sets a
+ * Tests classes {@link IdentityFetcher} and {@link IdentityInserter} with a real small darknet of
+ * ten Freenet {@link Node}s and two {@link WebOfTrust} plugin instances:
+ * - Creates an {@link OwnIdentity} on WoT #1 and has the IdentityInserter insert it into Freenet.
+ * - Creates another OwnIdentity on WoT #2 which adds the remote Identity by its URI and sets a
  *   positive trust to it.
- * - Waits until the remote Identity is successfully fetched and imported by the IdentityFetcher
- *   and validates its attributes are equal to the original. */
+ * - Waits until the remote Identity is successfully fetched and imported by the IdentityFetcher on
+ *   WoT #2 and validates its attributes are equal to the original. */
 public final class IdentityFetcherTest extends AbstractMultiNodeTest {
 
 	@Override public int getNodeCount() {
