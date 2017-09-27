@@ -3,6 +3,8 @@
  * any later version). See http://www.gnu.org/ for details of the GPL. */
 package plugins.WebOfTrust;
 
+import static freenet.support.TimeUtil.formatTime;
+
 import java.util.concurrent.TimeUnit;
 
 import plugins.WebOfTrust.IdentityFileQueue.IdentityFileStream;
@@ -61,7 +63,6 @@ public final class IdentityFileProcessor implements DelayedBackgroundJob {
 
 	private final Statistics mStatistics = new Statistics();
 
-
 	public static final class Statistics implements Cloneable {
 		/** Number of files for which processing has been finished successfully. */
 		public int mProcessedFiles = 0;
@@ -104,6 +105,11 @@ public final class IdentityFileProcessor implements DelayedBackgroundJob {
 		}	
 	}
 
+	private static transient volatile boolean logMINOR = false;
+	static {
+		Logger.registerClass(IdentityFileProcessor.class);
+	}
+
 
 	IdentityFileProcessor(IdentityFileQueue queue, Ticker ticker, XMLTransformer xmlTransformer) {
 		if(ticker != null) {
@@ -143,6 +149,10 @@ public final class IdentityFileProcessor implements DelayedBackgroundJob {
 	 * {@link IdentityFileQueue} implementations which do not deduplicate should instead use
 	 * {@link #triggerExecution(long)} to force a delay of 0. */
 	@Override public void triggerExecution() {
+		if(logMINOR) {
+			Logger.minor(this, "triggerExecution(): Scheduling processing with delay of: "
+				+ formatTime(PROCESSING_DELAY_MILLISECONDS));
+		}
 		mRealDelayedBackgroundJob.triggerExecution();
 	}
 
@@ -151,6 +161,10 @@ public final class IdentityFileProcessor implements DelayedBackgroundJob {
 	 * instead of {@link #triggerExecution()} to force a delay of 0:<br>
 	 * The only reason for a non-zero delay is to give time for deduplication. */
 	@Override public void triggerExecution(long delayMillis) {
+		if(logMINOR) {
+			Logger.minor(this, "triggerExecution(): Scheduling processing with delay of: "
+				+ formatTime(delayMillis));
+		}
 		mRealDelayedBackgroundJob.triggerExecution(delayMillis);
 	}
 

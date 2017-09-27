@@ -41,6 +41,22 @@ public final class IntroductionClientTest extends AbstractMultiNodeTest {
 		return false;
 	}
 
+	@Override public String getDetailedLogLevel() {
+		// Enable DEBUG logging so you can watch progress on stdout while the test is running.
+		// Enable logging for the unrelated IdentityFileProcessor as well as it may introduce a
+		// processing delay currently which you can observe at its logging (see
+		// https://bugs.freenetproject.org/view.php?id=6958).
+		return "freenet:NONE,"
+		     + "plugins.WebOfTrust.IdentityInserter:DEBUG,"
+		     + "plugins.WebOfTrust.IdentityFetcher:DEBUG,"
+		     + "plugins.WebOfTrust.IdentityFileProcessor:MINOR,"
+		     + "plugins.WebOfTrust.introduction.IntroductionServer:DEBUG,"
+		     + "plugins.WebOfTrust.introduction.IntroductionClient:DEBUG";
+		
+		// FIXME: Add plugins.WebOfTrust.network.input.IdentityDownloader:DEBUG / WHATEVER once
+		// the branch issue-0003816-IdentityFetcher-rewrite is complete.
+	}
+
 	@Before public void setUp() throws MalformedURLException, UnknownIdentityException {
 		deleteSeedIdentities();
 	}
