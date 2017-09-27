@@ -13,6 +13,7 @@ import plugins.WebOfTrust.Identity;
 import plugins.WebOfTrust.OwnIdentity;
 import plugins.WebOfTrust.Trust;
 import plugins.WebOfTrust.WebOfTrust;
+import plugins.WebOfTrust.exceptions.InvalidParameterException;
 import plugins.WebOfTrust.exceptions.UnknownIdentityException;
 import plugins.WebOfTrust.util.StopWatch;
 import freenet.node.Node;
@@ -61,7 +62,9 @@ public final class IntroductionClientTest extends AbstractMultiNodeTest {
 		deleteSeedIdentities();
 	}
 
-	@Test public void testFullIntroductionCycle() {
+	@Test public void testFullIntroductionCycle()
+			throws MalformedURLException, InvalidParameterException, UnknownIdentityException {
+		
 		System.out.println("IntroductionClientTest: testFullIntroductionCycle()...");
 		StopWatch t = new StopWatch();
 		
@@ -74,6 +77,35 @@ public final class IntroductionClientTest extends AbstractMultiNodeTest {
 		IntroductionPuzzleStore clientStore = clientWoT.getIntroductionPuzzleStore();
 		OwnIdentity serverIdentity;
 		OwnIdentity clientIdentity;
+		
+		// Synchronized to prevent the WoTs from doing stuff while we set up the test environment.
+		// synchronized & clone() also as workaround for
+		// https://bugs.freenetproject.org/view.php?id=6247
+		// Notice: As a consequence of the clone() we will have to re-query the identities from the
+		// database before we pass them to other functions which use them for database queries,
+		// otherwise db4o will not know the objects' references.
+		synchronized(serverWoT) {
+		synchronized(clientWoT) {
+			// Server Identity must have publishTrustList == true to enable puzzle publishing.
+			serverIdentity = serverWoT.createOwnIdentity("serverId", true, null).clone();
+			// Disable trust list and hence also puzzle upload for the client to reduce traffic.
+			clientIdentity = clientWoT.createOwnIdentity("clientId", false, null).clone();
+			
+			// Reduce amount of inserted puzzles to speed things up and keep our code simple.
+			serverWoT.setPublishIntroductionPuzzles(serverIdentity.getID(), true, 1);
+			
+			// Create the server identity at the client so the client knows where to download
+			// puzzles from.
+			clientWoT.createOwnIdentity(serverIdentity.getInsertURI(), "serverId", true, null);
+			clientWoT.setPublishIntroductionPuzzles(serverIdentity.getID(), true, 1);
+			// Convert it to a non-own Identity so we have to download the puzzles from the remote
+			// instance instead of just creating them locally.
+			clientWoT.deleteOwnIdentity(serverIdentity.getID());
+			
+			// The client ID must trust the server ID so it will actually download the server ID and
+			// its puzzles.
+			clientWoT.setTrust(clientIdentity.getID(), serverIdentity.getID(), (byte)100, "");
+		}}
 		
 		System.out.println("IntroductionClientTest: testFullIntroductionCycle() done! Time: " + t);
 		printNodeStatistics();
