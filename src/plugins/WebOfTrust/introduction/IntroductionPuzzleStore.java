@@ -423,5 +423,16 @@ public final class IntroductionPuzzleStore {
 		q.descend("mWasSolved").constrain(solved);
 		return q.execute().size();
 	}
-	
+
+	/**
+	 * For unit test purposes mostly:
+	 * Gets the amount of any puzzles, both including {@link OwnIntroductionPuzzle}s and non-own
+	 * {@link IntroductionPuzzle}s, independent of whether they are solved, not solved, inserted,
+	 * not inserted, etc. */
+	public synchronized int getTotalPuzzleAmount() {
+		Query q = mDB.query();
+		q.constrain(IntroductionPuzzle.class);
+		return q.execute().size();
+	}
+
 }
