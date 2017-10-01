@@ -133,31 +133,31 @@ public final class IntroductionClientTest extends AbstractMultiNodeTest {
 		} while(true);
 		System.out.println("IntroductionClientTest: Puzzle generated! Time: " + generationTime);
 		
-		System.out.println("IntroductionClientTest: Waiting for puzzle to be inserted/fetched...");
+		System.out.println("IntroductionClientTest: Waiting for puzzle to be up-/downloaded...");
 		StopWatch uploadTime = new StopWatch();
 		StopWatch downloadTime = new StopWatch();
-		boolean inserted = false;
-		boolean fetched = false;
+		boolean uploaded = false;
+		boolean downloaded = false;
 		String puzzleID = null;
 		String puzzleSolution = null;
 		do {
 			// Check whether the IntroductionPuzzle was uploaded and show the time it took to do so.
 			// Notice: We intentionally don't wait for this in a separate loop before waiting for it
-			// to be fetched: Due to redundancy the amount of data to insert is larger than what
-			// has to be fetched, so fred's "insert finished!" callbacks can happen AFTER the remote
-			// node's "fetch finished!" callbacks have already returned.
-			if(!inserted) {
+			// to be downloaded: Due to redundancy the amount of data to upload is larger than what
+			// has to be downloaded, so fred's "upload finished!" callbacks can happen AFTER the
+			// remote node's "download finished!" callbacks have already returned.
+			if(!uploaded) {
 				synchronized(serverWoT) {
 				synchronized(serverStore) {
 					OwnIdentity requeried = serverWoT.getOwnIdentityByID(serverIdentity.getID());
-					ObjectSet<OwnIntroductionPuzzle> insertedPuzzles =
+					ObjectSet<OwnIntroductionPuzzle> uploadedPuzzles =
 						serverStore.getInsertedOwnPuzzlesByInserter(requeried);
-					if(insertedPuzzles.size() == 1) {
-						inserted = true;
+					if(uploadedPuzzles.size() == 1) {
+						uploaded = true;
 						System.out.println(
 							"IntroductionClientTest: Puzzle uploaded! Time: " + uploadTime);
-						puzzleID = insertedPuzzles.get(0).getID();
-						puzzleSolution = insertedPuzzles.get(0).getSolution();
+						puzzleID = uploadedPuzzles.get(0).getID();
+						puzzleSolution = uploadedPuzzles.get(0).getSolution();
 						
 						// Speed up download of the puzzle
 						client.nextIteration();
@@ -168,12 +168,12 @@ public final class IntroductionClientTest extends AbstractMultiNodeTest {
 			synchronized(clientWoT) {
 			synchronized(clientStore) {
 				if(clientStore.getNonOwnCaptchaAmount(false) == 1)
-					fetched = true;
+					downloaded = true;
 			}}
 			
-			if(!fetched)
+			if(!downloaded)
 				sleep(1000);
-		} while(!fetched);
+		} while(!downloaded);
 		System.out.println("IntroductionClientTest: Puzzle downloaded! Time: " + downloadTime);
 		
 		System.out.println("IntroductionClientTest: testFullIntroductionCycle() done! Time: " + t);
