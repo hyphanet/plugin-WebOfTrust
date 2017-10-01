@@ -39,6 +39,16 @@ import freenet.support.TimeUtil;
  * 8. The IntroductionClient deletes the oldest puzzles to replace them with new ones (deleteOldestPuzzles).
  *
  * As of SVN revision 26940, I have ensured that all functions are properly synchronized and any needed external synchronization is documented.
+ * EDIT: The above statement may be outdated, this class may have been modified since then. Further
+ * the said documentation may be wrong as there was at least one instance of documentation which
+ * failed to mention the requirement to synchronize on the WebOfTrust.
+ * TODO: Code quality: Review the documentation.
+ * Hence please synchronize as follows:
+ * For database query functions which don't contain the following synchronization on their own you
+ * have to synchronize on the WebOfTrust (due to {@link IntroductionPuzzle} objects containing
+ * pointers to {@link Identity} objects) and this IntroductionPuzzleStore (as it's the database
+ * "table lock" for IntroductionPuzzles) while calling them and processing potentially returned
+ * ObjectSets.
  *
  * @author xor (xor@freenetproject.org)
  */
@@ -287,19 +297,23 @@ public final class IntroductionPuzzleStore {
 		
 		return result.size() > 0 ? result.next().getIndex()+1 : 0;
 	}
-	
-	/**
-	 * Get all not inserted puzzles of the given identity.
-	 * You have to put a synchronized(this IntroductionPuzzleStore) statement around the call to this function and the processing of the
-	 * List which was returned by it!
-	 * 
-	 * Used by the IntroductionServer for inserting puzzles.
-	 */
-	public ObjectSet<OwnIntroductionPuzzle> getUninsertedOwnPuzzlesByInserter(final OwnIdentity identity) {
-		final Query q = mDB.query();
+
+	ObjectSet<OwnIntroductionPuzzle> getUninsertedOwnPuzzlesByInserter(OwnIdentity identity) {
+		return getOwnPuzzlesByInserter(identity, false);
+	}
+
+	ObjectSet<OwnIntroductionPuzzle> getInsertedOwnPuzzlesByInserter(OwnIdentity identity) {
+		return getOwnPuzzlesByInserter(identity, true);
+	}
+
+	ObjectSet<OwnIntroductionPuzzle> getOwnPuzzlesByInserter(OwnIdentity identity,
+			boolean inserted) {
+		
+		Query q = mDB.query();
 		q.constrain(OwnIntroductionPuzzle.class);
-		q.descend("mInserter").constrain(identity).identity();
-		q.descend("mWasInserted").constrain(false);
+		q.descend("mInserter").constrain(identity)
+			.identity(); // Refers to object reference equality, not class Identity!
+		q.descend("mWasInserted").constrain(inserted);
 		return new Persistent.InitializingObjectSet<OwnIntroductionPuzzle>(mWoT, q);
 	}
 

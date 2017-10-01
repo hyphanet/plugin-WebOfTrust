@@ -151,7 +151,7 @@ public final class IntroductionClientTest extends AbstractMultiNodeTest {
 				synchronized(serverStore) {
 					OwnIdentity requeried = serverWoT.getOwnIdentityByID(serverIdentity.getID());
 					ObjectSet<OwnIntroductionPuzzle> insertedPuzzles =
-						serverStore.getOwnPuzzlesByInserter(requeried, true);
+						serverStore.getInsertedOwnPuzzlesByInserter(requeried);
 					if(insertedPuzzles.size() == 1) {
 						inserted = true;
 						System.out.println(
