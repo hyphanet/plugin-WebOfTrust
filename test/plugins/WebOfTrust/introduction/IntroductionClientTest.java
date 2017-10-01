@@ -3,6 +3,11 @@
  * any later version). See http://www.gnu.org/ for details of the GPL. */
 package plugins.WebOfTrust.introduction;
 
+import static java.lang.Thread.sleep;
+import static org.junit.Assert.*;
+import static plugins.WebOfTrust.introduction.IntroductionPuzzle.INTRODUCTION_CONTEXT;
+import static plugins.WebOfTrust.introduction.IntroductionServer.PUZZLE_COUNT_PROPERTY;
+
 import java.net.MalformedURLException;
 
 import org.junit.Before;
@@ -63,7 +68,8 @@ public final class IntroductionClientTest extends AbstractMultiNodeTest {
 	}
 
 	@Test public void testFullIntroductionCycle()
-			throws MalformedURLException, InvalidParameterException, UnknownIdentityException {
+			throws MalformedURLException, InvalidParameterException, UnknownIdentityException,
+			       InterruptedException {
 		
 		System.out.println("IntroductionClientTest: testFullIntroductionCycle()...");
 		StopWatch t = new StopWatch();
@@ -101,11 +107,28 @@ public final class IntroductionClientTest extends AbstractMultiNodeTest {
 			// Convert it to a non-own Identity so we have to download the puzzles from the remote
 			// instance instead of just creating them locally.
 			clientWoT.deleteOwnIdentity(serverIdentity.getID());
+			Identity serverAtClient = clientWoT.getIdentityByID(serverIdentity.getID());
+			assertTrue(serverAtClient.hasContext(INTRODUCTION_CONTEXT));
+			assertEquals("1", serverAtClient.getProperty(PUZZLE_COUNT_PROPERTY));
+			assertEquals(0, clientStore.getNonOwnCaptchaAmount(false));
 			
 			// The client ID must trust the server ID so it will actually download the server ID and
 			// its puzzles.
 			clientWoT.setTrust(clientIdentity.getID(), serverIdentity.getID(), (byte)100, "");
 		}}
+		
+		// Speed up generation / upload of the puzzle.
+		server.nextIteration();
+		
+		System.out.println("IntroductionClientTest: Waiting for puzzle to be generated...");
+		StopWatch generationTime = new StopWatch();
+		do {
+			if(serverStore.getOwnCatpchaAmount(false) == 1)
+				break;
+			
+			sleep(100);
+		} while(true);
+		System.out.println("IntroductionClientTest: Puzzle generated! Time: " + generationTime);
 		
 		System.out.println("IntroductionClientTest: testFullIntroductionCycle() done! Time: " + t);
 		printNodeStatistics();

@@ -59,7 +59,11 @@ public final class IntroductionServer extends TransferThread {
 	private static final int STARTUP_DELAY = 5 * 60 * 1000;
 	private static final int THREAD_PERIOD = 60 * 60 * 1000;
 
-	/** The name of the property we use to announce in identities how many puzzles they insert */
+	/**
+	 * The name of the property we use to announce in identities how many puzzles they insert.
+	 * TODO: Code quality: Move this and {@link IntroductionPuzzle#INTRODUCTION_CONTEXT} to the
+	 * same place. Perhaps link them from {@link OwnIdentity#hasContext(String)} etc. 
+	 * Rename this constant to start with INTRODUCTION as well. */
 	public static final String PUZZLE_COUNT_PROPERTY = "IntroductionPuzzleCount";
 	public static final int SEED_IDENTITY_PUZZLE_COUNT = 100;
 	public static final int DEFAULT_PUZZLE_COUNT = 10;
