@@ -3,6 +3,7 @@ package plugins.WebOfTrust.introduction;
 import java.text.ParseException;
 import java.util.Date;
 
+import plugins.WebOfTrust.Persistent.InitializingObjectSet;
 import plugins.WebOfTrust.Identity;
 import plugins.WebOfTrust.OwnIdentity;
 import plugins.WebOfTrust.Persistent;
@@ -299,21 +300,11 @@ public final class IntroductionPuzzleStore {
 	}
 
 	ObjectSet<OwnIntroductionPuzzle> getUninsertedOwnPuzzlesByInserter(OwnIdentity identity) {
-		return getOwnPuzzlesByInserter(identity, false);
-	}
-
-	ObjectSet<OwnIntroductionPuzzle> getInsertedOwnPuzzlesByInserter(OwnIdentity identity) {
-		return getOwnPuzzlesByInserter(identity, true);
-	}
-
-	ObjectSet<OwnIntroductionPuzzle> getOwnPuzzlesByInserter(OwnIdentity identity,
-			boolean inserted) {
-		
 		Query q = mDB.query();
 		q.constrain(OwnIntroductionPuzzle.class);
 		q.descend("mInserter").constrain(identity)
-			.identity(); // Refers to object reference equality, not class Identity!
-		q.descend("mWasInserted").constrain(inserted);
+			.identity(); // Does NOT refer to class Identity but to reference equality of objects!
+		q.descend("mWasInserted").constrain(false);
 		return new Persistent.InitializingObjectSet<OwnIntroductionPuzzle>(mWoT, q);
 	}
 
@@ -348,7 +339,15 @@ public final class IntroductionPuzzleStore {
 		q.descend("mDayOfInsertion").constrain(today.getTime());
 		return new Persistent.InitializingObjectSet<IntroductionPuzzle>(mWoT, q);
 	}
-	
+
+	ObjectSet<IntroductionPuzzle> getByInserter(Identity inserter) {
+		Query q = mDB.query();
+		q.constrain(IntroductionPuzzle.class);
+		q.descend("mInserter").constrain(inserter)
+			.identity(); // Does NOT refer to class Identity but to reference equality of objects!
+		return new InitializingObjectSet<IntroductionPuzzle>(mWoT, q);
+	}
+
 	/**
 	 * Get a puzzle or own puzzle of a given identity from a given date with a given index.
 	 * 

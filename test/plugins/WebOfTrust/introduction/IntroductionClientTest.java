@@ -20,6 +20,7 @@ import plugins.WebOfTrust.Trust;
 import plugins.WebOfTrust.WebOfTrust;
 import plugins.WebOfTrust.exceptions.InvalidParameterException;
 import plugins.WebOfTrust.exceptions.UnknownIdentityException;
+import plugins.WebOfTrust.exceptions.UnknownPuzzleException;
 import plugins.WebOfTrust.util.StopWatch;
 
 import com.db4o.ObjectSet;
@@ -72,7 +73,7 @@ public final class IntroductionClientTest extends AbstractMultiNodeTest {
 
 	@Test public void testFullIntroductionCycle()
 			throws MalformedURLException, InvalidParameterException, UnknownIdentityException,
-			       InterruptedException {
+			       InterruptedException, UnknownPuzzleException {
 		
 		System.out.println("IntroductionClientTest: testFullIntroductionCycle()...");
 		StopWatch t = new StopWatch();
@@ -123,11 +124,21 @@ public final class IntroductionClientTest extends AbstractMultiNodeTest {
 		// Speed up generation / upload of the puzzle.
 		server.nextIteration();
 		
+		final String puzzleID;
+		final String puzzleSolution;
 		System.out.println("IntroductionClientTest: Waiting for puzzle to be generated...");
 		StopWatch generationTime = new StopWatch();
 		do {
-			if(serverStore.getOwnCatpchaAmount(false) == 1)
-				break;
+			synchronized(serverWoT) {
+			synchronized(serverStore) {
+				if(serverStore.getOwnCatpchaAmount(false) == 1) {
+					OwnIdentity requeried = serverWoT.getOwnIdentityByID(serverIdentity.getID());
+					IntroductionPuzzle p = serverStore.getByInserter(requeried).get(0);
+					puzzleID = p.getID();
+					puzzleSolution = p.getSolution();
+					break;
+				}
+			}}
 			
 			sleep(100);
 		} while(true);
@@ -138,8 +149,6 @@ public final class IntroductionClientTest extends AbstractMultiNodeTest {
 		StopWatch downloadTime = new StopWatch();
 		boolean uploaded = false;
 		boolean downloaded = false;
-		String puzzleID = null;
-		String puzzleSolution = null;
 		do {
 			// Check whether the IntroductionPuzzle was uploaded and show the time it took to do so.
 			// Notice: We intentionally don't wait for this in a separate loop before waiting for it
@@ -149,15 +158,11 @@ public final class IntroductionClientTest extends AbstractMultiNodeTest {
 			if(!uploaded) {
 				synchronized(serverWoT) {
 				synchronized(serverStore) {
-					OwnIdentity requeried = serverWoT.getOwnIdentityByID(serverIdentity.getID());
-					ObjectSet<OwnIntroductionPuzzle> uploadedPuzzles =
-						serverStore.getInsertedOwnPuzzlesByInserter(requeried);
-					if(uploadedPuzzles.size() == 1) {
+					OwnIntroductionPuzzle p = (OwnIntroductionPuzzle)serverStore.getByID(puzzleID);
+					if(p.wasInserted()) {
 						uploaded = true;
 						System.out.println(
 							"IntroductionClientTest: Puzzle uploaded! Time: " + uploadTime);
-						puzzleID = uploadedPuzzles.get(0).getID();
-						puzzleSolution = uploadedPuzzles.get(0).getSolution();
 						
 						// Speed up download of the puzzle
 						client.nextIteration();
