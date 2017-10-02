@@ -372,6 +372,14 @@ public final class IntroductionClient extends TransferThread  {
 		}
 		
 		/* If we run out of identities to download from, flush the list of identities of which we have downloaded puzzles from */
+		// TODO: Code quality: This allows running multiple downloads for the same puzzle in
+		// parallel!
+		// It shouldn't be a big problem due to the current MINIMAL_SLEEP_TIME of 10 minutes and
+		// because when a download succeeds we will check whether we already have the puzzle and
+		// not store it twice in the database if we do. But it can result in confusing logging
+		// such as:
+		//     Parsing failed for SSK@...:
+		//     java.lang.IllegalArgumentException: Puzzle with ID ... already exists!
 		if(identitiesToDownloadFrom.size() == 0) {
 			mIdentities.clear(); /* We probably have less updated identities today than the size of the LRUQueue, empty it */
 
