@@ -186,20 +186,10 @@ public final class IntroductionPuzzleStore {
 	 * @param identity The identity which is being deleted. It must still be stored in the database.
 	 */
 	public void onIdentityDeletion(final Identity identity) {
-		Query q = mDB.query();
-		q.constrain(IntroductionPuzzle.class);
-		q.descend("mInserter").constrain(identity).identity();
-		ObjectSet<IntroductionPuzzle> puzzles = new Persistent.InitializingObjectSet<IntroductionPuzzle>(mWoT, q);
-		
-		for(IntroductionPuzzle puzzle : puzzles)
+		for(IntroductionPuzzle puzzle : getByInserter(identity))
 			puzzle.deleteWithoutCommit();
 		
-		q = mDB.query();
-		q.constrain(IntroductionPuzzle.class);
-		q.descend("mSolver").constrain(identity).identity();
-		puzzles = new Persistent.InitializingObjectSet<IntroductionPuzzle>(mWoT, q);
-			
-		for(IntroductionPuzzle puzzle : puzzles)
+		for(IntroductionPuzzle puzzle : getBySolver(identity))
 			puzzle.deleteWithoutCommit();
 	}
 
@@ -345,7 +335,7 @@ public final class IntroductionPuzzleStore {
 		q.constrain(IntroductionPuzzle.class);
 		q.descend("mInserter").constrain(inserter)
 			.identity(); // Does NOT refer to class Identity but to reference equality of objects!
-		return new InitializingObjectSet<IntroductionPuzzle>(mWoT, q);
+		return new InitializingObjectSet<>(mWoT, q);
 	}
 
 	/**
@@ -389,6 +379,14 @@ public final class IntroductionPuzzleStore {
 			case 0: throw new UnknownPuzzleException("inserter=" + inserter + "; date=" + date.getTime() + "; index=" + index);
 			default: throw new DuplicatePuzzleException("inserter=" + inserter + "; date=" + date.getTime() + "; index=" + index);
 		}
+	}
+
+	ObjectSet<IntroductionPuzzle> getBySolver(Identity solver) {
+		Query q = mDB.query();
+		q.constrain(IntroductionPuzzle.class);
+		q.descend("mSolver").constrain(solver)
+			.identity(); // Does NOT refer to class Identity but to reference equality of objects!
+		return new InitializingObjectSet<>(mWoT, q);
 	}
 
 	/**
