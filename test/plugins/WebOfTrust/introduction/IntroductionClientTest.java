@@ -112,9 +112,9 @@ public final class IntroductionClientTest extends AbstractMultiNodeTest {
 			// Convert it to a non-own Identity so we have to download the puzzles from the remote
 			// instance instead of just creating them locally.
 			clientWoT.deleteOwnIdentity(serverIdentity.getID());
-			Identity serverAtClient = clientWoT.getIdentityByID(serverIdentity.getID());
-			assertTrue(serverAtClient.hasContext(INTRODUCTION_CONTEXT));
-			assertEquals("1", serverAtClient.getProperty(PUZZLE_COUNT_PROPERTY));
+			Identity serverIdentityAtClient = clientWoT.getIdentityByID(serverIdentity.getID());
+			assertTrue(serverIdentityAtClient.hasContext(INTRODUCTION_CONTEXT));
+			assertEquals("1", serverIdentityAtClient.getProperty(PUZZLE_COUNT_PROPERTY));
 			assertEquals(0, clientStore.getNonOwnCaptchaAmount(false));
 			
 			// The client ID must trust the server ID so it will actually download the server ID and
