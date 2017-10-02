@@ -96,6 +96,7 @@ public final class IntroductionClientTest extends AbstractMultiNodeTest {
 		// otherwise db4o will not know the objects' references.
 		synchronized(serverWoT) {
 		synchronized(clientWoT) {
+		synchronized(clientStore) {
 			// Server Identity must have publishTrustList == true to enable puzzle publishing.
 			serverIdentity = serverWoT.createOwnIdentity("serverId", true, null).clone();
 			// Disable trust list and hence also puzzle upload for the client to reduce traffic.
@@ -119,7 +120,7 @@ public final class IntroductionClientTest extends AbstractMultiNodeTest {
 			// The client ID must trust the server ID so it will actually download the server ID and
 			// its puzzles.
 			clientWoT.setTrust(clientIdentity.getID(), serverIdentity.getID(), (byte)100, "");
-		}}
+		}}}
 		
 		// Speed up generation / upload of the puzzle.
 		server.nextIteration();
