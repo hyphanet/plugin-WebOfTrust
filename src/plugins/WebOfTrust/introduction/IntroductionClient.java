@@ -621,7 +621,10 @@ public final class IntroductionClient extends TransferThread  {
 				 *  The identity stays in the FIFO though so we do not try to fetch puzzzle from it again soon.
 				 *  If we do not have enough puzzles yet, we immediately try to start a new fetch. If we have enough puzzles, we just
 				 *  wait for the next time-based iteration of the puzzle fetch loop to avoid wasting CPU cycles. */ 
-	
+				
+				if(logMINOR)
+					Logger.minor(this, "DataNotFound for puzzle: " + state.getURI());
+				
 				if(puzzleStoreIsTooEmpty()) {
 				    // TODO: Performance: iterate() not only deals with downloading more puzzles but
 				    // also with inserts, deleting expired puzzles, etc. Instead we should have an
