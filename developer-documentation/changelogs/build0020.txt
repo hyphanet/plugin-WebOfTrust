@@ -7,11 +7,15 @@ Summary blah blah. Blah blah reference to link [1].
 
 Outlook blah blah.
 
+Thanks to the Cobertura test coverage analysis tool which WoT supports
+since the previous release, efforts have begun towards achieving 100%
+test coverage in WoT.
+
 
 CHANGELOG - prefixed with the bugtracker issue number:
 
-- 0000001: title_of_issue_1.............................................
-           more_lines_of_title..........................................
+- 0000001: [category_of_issue_1] title_of_issue_1.......................
+           more_lines_of_title (developer_of_issue_1)...................
 
   Blah.
   Blah.
@@ -24,7 +28,7 @@ CHANGELOG - prefixed with the bugtracker issue number:
   Blah.
   Blah.
 
-- 0006835: Merge random nickname improvement (ArneBab)
+- 0006835: [Features] Merge random nickname improvement (ArneBab)
 
   Some very short name templates such as "D" or "CNR" were removed to
   make the names more pleasant.
@@ -71,14 +75,76 @@ CHANGELOG about stuff only interesting for developers:
   improvements over the heuristics of the one this release ships, go
   ahead, it should be easy :)
 
-- 0006895: (Almost) Full unit test coverage for class Score
+- 0006804: [Code quality] Unit tests: Recycle fred simulator code to
+           allow tests which do real inserts/fetches (xor)
 
-  Thanks to the Cobertura test coverage analysis tool which WoT supports
-  since the previous release, efforts have begun towards achieving 100%
-  test coverage in WoT.
+  Previously WoT unit tests have not been testing the code for
+  uploading/downloading to/from the Freenet network at all.
+  They only tested the core which processes the transferred data.
 
-  Thus as a first step this release delivers a rewrite of the test for
-  class Score, which is one of the most important core classes.
+  Now unit tests can use the new class AbstractMultiNodeTest to use the
+  Freenet core code to create multiple real Freenet instances on the
+  local machine which connect to each other, and run the WoT plugin on
+  multiple of those nodes to test network traffic between instances of
+  WoT.
+  This does not involve the public network, all traffic is strictly
+  local.
+
+  Surprisingly this does not require much computing power:
+  Hundreds of test runs have shown that it does reliably complete with
+  only 10 nodes. Dozens of runs validated that it requires as little as
+  512 MB of RAM given to Java, it may possibly even work with 256 MB.
+  A simple upload/download test run completes within 167 seconds on my
+  10 years old 2.4 GHz Core 2 Duo.
+
+  Further, it is nice to know that a simple network-based test only
+  takes 150 lines of code to implement.
+
+  This allows us to do really sophisticated high level tests of whether
+  WoT works as intended, some of which have already been implemented,
+  see the following issues.
+
+- 0006950: [Code quality] Unit tests: Networked tests for classes
+           IdentityFetcher and IdentityInserter (xor)
+
+  While the primary goal of this release is to replace the legacy class
+  IdentityFetcher with a much faster new implementation (classes
+  IdentityDownloader*), the legacy class was nevertheless preserved so
+  we can keep it as a reference implementation for a while to have
+  something to test the new code against.
+
+  It was decided to use the legacy class as a first subject to test with
+  the new code for networked tests as described by the aforementioned
+  issue 0006804. It is a good idea to test the legacy class because:
+  - it had to be modified by this release to take account for the
+    changes to the WoT core which had to be made to power the new
+    implementation. These modifications could have caused bugs.
+  - it is more easy to understand than the new implementation and thus
+    serves well as a simple example of how to do networked tests.
+
+  Class IdentityFetcherTest was added which tests IdentityFetcher -
+  and also the IdentityInserter as a side effect - like this:
+  - Creates two WoT instances connected by network.
+  - Creates an identity on WoT #1 and has the IdentityInserter insert
+    it into the local Freenet network.
+  - Creates another identity on WoT #2 which adds the remote identity
+    by its URI and sets a positive trust to it.
+  - Waits until the remote identity is successfully fetched and imported
+    by the IdentityFetcher and validates its attributes are equal to the
+    original.
+
+  This increases WoT's overall test coverage by lines from 47% to 49%,
+  and branch coverage from 40% to 42%.
+  (As measured by the Cobertura support which was introduced by the
+  previous release, see "ant -projecthelp".)
+
+- 0006895: [Code quality] Unit tests: (Almost) Full coverage for class
+           Score (xor)
+
+  This release delivers a rewrite of the test for class Score, which is
+  one of the core storage classes of WoT's data model.
+  It is a simple class but used very much so decent tests are still a
+  good idea.
   It has got 94% line coverage and 89 % branch coverage.
   Previously line coverage of this was 75%, branch coverage 58%.
   The new test is 1190 lines long itself, the old one was merely 138.
@@ -126,9 +192,52 @@ CHANGELOG about stuff only interesting for developers:
   test code for it shows that the metric for how long full unit tests
   are typically may be "twice as much as the tested code itself."
 
+- 0006967: [Code quality] Unit tests: Introduce finite memory limit of
+           512 MB (xor)
+
+  Previously there was no memory limit for the unit tests at all, they
+  could consume as much memory as they pleased / as the default Java
+  memory limit of the current machine allowed them to.
+
+  The 512 MB memory limit was determined by running ~ 10 iterations of
+  the tests with 4GB, 512 MB, 384 MB and 256 MB.
+
+  The runtime average wasn't significantly different for any of those
+  so there is no excessive garbage collection happening and 512 MB
+  should be  enough for now and leave some leeway for new tests.
+
+  This is also intended as a service to people who use Freenet on a
+  Raspberry Pi - being able to build WoT there is a first step towards
+  ensuring it works with the hardware constraints of the Pi.
+  Along with the decrease of memory / CPU usage because of the
+  IdentityFetcher-rewrite of this release WoT may nowadays actually just
+  work fine on a Pi. Feedback is welcome :)
+
+  FYI you can use e.g. jVisualVM to watch the memory usage and GC
+  activity of Freenet.
+
+- 0006929: [Bugs] Travis CI builds fail due to changes at fred (xor)
+
+  The .travis.yml configuration of Travis CI has been fixed to be
+  compatible to the huge changeset of the Freenet core fred which is
+  being developed on fred's next branch.
+  Specifically it was adapted to be compatible with the new Gradle
+  builder of fred which has replaced Ant there - while keeping Ant at
+  WoT so we don't have too much migration efforts going on for now.
+
+  The unit tests of WoT branch next do succeed against the new fred code
+  so hopefully WoT won't delay the release of the fred changes any
+  further than they have already been delayed.
+  This also the first time where the "CI" = continuous integration
+  in Travis CI is really happening to meet its definition:
+  I don't have a Gradle build setup for fred branch next yet so it is of
+  true benefit to be able to test it elsewhere :)
+  Thanks to nextgens for insipiring this by setting up Travis CI at
+  fred!
 
 Thanks to:
   - ArneBab
+  - nextgens
 
 
 Links:

@@ -7,6 +7,7 @@
 	<property name="freenet-cvs-snapshot.location" location="../fred/dist/freenet.jar"/>
 	<property name="freenet-ext.location" location="../fred/lib/freenet/freenet-ext.jar"/>
 	<property name="bcprov.location" location="../fred/lib/bcprov.jar"/>
+	<property name="jna.location" location="../fred/lib/jna.jar"/>
 	<property name="debug-node-wot-plugin.location" location="../fred/plugins/WebOfTrust.jar"/>
 	<property name="svn.revision" value="@custom@"/>
 	<property name="source-version" value="1.7"/>
@@ -32,6 +33,7 @@
 
 	<path id="lib.path">
 		<pathelement location="${bcprov.location}"/>
+		<pathelement location="${jna.location}"/>
 		<pathelement location="${freenet-ext.location}"/>
 		<pathelement location="${freenet-cvs-snapshot.location}"/>
 	</path>
@@ -82,6 +84,7 @@
 		<echo message="Using ${freenet-cvs-snapshot.location} as freenet-cvs-snapshot.jar"/>
 		<echo message="Using ${freenet-ext.location} as freenet-ext.jar"/>
 		<echo message="Using ${bcprov.location} as bcprov.jar"/>
+		<echo message="Using ${jna.location} as jna.jar"/>
 		<echo message="Using ${cobertura.location} as cobertura.jar"/>
 	</target>
 
@@ -197,7 +200,15 @@
 			running them is a very bad idea!"/>
 		
 		<!-- Regular non-benchmark unit tests. -->
-		<junit printsummary="yes" fork="yes" haltonfailure="yes" unless:true="${test.benchmark}">
+		<!-- The 512 MB memory limit was determined by running ~ 10 iterations of the tests as of
+		     git describe == build0019-236-gfaf9fdb with 4GB, 512 MB, 384 MB and 256 MB. The runtime
+		     average wasn't significantly different for any of those so there is no excessive GCing
+		     happening and 512 MB should be enough for now and leave some leeway for new tests.
+		     showoutput was enabled for IdentityFetcherTest so you can watch its progress on stdout
+		     while it is still running instead of only getting it shown after it's finished. -->
+		<junit printsummary="yes" fork="yes" haltonfailure="yes" unless:true="${test.benchmark}"
+				maxmemory="512m" showoutput="yes">
+			
 			<classpath>
 				<path refid="lib.path"/>
 				<pathelement location="${build-test-jar}"/>
