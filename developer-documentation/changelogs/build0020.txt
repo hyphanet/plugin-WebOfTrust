@@ -49,12 +49,6 @@ CHANGELOG - prefixed with the bugtracker issue number:
 
 CHANGELOG about stuff only interesting for developers:
 
-- 0000004: .............................................................
-           .............................................................
-
-  Blah.
-  Blah.
-
 - 0006804: [Code quality] Unit tests: Recycle fred simulator code to
            allow tests which do real inserts/fetches (xor)
 
@@ -196,8 +190,8 @@ CHANGELOG about stuff only interesting for developers:
   FYI you can use e.g. jVisualVM to watch the memory usage and GC
   activity of Freenet.
 
-- 0006891: Make code for downloading identities modular to allow
-           alternate implementations
+- 0006891: [Code quality] Make code for downloading identities modular
+           to allow alternate implementations (xor)
 
   With the implementation of issue 0003816 (Redesign the IdentityFetcher
   to get rid of the network wide O(n²) fetch count), the goal was not
