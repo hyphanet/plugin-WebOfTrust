@@ -46,6 +46,7 @@ public final class AbstractMultiNodeTestSelfTest extends AbstractSingleNodeTest 
 		assertEquals(0, pm.getPlugins().size());
 		wot
 			= (WebOfTrust)pm.startPluginFile(WOT_JAR_FILE, false).getPlugin();
+		// startPluginFile() will NOT throw if loading the plugin fails, so check whether it worked.
 		assertEquals(1, pm.getPlugins().size());
 		
 		// The actual test
@@ -56,6 +57,7 @@ public final class AbstractMultiNodeTestSelfTest extends AbstractSingleNodeTest 
 		// The @After test AbstractMultiNodeTest.testDatabaseIntegrityAfterTermination() expects the
 		// WoT plugin to still be loaded after this test is finished so we need to load it again.
 		pm.startPluginFile(WOT_JAR_FILE, false);
+		assertEquals(1, pm.getPlugins().size());
 	}
 
 }
