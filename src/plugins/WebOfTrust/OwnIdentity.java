@@ -279,7 +279,12 @@ public final class OwnIdentity extends Identity implements Cloneable, Serializab
 
 	/**
 	 * Get the Date of last insertion of this OwnIdentity, in UTC, new Date(0) if it was not
-	 * inserted yet. */
+	 * inserted yet.
+	 * FIXME: This JavaDoc previously used to incorrectly say we would return a null pointer
+	 * instead.
+	 * Review all users of this function, and of mLastInsertDate, for whether they correctly check
+	 * for new Date(0) instead of null (and also review the functions they pass it to, e.g.
+	 * {@link Identity#onFetched(long, boolean, Date)}). */
 	public final Date getLastInsertDate() {
 		checkedActivate(1); // Date is a db4o primitive type so 1 is enough
 		return (Date)mLastInsertDate.clone();	// Clone it because date is mutable
