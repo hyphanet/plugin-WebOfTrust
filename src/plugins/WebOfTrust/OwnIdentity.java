@@ -284,7 +284,10 @@ public final class OwnIdentity extends Identity implements Cloneable, Serializab
 	 * instead.
 	 * Review all users of this function, and of mLastInsertDate, for whether they correctly check
 	 * for new Date(0) instead of null (and also review the functions they pass it to, e.g.
-	 * {@link Identity#onFetched(long, boolean, Date)}). */
+	 * {@link Identity#onFetched(long, boolean, Date)}).
+	 * EDIT: I've reviewed all 33 occurrences of "getLastInsertDate", i.e. calls to this function
+	 * and textual references, in the source and test code. What remains to be done is reviewing
+	 * uses of the member variable. */
 	public final Date getLastInsertDate() {
 		checkedActivate(1); // Date is a db4o primitive type so 1 is enough
 		return (Date)mLastInsertDate.clone();	// Clone it because date is mutable
