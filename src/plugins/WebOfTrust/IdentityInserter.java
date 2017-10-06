@@ -3,11 +3,14 @@
  * any later version). See http://www.gnu.org/ for details of the GPL. */
 package plugins.WebOfTrust;
 
+import static java.util.concurrent.TimeUnit.DAYS;
+
 import java.io.IOException;
 import java.io.OutputStream;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Random;
+import java.util.concurrent.TimeUnit;
 
 import plugins.WebOfTrust.util.Daemon;
 import plugins.WebOfTrust.util.TransferThread;
@@ -47,20 +50,20 @@ public final class IdentityInserter extends TransferThread implements Daemon {
 	
 	/**
 	 * The minimal time for which an identity must not have changed before we insert it.
-	 */
+	 * TODO: Convert this and users to long to be able to then use {@link TimeUnit#HOURS}. */
     private static final int MIN_DELAY_BEFORE_INSERT = 1 /* hours */ * 60 * 60 * 1000;
 	
 	/**
 	 * The maximal delay for which an identity insert can be delayed (relative to the last insert) due to continuous changes.
-	 */
+	 * TODO: Convert this and users to long to be able to then use {@link TimeUnit#HOURS}. */
     private static final int MAX_DELAY_BEFORE_INSERT = 3 /* hours */ * 60 * 60 * 1000;
 
     private static final int THREAD_PERIOD = MAX_DELAY_BEFORE_INSERT / 2;
 	
 	/**
 	 * The amount of time after which we insert a new edition of an identity even though it did not change.
-	 */
-	public static final long MAX_UNCHANGED_TIME_BEFORE_REINSERT = 1000*60*60*24*3;
+	 * TODO: Code quality: Make this and the above values configurable. */
+	public static final long MAX_UNCHANGED_TIME_BEFORE_REINSERT = DAYS.toMillis(3);
 	
 	
 	private WebOfTrust mWoT;
