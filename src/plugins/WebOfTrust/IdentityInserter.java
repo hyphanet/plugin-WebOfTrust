@@ -60,7 +60,7 @@ public final class IdentityInserter extends TransferThread implements Daemon {
 	/**
 	 * The amount of time after which we insert a new edition of an identity even though it did not change.
 	 */
-	public static final long MAX_UNCHANGED_TINE_BEFORE_REINSERT = 1000*60*60*24*3;
+	public static final long MAX_UNCHANGED_TIME_BEFORE_REINSERT = 1000*60*60*24*3;
 	
 	
 	private WebOfTrust mWoT;

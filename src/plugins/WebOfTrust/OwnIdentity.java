@@ -153,7 +153,7 @@ public final class OwnIdentity extends Identity implements Cloneable, Serializab
 		// delays for unimportant reasons.
 		
 		return (getLastChangeDate().after(getLastInsertDate()) ||
-				(CurrentTimeUTC.getInMillis() - getLastInsertDate().getTime()) > IdentityInserter.MAX_UNCHANGED_TINE_BEFORE_REINSERT); 
+				(CurrentTimeUTC.getInMillis() - getLastInsertDate().getTime()) > IdentityInserter.MAX_UNCHANGED_TIME_BEFORE_REINSERT); 
 	}
 
 	/**
