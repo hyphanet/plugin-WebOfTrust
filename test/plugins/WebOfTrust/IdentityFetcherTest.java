@@ -113,7 +113,7 @@ public final class IdentityFetcherTest extends AbstractMultiNodeTest {
 			// Notice: We intentionally don't wait for this in a separate loop before waiting for it
 			// to be fetched: Due to redundancy the amount of data to insert is larger than what
 			// has to be fetched, so fred's "insert finished!" callbacks can happen AFTER the remote
-			// node's "fetch finished!" callbacks have already returned.
+			// node's "fetch finished!" callbacks have already happend.
 			if(!inserted) {
 				synchronized(insertingWoT) {
 					OwnIdentity i = insertingWoT.getOwnIdentityByID(insertedIdentity.getID());

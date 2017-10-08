@@ -193,8 +193,7 @@ public final class IntroductionClientTest extends AbstractMultiNodeTest {
 			try {
 				serverWoT.getIdentityByID(clientIdentity.getID());
 				fail();
-			}
-			catch(UnknownIdentityException e) { }
+			} catch(UnknownIdentityException e) { }
 		}
 		
 		synchronized(clientWoT) {
@@ -205,6 +204,45 @@ public final class IntroductionClientTest extends AbstractMultiNodeTest {
 			assertEquals(1, clientStore.getNonOwnCaptchaAmount(true));
 			assertEquals(1, clientStore.getUninsertedSolvedPuzzles().size());
 		}}
+		
+		// Notice: We intentionally don't wait for the upload  to be finished in a separate loop
+		// before waiting for the download: Due to redundancy the amount of data to upload is larger
+		// than what has to be downloaded, so fred's "upload finished!" callbacks can happen AFTER
+		// the remote node's "download finished!" callbacks have already happened.
+		System.out.println("IntroductionClientTest: Waiting for solution to be up-/downloaded...");
+		uploadTime = new StopWatch();
+		downloadTime = new StopWatch();
+		boolean uploaded = false;
+		do {
+			if(!uploaded) {
+				synchronized(clientWoT) {
+				synchronized(clientStore) {
+					if(clientStore.getByID(puzzleID).wasInserted()) {
+						uploaded = true;
+						System.out.println(
+							"IntroductionClientTest: Solution uploaded! Time: " + uploadTime);
+					}
+				}}
+			}
+			
+			synchronized(serverWoT) {
+			synchronized(serverStore) {
+				if(serverStore.getByID(puzzleID).wasSolved())
+					break;
+			}}
+			
+			sleep(1000);
+		} while(true);
+		System.out.println("IntroductionClientTest: Solution downloaded! Time: " + downloadTime);
+		
+		synchronized(serverWoT) {
+			try {
+				serverWoT.getIdentityByID(clientIdentity.getID());
+				// Success! The client's Identity now is visible to the server.
+			} catch(UnknownIdentityException e) {
+				fail();
+			}
+		}
 		
 		System.out.println("IntroductionClientTest: testFullIntroductionCycle() done! Time: " + t);
 		printNodeStatistics();
