@@ -186,6 +186,17 @@ public final class IntroductionClientTest extends AbstractMultiNodeTest {
 		} while(true);
 		System.out.println("IntroductionClientTest: Puzzle downloaded! Time: " + downloadTime);
 		
+		// Self-test: Our central test is whether we can get this to not throw anymore by solving
+		// the puzzle and thus transferring knowledge of the Identity's existence across the
+		// network. For now it shouldn't be known yet as we haven't solved the puzzle.
+		synchronized(serverWoT) {
+			try {
+				serverWoT.getIdentityByID(clientIdentity.getID());
+				fail();
+			}
+			catch(UnknownIdentityException e) { }
+		}
+		
 		System.out.println("IntroductionClientTest: testFullIntroductionCycle() done! Time: " + t);
 		printNodeStatistics();
 	}
