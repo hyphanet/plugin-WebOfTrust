@@ -197,6 +197,15 @@ public final class IntroductionClientTest extends AbstractMultiNodeTest {
 			catch(UnknownIdentityException e) { }
 		}
 		
+		synchronized(clientWoT) {
+		synchronized(clientStore) {
+			System.out.println("IntroductionClientTest: Solving puzzle.");
+			client.solvePuzzle(clientIdentity.getID(), puzzleID, puzzleSolution);
+			assertEquals(0, clientStore.getNonOwnCaptchaAmount(false));
+			assertEquals(1, clientStore.getNonOwnCaptchaAmount(true));
+			assertEquals(1, clientStore.getUninsertedSolvedPuzzles().size());
+		}}
+		
 		System.out.println("IntroductionClientTest: testFullIntroductionCycle() done! Time: " + t);
 		printNodeStatistics();
 	}
