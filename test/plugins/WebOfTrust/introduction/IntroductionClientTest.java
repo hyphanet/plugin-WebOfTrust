@@ -75,17 +75,17 @@ public final class IntroductionClientTest extends AbstractMultiNodeTest {
 			       InterruptedException, UnknownPuzzleException {
 		
 		System.out.println("IntroductionClientTest: testFullIntroductionCycle()...");
-		StopWatch t = new StopWatch();
+		final StopWatch t = new StopWatch();
 		
-		Node[] nodes = getNodes();
-		WebOfTrust serverWoT = getWebOfTrust(nodes[0]);
-		WebOfTrust clientWoT  = getWebOfTrust(nodes[1]);
-		IntroductionServer server = serverWoT.getIntroductionServer();
-		IntroductionClient client = clientWoT.getIntroductionClient();
-		IntroductionPuzzleStore serverStore = serverWoT.getIntroductionPuzzleStore();
-		IntroductionPuzzleStore clientStore = clientWoT.getIntroductionPuzzleStore();
-		OwnIdentity serverIdentity;
-		OwnIdentity clientIdentity;
+		final Node[] nodes = getNodes();
+		final WebOfTrust serverWoT = getWebOfTrust(nodes[0]);
+		final WebOfTrust clientWoT  = getWebOfTrust(nodes[1]);
+		final IntroductionServer server = serverWoT.getIntroductionServer();
+		final IntroductionClient client = clientWoT.getIntroductionClient();
+		final IntroductionPuzzleStore serverStore = serverWoT.getIntroductionPuzzleStore();
+		final IntroductionPuzzleStore clientStore = clientWoT.getIntroductionPuzzleStore();
+		final OwnIdentity serverIdentity;
+		final OwnIdentity clientIdentity;
 		
 		// Create the server Identity which will upload a puzzle.
 		// Don't create the client Identity yet: That would result in the client trying to download
