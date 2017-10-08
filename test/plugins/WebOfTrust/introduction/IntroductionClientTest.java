@@ -20,6 +20,7 @@ import plugins.WebOfTrust.OwnIdentity;
 import plugins.WebOfTrust.Trust;
 import plugins.WebOfTrust.WebOfTrust;
 import plugins.WebOfTrust.exceptions.InvalidParameterException;
+import plugins.WebOfTrust.exceptions.NotTrustedException;
 import plugins.WebOfTrust.exceptions.UnknownIdentityException;
 import plugins.WebOfTrust.exceptions.UnknownPuzzleException;
 import plugins.WebOfTrust.util.StopWatch;
@@ -245,9 +246,13 @@ public final class IntroductionClientTest extends AbstractMultiNodeTest {
 				fail();
 			}
 		
-			Trust trust = serverWoT.getTrust(serverIdentity.getID(), clientIdentity.getID());
-			assertEquals(0, trust.getValue());
-			assertEquals("Trust received by solving a captcha.", trust.getComment());
+			try {
+				Trust trust = serverWoT.getTrust(serverIdentity.getID(), clientIdentity.getID());
+				assertEquals(0, trust.getValue());
+				assertEquals("Trust received by solving a captcha.", trust.getComment());
+			} catch(NotTrustedException e) {
+				fail();
+			}
 			
 			IntroductionPuzzle p = serverStore.getByID(puzzleID);
 			assertEquals(clientIdentity.getID(), p.getSolver().getID());
