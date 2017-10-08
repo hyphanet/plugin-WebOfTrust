@@ -276,6 +276,20 @@ public final class IntroductionClientTest extends AbstractMultiNodeTest {
 		} while(true);
 		System.out.println("IntroductionClientTest: Identity downloaded! Time: " + downloadTime);
 		
+		synchronized(serverWoT) {
+		synchronized(clientWoT) {
+			// Bonus check: Now that we've downloaded the Identity anyway we can actually check
+			// whether all its attributes match the original one.
+			//
+			// For Identity.equals() to succeed the Identity we use in the comparison must not be an
+			// OwnIdentity. deleteOwnIdentity() will replace the OwnIdentity with a
+			// non-own one.
+			clientWoT.deleteOwnIdentity(clientIdentity.getID());
+			assertEquals(
+				clientWoT.getIdentityByID(clientIdentity.getID()),
+				serverWoT.getIdentityByID(clientIdentity.getID()));
+		}}
+		
 		System.out.println("IntroductionClientTest: testFullIntroductionCycle() done! Time: " + t);
 		printNodeStatistics();
 	}

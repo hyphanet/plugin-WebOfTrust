@@ -139,7 +139,7 @@ public final class IdentityFetcherTest extends AbstractMultiNodeTest {
 		System.out.println("IdentityFetcherTest: Identity fetched! Time: " + fetchTime);
 		printNodeStatistics();
 		
-		// For Identity.equals() to succeed the source Identity we compare it to must not be an
+		// For Identity.equals() to succeed the Identity we use in the comparison must not be an
 		// OwnIdentity. deleteOwnIdentity() will replace the OwnIdentity with a non-own one.
 		// (We have to do this before terminating subsystems - otherwise an assert at the beginning
 		// of deleteOwnIdentity() will fail because it detects that the IdentityFetcher wasn't
