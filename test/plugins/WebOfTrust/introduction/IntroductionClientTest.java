@@ -15,6 +15,7 @@ import org.junit.Test;
 
 import plugins.WebOfTrust.AbstractMultiNodeTest;
 import plugins.WebOfTrust.Identity;
+import plugins.WebOfTrust.Identity.FetchState;
 import plugins.WebOfTrust.OwnIdentity;
 import plugins.WebOfTrust.Trust;
 import plugins.WebOfTrust.WebOfTrust;
@@ -251,6 +252,24 @@ public final class IntroductionClientTest extends AbstractMultiNodeTest {
 			IntroductionPuzzle p = serverStore.getByID(puzzleID);
 			assertEquals(clientIdentity.getID(), p.getSolver().getID());
 		}}
+		
+		// Additional paranoia check: Wait for the client Identity to be downloaded at the
+		// serverWoT. This is to take account for e.g. WebOfTrust.setTrust...() having the bug
+		// of not considering Identitys which receive a Trust value of 0 as eligible for download,
+		// which could easily happen by mixing up ">= 0" with "> 0".
+		System.out.println("IntroductionClientTest: Waiting for Identity to be downloaded...");
+		downloadTime = new StopWatch();
+		do {
+			synchronized(serverWoT) {
+				Identity remoteView = serverWoT.getIdentityByID(clientIdentity.getID());
+				
+				if(remoteView.getCurrentEditionFetchState() == FetchState.Fetched)
+					break;
+			}
+			
+			sleep(1000);
+		} while(true);
+		System.out.println("IntroductionClientTest: Identity downloaded! Time: " + downloadTime);
 		
 		System.out.println("IntroductionClientTest: testFullIntroductionCycle() done! Time: " + t);
 		printNodeStatistics();
