@@ -236,13 +236,21 @@ public final class IntroductionClientTest extends AbstractMultiNodeTest {
 		System.out.println("IntroductionClientTest: Solution downloaded! Time: " + downloadTime);
 		
 		synchronized(serverWoT) {
+		synchronized(serverStore) {
 			try {
 				serverWoT.getIdentityByID(clientIdentity.getID());
 				// Success! The client's Identity now is visible to the server.
 			} catch(UnknownIdentityException e) {
 				fail();
 			}
-		}
+		
+			Trust trust = serverWoT.getTrust(serverIdentity.getID(), clientIdentity.getID());
+			assertEquals(0, trust.getValue());
+			assertEquals("Trust received by solving a captcha.", trust.getComment());
+			
+			IntroductionPuzzle p = serverStore.getByID(puzzleID);
+			assertEquals(clientIdentity.getID(), p.getSolver().getID());
+		}}
 		
 		System.out.println("IntroductionClientTest: testFullIntroductionCycle() done! Time: " + t);
 		printNodeStatistics();
