@@ -28,6 +28,27 @@ CHANGELOG - prefixed with the bugtracker issue number:
   Blah.
   Blah.
 
+- 0006994: [Performance] IntroductionServer: Fix up to 1.5 hour delay of
+           seeing puzzle solutions
+
+  The identities which publish puzzles check for solutions of them on
+  the network every 0.5 to 1.5 hours (randomized delay).
+
+  Unfortunately the code which does this had a bug:
+  When generating new puzzles it didn't try to download solutions right
+  after uploading the puzzles.
+  Instead the solutions would only be downloaded at the next iteration
+  of the maintenance loop, i.e. after the said 0.5 to 1.5 hours.
+  This could cause a delay of 1.5 hours for new identities to become
+  visible after solving a puzzle.
+
+  It was fixed to try to download solutions right away.
+  Together with the below fix for issue 6996 a round-trip time of 5
+  minutes for solving a puzzle & the solution being seen by the remote
+  identity should be possible now.
+
+- 0006996: FIXME
+
 - 0006835: [Features] Merge random nickname improvement (ArneBab)
 
   Some very short name templates such as "D" or "CNR" were removed to
