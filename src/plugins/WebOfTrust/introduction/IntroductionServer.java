@@ -180,9 +180,9 @@ public final class IntroductionServer extends TransferThread {
 				if(identity.hasContext(IntroductionPuzzle.INTRODUCTION_CONTEXT)) {
 					try {
 						Logger.normal(this, "Managing puzzles of " + identity.getNickname());
-						downloadSolutions(identity);
 						generateNewPuzzles(identity);
 						insertPuzzles(identity);
+						downloadSolutions(identity);
 						Logger.normal(this, "Managing puzzles finished.");
 					} catch (Exception e) {
 						Logger.error(this, "Puzzle management failed for " + identity.getNickname(), e);
