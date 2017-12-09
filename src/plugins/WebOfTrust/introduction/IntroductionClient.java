@@ -3,6 +3,8 @@
  * any later version). See http://www.gnu.org/ for details of the GPL. */
 package plugins.WebOfTrust.introduction;
 
+import static java.util.concurrent.TimeUnit.SECONDS;
+
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
@@ -293,7 +295,8 @@ public final class IntroductionClient extends TransferThread  {
 	
 	/**
 	 * Use this function to store the solution of a puzzle.
-	 * It will start the upload of the solution immediately.
+	 * It will start the upload of the solution after 10 seconds unless you call
+	 * {@link #nextIteration()} to start the upload right away.
 	 * No synchronization is needed when using this function.
 	 * 
 	 * @throws InvalidParameterException If the puzzle was already solved.
@@ -329,10 +332,17 @@ public final class IntroductionClient extends TransferThread  {
         // We may not call insertPuzzleSolution() directly here because the parent class
         // TransferThread requires that only iterate() creates new transfers. So we schedule
         // iterate() to be executed instead.
+		// We do this with a 10 second delay instead of the default delay of 0 because the web
+		// interface shows multiple puzzles to the user at once and does ask them to solve multiple
+		// - which will result in the web interface calling solvePuzzle() multiple times in a loop.
+		// As the output "Success!" HTML won't be sent until that loop is finished we don't want to
+		// cause iterate() to delay it by taking the required locks in between.
+		// So we delay iterate() by 10 seconds which should be more than enough to process a handful
+		// of solvePuzzle() calls.
         // TODO: Performance: iterate() not only deals with inserting puzzle solutions but
         // also with downloading puzzles, deleting expired puzzles, etc. Instead we should have an
         // event-driven loop for each and only trigger the one for inserting solutions here.
-        nextIteration();
+        nextIteration(SECONDS.toMillis(10));
 	}
 
 	/**
