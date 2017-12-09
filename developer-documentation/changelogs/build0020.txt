@@ -28,6 +28,17 @@ CHANGELOG - prefixed with the bugtracker issue number:
   Blah.
   Blah.
 
+- 0006996: [Performance] Fix 10 minute delay of captcha solution upload
+
+  The IntroductionClient had a bug which almost always caused upload of
+  catpcha solutions to be delayed by 10 minutes, causing new identities
+  to not become visible before that.
+
+  This delay has been reduced to zero.
+
+  Notably this was discovered thanks to the new unit test for puzzle
+  up-/download as introduced in this release by issue 0006951.
+
 - 0006835: [Features] Merge random nickname improvement (ArneBab)
 
   Some very short name templates such as "D" or "CNR" were removed to
