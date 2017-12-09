@@ -180,6 +180,22 @@ public final class IntroductionClient extends TransferThread  {
 	 */
 	@Override
 	protected void iterate() {
+		// iterate() is split in two parts:
+		// 1) Stuff we do at every iteration because it is important.
+		// 2) Stuff which we only do if 10 minutes have passed since the last iteration because it
+		//    isn't important and may be slow.
+		//    Especially downloadPuzzles() can be a very heavy database query.
+		
+		// We must check for solutions to insert at every iteration because:
+		// - When the user views puzzles on the web interface that causes getPuzzles() to trigger
+		//   an iteration - which may start the 10 minute delay.
+		// - When the user then solves a puzzle solvePuzzle() will want to cause the solution to be
+		//   inserted by triggering iterate(). So if insertSolutions() here was being blocked by the
+		//   10 minute delay that would mean that the upload of puzzle solutions is always delayed
+		//   by 10 minutes and thus introducing an Identity couldn't be faster than that.
+		insertSolutions();
+		
+		// Now follows the 10 minute delay ...
 		
 	    // TODO: Performance: The synchronized(this) can likely be removed since TransferThread
 	    // should never execute iterate() multiple times concurrently.
@@ -198,7 +214,6 @@ public final class IntroductionClient extends TransferThread  {
 		mPuzzleStore.deleteExpiredPuzzles();
 		mPuzzleStore.deleteOldestUnsolvedPuzzles(PUZZLE_POOL_SIZE);
 		downloadPuzzles();
-		insertSolutions();
 	}
 	
 	private boolean puzzleStoreIsTooEmpty() {
