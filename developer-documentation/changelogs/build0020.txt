@@ -29,7 +29,7 @@ CHANGELOG - prefixed with the bugtracker issue number:
   Blah.
 
 - 0006994: [Performance] IntroductionServer: Fix up to 1.5 hour delay of
-           seeing puzzle solutions
+           seeing puzzle solutions (xor)
 
   The identities which publish puzzles check for solutions of them on
   the network every 0.5 to 1.5 hours (randomized delay).
@@ -48,6 +48,7 @@ CHANGELOG - prefixed with the bugtracker issue number:
   identity should be possible now.
 
 - 0006996: [Performance] Fix 10 minute delay of captcha solution upload
+           (xor)
 
   The IntroductionClient had a bug which almost always caused upload of
   catpcha solutions to be delayed by 10 minutes, causing new identities
