@@ -3,6 +3,8 @@
  * any later version). See http://www.gnu.org/ for details of the GPL. */
 package plugins.WebOfTrust.introduction;
 
+import static java.util.concurrent.TimeUnit.SECONDS;
+
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
@@ -180,6 +182,22 @@ public final class IntroductionClient extends TransferThread  {
 	 */
 	@Override
 	protected void iterate() {
+		// iterate() is split in two parts:
+		// 1) Stuff we do at every iteration because it is important.
+		// 2) Stuff which we only do if 10 minutes have passed since the last iteration because it
+		//    isn't important and may be slow.
+		//    Especially downloadPuzzles() can be a very heavy database query.
+		
+		// We must check for solutions to insert at every iteration because:
+		// - When the user views puzzles on the web interface that causes getPuzzles() to trigger
+		//   an iteration - which may start the 10 minute delay.
+		// - When the user then solves a puzzle solvePuzzle() will want to cause the solution to be
+		//   inserted by triggering iterate(). So if insertSolutions() here was being blocked by the
+		//   10 minute delay that would mean that the upload of puzzle solutions is always delayed
+		//   by 10 minutes and thus introducing an Identity couldn't be faster than that.
+		insertSolutions();
+		
+		// Now follows the 10 minute delay ...
 		
 	    // TODO: Performance: The synchronized(this) can likely be removed since TransferThread
 	    // should never execute iterate() multiple times concurrently.
@@ -198,7 +216,6 @@ public final class IntroductionClient extends TransferThread  {
 		mPuzzleStore.deleteExpiredPuzzles();
 		mPuzzleStore.deleteOldestUnsolvedPuzzles(PUZZLE_POOL_SIZE);
 		downloadPuzzles();
-		insertSolutions();
 	}
 	
 	private boolean puzzleStoreIsTooEmpty() {
@@ -278,7 +295,8 @@ public final class IntroductionClient extends TransferThread  {
 	
 	/**
 	 * Use this function to store the solution of a puzzle.
-	 * It will start the upload of the solution immediately.
+	 * It will start the upload of the solution after 10 seconds unless you call
+	 * {@link #nextIteration()} to start the upload right away.
 	 * No synchronization is needed when using this function.
 	 * 
 	 * @throws InvalidParameterException If the puzzle was already solved.
@@ -314,10 +332,17 @@ public final class IntroductionClient extends TransferThread  {
         // We may not call insertPuzzleSolution() directly here because the parent class
         // TransferThread requires that only iterate() creates new transfers. So we schedule
         // iterate() to be executed instead.
+		// We do this with a 10 second delay instead of the default delay of 0 because the web
+		// interface shows multiple puzzles to the user at once and does ask them to solve multiple
+		// - which will result in the web interface calling solvePuzzle() multiple times in a loop.
+		// As the output "Success!" HTML won't be sent until that loop is finished we don't want to
+		// cause iterate() to delay it by taking the required locks in between.
+		// So we delay iterate() by 10 seconds which should be more than enough to process a handful
+		// of solvePuzzle() calls.
         // TODO: Performance: iterate() not only deals with inserting puzzle solutions but
         // also with downloading puzzles, deleting expired puzzles, etc. Instead we should have an
         // event-driven loop for each and only trigger the one for inserting solutions here.
-        nextIteration();
+        nextIteration(SECONDS.toMillis(10));
 	}
 
 	/**
