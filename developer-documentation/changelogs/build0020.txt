@@ -43,9 +43,14 @@ CHANGELOG - prefixed with the bugtracker issue number:
   visible after solving a puzzle.
 
   It was fixed to try to download solutions right away.
-  Together with the below fix for issue 0006996 a round-trip time of 5
-  minutes for solving a puzzle & the solution being seen by the remote
-  identity should be possible now.
+  Together with the below fix for issue 0006996 a round-trip time of 3
+  minutes should be possible now for introduction, as measured by 89
+  iterations of the new unit test for introduction introduced by
+  issue 0006951.
+  That time is for uploading the puzzle, the remote identity downloading
+  the puzzle, uploading the solution, the solution being downloaded by
+  the puzzle's publisher, and the introduced identity being downloaded
+  by it as well.
 
 - 0006996: [Performance] Fix 10 minute delay of captcha solution upload
            (xor)
