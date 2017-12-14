@@ -28,8 +28,8 @@ CHANGELOG - prefixed with the bugtracker issue number:
   Blah.
   Blah.
 
-- 0006994: [Performance] IntroductionServer: Fix up to 1.5 hour delay of
-           seeing puzzle solutions (xor)
+- 0006994: [Performance] Fix up to 1.5 hour delay of captcha solution
+           download (xor)
 
   The identities which publish puzzles check for solutions of them on
   the network every 0.5 to 1.5 hours (randomized delay).
