@@ -52,6 +52,9 @@ CHANGELOG - prefixed with the bugtracker issue number:
   the captcha's publisher, and the introduced identity being downloaded
   by it as well.
 
+  Notably this was discovered thanks to the new unit test for captcha
+  up-/download as introduced in this release by issue 0006951.
+
 - 0006996: [Performance] Fix 10 minute delay of captcha solution upload
            (xor)
 
@@ -61,8 +64,8 @@ CHANGELOG - prefixed with the bugtracker issue number:
 
   This delay has been reduced to zero.
 
-  Notably this was discovered thanks to the new unit test for captcha
-  up-/download as introduced in this release by issue 0006951.
+  This was also discovered thanks to the new unit test for captcha
+  up-/download.
 
 - 0006835: [Features] Merge random nickname improvement (ArneBab)
 
