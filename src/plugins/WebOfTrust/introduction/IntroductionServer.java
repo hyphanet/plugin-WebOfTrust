@@ -205,10 +205,18 @@ public final class IntroductionServer extends TransferThread {
 				try {
 				final FetchContext fetchContext = mClient.getFetchContext();
 				fetchContext.maxArchiveLevels = 0; // Because archives can become huge and WOT does not use them, we should disallow them. See JavaDoc of the variable.
-				// -1 means retry forever. Does make sense here: After 2 retries the fetches go into the cooldown queue, ULPRs are used. So if someone inserts
-				// the puzzle solution during that, we might get to know it.
+				// -1 means retry forever. Does make sense here: We cannot predict *when* someone
+				// solves the puzzles.
+				// After 3 retries the fetches go into the cooldown queue = fred stop requesting
+				// the data temporarily. "ULPR"s (= Ultra Lightweight Passive Requests) are in
+				// effect then: If someone inserts the puzzle solution remote Freenet peers will
+				// remember that we had requested the data and send it to us automatically.
+				// After a cooldown time of 30 minutes fred will request the data on its own again.
 				fetchContext.maxSplitfileBlockRetries = -1;
 				fetchContext.maxNonSplitfileRetries = -1;
+				// assert(fetchContext.getCooldownRetries() == 3);
+				// assert(fetchContext.getCooldownTime() == MINUTES.toMillis(30));
+				
 				final ClientGetter g = mClient.fetch(
                     p.getSolutionURI(), XMLTransformer.MAX_INTRODUCTION_BYTE_SIZE,
 						this, fetchContext, RequestStarter.UPDATE_PRIORITY_CLASS); 
