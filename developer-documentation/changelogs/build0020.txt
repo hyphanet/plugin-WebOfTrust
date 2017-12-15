@@ -31,37 +31,37 @@ CHANGELOG - prefixed with the bugtracker issue number:
 - 0006994: [Performance] Fix up to 1.5 hour delay of captcha solution
            download (xor)
 
-  The identities which publish puzzles check for solutions of them on
+  The identities which publish captchas check for solutions of them on
   the network every 0.5 to 1.5 hours (randomized delay).
 
   Unfortunately the code which does this had a bug:
-  When generating new puzzles it didn't try to download solutions right
-  after uploading the puzzles.
+  When generating new captchas it didn't try to download solutions right
+  after uploading the captchas.
   Instead the solutions would only be downloaded at the next iteration
   of the maintenance loop, i.e. after the said 0.5 to 1.5 hours.
   This could cause a delay of 1.5 hours for new identities to become
-  visible after solving a puzzle.
+  visible after solving a captcha.
 
   It was fixed to try to download solutions right away.
   Together with the below fix for issue 0006996 a round-trip time of 3
   minutes should be possible now for introduction, as measured by 89
   iterations of the new unit test for introduction introduced by
   issue 0006951.
-  That time is for uploading the puzzle, the remote identity downloading
-  the puzzle, uploading the solution, the solution being downloaded by
-  the puzzle's publisher, and the introduced identity being downloaded
+  That time is for uploading the captcha, the remote identity downloading
+  the captcha, uploading the solution, the solution being downloaded by
+  the captcha's publisher, and the introduced identity being downloaded
   by it as well.
 
 - 0006996: [Performance] Fix 10 minute delay of captcha solution upload
            (xor)
 
-  The IntroductionClient had a bug which almost always caused upload of
-  catpcha solutions to be delayed by 10 minutes, causing new identities
-  to not become visible before that.
+  The code which uploads captcha solutions had a bug which almost always
+  caused the upload of solutions to be delayed by 10 minutes, causing
+  new identities to not become visible before that.
 
   This delay has been reduced to zero.
 
-  Notably this was discovered thanks to the new unit test for puzzle
+  Notably this was discovered thanks to the new unit test for captcha
   up-/download as introduced in this release by issue 0006951.
 
 - 0006835: [Features] Merge random nickname improvement (ArneBab)
