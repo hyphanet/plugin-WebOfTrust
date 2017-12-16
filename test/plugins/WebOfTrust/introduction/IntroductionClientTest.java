@@ -89,9 +89,9 @@ public final class IntroductionClientTest extends AbstractMultiNodeTest {
 		
 		// Create the server Identity which will upload a puzzle.
 		// Don't create the client Identity yet: That would result in the client trying to download
-		// puzzles immediately, which would fail because the puzzles of the server aren't uploaded
+		// puzzles immediately, which would fail because the puzzle of the server isn't uploaded
 		// yet, and the IntroductionClient puzzle download loop has a MINIMAL_SLEEP_TIME of 10
-		// minutes, so retrying once they are uploaded would take >= 10 minutes. 
+		// minutes, so retrying once it is uploaded would take >= 10 minutes.
 		//
 		// Synchronized to prevent the WoT from doing stuff while we set up the test environment,
 		// synchronized & clone() also as workaround for
