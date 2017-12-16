@@ -93,13 +93,13 @@ public final class IntroductionClientTest extends AbstractMultiNodeTest {
 		// yet, and the IntroductionClient puzzle download loop has a MINIMAL_SLEEP_TIME of 10
 		// minutes, so retrying once they are uploaded would take >= 10 minutes. 
 		//
-		// Synchronized to prevent the WoTs from doing stuff while we set up the test environment.
+		// Synchronized to prevent the WoT from doing stuff while we set up the test environment,
 		// synchronized & clone() also as workaround for
 		// https://bugs.freenetproject.org/view.php?id=6247
 		//
-		// Notice: As a consequence of the clone() we will have to re-query the identities from the
-		// database before we pass them to other functions which use them for database queries,
-		// otherwise db4o will not know the objects' references.
+		// Notice: As a consequence of the clone() we will have to re-query the Identity from the
+		// database before we pass it to functions which use it for database queries, otherwise db4o
+		// will not know the object's reference.
 		synchronized(serverWoT) {
 			// Server Identity must have publishTrustList == true to enable puzzle publishing.
 			serverIdentity = serverWoT.createOwnIdentity("serverId", true, null).clone();
