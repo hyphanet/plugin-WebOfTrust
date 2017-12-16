@@ -150,6 +150,33 @@ CHANGELOG about stuff only interesting for developers:
   (As measured by the Cobertura support which was introduced by the
   previous release, see "ant -projecthelp".)
 
+- 0006951: [Code quality] Unit tests: Networked tests for captcha
+           upload/download/solving (xor)
+
+  Another networked test was introduced which tests a full cycle of
+  identity introduction among two WoT instances in a local test network
+  of 10 Freenet nodes:
+  - an identity is created at the "server" WoT instance and it uploads
+    a captcha.
+  - another identity is created at the "client" WoT instance to trust
+    the server identity and download its captcha.
+  - once the captcha is downloaded at the client it is solved and the
+    solution is uploaded to the test network.
+  - the test then waits for the server to discover the captcha solution
+    and checkes whether it results in a trust value to the client
+    identity.
+  - the test further waits for whether the client identity is actually
+    downloaded as a result of the trust value.
+  - once the client identity is downloaded at the server it is compared
+    with the instance of it at the client using Identity.equals() to
+    have a bonus check for whether all its data is transported correctly
+    across the network.
+
+  The test prints the time each of the important steps take to execute,
+  and also the total round-trip time for introduction - which is 3
+  minutes now thanks to the bugs caught by the test (was up to 1.7 h
+  before).
+
 - 0006895: [Code quality] Unit tests: (Almost) Full coverage for class
            Score (xor)
 
