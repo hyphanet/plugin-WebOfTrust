@@ -147,8 +147,9 @@ CHANGELOG about stuff only interesting for developers:
 
   This increases WoT's overall test coverage by lines from 47% to 49%,
   and branch coverage from 40% to 42%.
-  (As measured by the Cobertura support which was introduced by the
-  previous release, see "ant -projecthelp".)
+  This was measured by the Cobertura support which was introduced by the
+  previous release and can be used by:
+    ant -Dtest.coverage=true && firefox test-coverage/html/index.html
 
 - 0006951: [Code quality] Unit tests: Networked tests for captcha
            upload/download/solving (xor)
@@ -176,6 +177,9 @@ CHANGELOG about stuff only interesting for developers:
   and also the total round-trip time for introduction - which is 3
   minutes now thanks to the bugs caught by the test (was up to 1.7 h
   before).
+
+  This increases WoT's overall test coverage by lines from 49% to 52%,
+  and branch coverage from 42% to 44%.
 
 - 0006895: [Code quality] Unit tests: (Almost) Full coverage for class
            Score (xor)
