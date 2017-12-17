@@ -186,7 +186,7 @@
 
 	<target name="junit" depends="junit-package" unless="${test.skip}"
 			description="Runs all unit tests. Options:&#10;
-		        - Set test.coverage=true to analyze test coverage&#10;
+		        - Set test.coverage=true to analyze test coverage. View by e.g.: firefox test-coverage/html/index.html&#10;
 		        - Set test.skip=true to skip&#10;
 		        - Set test.class=&lt;test class&gt; (e.g. test.class=plugins.WebOfTrust.WoTTest) to run a single test)&#10;
 		        - Set test.benchmark=true to run benchmarks.&#10;
