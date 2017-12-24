@@ -30,7 +30,10 @@ import freenet.pluginmanager.PluginManager;
 public final class DatabaseLockTest extends AbstractMultiNodeTest {
 
 	@Override public int getNodeCount() {
-		return 1;
+		// TODO: Change to 1 once this is fixed: https://bugs.freenetproject.org/view.php?id=7000
+		// = We actually only need one node, but with one node shutdown currently hangs upon test
+		// failure - due to a potential fred bug.
+		return 2;
 	}
 
 	@Override public int getWoTCount() {
