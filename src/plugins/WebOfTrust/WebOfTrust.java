@@ -2312,11 +2312,15 @@ public final class WebOfTrust extends WebOfTrustInterface
 				Logger.error(this, "Error during termination.", e);
 				success.set(false);
 			}
+			
+			mIsTerminated = success.get();
+			
+			Logger.normal(this, "Web Of Trust plugin terminated.");
+		} else {
+			// Don't set mIsTerminated: We only stopped the threads, we didn't close the database.
+			
+			Logger.normal(this, "Web Of Trust plugin subsystem threads terminated.");
 		}
-
-		mIsTerminated = success.get();
-		
-		Logger.normal(this, "Web Of Trust plugin terminated.");
 	}
 
 	/**
