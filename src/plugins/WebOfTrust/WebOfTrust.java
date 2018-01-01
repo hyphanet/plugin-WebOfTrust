@@ -2129,6 +2129,14 @@ public final class WebOfTrust extends WebOfTrustInterface
 		}
 	}
 
+	/**
+	 * ATTENTION: This will NOT throw if termination did not succeed! Use {@link #isTerminated()}
+	 * to validate success of termination.
+	 * 
+	 * The reason behind this decision is that this is the API for fred which the node uses to
+	 * terminate the plugin, and we want to allow fred to unload the plugin successfully even if it
+	 * has bugs. (Notice that I'm not 100% sure whether fred actually doesn't want this to throw, a
+	 * bug for investigating has been filed at https://bugs.freenetproject.org/view.php?id=7004) */
 	@Override public void terminate() {
 		terminate(false);
 	}
@@ -2139,7 +2147,12 @@ public final class WebOfTrust extends WebOfTrustInterface
 	 * Version of {@link #terminate()} which only halts all threads of WoT while still not
 	 * terminating the whole plugin and thus allowing unit tests to keep doing e.g. database
 	 * queries. This is intended to allow unit tests to call it right after startup so they do not
-	 * have to contain code to deal with concurrency. */
+	 * have to contain code to deal with concurrency.
+	 * 
+	 * ATTENTION: Like {@link #terminate()} this does not throw upon errors.
+	 * 
+	 * {@link #isTerminated()} will NOT return true when this was called, it will only return true
+	 * after {@link #terminate()} was called. */
 	void terminateSubsystemThreads() {
 		terminate(true);
 	}
@@ -2328,7 +2341,10 @@ public final class WebOfTrust extends WebOfTrustInterface
 	 * The latter is an important distinction: To conform with best practices of implementing
 	 * Freenet plugin API, {@link #terminate()} will <b>not</b> throw upon errors but only log them.
 	 * Hence, in cases where the {@link Logger} output is mostly ignored, such as unit tests, this
-	 * function may serve as a way of ensuring proper shutdown. */
+	 * function may serve as a way of ensuring proper shutdown.
+	 * 
+	 * Will NOT return true when only {@link #terminateSubsystemThreads()} was called, it will only
+	 * return true after {@link #terminate()} was called. */
 	public boolean isTerminated() {
 		return mIsTerminated;
 	}
