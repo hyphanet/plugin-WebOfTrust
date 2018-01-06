@@ -349,7 +349,10 @@ public final class WebOfTrust extends WebOfTrustInterface
 			Logger.error(this, "Error during startup", e);
 			/* We call it so the database is properly closed */
 			terminate();
+			// Unlikely to succeed given that startup failed
+			/* assert(isTerminated()); */
 			
+			assert(false) : e;
 			throw e;
 		}
 	}
@@ -1151,8 +1154,10 @@ public final class WebOfTrust extends WebOfTrustInterface
 			
 			success = true;
 		} finally {
-			if(backup != null)
+			if(backup != null) {
 				backup.terminate();
+				assert(backup.isTerminated());
+			}
 			
 			if(!success)
 				newDatabase.delete();
@@ -1232,6 +1237,7 @@ public final class WebOfTrust extends WebOfTrustInterface
 			// - Subscription and Notification objects because subscriptions are also not persistent across startups.
 			
 			original.terminate();
+			assert(original.isTerminated());
 			original = null;
 			System.gc();
 			
@@ -1277,11 +1283,15 @@ public final class WebOfTrust extends WebOfTrustInterface
 
 			success = true;
 		} finally {
-			if(original != null)
+			if(original != null) {
 				original.terminate();
+				assert(original.isTerminated());
+			}
 			
-			if(clone != null)
+			if(clone != null) {
 				clone.terminate();
+				assert(clone.isTerminated());
+			}
 			
 			if(!success)
 				targetDatabase.delete();

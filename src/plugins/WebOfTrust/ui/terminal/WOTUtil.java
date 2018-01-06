@@ -310,8 +310,10 @@ public final class WOTUtil {
 			System.err.println(e);
 			return 3;
 		} finally {
-			if(wot != null)
+			if(wot != null) {
 				wot.terminate();
+				assert(wot.isTerminated());
+			}
 		}
 	}
 			

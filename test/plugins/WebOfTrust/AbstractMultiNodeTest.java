@@ -524,11 +524,13 @@ public abstract class AbstractMultiNodeTest
             // The compensation for having this assert commented out is the function testTerminate()
             // at AbstractMultiNodeTestSelfTest.
             // TODO: Code quality: It would nevertheless be a good idea to find a way to enable this
-            // assert since testTerminate() does not cause load upon the subsystems of WoT. This
-            // function here however is an @After test, so it will be run after the child test
-            // classes' tests, which can cause sophisticated load. An alternate solution would be to
-            // find a way to make testTerminate() cause the subsystem threads to all run, in
-            // parallel of terminate(). 
+            // assert since testTerminate() does not cause load upon the subsystems of WoT and thus
+            // is unlikely to trigger bugs. This function here however is an @After test, so it will
+            // be run after the child tests classes' tests, which can cause sophisticated load.
+            // An alternative solution would be to amend terminateSubystemThreads() and terminate()
+            // to be able to track success of shutdown of each individual subsystem.
+            // Then terminate() wouldn't have to mark termination as failed when being called with
+            // some subsystems having been terminated already by terminateSubystemThreads().
             /* assertTrue(wot.isTerminated()); */
             
             wot = null;

@@ -111,6 +111,7 @@ public class TrustTest extends AbstractJUnit3BaseTest {
 	public void testTrustPersistence() throws MalformedURLException, UnknownIdentityException, DuplicateTrustException, NotTrustedException {
 		
 		mWoT.terminate();
+		assertTrue(mWoT.isTerminated());
 		mWoT = null;
 		
 		System.gc();
