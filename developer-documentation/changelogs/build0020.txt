@@ -175,8 +175,8 @@ CHANGELOG about stuff only interesting for developers:
 
   The test prints the time each of the important steps take to execute,
   and also the total round-trip time for introduction - which is 3
-  minutes now thanks to the bugs caught by the test (was up to 1.7 h
-  before).
+  minutes now thanks to the bugs caught by the test - it was up to 1.7 h
+  before.
 
   This increases WoT's overall test coverage by lines from 49% to 52%,
   and branch coverage from 42% to 44%.
