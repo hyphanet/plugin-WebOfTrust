@@ -83,8 +83,8 @@ public final class IdentityFetcherTest extends AbstractMultiNodeTest {
 			fetchingWoT.setTrust(trustingIdentity.getID(), insertedIdentity.getID(), (byte)100, "");
 			
 			// Disable upload of puzzles to reduce load and thus speed things up.
-			// FIXME: Benchmark whether this actually helps enough to justify having unrelated code
-			// here.
+			// TODO: Code quality: Benchmark whether this actually helps enough to justify having
+			// unrelated code here.
 			insertingWoT.setPublishIntroductionPuzzles(insertedIdentity.getID(), false);
 			fetchingWoT.setPublishIntroductionPuzzles(trustingIdentity.getID(), false);
 			
