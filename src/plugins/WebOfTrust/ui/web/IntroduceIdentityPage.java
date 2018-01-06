@@ -62,6 +62,9 @@ public class IntroduceIdentityPage extends WebPageImpl {
 				new ErrorPage(mToadlet, mRequest, mContext, e).addToPage(this);
 			}
 		}
+		
+		// Speed up the upload of the solutions (see IntroductionClient.solvePuzzle()).
+		mClient.nextIteration();
 	}
 
 	private void makeInfoBox() {

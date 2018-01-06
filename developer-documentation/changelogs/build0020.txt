@@ -28,6 +28,45 @@ CHANGELOG - prefixed with the bugtracker issue number:
   Blah.
   Blah.
 
+- 0006994: [Performance] Fix up to 1.5 hour delay of captcha solution
+           download (xor)
+
+  The identities which publish captchas check for solutions of them on
+  the network every 0.5 to 1.5 hours (randomized delay).
+
+  Unfortunately the code which does this had a bug:
+  When generating new captchas it didn't try to download solutions right
+  after uploading the captchas.
+  Instead the solutions would only be downloaded at the next iteration
+  of the maintenance loop, i.e. after the said 0.5 to 1.5 hours.
+  This could cause a delay of 1.5 hours for new identities to become
+  visible after solving a captcha.
+
+  It was fixed to try to download solutions right away.
+  Together with the below fix for issue 0006996 a round-trip time of 3
+  minutes should be possible now for introduction, as measured by 89
+  iterations of the new unit test for introduction introduced by
+  issue 0006951.
+  That time is for uploading the captcha, the remote identity downloading
+  the captcha, uploading the solution, the solution being downloaded by
+  the captcha's publisher, and the introduced identity being downloaded
+  by it as well.
+
+  Notably this was discovered thanks to the new unit test for captcha
+  up-/download as introduced in this release by issue 0006951.
+
+- 0006996: [Performance] Fix 10 minute delay of captcha solution upload
+           (xor)
+
+  The code which uploads captcha solutions had a bug which almost always
+  caused the upload of solutions to be delayed by 10 minutes, causing
+  new identities to not become visible before that.
+
+  This delay has been reduced to zero.
+
+  This was also discovered thanks to the new unit test for captcha
+  up-/download.
+
 - 0006835: [Features] Merge random nickname improvement (ArneBab)
 
   Some very short name templates such as "D" or "CNR" were removed to
@@ -108,8 +147,39 @@ CHANGELOG about stuff only interesting for developers:
 
   This increases WoT's overall test coverage by lines from 47% to 49%,
   and branch coverage from 40% to 42%.
-  (As measured by the Cobertura support which was introduced by the
-  previous release, see "ant -projecthelp".)
+  This was measured by the Cobertura support which was introduced by the
+  previous release and can be used by:
+    ant -Dtest.coverage=true && firefox test-coverage/html/index.html
+
+- 0006951: [Code quality] Unit tests: Networked tests for captcha
+           upload/download/solving (xor)
+
+  Another networked test was introduced which tests a full cycle of
+  identity introduction among two WoT instances in a local test network
+  of 10 Freenet nodes:
+  - an identity is created at the "server" WoT instance and it uploads
+    a captcha.
+  - another identity is created at the "client" WoT instance to trust
+    the server identity and download its captcha.
+  - once the captcha is downloaded at the client it is solved and the
+    solution is uploaded to the test network.
+  - the test then waits for the server to discover the captcha solution
+    and checkes whether it results in a trust value to the client
+    identity.
+  - the test further waits for whether the client identity is actually
+    downloaded as a result of the trust value.
+  - once the client identity is downloaded at the server it is compared
+    with the instance of it at the client using Identity.equals() to
+    have a bonus check for whether all its data is transported correctly
+    across the network.
+
+  The test prints the time each of the important steps take to execute,
+  and also the total round-trip time for introduction - which is 3
+  minutes now thanks to the bugs caught by the test - it was up to 1.7 h
+  before.
+
+  This increases WoT's overall test coverage by lines from 49% to 52%,
+  and branch coverage from 42% to 44%.
 
 - 0006895: [Code quality] Unit tests: (Almost) Full coverage for class
            Score (xor)

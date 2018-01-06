@@ -3,6 +3,7 @@ package plugins.WebOfTrust.introduction;
 import java.text.ParseException;
 import java.util.Date;
 
+import plugins.WebOfTrust.Persistent.InitializingObjectSet;
 import plugins.WebOfTrust.Identity;
 import plugins.WebOfTrust.OwnIdentity;
 import plugins.WebOfTrust.Persistent;
@@ -39,6 +40,16 @@ import freenet.support.TimeUtil;
  * 8. The IntroductionClient deletes the oldest puzzles to replace them with new ones (deleteOldestPuzzles).
  *
  * As of SVN revision 26940, I have ensured that all functions are properly synchronized and any needed external synchronization is documented.
+ * EDIT: The above statement may be outdated, this class may have been modified since then. Further
+ * the said documentation may be wrong as there was at least one instance of documentation which
+ * failed to mention the requirement to synchronize on the WebOfTrust.
+ * TODO: Code quality: Review the documentation.
+ * Hence please synchronize as follows:
+ * For database query functions which don't contain the following synchronization on their own you
+ * have to synchronize on the WebOfTrust (due to {@link IntroductionPuzzle} objects containing
+ * pointers to {@link Identity} objects) and this IntroductionPuzzleStore (as it's the database
+ * "table lock" for IntroductionPuzzles) while calling them and processing potentially returned
+ * ObjectSets.
  *
  * @author xor (xor@freenetproject.org)
  */
@@ -175,20 +186,10 @@ public final class IntroductionPuzzleStore {
 	 * @param identity The identity which is being deleted. It must still be stored in the database.
 	 */
 	public void onIdentityDeletion(final Identity identity) {
-		Query q = mDB.query();
-		q.constrain(IntroductionPuzzle.class);
-		q.descend("mInserter").constrain(identity).identity();
-		ObjectSet<IntroductionPuzzle> puzzles = new Persistent.InitializingObjectSet<IntroductionPuzzle>(mWoT, q);
-		
-		for(IntroductionPuzzle puzzle : puzzles)
+		for(IntroductionPuzzle puzzle : getByInserter(identity))
 			puzzle.deleteWithoutCommit();
 		
-		q = mDB.query();
-		q.constrain(IntroductionPuzzle.class);
-		q.descend("mSolver").constrain(identity).identity();
-		puzzles = new Persistent.InitializingObjectSet<IntroductionPuzzle>(mWoT, q);
-			
-		for(IntroductionPuzzle puzzle : puzzles)
+		for(IntroductionPuzzle puzzle : getBySolver(identity))
 			puzzle.deleteWithoutCommit();
 	}
 
@@ -287,18 +288,12 @@ public final class IntroductionPuzzleStore {
 		
 		return result.size() > 0 ? result.next().getIndex()+1 : 0;
 	}
-	
-	/**
-	 * Get all not inserted puzzles of the given identity.
-	 * You have to put a synchronized(this IntroductionPuzzleStore) statement around the call to this function and the processing of the
-	 * List which was returned by it!
-	 * 
-	 * Used by the IntroductionServer for inserting puzzles.
-	 */
-	public ObjectSet<OwnIntroductionPuzzle> getUninsertedOwnPuzzlesByInserter(final OwnIdentity identity) {
-		final Query q = mDB.query();
+
+	ObjectSet<OwnIntroductionPuzzle> getUninsertedOwnPuzzlesByInserter(OwnIdentity identity) {
+		Query q = mDB.query();
 		q.constrain(OwnIntroductionPuzzle.class);
-		q.descend("mInserter").constrain(identity).identity();
+		q.descend("mInserter").constrain(identity)
+			.identity(); // Does NOT refer to class Identity but to reference equality of objects!
 		q.descend("mWasInserted").constrain(false);
 		return new Persistent.InitializingObjectSet<OwnIntroductionPuzzle>(mWoT, q);
 	}
@@ -334,7 +329,15 @@ public final class IntroductionPuzzleStore {
 		q.descend("mDayOfInsertion").constrain(today.getTime());
 		return new Persistent.InitializingObjectSet<IntroductionPuzzle>(mWoT, q);
 	}
-	
+
+	ObjectSet<IntroductionPuzzle> getByInserter(Identity inserter) {
+		Query q = mDB.query();
+		q.constrain(IntroductionPuzzle.class);
+		q.descend("mInserter").constrain(inserter)
+			.identity(); // Does NOT refer to class Identity but to reference equality of objects!
+		return new InitializingObjectSet<>(mWoT, q);
+	}
+
 	/**
 	 * Get a puzzle or own puzzle of a given identity from a given date with a given index.
 	 * 
@@ -376,6 +379,14 @@ public final class IntroductionPuzzleStore {
 			case 0: throw new UnknownPuzzleException("inserter=" + inserter + "; date=" + date.getTime() + "; index=" + index);
 			default: throw new DuplicatePuzzleException("inserter=" + inserter + "; date=" + date.getTime() + "; index=" + index);
 		}
+	}
+
+	ObjectSet<IntroductionPuzzle> getBySolver(Identity solver) {
+		Query q = mDB.query();
+		q.constrain(IntroductionPuzzle.class);
+		q.descend("mSolver").constrain(solver)
+			.identity(); // Does NOT refer to class Identity but to reference equality of objects!
+		return new InitializingObjectSet<>(mWoT, q);
 	}
 
 	/**
@@ -423,5 +434,16 @@ public final class IntroductionPuzzleStore {
 		q.descend("mWasSolved").constrain(solved);
 		return q.execute().size();
 	}
-	
+
+	/**
+	 * For unit test purposes mostly:
+	 * Gets the amount of any puzzles, both including {@link OwnIntroductionPuzzle}s and non-own
+	 * {@link IntroductionPuzzle}s, independent of whether they are solved, not solved, inserted,
+	 * not inserted, etc. */
+	public synchronized int getTotalPuzzleAmount() {
+		Query q = mDB.query();
+		q.constrain(IntroductionPuzzle.class);
+		return q.execute().size();
+	}
+
 }

@@ -3,6 +3,10 @@
  * any later version). See http://www.gnu.org/ for details of the GPL. */
 package plugins.WebOfTrust;
 
+import static java.lang.Integer.parseInt;
+import static plugins.WebOfTrust.introduction.IntroductionServer.PUZZLE_COUNT_PROPERTY;
+
+import java.io.IOException;
 import java.net.MalformedURLException;
 import java.util.ArrayList;
 import java.util.Date;
@@ -15,6 +19,10 @@ import plugins.WebOfTrust.exceptions.InvalidParameterException;
 import plugins.WebOfTrust.exceptions.NotInTrustTreeException;
 import plugins.WebOfTrust.exceptions.NotTrustedException;
 import plugins.WebOfTrust.exceptions.UnknownIdentityException;
+import plugins.WebOfTrust.introduction.IntroductionPuzzleFactory;
+import plugins.WebOfTrust.introduction.IntroductionPuzzleStore;
+import plugins.WebOfTrust.introduction.OwnIntroductionPuzzle;
+import plugins.WebOfTrust.introduction.captcha.CaptchaFactory1;
 
 import com.db4o.ObjectSet;
 import com.db4o.ext.ExtObjectContainer;
@@ -1130,7 +1138,33 @@ public class WoTTest extends AbstractJUnit3BaseTest {
 		assertEquals(oldOwnIdentity.getContexts(), replacementNonOwnIdentity.getContexts());
 		assertEquals(oldOwnIdentity.getProperties(), replacementNonOwnIdentity.getProperties());
 	}
-	
+
+	/**
+	 * Tests whether {@link WebOfTrust#deleteOwnIdentity(String)} also takes care of deleting
+	 * {@link OwnIntroductionPuzzle}s of the {@link OwnIdentity} from the
+	 * {@link IntroductionPuzzleStore}. */
+	public void testDeleteOwnIdentity_IntroductionPuzzleDeletion()
+			throws InvalidParameterException, IOException, UnknownIdentityException {
+		
+		OwnIdentity ownIdentity
+			= mWoT.createOwnIdentity(new FreenetURI(insertUriO), "test", true, null);
+		
+		IntroductionPuzzleStore store = mWoT.getIntroductionPuzzleStore();
+		// Cannot use the IntroductionServer to create a puzzle because our base class
+		// AbstractJUnit3BaseTest will construct WoT with the constructor
+		// WebOfTrust.WebOfTrust(String databaseFilename) which does not create an
+		// IntroductionServer.
+		IntroductionPuzzleFactory f = new CaptchaFactory1();
+		int amount = parseInt(ownIdentity.getProperty(PUZZLE_COUNT_PROPERTY));
+		assertTrue(amount > 0);
+		for(int i = 0; i < amount; ++i)
+			f.generatePuzzle(store, ownIdentity);
+		
+		assertEquals(amount, store.getTotalPuzzleAmount());
+		mWoT.deleteOwnIdentity(ownIdentity.getID());
+		assertEquals(0, store.getTotalPuzzleAmount());
+	}
+
 	/**
 	 * Tests {@link restoreOwnIdentity} AND {@link deleteOwnIdentity} by:
 	 * - Creating a random WOT.
