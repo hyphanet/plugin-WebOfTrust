@@ -142,6 +142,7 @@ public final class IntroductionClientTest extends AbstractMultiNodeTest {
 					break;
 			}}
 			
+			// printNodeStatistics();
 			sleep(1000);
 		} while(true);
 		System.out.println("IntroductionClientTest: Puzzle uploaded! Time: " + uploadTime);
@@ -184,6 +185,7 @@ public final class IntroductionClientTest extends AbstractMultiNodeTest {
 					break;
 			}}
 			
+			// printNodeStatistics();
 			sleep(1000);
 		} while(true);
 		System.out.println("IntroductionClientTest: Puzzle downloaded! Time: " + downloadTime);
@@ -233,6 +235,7 @@ public final class IntroductionClientTest extends AbstractMultiNodeTest {
 					break;
 			}}
 			
+			// printNodeStatistics();
 			sleep(1000);
 		} while(true);
 		System.out.println("IntroductionClientTest: Solution downloaded! Time: " + downloadTime);
@@ -272,6 +275,7 @@ public final class IntroductionClientTest extends AbstractMultiNodeTest {
 					break;
 			}
 			
+			// printNodeStatistics();
 			sleep(1000);
 		} while(true);
 		System.out.println("IntroductionClientTest: Identity downloaded! Time: " + downloadTime);

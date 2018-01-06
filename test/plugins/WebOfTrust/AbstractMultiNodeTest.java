@@ -3,6 +3,7 @@
  * any later version). See http://www.gnu.org/ for details of the GPL. */
 package plugins.WebOfTrust;
 
+import static java.lang.Math.max;
 import static java.lang.Math.round;
 import static java.lang.Thread.sleep;
 import static org.junit.Assert.*;
@@ -31,8 +32,8 @@ import freenet.node.Location;
 import freenet.node.Node;
 import freenet.node.NodeInitException;
 import freenet.node.NodeStarter;
-import freenet.node.NodeStats;
 import freenet.node.NodeStarter.TestNodeParameters;
+import freenet.node.NodeStats;
 import freenet.node.PeerTooOldException;
 import freenet.node.simulator.RealNodeRequestInsertTest;
 import freenet.node.simulator.RealNodeTest;
@@ -108,11 +109,12 @@ public abstract class AbstractMultiNodeTest
 
 	/**
 	 * Thread limit which is given to each Node.
-	 * A single node as of build01478 will have about 64 threads when idle.
+	 * A single node as of build01478 will have about 64 threads when idle. We arbitrarily assume
+	 * it needs half of that more if under load, which is 96.
 	 * All nodes share the executor {@link #mExecutor} so multiply the expected minimal thread count
 	 * for one node by their amount, and divide it by the arbitrary value of 2 to compensate for
 	 * the fact that each node can use the unused threads of all other nodes. */
-	private final int mThreadLimit = 64 * getNodeCount() / 2;
+	private final int mThreadLimit = max(96, 96 * getNodeCount() / 2);
 
 
     /**
