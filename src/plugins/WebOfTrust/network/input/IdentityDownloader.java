@@ -114,6 +114,16 @@ public interface IdentityDownloader extends Daemon {
 	 *   synchronized(WebOfTrust.getIdentityDownloaderController())
 	 *   synchronized(Persistent.transactionLock(WebOfTrust.getDatabase()))
 	 * 
+	 * ATTENTION: The passed {@link Trust} objects may be {@link Trust#clone()}s of the original
+	 * objects. Hence when you want to do database queries using e.g. them, their
+	 * {@link Trust#getTruster()} or {@link Trust#getTrustee()} you need to first re-query those
+	 * objects from the database by their ID as the clones are unknown to the database.
+	 * FIXME: Review implementations of this function for whether they are safe w.r.t. this.
+	 * Alternatively, if {@link WebOfTrust#deleteWithoutCommit(Identity)} is the only function which
+	 * passes a clone for newTrust, consider to change it to not call this callback as suggested by
+	 * the comments there, and relax the "ATTENTION" to only be about oldTrust (which usually always
+	 * be a clone because it represents a historical state).
+	 * 
 	 * FIXME: Make the WebOfTrust actually call it. Find the places where to call it by using your
 	 * IDE to look up where WoT calls the similar function at SubscriptionManager.
 	 * Do not call it in the very same place but some lines later *after* Score computation is
