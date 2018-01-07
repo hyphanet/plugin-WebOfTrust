@@ -268,7 +268,7 @@ public final class OwnIdentity extends Identity implements Cloneable, Serializab
 		// become eligible for inserting.
 		// The IdentityInserter would then upload it to the highest USK slot, causing restoring to
 		// result in the OwnIdentity being overwritten with very old data completely.
-		// To prevent this, we setmLastInsertDatet to current time, which prevents the
+		// To prevent this, we set mLastInsertDate to current time, which prevents the
 		// IdentityInserter from uploading a new edition for a while.
 		// This hopefully gives the restoring code time to acquire a second, newer edition.
 		// TODO: Code quality: Enforce this more strictly. This will become possible once we not
@@ -279,15 +279,7 @@ public final class OwnIdentity extends Identity implements Cloneable, Serializab
 
 	/**
 	 * Get the Date of last insertion of this OwnIdentity, in UTC, new Date(0) if it was not
-	 * inserted yet.
-	 * FIXME: This JavaDoc previously used to incorrectly say we would return a null pointer
-	 * instead.
-	 * Review all users of this function, and of mLastInsertDate, for whether they correctly check
-	 * for new Date(0) instead of null (and also review the functions they pass it to, e.g.
-	 * {@link Identity#onFetched(long, boolean, Date)}).
-	 * EDIT: I've reviewed all 33 occurrences of "getLastInsertDate", i.e. calls to this function
-	 * and textual references, in the source and test code. What remains to be done is reviewing
-	 * uses of the member variable. */
+	 * inserted yet. */
 	public final Date getLastInsertDate() {
 		checkedActivate(1); // Date is a db4o primitive type so 1 is enough
 		return (Date)mLastInsertDate.clone();	// Clone it because date is mutable
@@ -560,7 +552,11 @@ public final class OwnIdentity extends Identity implements Cloneable, Serializab
 		if(mLastInsertDate == null)
 			throw new NullPointerException("mLastInsertDate==null");
 		
-		if(mLastInsertDate.after(CurrentTimeUTC.get()))
+		// The special value 0 is allowed to signal that the OwnIdentity wasn't inserted yet.
+		if(mLastInsertDate.before(new Date(0))) {
+			throw new IllegalStateException("mLastInsertDate is before new Date(0): "
+				+ mLastInsertDate);
+		} else if(mLastInsertDate.after(CurrentTimeUTC.get()))
 			throw new IllegalStateException("mLastInsertDate is in the future: " + mLastInsertDate);
 	}
 	
