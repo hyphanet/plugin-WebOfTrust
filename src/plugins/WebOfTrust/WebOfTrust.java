@@ -2851,7 +2851,7 @@ public final class WebOfTrust extends WebOfTrustInterface
 				
 				// TODO: Performance: In theory this only needs to be called if the trust giver
 				// was an OwnIdentity, otherwise the only current implementation of
-				// IdentityDownloader which uses this callback - IdentityDownloaderFast - wduldn't
+				// IdentityDownloader which uses this callback - IdentityDownloaderFast - wouldn't
 				// have used the trust as a reason to download anything anyway.
 				// However the same concerns about resolving this TODO apply as at the above TODO.
 				for(Trust t : givenTrusts)
