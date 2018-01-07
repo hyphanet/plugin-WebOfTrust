@@ -272,8 +272,8 @@ public final class OwnIdentity extends Identity implements Cloneable, Serializab
 		// IdentityInserter from uploading a new edition for a while.
 		// This hopefully gives the restoring code time to acquire a second, newer edition.
 		// TODO: Code quality: Enforce this more strictly. This will become possible once we not
-		// only keep track of a mLastInsertDate, but also of a "mNextInsertDate". Set the next
-		// insert date to infinity then.
+		// only keep track of a mLastInsertDate, but also of a "mNextInsertDate". Then set the next
+		// insert date to CurrentTimeUTC.get() + some TimeUnit.DAYS.
 		mLastInsertDate = CurrentTimeUTC.get();
 	}
 
