@@ -273,7 +273,14 @@ public final class OwnIdentity extends Identity implements Cloneable, Serializab
 		// This hopefully gives the restoring code time to acquire a second, newer edition.
 		// TODO: Code quality: Enforce this more strictly. This will become possible once we not
 		// only keep track of a mLastInsertDate, but also of a "mNextInsertDate". Then set the next
-		// insert date to CurrentTimeUTC.get() + some TimeUnit.DAYS.
+		// insert date to CurrentTimeUTC.get() + some TimeUnit.DAYS. Though it probably wouldn't be
+		// sufficient to merely have mNextInsertDate as that may then be decreased by the user
+		// doing a modification in the UI. The proper approach would probably be to separately
+		// track a mMinNextInsertDate and mMaxNextInsertDate. mMaxNextInsertDate would be
+		// decreased by unimportant stuff such as changes of getProperties() or insignificant Trust
+		// changes (+3 -> +4). mMinNextInsertDate would be what this function sets and it could
+		// only be decreased by important changes such as new negative Trust values.
+		// Also see https://bugs.freenetproject.org/view.php?id=5374
 		mLastInsertDate = CurrentTimeUTC.get();
 	}
 
