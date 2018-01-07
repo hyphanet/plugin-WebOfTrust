@@ -3,6 +3,7 @@
  * any later version). See http://www.gnu.org/ for details of the GPL. */
 package plugins.WebOfTrust;
 
+import static java.lang.Math.max;
 import static java.lang.Math.round;
 import static java.lang.Thread.sleep;
 import static org.junit.Assert.*;
@@ -31,8 +32,8 @@ import freenet.node.Location;
 import freenet.node.Node;
 import freenet.node.NodeInitException;
 import freenet.node.NodeStarter;
-import freenet.node.NodeStats;
 import freenet.node.NodeStarter.TestNodeParameters;
+import freenet.node.NodeStats;
 import freenet.node.PeerTooOldException;
 import freenet.node.simulator.RealNodeRequestInsertTest;
 import freenet.node.simulator.RealNodeTest;
@@ -108,11 +109,12 @@ public abstract class AbstractMultiNodeTest
 
 	/**
 	 * Thread limit which is given to each Node.
-	 * A single node as of build01478 will have about 64 threads when idle.
+	 * A single node as of build01478 will have about 64 threads when idle. We arbitrarily assume
+	 * it needs half of that more if under load, which is 96.
 	 * All nodes share the executor {@link #mExecutor} so multiply the expected minimal thread count
 	 * for one node by their amount, and divide it by the arbitrary value of 2 to compensate for
 	 * the fact that each node can use the unused threads of all other nodes. */
-	private final int mThreadLimit = 64 * getNodeCount() / 2;
+	private final int mThreadLimit = max(96, 96 * getNodeCount() / 2);
 
 
     /**
@@ -533,11 +535,13 @@ public abstract class AbstractMultiNodeTest
             // The compensation for having this assert commented out is the function testTerminate()
             // at AbstractMultiNodeTestSelfTest.
             // TODO: Code quality: It would nevertheless be a good idea to find a way to enable this
-            // assert since testTerminate() does not cause load upon the subsystems of WoT. This
-            // function here however is an @After test, so it will be run after the child test
-            // classes' tests, which can cause sophisticated load. An alternate solution would be to
-            // find a way to make testTerminate() cause the subsystem threads to all run, in
-            // parallel of terminate(). 
+            // assert since testTerminate() does not cause load upon the subsystems of WoT and thus
+            // is unlikely to trigger bugs. This function here however is an @After test, so it will
+            // be run after the child tests classes' tests, which can cause sophisticated load.
+            // An alternative solution would be to amend terminateSubystemThreads() and terminate()
+            // to be able to track success of shutdown of each individual subsystem.
+            // Then terminate() wouldn't have to mark termination as failed when being called with
+            // some subsystems having been terminated already by terminateSubystemThreads().
             /* assertTrue(wot.isTerminated()); */
             
             wot = null;

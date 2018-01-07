@@ -38,8 +38,13 @@ public final class AbstractMultiNodeTestSelfTest extends AbstractSingleNodeTest 
 		// - When killPlugin() calls WebOfTrust.terminate(), that function will try to terminate()
 		//   those subsystems again. This will fail because they are terminated already.
 		// - WebOfTrust.terminate() will mark termination as failed due to subsystem termination
-		//   failure. Thus, isTerminated() will return false.
+		//   failure. Thus, isTerminated() would return false, but isTerminated() is what we want
+		//   to return true to consider this unit test to have succeeded.
 		pm.killPlugin(wot, Long.MAX_VALUE);
+		// Workaround for https://bugs.freenetproject.org/view.php?id=7001
+		// = Database locking of WoT doesn't work currently, which means that if termination failed
+		// then WoT happily will start a second instance upon the already opened database.
+		assertTrue(wot.getDatabase().isClosed());
 		// Pointer of AbstractSingleNodeTest. AbstractMultiNodeTest doesn't keep one.
 		this.mWebOfTrust = null;
 		wot = null;

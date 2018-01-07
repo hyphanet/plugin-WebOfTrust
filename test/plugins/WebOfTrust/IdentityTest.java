@@ -220,6 +220,7 @@ public final class IdentityTest extends AbstractJUnit3BaseTest {
 		
 		stored = null;
 		mWoT.terminate();
+		assertTrue(mWoT.isTerminated());
 		mWoT = null;
 		
 		flushCaches();

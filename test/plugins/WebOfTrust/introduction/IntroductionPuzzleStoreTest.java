@@ -234,6 +234,9 @@ public final class IntroductionPuzzleStoreTest extends AbstractJUnit3BaseTest {
 		mWoT.deleteOwnIdentity(a.getID());
 		flushCaches();
 		
+		// FIXME: This tests deletion of a puzzle because of the inserter of the puzzle being
+		// deleted. Also test for deletion because of the solver being deleted!
+		
 		// We should not query for the puzzle count of the identity to ensure that we catch puzzles whose owner has become null as well.
 		for(OwnIntroductionPuzzle puzzle : deletedPuzzles) {
 			try {

@@ -19,13 +19,13 @@ import plugins.WebOfTrust.util.StopWatch;
 import freenet.node.Node;
 
 /**
- * Tests class {@link IdentityFetcher} and {@link IdentityInserter} with a real small darknet of
- * ten Freenet {@link Node}s:
- * - Creates an {@link OwnIdentity} on node #1 and has the IdentityInserter insert it into Freenet.
- * - Creates another OwnIdentity on node #2 which adds the remote Identity by its URI and sets a
+ * Tests classes {@link IdentityFetcher} and {@link IdentityInserter} with a real small darknet of
+ * ten Freenet {@link Node}s and two {@link WebOfTrust} plugin instances:
+ * - Creates an {@link OwnIdentity} on WoT #1 and has the IdentityInserter insert it into Freenet.
+ * - Creates another OwnIdentity on WoT #2 which adds the remote Identity by its URI and sets a
  *   positive trust to it.
- * - Waits until the remote Identity is successfully fetched and imported by the IdentityFetcher
- *   and validates its attributes are equal to the original. */
+ * - Waits until the remote Identity is successfully fetched and imported by the IdentityFetcher on
+ *   WoT #2 and validates its attributes are equal to the original. */
 public final class IdentityFetcherTest extends AbstractMultiNodeTest {
 
 	@Override public int getNodeCount() {
@@ -42,11 +42,14 @@ public final class IdentityFetcherTest extends AbstractMultiNodeTest {
 	}
 
 	@Override public String getDetailedLogLevel() {
-		// Enable DEBUG logging for the inserter/fetcher so you can watch progress on stdout while
-		// the test is running.
+		// Enable DEBUG logging so you can watch progress on stdout while the test is running.
+		// Enable logging for the unrelated IdentityFileProcessor as well as it may introduce a
+		// processing delay currently which you can observe at its logging (see
+		// https://bugs.freenetproject.org/view.php?id=6958).
 		return "freenet:NONE,"
 		     + "plugins.WebOfTrust.IdentityInserter:DEBUG,"
-		     + "plugins.WebOfTrust.IdentityFetcher:DEBUG";
+		     + "plugins.WebOfTrust.IdentityFetcher:DEBUG,"
+		     + "plugins.WebOfTrust.IdentityFileProcessor:MINOR";
 	}
 
 	@Before public void setUp() throws MalformedURLException, UnknownIdentityException {
@@ -64,21 +67,26 @@ public final class IdentityFetcherTest extends AbstractMultiNodeTest {
 		OwnIdentity insertedIdentity;
 		OwnIdentity trustingIdentity;
 		
-		// synchronized & clone() as workaround for https://bugs.freenetproject.org/view.php?id=6247
+		// Synchronized to prevent the WoTs from doing stuff while we set up the test environment.
+		// synchronized & clone() also as workaround for
+		// https://bugs.freenetproject.org/view.php?id=6247
+		// Notice: As a consequence of the clone() we will have to re-query the identities from the
+		// database before we pass them to other functions which use them for database queries,
+		// otherwise db4o will not know the objects' references.
 		synchronized(insertingWoT) {
 		synchronized(fetchingWoT) {
 			insertedIdentity = insertingWoT.createOwnIdentity("i1", true, null).clone();
 			trustingIdentity = fetchingWoT.createOwnIdentity("i2", true, null).clone();
 			
 			fetchingWoT.addIdentity(insertedIdentity.getRequestURI().toString());
-		}}
-		
-		// synchronized for concurrency, inserts & fetch could complete as soon as setTrust() is
-		// done which would break the assertNotEquals().
-		synchronized(insertingWoT) {
-		synchronized(fetchingWoT) {
 			// The Identity has to receive a Trust, otherwise it won't be eligible for download.
 			fetchingWoT.setTrust(trustingIdentity.getID(), insertedIdentity.getID(), (byte)100, "");
+			
+			// Disable upload of puzzles to reduce load and thus speed things up.
+			// TODO: Code quality: Benchmark whether this actually helps enough to justify having
+			// unrelated code here.
+			insertingWoT.setPublishIntroductionPuzzles(insertedIdentity.getID(), false);
+			fetchingWoT.setPublishIntroductionPuzzles(trustingIdentity.getID(), false);
 			
 			// This will be equals after the identity was inserted & fetched.
 			// (Checking equals() of the whole Identity wouldn't make sense here because comparing
@@ -103,8 +111,9 @@ public final class IdentityFetcherTest extends AbstractMultiNodeTest {
 		do {
 			// Check whether Identity was inserted and print the time it took to insert it.
 			// Notice: We intentionally don't wait for this in a separate loop before waiting for it
-			// to be fetched: Due to redundancy of inserts fred's "insert finished!" callbacks can
-			// happen AFTER the remote node's "fetch finished!" callbacks have already returned.
+			// to be fetched: Due to redundancy the amount of data to insert is larger than what
+			// has to be fetched, so fred's "insert finished!" callbacks can happen AFTER the remote
+			// node's "fetch finished!" callbacks have already happend.
 			if(!inserted) {
 				synchronized(insertingWoT) {
 					OwnIdentity i = insertingWoT.getOwnIdentityByID(insertedIdentity.getID());
@@ -130,7 +139,7 @@ public final class IdentityFetcherTest extends AbstractMultiNodeTest {
 		System.out.println("IdentityFetcherTest: Identity fetched! Time: " + fetchTime);
 		printNodeStatistics();
 		
-		// For Identity.equals() to succeed the source Identity we compare it to must not be an
+		// For Identity.equals() to succeed the Identity we use in the comparison must not be an
 		// OwnIdentity. deleteOwnIdentity() will replace the OwnIdentity with a non-own one.
 		// (We have to do this before terminating subsystems - otherwise an assert at the beginning
 		// of deleteOwnIdentity() will fail because it detects that the IdentityFetcher wasn't
