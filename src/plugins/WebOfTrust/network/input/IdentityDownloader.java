@@ -96,7 +96,7 @@ public interface IdentityDownloader extends Daemon {
 	 *   Especially the Score database shall already have been updated to reflect the changes due to
 	 *   the changed Trust.
 	 *   The SubscriptionManager's callback is called before the Score database is updated because:
-	 *   Its job is to deploy events to clients in the order they occured, and if the Score events
+	 *   Its job is to deploy events to clients in the order they occurred, and if the Score events
 	 *   were deployed before the Trust events then clients couldn't see the cause of the Score 
 	 *   events before their effect which logically doesn't make sense.
 	 *   However the existing implementation of this callback here don't care about this, and in
