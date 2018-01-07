@@ -9,6 +9,7 @@ import plugins.WebOfTrust.Identity;
 import plugins.WebOfTrust.IdentityFetcher;
 import plugins.WebOfTrust.IdentityFetcher.IdentityFetcherCommand;
 import plugins.WebOfTrust.IdentityFileQueue;
+import plugins.WebOfTrust.OwnIdentity;
 import plugins.WebOfTrust.Trust;
 import plugins.WebOfTrust.WebOfTrust;
 import plugins.WebOfTrust.util.Daemon;
@@ -118,6 +119,17 @@ public final class IdentityDownloaderController implements IdentityDownloader, D
 	}
 
 	@Override public void storeTrustChangedCommandWithoutCommit(Trust oldTrust, Trust newTrust) {
+		// Check whether we're being called only for such Trust changes as which the interface
+		// specification of IdentityDownloader requests.
+		// FIXME: Review IdentityDownloaderFast / IdentityDownloaderSlow implementations of this
+		// function for whether they are safe in all those cases.
+		assert(
+			(newTrust == null ^ oldTrust == null) ||
+			(newTrust.getValue() != oldTrust.getValue()) ||
+			(	  (newTrust.getTruster() instanceof OwnIdentity)
+				^ (oldTrust.getTruster() instanceof OwnIdentity))
+		) : "storeTrustChangedCommandWithoutCommit() called for irrelevant Trust change!";
+		
 		for(IdentityDownloader d : mDownloaders)
 			d.storeTrustChangedCommandWithoutCommit(oldTrust, newTrust);
 	}
