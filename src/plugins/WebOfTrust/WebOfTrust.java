@@ -2845,7 +2845,7 @@ public final class WebOfTrust extends WebOfTrustInterface
 				// storeAbortFetchCommandWithoutCommit() above.
 				// However such hacks should first be explicitely allowed in the interface
 				// specification of IdentityDownloader. As this function here is for debug purposes
-				// mostly currently it's not worth doing that now.
+				// and database upgrade code mostly currently it's not worth doing that now.
 				for(Trust t : receivedTrusts)
 					mFetcher.storeTrustChangedCommandWithoutCommit(t, null);
 				
