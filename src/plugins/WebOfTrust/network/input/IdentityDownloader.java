@@ -105,6 +105,12 @@ public interface IdentityDownloader extends Daemon {
 	 * - May not be called for all changes to attributes of the Trust but will be called upon:
 	 *   * {@link Trust#getValue()} changes.
 	 *   * {@link Trust#getTruster()} changes its type from OwnIdentity to Identity or vice versa.
+	 *       FIXME: It may not actually be called in the above cases because the implementations of
+	 *       {@link WebOfTrust#restoreOwnIdentity(FreenetURI)} and
+	 *       {@link WebOfTrust#deleteOwnIdentity(String)} probably handle the type change by
+	 *       deleting the trust objects and re-creating them in separate calls to
+	 *       {@link WebOfTrust#removeTrust(String, String)} and
+	 *       {@link WebOfTrust#setTrust(String, String, byte, String)}.
 	 *   * a Trust is created or deleted.
 	 * 
 	 * - Synchronization requirements:
