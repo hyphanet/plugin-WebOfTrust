@@ -5270,9 +5270,8 @@ public final class WebOfTrust extends WebOfTrustInterface
 				
 				try {
 					newIdentity = new Identity(this, oldIdentity.getRequestURI(), oldIdentity.getNickname(), oldIdentity.doesPublishTrustList());
-				} catch(MalformedURLException e) { // The data was taken from the OwnIdentity so this shouldn't happen
-					throw new RuntimeException(e);
-				} catch (InvalidParameterException e) { // The data was taken from the OwnIdentity so this shouldn't happen
+				} catch(MalformedURLException | InvalidParameterException e) {
+					// The data was taken from the OwnIdentity so this shouldn't happen
 					throw new RuntimeException(e);
 				}
 				
