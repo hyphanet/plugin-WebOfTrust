@@ -133,7 +133,19 @@ public interface IdentityDownloader extends Daemon {
 	 * FIXME: Make the WebOfTrust actually call it. Find the places where to call it by using your
 	 * IDE to look up where WoT calls the similar function at SubscriptionManager.
 	 * Do not call it in the very same place but some lines later *after* Score computation is
-	 * finished to obey that requirement as aforementioned. */
+	 * finished to obey that requirement as aforementioned.
+	 * EDIT: It is actually not true that the set of calls to
+	 * {@link SubscriptionManager#storeTrustChangedNotificationWithoutCommit()} includes every
+	 * place where we need to call this callback:
+	 * At least {@link WebOfTrust#deleteOwnIdentity(String)} doesn't call the SubscriptionManager's
+	 * callback but is very relevant to the {@link IdentityDownloaderFast} because the set of
+	 * Identitys it wants to download is precisely those which have received a Trust by an
+	 * OwnIdentity. Thus when resolving this FIXME please think about all potential places where
+	 * this callback needs to be called. An inspiration for this may be AbstractJUnit4BaseTest's
+	 * function doRandomChangesToWoT(), it attempts to cover all types of changes to the database.
+	 * Further it might make sense to change the JavaDoc of this callback here to not compare it
+	 * to SubscriptionManager's callback anymore as the set of differences has already become too
+	 * large. */
 	void storeTrustChangedCommandWithoutCommit(Trust oldTrust, Trust newTrust);
 
 	/**
