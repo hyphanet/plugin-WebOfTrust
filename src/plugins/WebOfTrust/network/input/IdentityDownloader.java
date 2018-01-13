@@ -127,9 +127,7 @@ public interface IdentityDownloader extends Daemon {
 	 * FIXME: Make the WebOfTrust actually call it. Find the places where to call it by using your
 	 * IDE to look up where WoT calls the similar function at SubscriptionManager.
 	 * Do not call it in the very same place but some lines later *after* Score computation is
-	 * finished to obey that requirement as aforementioned. 
-	 * Also check whether they synchronization requirements are obeyed by the code there, which they
-	 * will likely be IIRC. */
+	 * finished to obey that requirement as aforementioned. */
 	void storeTrustChangedCommandWithoutCommit(Trust oldTrust, Trust newTrust);
 
 	/**
