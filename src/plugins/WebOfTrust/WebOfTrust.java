@@ -5402,12 +5402,14 @@ public final class WebOfTrust extends WebOfTrustInterface
 				
 				assert(getGivenScores(oldIdentity).size() == 0);
 
-				// Copy all given trusts:
-				// We don't have to use the removeTrust/setTrust functions because the score graph does not need updating:
-				// - To the rating of the converted identity in the score graphs of other own identities it is irrelevant
-				//   whether it is an own identity or not. The rating should never depend on whether it is an own identity!
-				// - Non-own identities do not have a score graph. So the score graph of the converted identity is deleted
-				//   completely and therefore it does not need to be updated.
+				// Copy all given Trusts:
+				// We also don't have to use removeTrustWithoutCommit() + setTrustWithoutCommit()
+				// here because the Score graph does not need updating:
+				// - The weight of the given Trusts of an identity in the Score graph of other
+				//   OwnIdentitys is the same independent of whether it is an OwnIdentity or
+				//   non-own Identity, similar to the reason explained for received Trusts above.
+				// - Non-own Identitys do not assign Scores to other Identitys so by having deleted
+				//   all its Scores already we're done with the Score graph.
 				for(Trust oldGivenTrust : getGivenTrusts(oldIdentity)) {
 					Trust newGivenTrust;
 					try {
