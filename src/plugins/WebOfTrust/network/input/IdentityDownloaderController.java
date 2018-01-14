@@ -119,6 +119,14 @@ public final class IdentityDownloaderController implements IdentityDownloader, D
 	}
 
 	@Override public void storeTrustChangedCommandWithoutCommit(Trust oldTrust, Trust newTrust) {
+		// Check sanity of passed Trusts.
+		assert(oldTrust != null || newTrust != null);
+		// The newTrust must be about the same truster and trustee Identitys. The Trust's ID
+		// contains their IDs so we can compare it to check the Identitys. We must do that as the
+		// object references of the Identitys aren't the same as oldTrust is a clone().
+		assert(oldTrust != null && newTrust != null ? newTrust.getID().equals(oldTrust.getID())
+			: true /* Emulate "assert(if())" using the ternary operator */);
+		
 		// Check whether we're being called only for such Trust changes as which the interface
 		// specification of IdentityDownloader requests.
 		// FIXME: Review IdentityDownloaderFast / IdentityDownloaderSlow implementations of this
@@ -129,6 +137,7 @@ public final class IdentityDownloaderController implements IdentityDownloader, D
 			(	  (newTrust.getTruster() instanceof OwnIdentity)
 				^ (oldTrust.getTruster() instanceof OwnIdentity))
 		) : "storeTrustChangedCommandWithoutCommit() called for irrelevant Trust change!";
+		
 		
 		for(IdentityDownloader d : mDownloaders)
 			d.storeTrustChangedCommandWithoutCommit(oldTrust, newTrust);

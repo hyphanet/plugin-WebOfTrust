@@ -490,14 +490,6 @@ public final class IdentityDownloaderFast implements
 	 *   This callback must hence stop the download by observing Trust removal of OwnIdentitys.
 	 *   (Notice that this is sort of the inverse of the above case.) */
 	@Override public void storeTrustChangedCommandWithoutCommit(Trust oldTrust, Trust newTrust) {
-		assert(oldTrust != null || newTrust != null);
-		// The newTrust must be about the same truster and trustee Identitys. The Trust's ID
-		// contains their IDs so we can compare it to check the Identitys. We must do that as the
-		// object references of the Identitys aren't the same as oldTrust is a clone().
-		assert(oldTrust != null && newTrust != null ? newTrust.getID().equals(oldTrust.getID())
-			: true /* To emulate "assert(if())" using the ternary operator */);
-		
-		
 		// Check whether the Trust change could cause our "download the trustee?" decision to
 		// change, if not return. This is only "maybe" because there may be other Trusts to the
 		// trustee.
