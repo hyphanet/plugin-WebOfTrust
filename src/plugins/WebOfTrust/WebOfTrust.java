@@ -5328,9 +5328,14 @@ public final class WebOfTrust extends WebOfTrustInterface
 
 				newIdentity.storeWithoutCommit();
 
-				// Copy all received trusts.
-				// We don't have to modify them because they are user-assigned values and the assignment
-				// of the user does not change just because the type of the identity changes.
+				// Copy all received Trusts.
+				// We don't use removeTrustWithoutCommit() + setTrustWithoutCommit() here to avoid
+				// triggering expensive Score computation as recomputing Scores is not necessary:
+				// The Score rating of an identity from the perspective of an OwnIdentity as
+				// acquired by the Trusts it has received is independent of whether the rated
+				// identity is an OwnIdentity or non-own Identity.
+				// This is because from the perspective of the rating OwnIdentity the rated
+				// OwnIdentity was a different user and had no special privileges.
 				for(Trust oldReceivedTrust : getReceivedTrusts(oldIdentity)) {
 					Trust newReceivedTrust;
 					try {
@@ -5351,9 +5356,8 @@ public final class WebOfTrust extends WebOfTrustInterface
 
 				assert(getReceivedTrusts(oldIdentity).size() == 0);
 
-				// Copy all received scores.
-				// We don't have to modify them because the rating of the identity from the perspective of a
-				// different own identity should NOT be dependent upon whether it is an own identity or not.
+				// Copy all received Scores.
+				// We don't have to modify them for the same reason as explained above for Trusts.
 				for(Score oldScore : getScores(oldIdentity)) {
 					Score newScore = new Score(this, oldScore.getTruster(), newIdentity, oldScore.getScore(),
 							oldScore.getRank(), oldScore.getCapacity());
@@ -5548,9 +5552,14 @@ public final class WebOfTrust extends WebOfTrustInterface
 				mSubscriptionManager.storeIdentityChangedNotificationWithoutCommit(oldIdentity, identity);
 				initTrustTreeWithoutCommit(identity);
 
-				// Copy all received trusts.
-				// We don't have to modify them because they are user-assigned values and the assignment
-				// of the user does not change just because the type of the identity changes.
+				// Copy all received Trusts.
+				// We don't use removeTrustWithoutCommit() + setTrustWithoutCommit() here to avoid
+				// triggering expensive Score computation as recomputing Scores is not necessary:
+				// The Score rating of an identity from the perspective of an OwnIdentity as
+				// acquired by the Trusts it has received is independent of whether the rated
+				// identity is an OwnIdentity or non-own Identity.
+				// This is because from the perspective of the rating OwnIdentity the rated
+				// OwnIdentity is a different user and has no special privileges.
 				for(Trust oldReceivedTrust : getReceivedTrusts(oldIdentity)) {
 					Trust newReceivedTrust = new Trust(this, oldReceivedTrust.getTruster(), identity,
 							oldReceivedTrust.getValue(), oldReceivedTrust.getComment());
@@ -5566,9 +5575,8 @@ public final class WebOfTrust extends WebOfTrustInterface
 				
 				assert(getReceivedTrusts(oldIdentity).size() == 0);
 	
-				// Copy all received scores.
-				// We don't have to modify them because the rating of the identity from the perspective of a
-				// different own identity should NOT be dependent upon whether it is an own identity or not.
+				// Copy all received Scores.
+				// We don't have to modify them for the same reason as explained above for Trusts.
 				for(Score oldScore : getScores(oldIdentity)) {
 					Score newScore = new Score(this, oldScore.getTruster(), identity, oldScore.getScore(),
 							oldScore.getRank(), oldScore.getCapacity());
