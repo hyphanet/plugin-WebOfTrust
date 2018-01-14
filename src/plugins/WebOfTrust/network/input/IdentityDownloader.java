@@ -143,6 +143,9 @@ public interface IdentityDownloader extends Daemon {
 	 * OwnIdentity. Thus when resolving this FIXME please think about all potential places where
 	 * this callback needs to be called. An inspiration for this may be AbstractJUnit4BaseTest's
 	 * function doRandomChangesToWoT(), it attempts to cover all types of changes to the database.
+	 * The proper approach though may be to use Eclipse's "Open Call Hierarchy" feature to inspect
+	 * all places where {@link Trust#storeWithoutCommit()} and {@link Trust#deleteWithoutCommit()}
+	 * are called.
 	 * Further it might make sense to change the JavaDoc of this callback here to not compare it
 	 * to SubscriptionManager's callback anymore as the set of differences has already become too
 	 * large. */
