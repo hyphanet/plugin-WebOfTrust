@@ -111,6 +111,9 @@ public interface IdentityDownloader extends Daemon {
 	 *       deleting the trust objects and re-creating them in separate calls to
 	 *       {@link WebOfTrust#removeTrust(String, String)} and
 	 *       {@link WebOfTrust#setTrust(String, String, byte, String)}.
+	 *       If you drop this constraint then also adapt the implementation of this callback
+	 *       {@link IdentityDownloaderController#storeTrustChangedCommandWithoutCommit(Trust,
+	 *       Trust)} to not check for it anymore in an assert().
 	 *   * a Trust is created or deleted.
 	 * 
 	 * - Synchronization requirements:
