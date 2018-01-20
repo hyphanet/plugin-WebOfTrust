@@ -137,12 +137,14 @@ public interface IdentityDownloader extends Daemon {
 	 * EDIT: It is actually not true that the set of calls to
 	 * {@link SubscriptionManager#storeTrustChangedNotificationWithoutCommit()} includes every
 	 * place where we need to call this callback:
-	 * At least {@link WebOfTrust#deleteOwnIdentity(String)} doesn't call the SubscriptionManager's
-	 * callback but is very relevant to the {@link IdentityDownloaderFast} because the set of
-	 * Identitys it wants to download is precisely those which have received a Trust by an
-	 * OwnIdentity. Thus when resolving this FIXME please think about all potential places where
-	 * this callback needs to be called. An inspiration for this may be AbstractJUnit4BaseTest's
-	 * function doRandomChangesToWoT(), it attempts to cover all types of changes to the database.
+	 * At least {@link WebOfTrust#deleteOwnIdentity(String)} and p
+	 * {@link WebOfTrust#restoreOwnIdentityWithoutCommit(FreenetURI)} don't call the
+	 * SubscriptionManager's callback but are very relevant to the {@link IdentityDownloaderFast}
+	 * because the set of Identitys it wants to download is precisely those which have received a
+	 * Trust by an OwnIdentity. Thus when resolving this FIXME please think about all potential
+	 * places where this callback needs to be called. An inspiration for this may be
+	 * AbstractJUnit4BaseTest's function doRandomChangesToWoT(), it attempts to cover all types of
+	 * changes to the database.
 	 * The proper approach though may be to use Eclipse's "Open Call Hierarchy" feature to inspect
 	 * all places where {@link Trust#storeWithoutCommit()} and {@link Trust#deleteWithoutCommit()}
 	 * are called.
