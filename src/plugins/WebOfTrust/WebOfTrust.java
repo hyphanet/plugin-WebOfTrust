@@ -5327,6 +5327,12 @@ public final class WebOfTrust extends WebOfTrustInterface
 				newIdentity.forceSetNewEditionHint(oldIdentity.getLatestEditionHint());
 
 				newIdentity.storeWithoutCommit();
+				
+				// For calling mFetcher.storeTrustChangedCommandWithoutCommit()
+				// - it needs to be called after the Score database is correct so we must store
+				// the Trusts we modify in the ArrayLists temporarily.
+				ArrayList<Trust> deletedTrusts = new ArrayList<>(MAX_IDENTITY_XML_TRUSTEE_AMOUNT);
+				ArrayList<Trust> createdTrusts = new ArrayList<>(MAX_IDENTITY_XML_TRUSTEE_AMOUNT);
 
 				// Copy all received Trusts.
 				// We don't use removeTrustWithoutCommit() + setTrustWithoutCommit() here to avoid
@@ -5349,7 +5355,13 @@ public final class WebOfTrust extends WebOfTrustInterface
 					// It would implicitly trigger oldIdentity.equals(identity) which is not the case:
 					// Certain member values such as the edition might not be equal.
 					/* assert(newReceivedTrust.equals(oldReceivedTrust)); */
-
+					
+					// We clone() the oldReceivedTrust because after deleting it its getters
+					// wouldn't be able to query its members from the database anymore. mFetcher is
+					// compatible with that.
+					deletedTrusts.add(oldReceivedTrust.clone());
+					createdTrusts.add(newReceivedTrust);
+					
 					oldReceivedTrust.deleteWithoutCommit();
 					newReceivedTrust.storeWithoutCommit();
 				}
@@ -5424,11 +5436,17 @@ public final class WebOfTrust extends WebOfTrustInterface
 					// Certain member values such as the edition might not be equal.
 					/* assert(newGivenTrust.equals(oldGivenTrust)); */
 
+					deletedTrusts.add(oldGivenTrust.clone());
+					createdTrusts.add(newGivenTrust);
+					
 					oldGivenTrust.deleteWithoutCommit();
 					newGivenTrust.storeWithoutCommit();
 				}
 
 				mPuzzleStore.onIdentityDeletion(oldIdentity);
+				
+				for(Trust t : deletedTrusts)
+					mFetcher.storeTrustChangedCommandWithoutCommit(t, null);
 				
 				for(Identity i : needAbortFetchCommand)
 					mFetcher.storeAbortFetchCommandWithoutCommit(i);
@@ -5445,6 +5463,9 @@ public final class WebOfTrust extends WebOfTrustInterface
 
 				if(shouldFetchIdentity(newIdentity))
 					mFetcher.storeStartFetchCommandWithoutCommit(newIdentity);
+
+				for(Trust t : createdTrusts)
+					mFetcher.storeTrustChangedCommandWithoutCommit(null, t);
 				
 				mSubscriptionManager.storeIdentityChangedNotificationWithoutCommit(oldIdentity, newIdentity);
 				
