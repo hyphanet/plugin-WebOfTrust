@@ -5379,6 +5379,14 @@ public final class WebOfTrust extends WebOfTrustInterface
 					// We clone() the oldReceivedTrust because after deleting it its getters
 					// wouldn't be able to query its members from the database anymore. mFetcher is
 					// compatible with that.
+					// TODO: Performance: In theory we don't need to tell mFetcher about the deleted
+					// received Trusts as the effect of aborting fetching of the oldIdentity is
+					// already covered by the fact that we'll have to call
+					// storeAbortFetchCommandWithoutCommit() upon it (as it was an OwnIdentity which
+					// are always being fetched even without received Trusts, for restoring).
+					// However such hacks should first be explicitely allowed in the interface
+					// specification of IdentityDownloader - and perhaps the few CPU cycles are not
+					// worth the uglyness of such special cases.
 					deletedTrusts.add(oldReceivedTrust.clone());
 					createdTrusts.add(newReceivedTrust);
 					
