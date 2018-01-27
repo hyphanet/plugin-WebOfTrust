@@ -2782,6 +2782,16 @@ public final class WebOfTrust extends WebOfTrustInterface
 
 			// While deleting Trusts now we will preserve them here as we will need to pass them to
 			// mFetcher after Scores are updated.
+			// TODO: Performance: The initial size for receivedTrusts should rather be a multiply of
+			// the average amount of *received* Trusts as measured on the actual network, the used
+			// constant is about *given* Trusts (though it may be the same as the average received
+			// Trust amount anyway if Trusts are distributed completely random among Identitys).
+			// While the performance benefit of that may be neglegible introducing a constant
+			// for it will allow developers to easily search the source code for things which
+			// need to change if the network grows so large that this won't fit into memory
+			// anymore for seed Identitys - for which you should please file a bug once you
+			// introduce such a constant. Then please also deal with the other TODO of the same
+			// subject which was added by the same commit as this one.
 			ArrayList<Trust> receivedTrusts = new ArrayList<>(MAX_IDENTITY_XML_TRUSTEE_AMOUNT);
 			ArrayList<Trust> givenTrusts = new ArrayList<>(MAX_IDENTITY_XML_TRUSTEE_AMOUNT);
 			
@@ -5331,6 +5341,16 @@ public final class WebOfTrust extends WebOfTrustInterface
 				// For calling mFetcher.storeTrustChangedCommandWithoutCommit()
 				// - it needs to be called after the Score database is correct so we must store
 				// the Trusts we modify in the ArrayLists temporarily.
+				// TODO: Performance: The initial size isn't very accurate because we also add
+				// received Trusts to the lists, but the used constant is about *given* trusts.
+				// The initial size should rather be the average amount of received Trusts as
+				// measured on the actual network + MAX_IDENTITY_XML_TRUSTEE_AMOUNT.
+				// While the performance benefit of that may be neglegible introducing a constant
+				// for it will allow developers to easily search the source code for things which
+				// need to change if the network grows so large that this won't fit into memory
+				// anymore for seed Identitys - for which you should please file a bug once you
+				// introduce such a constant. Then please also deal with the other TODO of the same
+				// subject which was added by the same commit as this one.
 				ArrayList<Trust> deletedTrusts = new ArrayList<>(MAX_IDENTITY_XML_TRUSTEE_AMOUNT);
 				ArrayList<Trust> createdTrusts = new ArrayList<>(MAX_IDENTITY_XML_TRUSTEE_AMOUNT);
 
