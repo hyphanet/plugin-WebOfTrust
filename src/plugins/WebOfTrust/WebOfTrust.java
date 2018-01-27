@@ -5664,8 +5664,14 @@ public final class WebOfTrust extends WebOfTrustInterface
 				final ArrayList<Trust> oldGivenTrustsCopy
 					= new ArrayList<Trust>(oldGivenTrusts);
 				
-				for(Trust oldGivenTrust : oldGivenTrusts)
+				for(Trust oldGivenTrust : oldGivenTrusts) {
+					// We will have to call getters on the Trust after its deletion - which
+					// wouldn't be able to load their value from the database after the object was
+					// already deleted. So we load the values now.
+					oldGivenTrust.activateFully();
+					
 					oldGivenTrust.deleteWithoutCommit();
+				}
 				
 				assert(getGivenTrusts(oldIdentity).size() == 0);
 				
