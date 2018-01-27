@@ -469,7 +469,8 @@ public final class IdentityDownloaderFast implements
 	}
 
 	/**
-	 * By implementing this callback we're targeting the following events:
+	 * By implementing this callback we're processing the following events to adjust our decision
+	 * of whether we download the {@link Trust#getTrustee()} of the changed {@link Trust}:
 	 * - {@link #storeStartFetchCommandWithoutCommit()} was already called for the {@link Identity}
 	 *   because a non-own Identity's {@link Trust} caused it to be trusted enough for being
 	 *   downloaded by WoT in general BUT as it was a non-own Trust this class wasn't interested in
@@ -505,15 +506,19 @@ public final class IdentityDownloaderFast implements
 		if(maybeWouldDownloadNow == maybeWouldDownloadBefore)
 			return;
 		
-		Identity identity;
-		if(newTrust != null)
-			identity = newTrust.getTrustee();
-		else {
-			// The oldTrust is a clone() so its getTrustee() also is a clone().
+		Identity identity = newTrust != null ? newTrust.getTrustee() : oldTrust.getTrustee();
+
+		// OwnIdentitys are always downloaded, independent of whether someone trusts them.
+		if(identity instanceof OwnIdentity)
+			return;
+		
+		if(newTrust == null) {
+			// The identity was taken from oldTrust which is a clone() - so the identity also is
+			// a clone().
 			// Our callees will store a reference to the Identity object in the database so to avoid
 			// its duplication we must re-query the original object from the database by ID.
 			try {
-				identity = mWoT.getIdentityByID(oldTrust.getTrustee().getID());
+				identity = mWoT.getIdentityByID(identity.getID());
 			} catch(UnknownIdentityException e) {
 				throw new RuntimeException("Called with a Trust to an inexistent identity!", e);
 			}
