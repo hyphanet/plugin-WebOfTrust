@@ -1,3 +1,8 @@
+# FIXME: Re-enable once the branch is finished
+branches:
+	except:
+		- issue-0003816-IdentityFetcher-rewrite
+
 language: java
 
 # We need Ubuntu 14.04 due to very new JUnit API which WoT needs

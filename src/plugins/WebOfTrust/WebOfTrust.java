@@ -239,6 +239,9 @@ public final class WebOfTrust extends WebOfTrustInterface
 	@Override
 	public void runPlugin(PluginRespirator myPR) {
 		try {
+			// FIXME: When you remove this also remove the code in .travis.yml which disables unit
+			// tests for this branch. Use git blame to locate it, it was added by the same commit as
+			// this comment.
 			if(true) throw new UnsupportedOperationException(
 			    "The code of this branch is not finished yet, please do not use it: "
 			  + "It will *gradually* change the scheme of the database, and having databases of "
