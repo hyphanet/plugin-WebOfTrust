@@ -21,6 +21,7 @@ import java.util.HashMap;
 import java.util.HashSet;
 import java.util.IdentityHashMap;
 import java.util.LinkedList;
+import java.util.List;
 import java.util.Map;
 import java.util.PriorityQueue;
 import java.util.concurrent.CountDownLatch;
@@ -5657,12 +5658,11 @@ public final class WebOfTrust extends WebOfTrustInterface
 				// would be confused by both the OwnIdentity and non-own Identity object being
 				// in the database at the same time.
 				// Thus we will first delete the non-own Identity and then re-set the trusts.
-				final ObjectSet<Trust> oldGivenTrusts = getGivenTrusts(oldIdentity);
+				List<Trust> oldGivenTrusts = getGivenTrusts(oldIdentity);
 				
 				// TODO: No need to copy after this is fixed:
 				// https://bugs.freenetproject.org/view.php?id=6596
-				final ArrayList<Trust> oldGivenTrustsCopy
-					= new ArrayList<Trust>(oldGivenTrusts);
+				oldGivenTrusts = new ArrayList<>(oldGivenTrusts);
 				
 				for(Trust oldGivenTrust : oldGivenTrusts) {
 					// We will have to call getters on the Trust after its deletion - which
@@ -5696,7 +5696,7 @@ public final class WebOfTrust extends WebOfTrustInterface
 				// which is why we had not set them yet.
 				// FIXME: Performance: This could maybe be optimized by setting
 				// mFullScoreComputationNeeded to true. Do benchmarks.
-				for(Trust givenTrust : oldGivenTrustsCopy)
+				for(Trust givenTrust : oldGivenTrusts)
 					setTrustWithoutCommit(identity, givenTrust.getTrustee(), givenTrust.getValue(), givenTrust.getComment());
 				
 				finishTrustListImport();
