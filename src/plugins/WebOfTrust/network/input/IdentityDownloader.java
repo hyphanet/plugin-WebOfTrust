@@ -153,7 +153,25 @@ public interface IdentityDownloader extends Daemon {
 	 * are called.
 	 * Further it might make sense to change the JavaDoc of this callback here to not compare it
 	 * to SubscriptionManager's callback anymore as the set of differences has already become too
-	 * large. */
+	 * large.
+	 * 
+	 * FIXME: Rename to storeOwnTrustChanged...(), make callers only call it for Trusts where
+	 * the truster is an OwnIdentity.
+	 * They currently are the only ones which IdentityDownloaderFast is interested in, and it likely
+	 * will stay as is for a long time. Yes, it it is easy to just implement this function there to
+	 * ignore non-own Trusts. But my efforts to adapt all of WoT, specifically
+	 * restoreOwnIdentity...(), to call the function for non-own Trusts as well have shown that it
+	 * seems rather difficult to do so *while* obeying its requirements. Namely calling it *after*
+	 * the Score database has been updated seems to be difficult in the context of
+	 * restoreOwnIdentity() (because it calls setTrustWithoutCommit(), which does call this
+	 * function here on its own. Though perhaps that is not a problem, I was rather tired when I
+	 * noticed it).
+	 * Spending the effort of figuring that out is probably more work than it would take to rename
+	 * the function and change the callers to only call it for own Trusts.
+	 * And even if in the future some other implementation of IdentityDownloader is written which is
+	 * interested in non-own Trusts it may then probably be necessary to review the conditions under
+	 * which the function is called anyway - so we might postpone the task of calling it for non-own
+	 * Trusts to that point in time, if it ever happens. */
 	void storeTrustChangedCommandWithoutCommit(Trust oldTrust, Trust newTrust);
 
 	/**
