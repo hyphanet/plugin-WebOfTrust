@@ -172,6 +172,11 @@ public class StatisticsPage extends WebPageImpl {
 				// the EditionHints in the download queue. We add them in the same order as they
 				// define the sort order at EditionHint.compareTo().
 				addChild("th", l.getString(p2 + "Date"));
+				// FIXME: Add "Queued for" column which shows the number of hours for which the hint
+				// has been queued for downloading. This can be computed from the
+				// Persistent.getCreationDate() of the EditionHint object as hints are only stored
+				// in the database as long as they are eligible for download (proof is e.g.
+				// IdentityDownloaderSlow.getQueue()).
 				addChild("th", l.getString(p2 + "SourceCapacity"));
 				addChild("th", l.getString(p2 + "SourceScore"));
 				addChild("th", l.getString(p2 + "TargetIdentity"));
