@@ -25,6 +25,9 @@ import freenet.support.CurrentTimeUTC;
  * A score is the actual rating of how much an identity can be trusted from the point of view of the OwnIdentity which owns the score.
  * If the Score is negative, the identity is considered malicious, if it is zero or positive, it is trusted. 
  * 
+ * NOTICE: In the web interface we nowadays only ever call this "computed trust" or "computed trust
+ * value". This was changed for usability purposes.
+ * 
  * Concurrency:
  * Score does not provide locking of its own.
  * Reads and writes upon Score objects must be secured by synchronizing on the {@link WebOfTrust}.
