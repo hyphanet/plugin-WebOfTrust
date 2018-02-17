@@ -5647,20 +5647,19 @@ public final class WebOfTrust extends WebOfTrustInterface
 					// Nothing has changed about the actual score so we do not notify.
 					// mSubscriptionManager.storeScoreChangedNotificationWithoutCommit(oldScore, newScore);
 				}
-				
 				assert(getScores(oldIdentity).size() == 0);
 				
-				// What we do NOT have to deal with is the given scores of the old identity:
-				// Given scores do NOT exist for non-own identities, so there are no old ones to update.
-				// Of cause there WILL be scores because it is an own identity now.
-				// They will be created automatically when updating the given trusts
-				// - so thats what we will do now.
-				
-				// Copy all given trusts at first instead of using removeTrustWithoutCommit()
-				// and immediately afterwards setTrustWithoutCommit() because those functions
-				// would be confused by both the OwnIdentity and non-own Identity object being
-				// in the database at the same time.
-				// Thus we will first delete the non-own Identity and then re-set the trusts.
+				// Only OwnIdentitys assign Scores to other Identitys so there are no old *given*
+				// Scores to deal with, there only were received ones.
+				// Now that the Identity is becoming an OwnIdentity we will have to ensure its given
+				// Scores are computed by using setTrustWithoutCommit() to re-create its Trusts
+				// after we've deleted the old ones.
+				// We can for now only delete the Trust objects, not re-create them, as the Score
+				// computation code which is invoked by setTrustWithoutCommit() would not work
+				// if two Identitys with the same ID existed at the same time.
+				// Thus while deleting the Trusts we store them in this List temporarily and
+				// feed them to setTrustWithoutCommit() later on after we're done with deleting the
+				// old Identity.
 				List<Trust> oldGivenTrusts = getGivenTrusts(oldIdentity);
 				
 				// TODO: No need to copy after this is fixed:
