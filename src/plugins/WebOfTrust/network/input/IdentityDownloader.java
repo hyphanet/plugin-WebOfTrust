@@ -171,7 +171,25 @@ public interface IdentityDownloader extends Daemon {
 	 * And even if in the future some other implementation of IdentityDownloader is written which is
 	 * interested in non-own Trusts it may then probably be necessary to review the conditions under
 	 * which the function is called anyway - so we might postpone the task of calling it for non-own
-	 * Trusts to that point in time, if it ever happens. */
+	 * Trusts to that point in time, if it ever happens.
+	 * EDIT: The above great effort to adapt restoreOwnIdentity...() to be able to call this may
+	 * become a lot less complex if we just fully bail out on having to call this function there by
+	 * introducing a separate callback for signaling restoreOwnIdentity..() to the
+	 * IdentityDownloader, i.e. "storeRestoreOwnIdentityCommand...(Identity oldIdentity, OwnIdentity
+	 * newIdentity). That would avoid useless computations completely and also be very easy to
+	 * implement at IdentityDownloaderFast: It merely would have to start downloads for all trustees
+	 * of the OwnIdentity. Further it would likely resolve the issue of IdentityDownloaderFast's
+	 * DownloadSchedulerCommand objects containing database pointers to the Identity object which
+	 * have to be deleted as the Identity object is deleted by restoreOwnIdentity() -
+	 * IdentityDownloaderFast would become aware of the necessity to get rid of the stale pointers
+	 * before they become stale. Right now with the existing naming and purpose of this callback it
+	 * would receive a lot of calls where the Trust objects of the to-be-deleted Identity are
+	 * deleted, which would mean that it would store DownloadSchedulerCommand objects pointing to
+	 * the deleted Identity, so it would create even more stale pointers.
+	 * If the IdentityDownloaderFast becomes aware of Identity deletion with a separate 
+	 * storeRestoreOwnIdentityCommand...() then it can likely handle the pointers properly.
+	 * ... If you go for the approach of the separate callback you then should also deal in the
+	 * same way with WebOfTrust.deleteOwnIdentity...(), it has the same issues.*/
 	void storeTrustChangedCommandWithoutCommit(Trust oldTrust, Trust newTrust);
 
 	/**
