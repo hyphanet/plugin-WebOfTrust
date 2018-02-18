@@ -87,6 +87,22 @@ public interface IdentityDownloader extends Daemon {
 	void storeAbortFetchCommandWithoutCommit(Identity identity);
 
 	/**
+	 * Called by {@link WebOfTrust#restoreOwnIdentityWithoutCommit(FreenetURI)} when the class of an
+	 * {@link Identity} changes to {@link OwnIdentity}.
+	 * 
+	 * FIXME: Implement at the child classes IdentityDownloaderFast and IdentityDownloaderSlow.
+	 * Adapt restoreOwnIdentity() to call it. Then JavaDoc this once the requirements of the
+	 * callback have been become apparent by implementing it. 
+	 * This callback was introduced during attempts to implement calling of
+	 * {@link #storeTrustChangedCommandWithoutCommit(Trust, Trust)} by restoreOwnIdentty(), during
+	 * which it was discovered that it would be too complex to deploy that callback under the
+	 * circumstances of restoreOwnIdentity(). Those circumstances are described at the JavaDoc of
+	 * that callback.
+	 * Therefore please also take the requirements of that callback into consideration for the
+	 * pending documentation of this callback here. */
+	void storeRestoreOwnIdentityCommandWithoutCommit(Identity oldIdentity, OwnIdentity newIdentity);
+
+	/**
 	 * Called under almost the same circumstances as
 	 * {@link SubscriptionManager#storeTrustChangedNotificationWithoutCommit()} except for the
 	 * following differences:

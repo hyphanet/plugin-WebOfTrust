@@ -469,6 +469,15 @@ public final class IdentityDownloaderFast implements
 	}
 
 	/**
+	 * FIXME: Implement, see
+	 * {@link IdentityDownloader#storeRestoreOwnIdentityCommandWithoutCommit(Identity, OwnIdentity)}
+	 */
+	@Override public void storeRestoreOwnIdentityCommandWithoutCommit(Identity oldIdentity,
+			OwnIdentity newIdentity) {
+		throw new UnsupportedOperationException("Not implemented yet!");
+	}
+
+	/**
 	 * By implementing this callback we're processing the following events to adjust our decision
 	 * of whether we download the {@link Trust#getTrustee()} of the changed {@link Trust}:
 	 * - {@link #storeStartFetchCommandWithoutCommit()} was already called for the {@link Identity}

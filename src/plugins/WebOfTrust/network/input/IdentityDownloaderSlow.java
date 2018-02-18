@@ -952,6 +952,15 @@ public final class IdentityDownloaderSlow implements
 		Logger.normal(this, "storeAbortFetchCommandWithoutCommit() finished");
 	}
 
+	/**
+	 * FIXME: Implement, see
+	 * {@link IdentityDownloader#storeRestoreOwnIdentityCommandWithoutCommit(Identity, OwnIdentity)}
+	 */
+	@Override public void storeRestoreOwnIdentityCommandWithoutCommit(Identity oldIdentity,
+			OwnIdentity newIdentity) {
+		throw new UnsupportedOperationException("Not implemented yet!");
+	}
+
 	/** This callback is not used by this class. */
 	@Override public void storeTrustChangedCommandWithoutCommit(Trust oldTrust, Trust newTrust) {
 	}
