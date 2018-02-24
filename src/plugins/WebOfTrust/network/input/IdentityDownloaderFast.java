@@ -6,6 +6,7 @@ package plugins.WebOfTrust.network.input;
 import static java.lang.Thread.currentThread;
 import static java.util.Objects.requireNonNull;
 import static java.util.concurrent.TimeUnit.MINUTES;
+import static plugins.WebOfTrust.util.AssertUtil.assertDidNotThrow;
 
 import java.io.IOException;
 import java.io.InputStream;
@@ -14,6 +15,7 @@ import java.util.HashMap;
 
 import plugins.WebOfTrust.Identity;
 import plugins.WebOfTrust.Identity.FetchState;
+import plugins.WebOfTrust.Identity.IdentityID;
 import plugins.WebOfTrust.IdentityFile;
 import plugins.WebOfTrust.IdentityFileQueue;
 import plugins.WebOfTrust.IdentityFileQueue.IdentityFileStream;
@@ -608,35 +610,67 @@ public final class IdentityDownloaderFast implements
 	 * of this class). */
 	@SuppressWarnings("serial")
 	public static abstract class DownloadSchedulerCommand extends Persistent {
-		@IndexedField private final Identity mIdentity;
-		
+		// FIXME: Change all database query functions to use this instead of mIdentity
+		@IndexedField private final String mIdentityID;
+
+		/**
+		 * Can be null if the Identity object is to be deleted before the command will be
+		 * processed, see {@link IdentityDownloader#storeRestoreOwnIdentityCommandWithoutCommit(
+		 * Identity, OwnIdentity)}. */
+		private final Identity mIdentity;
+
 		DownloadSchedulerCommand(WebOfTrust wot, Identity identity) {
 			assert(wot != null);
 			assert(identity != null);
 			initializeTransient(wot);
 			mIdentity = identity;
+			mIdentityID = mIdentity.getID();
 		}
-		
+
+		DownloadSchedulerCommand(WebOfTrust wot, final String identityID) {
+			assert(wot != null);
+			// TODO: Code quality: Java 8: Replace with lambda expression
+			assertDidNotThrow(new Runnable() { @Override public void run() {
+				IdentityID.constructAndValidateFromString(identityID);
+			}});
+			initializeTransient(wot);
+			mIdentity = null;
+			mIdentityID = identityID;
+		}
+
 		final Identity getIdentity() {
 			checkedActivate(1);
+			
+			// See JavaDoc of mIdentity
+			if(mIdentity == null)
+				throw new NullPointerException("The Identity was deleted, use getID() instead!");
+			
 			mIdentity.initializeTransient(mWebOfTrust);
 			return mIdentity;
 		}
 		
+		/** Returns the {@link Identity#getID()} of the associated {@link Identity}. */
 		@Override public final String getID() {
-			throw new UnsupportedOperationException("Not implemented!");
+			checkedActivate(1); // String is a db4o native type so 1 is enough
+			return mIdentityID;
 		}
 		
 		@Override public void startupDatabaseIntegrityTest() {
-			checkedActivate(1);
-			requireNonNull(mIdentity);
+			checkedActivate(1); // String is a db4o native type so 1 is enough
+			requireNonNull(mIdentityID);
+			IdentityID.constructAndValidateFromString(mIdentityID);
+			
+			if(mIdentity != null && !mIdentityID.equals(getIdentity().getID())) {
+				throw new IllegalStateException("mIdentityID does not match mIdentity.getID(): "
+					+ mIdentityID + " != " + getIdentity().getID());
+			}
 			
 			// Check whether only a single DownloadSchedulerCommand exists for mIdentity by using
 			// getQueuedCommand() on mIdentity - it will throw if there is more than one.
 			
 			DownloadSchedulerCommand queriedFromDB =
 				((WebOfTrust)mWebOfTrust).getIdentityDownloaderController()
-				.getIdentityDownloaderFast().getQueuedCommand(mIdentity);
+				.getIdentityDownloaderFast().getQueuedCommand(mIdentityID);
 			
 			// As we now have the return value anyway let's check it.
 			if(queriedFromDB != this) {
@@ -647,7 +681,7 @@ public final class IdentityDownloaderFast implements
 		
 		@Override public String toString() {
 			return "[" + super.toString()
-			     + "; mIdentity.getID(): " + getIdentity().getID()
+			     + "; mIdentityID: " + getID()
 			     + "]";
 		}
 
@@ -1021,12 +1055,19 @@ public final class IdentityDownloaderFast implements
 		}
 	}
 
-	/** Must be called while synchronized on {@link #mWoT} and {@link #mLock}. */
+	/** @see #getQueuedCommand(String) */
 	private DownloadSchedulerCommand getQueuedCommand(Identity identity) {
+		// FIXME: Review callers for whether they can be changed to use that function directly.
+		// This would especially benefit callers which don't need the Identity object on their
+		// own and solely acquire it to serve it to this function.
+		return getQueuedCommand(identity.getID());
+	}
+
+	/** Must be called while synchronized on {@link #mWoT} and {@link #mLock}. */
+	private DownloadSchedulerCommand getQueuedCommand(String identityID) {
 		Query q = mDB.query();
 		q.constrain(DownloadSchedulerCommand.class);
-		q.descend("mIdentity").constrain(identity)
-			.identity(); // Not about class Identity, refers to wanting the same object!
+		q.descend("mIdentityID").constrain(identityID);
 		InitializingObjectSet<DownloadSchedulerCommand> result
 			= new InitializingObjectSet<>(mWoT, q);
 		
@@ -1035,11 +1076,11 @@ public final class IdentityDownloaderFast implements
 				return null;
 			case 1:
 				DownloadSchedulerCommand c = result.next();
-				assert(c.getIdentity() == identity);
+				assert(c.getID().equals(identityID));
 				return c;
 			default:
 				throw new DuplicateObjectException(
-					"Multiple DownloadSchedulerCommand objects stored for " + identity);
+					"Multiple DownloadSchedulerCommand objects stored for Identity " + identityID);
 		}
 	}
 
