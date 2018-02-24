@@ -610,7 +610,6 @@ public final class IdentityDownloaderFast implements
 	 * of this class). */
 	@SuppressWarnings("serial")
 	public static abstract class DownloadSchedulerCommand extends Persistent {
-		// FIXME: Change all database query functions to use this instead of mIdentity
 		@IndexedField private final String mIdentityID;
 
 		/**
