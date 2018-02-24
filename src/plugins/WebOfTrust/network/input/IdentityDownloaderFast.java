@@ -665,8 +665,8 @@ public final class IdentityDownloaderFast implements
 					+ mIdentityID + " != " + getIdentity().getID());
 			}
 			
-			// Check whether only a single DownloadSchedulerCommand exists for mIdentity by using
-			// getQueuedCommand() on mIdentity - it will throw if there is more than one.
+			// Check whether only a single DownloadSchedulerCommand exists for mIdentityID by using
+			// getQueuedCommand() on mIdentityID - it will throw if there is more than one.
 			
 			DownloadSchedulerCommand queriedFromDB =
 				((WebOfTrust)mWebOfTrust).getIdentityDownloaderController()
