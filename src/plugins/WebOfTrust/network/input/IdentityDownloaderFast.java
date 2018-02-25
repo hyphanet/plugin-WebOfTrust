@@ -736,7 +736,7 @@ public final class IdentityDownloaderFast implements
 					
 					for(StopDownloadCommand c : getQueuedCommands(StopDownloadCommand.class)) {
 						// Have a try/catch block for each individual download to ensure potential
-						// hacks cannot break all processing. (The outer try/catch is still required
+						// bugs cannot break all processing. (The outer try/catch is still required
 						// as any database transaction should be fenced by one.)
 						try {
 							stopDownload(c.getID());
