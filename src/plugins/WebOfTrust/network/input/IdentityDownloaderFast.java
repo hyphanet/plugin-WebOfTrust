@@ -205,11 +205,9 @@ public final class IdentityDownloaderFast implements
 	@Override public void start() {
 		// FIXME: Implement.
 		// Constraints for the upcoming implementation:
-		// - It MUST delete all existing DownloadSchedulerCommands: If a StopDownloadCommand is
-		//   stored for an Identity then e.g. storeStartFetchCommandWithoutCommit_Checked() won't
-		//   store a StartDownloadCommand because it assumes the download is already running if a
-		//   StopDownloadCommand is stored. As this function here is called upon restart of the
-		//   Freenet node no downloads will be running so that assumption would be invalid.
+		// - It should delete all existing DownloadSchedulerCommands as they were referring to the
+		//   set of downloads which were running before the restart which have all been aborted
+		//   by restarting Freenet.
 		// - It must store a StartDownloadCommand for each OwnIdentity's trustees with trust >= 0,
 		//   and for the OwnIdentitys themselves (for the purposes of
 		//   WebOfTrust.restoreOwnIdentity()).
@@ -298,6 +296,9 @@ public final class IdentityDownloaderFast implements
 					// But a second StartDownloadCommand is also used for the purpose of handling
 					// Identity.markForRefetch() when a download is already running so we do need
 					// to store one and cannot return.
+					// Further commands are only deleted after processing if nothing threw during
+					// processing - so it is possible we did stop the download already even if the
+					// command wasn't deleted.
 				}
 			}
 			
@@ -334,10 +335,24 @@ public final class IdentityDownloaderFast implements
 			
 			if(c instanceof StopDownloadCommand) {
 				c.deleteWithoutCommit();
-				// mDownloads is valid to use from a concurrency perspective, is guarded by mLock
-				// which callers are required to hold.
-				assert(mDownloads.containsKey(identity.getID()));
-				return;
+				// At first glance we could always return here because if a StopDownloadCommand
+				// exists that means the download is still running - but the loop which processes
+				// the StopDownloadCommands only deletes them if none of the code for aborting a
+				// download at fred did throw. So if the command wasn't deleted yet that doesn't
+				// mean that fred didn't abort the download yet. Thus we better program defensively
+				// and check whether the download is *really* still running - especially considering
+				// that the case of switching between an Identity being eligible for download, then
+				// not being eligible, and then being eligible again, all in a sufficiently short
+				// timespan for commands to not have been processed yet, should be rare and thus the
+				// extra check doesn't impair performance a lot.
+				// (mDownloads is valid to use from a concurrency perspective, is guarded by mLock
+				// which callers are required to hold.)
+				if(mDownloads.containsKey(identity.getID()))
+					return;
+				else {
+					assert(false)
+						: "StopDownloadCommand queued but no download found for " + identity;
+				}
 			}
 		}
 		
@@ -393,6 +408,9 @@ public final class IdentityDownloaderFast implements
 				// Identity.markForRefetch() when a download is already running so one could be
 				// running already indeed and thus we do need to store a StopDownloadCommand and
 				// cannot return.
+				// Further commands are only deleted after processing if nothing threw during
+				// processing - so it is possible we did start a download already even if the
+				// command wasn't deleted.
 			}
 		}
 		
@@ -456,6 +474,9 @@ public final class IdentityDownloaderFast implements
 				// Identity.markForRefetch() when a download is already running so one could be
 				// running already indeed and thus we do need to store a StopDownloadCommand and
 				// cannot return.
+				// Further commands are only deleted after processing if nothing threw during
+				// processing - so it is possible we did start a download already even if the
+				// command wasn't deleted.
 			}
 		}
 		
