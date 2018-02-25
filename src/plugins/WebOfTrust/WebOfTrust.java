@@ -1248,7 +1248,15 @@ public final class WebOfTrust extends WebOfTrustInterface
 	 * 
 	 * HOWEVER this function uses lots of memory as the whole database is copied into memory.
 	 */
+	@SuppressWarnings("unused")
 	private synchronized void cloneDatabase(File sourceDatabase, File targetDatabase) {
+		// TODO: New persistent classes have recently been added to WoT but this function hasn't
+		// been adapted to copy them yet.
+		// For a list of all persistent classes see getNewDatabaseConfiguration().
+		if(true)
+			throw new UnsupportedOperationException("The implementation of this is incomplete!");
+		
+		
 		Logger.normal(this, "Cloning " + sourceDatabase.getAbsolutePath() + " to " + targetDatabase.getAbsolutePath());
 		
 		if(targetDatabase.exists())
