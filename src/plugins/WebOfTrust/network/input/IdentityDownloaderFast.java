@@ -1056,9 +1056,6 @@ public final class IdentityDownloaderFast implements
 
 	/** @see #getQueuedCommand(String) */
 	private DownloadSchedulerCommand getQueuedCommand(Identity identity) {
-		// FIXME: Review callers for whether they can be changed to use that function directly.
-		// This would especially benefit callers which don't need the Identity object on their
-		// own and solely acquire it to serve it to this function.
 		return getQueuedCommand(identity.getID());
 	}
 
