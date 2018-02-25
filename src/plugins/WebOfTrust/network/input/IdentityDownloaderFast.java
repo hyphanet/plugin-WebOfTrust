@@ -705,7 +705,10 @@ public final class IdentityDownloaderFast implements
 	@SuppressWarnings("serial")
 	public static final class StopDownloadCommand extends DownloadSchedulerCommand {
 		StopDownloadCommand(WebOfTrust wot, Identity identity) {
-			super(wot, identity);
+			// Use the constructor which doesn't store a pointer to the Identity object in the
+			// database as the Identity may be deleted from the database before the command is
+			// processed, see e.g. IdentityDownloader.storeRestoreOwnIdentityCommandWithoutCommit().
+			super(wot, identity.getID());
 		}
 	}
 
@@ -736,7 +739,7 @@ public final class IdentityDownloaderFast implements
 						// hacks cannot break all processing. (The outer try/catch is still required
 						// as any database transaction should be fenced by one.)
 						try {
-							stopDownload(c.getIdentity().getID());
+							stopDownload(c.getID());
 							c.deleteWithoutCommit();
 						} catch(RuntimeException | Error e) {
 							Logger.error(this, "Processing failed for (will retry): " + c, e);

@@ -2837,8 +2837,18 @@ public final class WebOfTrust extends WebOfTrustInterface
 				// may be possible as we anyway are holding the required locks at this point
 				// probably. Further review all other similar callers of storeAbortFetchCommand...()
 				// to do the same, e.g. deleteOwnIdentity() / restoreOwnIdentity().
+				// EDIT: It would NOT be valid to process the command queue here as suggested above:
+				// Aborting downloads then wouldn't be covered by a rollback of the unfinished
+				// database transaction, they would stay aborted. So the only option we have is to
+				// change storeAbortFetchCommandWithoutCommit() to not store a reference to the
+				// Identity object. That will be possible though: For aborting a download typically
+				// only the ID of the Identity is needed - the fred downloaders are typically stored
+				// in a HashMap by the ID of the identity they belong to.
 				// EDIT: This FIXME also applies to the below deployments of the
 				// mFetcher.storeTrustChangedCommandWithoutCommit() callbacks.
+				// EDIT: IdentityDownloaderFast has been fixed to not store a reference to the
+				// Identity when storeAbortFetchCommandWithoutCommit() is used, it only stores the
+				// ID of the Identity.
 				mFetcher.storeAbortFetchCommandWithoutCommit(identity);
 			}
 		
