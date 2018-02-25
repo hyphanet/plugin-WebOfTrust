@@ -100,6 +100,13 @@ public interface IdentityDownloader extends Daemon {
 	 * Called by {@link WebOfTrust#restoreOwnIdentityWithoutCommit(FreenetURI)} when the class of an
 	 * {@link Identity} changes to {@link OwnIdentity}.
 	 * 
+	 * Synchronization:
+	 * This function is guaranteed to be called while the following locks are being held in the
+	 * given order:
+	 * synchronized(Instance of WebOfTrust)
+	 * synchronized(WebOfTrust.getIdentityDownloaderController())
+	 * synchronized(Persistent.transactionLock(WebOfTrust.getDatabase())) 
+	 * 
 	 * FIXME: Implement at the child classes IdentityDownloaderFast and IdentityDownloaderSlow.
 	 * Adapt restoreOwnIdentity() to call it. Then JavaDoc this once the requirements of the
 	 * callback have been become apparent by implementing it. 
@@ -140,6 +147,8 @@ public interface IdentityDownloader extends Daemon {
 	 *       If you drop this constraint then also adapt the implementation of this callback
 	 *       {@link IdentityDownloaderController#storeTrustChangedCommandWithoutCommit(Trust,
 	 *       Trust)} to not check for it anymore in an assert().
+	 *       EDIT: It certainly is not called in the case of restoreOwnIdentity(), see
+	 *       {@link #storeRestoreOwnIdentityCommandWithoutCommit(Identity, OwnIdentity)}.
 	 *   * a Trust is created or deleted.
 	 * 
 	 * - Synchronization requirements:

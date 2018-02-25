@@ -500,13 +500,43 @@ public final class IdentityDownloaderFast implements
 		}
 	}
 
-	/**
-	 * FIXME: Implement, see
-	 * {@link IdentityDownloader#storeRestoreOwnIdentityCommandWithoutCommit(Identity, OwnIdentity)}
-	 */
 	@Override public void storeRestoreOwnIdentityCommandWithoutCommit(Identity oldIdentity,
 			OwnIdentity newIdentity) {
-		throw new UnsupportedOperationException("Not implemented yet!");
+		
+		// OwnIdentitys are always downloaded by this class, non-own Identitys are not.
+		// Thus we must ensure it will be downloaded now, and correct potentially pre-existing
+		// DownloadSchedulerCommands for it it in the command queue.
+		// - The fact that the ID is equal for both the old and the new identity means pre-existing
+		// commands will continue to affect the new identity.
+		String id = oldIdentity.getID();
+		DownloadSchedulerCommand pendingCommand = getQueuedCommand(id);
+		if(pendingCommand != null) {
+			if(pendingCommand instanceof StartDownloadCommand) {
+				// StartDownloadCommands store a pointer to the Identity object in the database
+				// which would become null by the upcoming deletion of the Identity.
+				// Thus we must delete the stale command to create a fresh one later on.
+				pendingCommand.deleteWithoutCommit();
+			} else if(pendingCommand instanceof StopDownloadCommand) {
+				pendingCommand.deleteWithoutCommit();
+				
+				// At first glance we could always return here because if a StopDownloadCommand
+				// exists that means the download is still running - but the loop which processes
+				// the StopDownloadCommands only deletes them if none of the code for aborting a
+				// download at fred did throw. So if the command wasn't deleted yet that doesn't
+				// mean that fred didn't abort the download yet. Thus we better program defensively
+				// and check whether the download is *really* still running.
+				// (mDownloads is valid to use from a concurrency perspective, is guarded by mLock
+				// which callers are required to hold.)
+				if(mDownloads.containsKey(id))
+					return;
+				else
+					assert(false) : "StopDownloadCommand queued but no download running for " + id;
+			} else
+				assert(false) : "Unknown DownloadSchedulerCommand: " + pendingCommand.getClass();
+		}
+		
+		new StartDownloadCommand(mWoT, newIdentity).storeWithoutCommit();
+		mDownloadSchedulerThread.triggerExecution();
 	}
 
 	/**

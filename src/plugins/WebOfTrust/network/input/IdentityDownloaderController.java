@@ -120,6 +120,9 @@ public final class IdentityDownloaderController implements IdentityDownloader, D
 
 	@Override public void storeRestoreOwnIdentityCommandWithoutCommit(Identity oldIdentity,
 			OwnIdentity newIdentity) {
+		
+		assert(oldIdentity.getID() == newIdentity.getID());
+		
 		for(IdentityDownloader d : mDownloaders)
 			d.storeRestoreOwnIdentityCommandWithoutCommit(oldIdentity, newIdentity);
 	}
