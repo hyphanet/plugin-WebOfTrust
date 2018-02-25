@@ -490,6 +490,11 @@ public final class IdentityFetcher implements
 		}
 	}
 
+	/** Not needed by this class. */
+	@Override public void storeRestoreOwnIdentityCommandWithoutCommit(Identity oldIdentity,
+		OwnIdentity newIdentity) {
+	}
+
 	/** This callback is not used by this class. */
 	@Override public void storeTrustChangedCommandWithoutCommit(Trust oldTrust, Trust newTrust) {
 	}
