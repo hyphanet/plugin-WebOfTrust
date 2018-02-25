@@ -203,7 +203,16 @@ public final class IdentityDownloaderFast implements
 	}
 
 	@Override public void start() {
-		// FIXME
+		// FIXME: Implement.
+		// Constraints for the upcoming implementation:
+		// - It MUST delete all existing DownloadSchedulerCommands: If a StopDownloadCommand is
+		//   stored for an Identity then e.g. storeStartFetchCommandWithoutCommit_Checked() won't
+		//   store a StartDownloadCommand because it assumes the download is already running if a
+		//   StopDownloadCommand is stored. As this function here is called upon restart of the
+		//   Freenet node no downloads will be running so that assumption would be invalid.
+		// - It must store a StartDownloadCommand for each OwnIdentity's trustees with trust >= 0,
+		//   and for the OwnIdentitys themselves (for the purposes of
+		//   WebOfTrust.restoreOwnIdentity()).
 	}
 
 	@Override public void terminate() {
