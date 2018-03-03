@@ -89,7 +89,16 @@ import freenet.support.io.ResumeFailedException;
  * {@link #onSuccess(FetchResult, ClientGetter)} and
  * {@link #onFailure(FetchException, ClientGetter)} to the {@link IdentityDownloaderFast}, and
  * also have that one do the same for us - this avoids both class trying to download the same stuff
- * twice.
+ * twice. Notice: An *invalid* approach for handling a downloaded or failed to download edition in
+ * IdentityDownloaderFast would be to call fred's function for passing an edition hint to its USK
+ * code with edition = fetchedOrFailedEdition + 1: fred considers edition hints as non-mandatory so
+ * it would continue trying to fetch lower editions if downloading the hint fails, which it may do
+ * as the edition may not have been published yet.
+ * It may actually not be necessary to do anything in IdentityDownloaderFast: Fred probably passes
+ * the knowledge about an edition which was fetched by SSK to its USK code internally, though I am
+ * not sure about that. It is possible it only does that if the USK code was already running a
+ * request for that edition. This is something we should ask toad_ about - which I've done, I will
+ * add his reply here once I have it.
  * 
  * Some of the storage policy of {@link EditionHint} objects:
  * - For a given pair of an Identity as specified by {@link EditionHint#getSourceIdentity()} and an
