@@ -955,6 +955,10 @@ public final class IdentityDownloaderSlow implements
 	/**
 	 * FIXME: Implement, see
 	 * {@link IdentityDownloader#storeRestoreOwnIdentityCommandWithoutCommit(Identity, OwnIdentity)}
+	 * When implementing it make sure to store an EditionHint for the edition of the newIdentity:
+	 * IdentityDownloaderFast won't restart a pending USK subscription to the Identity so it won't
+	 * become aware of the user having provided a higher edition number when entering the USK of
+	 * the OwnIdentity.
 	 */
 	@Override public void storeRestoreOwnIdentityCommandWithoutCommit(Identity oldIdentity,
 			OwnIdentity newIdentity) {

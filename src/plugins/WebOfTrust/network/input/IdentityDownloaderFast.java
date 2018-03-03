@@ -535,8 +535,18 @@ public final class IdentityDownloaderFast implements
 				assert(false) : "Unknown DownloadSchedulerCommand: " + pendingCommand.getClass();
 		}
 		
-		new StartDownloadCommand(mWoT, newIdentity).storeWithoutCommit();
-		mDownloadSchedulerThread.triggerExecution();
+		// Keep a potentially running download as is so we don't lose fred's progress on polling the
+		// USK.
+		// Notice: When entering the USK for restoring the user may have supplied a higher edition
+		// than what we had passed to the running USK subscription so it is necessary to somehow
+		// make the USK code aware of that. There is no need to do so in this class:
+		// The IdentityDownloaderSlow will store an EditionHint for the edition of the newIdentity
+		// in its implementation of this callback to conduct a download attempt on the higher
+		// edition.
+		if(!mDownloads.containsKey(id)) {
+			new StartDownloadCommand(mWoT, newIdentity).storeWithoutCommit();
+			mDownloadSchedulerThread.triggerExecution();
+		}
 	}
 
 	/**
