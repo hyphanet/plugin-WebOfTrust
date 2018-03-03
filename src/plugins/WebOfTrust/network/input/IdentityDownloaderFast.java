@@ -683,10 +683,13 @@ public final class IdentityDownloaderFast implements
 		@IndexedField private final String mIdentityID;
 
 		/**
-		 * Can be null if the Identity object is to be deleted before the command will be
-		 * processed, see {@link IdentityDownloader#storeRestoreOwnIdentityCommandWithoutCommit(
-		 * Identity, OwnIdentity)}. */
-		private final Identity mIdentity;
+		 * Can and must be null for {@link StopDownloadCommand}: If the Identity object is to be
+		 * deleted the command will be processed after that and thus pointers to the Identity would
+		 * be nulled by db4o. See
+		 * {@link IdentityDownloader#storeRestoreOwnIdentityCommandWithoutCommit(Identity,
+		 * OwnIdentity)}.
+		 * FIXME: Thus make the code more solid by moving this to class StartDownloadCOmmand. */
+		protected final Identity mIdentity;
 
 		DownloadSchedulerCommand(WebOfTrust wot, Identity identity) {
 			assert(wot != null);
@@ -770,6 +773,13 @@ public final class IdentityDownloaderFast implements
 		StartDownloadCommand(WebOfTrust wot, Identity identity) {
 			super(wot, identity);
 		}
+		
+		@Override public void startupDatabaseIntegrityTest() {
+			super.startupDatabaseIntegrityTest();
+			
+			checkedActivate(1);
+			requireNonNull(mIdentity);
+		}
 	}
 
 	@SuppressWarnings("serial")
@@ -779,6 +789,14 @@ public final class IdentityDownloaderFast implements
 			// database as the Identity may be deleted from the database before the command is
 			// processed, see e.g. IdentityDownloader.storeRestoreOwnIdentityCommandWithoutCommit().
 			super(wot, identity.getID());
+		}
+
+		@Override public void startupDatabaseIntegrityTest() {
+			super.startupDatabaseIntegrityTest();
+			
+			checkedActivate(1);
+			if(mIdentity != null)
+				throw new IllegalStateException("mIdentity must be null for StopDownloadCommands!");
 		}
 	}
 
