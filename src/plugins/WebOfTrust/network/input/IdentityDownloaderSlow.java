@@ -596,25 +596,29 @@ public final class IdentityDownloaderSlow implements
 			//    Further fsync is an expensive operation as it prevents write caching.
 			// 2. Don't do the deleteEditionHints() here but when actually importing the
 			//    IdentityFile from the IdentityFileQueue. This can be done by adding a new callback
-			//    onIdentityChanged() to IdentityDownloader which is called by WoT upon import and
-			//    whose implementation in this class then looks at the new value of
+			//    onIdentityEditionChanged() to IdentityDownloader which is called by WoT upon
+			//    import and whose implementation in this class then looks at the new value of
 			//    Identity.getLastFetchedEdition() to call deleteEditionHints() accordingly (make
 			//    sure to add and use a special version of it which it doesn't commit(), the
 			//    callback will likely be part of a transaction which is started by
 			//    IdentityFileProcessor and ought to be committed by it!).
-			//    Advantages of this approach would be:
+			//    To prevent the mDownloadSchedulerThread from starting a download for the same
+			//    edition again while it is still queued for processing you must add code to it
+			//    which before starting a download checks the mOutputQueue for whether the edition
+			//    (or a higher one!) is queue there already. (Alternatively the delay for which
+			//    IdentityFileProcessor waits after mOutputQueue.add() before processing the queue
+			//    could be made sufficiently smaller as compared to the delay of the below
+			//    mDownloadSchedulerThread.triggerExecution() but in practice that race condition
+			//    could very often result in duplicate downloads.)
+			//    Further advantages beyond ACID of this approach would be:
 			//    - it will also allow the IdentityDownloaderFast to notice when the
-			//      IdentityDownloaderSlow has found a new edition, which is a pending FIXME already
-			//      anyway: We must implement this somehow so the other downloader doesn't
-			//      unnecessarily duplicate our efforts.
-			//    - it leaves a time window for the IdentityFileDiskQueue to extend its secondary
-			//      purpose of deduplicating editions before import to also deduplicating what we
-			//      have queued for download. I.e. it will then make the IdentityFileProcessor only
-			//      import the latest edition of multiple queued ones in case we have multiple
-			//      EditionHints queued for a single Identity with different download priorities
-			//      where the lower editions have a higher value of EditionHint.mPriority due to the
-			//      Identitys which gave them being rated as more trustworthy than the givers of the
-			//      hints of the higher editions.
+			//      IdentityDownloaderSlow has found a new edition, which is a pending FIXME of this
+			//      class already anyway: We must implement this somehow so the other downloader
+			//      doesn't unnecessarily duplicate our efforts.
+			//    - it allows the same in reverse: Processing of editions which the
+			//      IdentityDownloaderFast has downloaded will cause the onIdentityEdtionChanged()
+			//      callback to be called upon this class here which allows it to
+			//      deleteEditionHints() upon the hints older than the processed edition.
 			// Thereby I would prefer the latter approach to be implemented.
 			// When doing so please consider recycling this FIXME into documentation: Don't remove
 			// the deleteEditionHints() call but comment it out, with the recycled FIXME explaining
