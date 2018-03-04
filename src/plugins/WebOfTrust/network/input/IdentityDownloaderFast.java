@@ -286,9 +286,9 @@ public final class IdentityDownloaderFast implements
 					*/
 					
 					return;
-				}
-				
-				if(c instanceof StopDownloadCommand) {
+				} else {
+					assert(c instanceof StopDownloadCommand);
+					
 					c.deleteWithoutCommit();
 					// At first glance we'd put a "return;" here since the StopDownloadCommand
 					// wasn't processed yet and thus there'd be no need to store a
@@ -331,9 +331,9 @@ public final class IdentityDownloaderFast implements
 				// the Trust changed: It may have been eligible for download due to a different
 				// Trust.
 				return;
-			}
-			
-			if(c instanceof StopDownloadCommand) {
+			} else {
+				assert(c instanceof StopDownloadCommand);
+				
 				c.deleteWithoutCommit();
 				// At first glance we could always return here because if a StopDownloadCommand
 				// exists that means the download is still running - but the loop which processes
@@ -397,9 +397,9 @@ public final class IdentityDownloaderFast implements
 					+ "once for: " + identity,
 					new RuntimeException("Exception not thrown, for logging trace only!"));
 				return;
-			}
-			
-			if(c instanceof StartDownloadCommand) {
+			} else {
+				assert(c instanceof StartDownloadCommand);
+				
 				c.deleteWithoutCommit();
 				// At first glance we'd put a "return;" here since the StartDownloadCommand
 				// wasn't processed yet and thus there seems to be no need to store a
@@ -463,9 +463,9 @@ public final class IdentityDownloaderFast implements
 				// by Score computation before storeTrustChangedCommandWithoutCommit().
 				// Thus this is not an error.
 				return;
-			}
-			
-			if(c instanceof StartDownloadCommand) {
+			} else {
+				assert(c instanceof StartDownloadCommand);
+				
 				c.deleteWithoutCommit();
 				// At first glance we'd put a "return;" here since the StartDownloadCommand
 				// wasn't processed yet and thus there seems to be no need to store a
@@ -516,7 +516,9 @@ public final class IdentityDownloaderFast implements
 				// which would become null by the upcoming deletion of the Identity.
 				// Thus we must delete the stale command to create a fresh one later on.
 				pendingCommand.deleteWithoutCommit();
-			} else if(pendingCommand instanceof StopDownloadCommand) {
+			} else {
+				assert(pendingCommand instanceof StopDownloadCommand);
+				
 				pendingCommand.deleteWithoutCommit();
 				
 				// At first glance we could always return here because if a StopDownloadCommand
@@ -531,8 +533,7 @@ public final class IdentityDownloaderFast implements
 					return;
 				else
 					assert(false) : "StopDownloadCommand queued but no download running for " + id;
-			} else
-				assert(false) : "Unknown DownloadSchedulerCommand: " + pendingCommand.getClass();
+			}
 		}
 		
 		// Keep a potentially running download as is so we don't lose fred's progress on polling the
@@ -1101,8 +1102,7 @@ public final class IdentityDownloaderFast implements
 				
 				return false;
 			} else {
-				assert(c instanceof StartDownloadCommand)
-					: "There should only be two types of DownloadSchedulerCommand!";
+				assert(c instanceof StartDownloadCommand);
 				
 				// This assert would currently be invalid:
 				// storeStartFetchCommandWithoutCommit() will also store a command even if a
