@@ -431,7 +431,7 @@ public final class IdentityDownloaderFast implements
 			// Thus we need to cancel the download in a separate transaction, which is what the
 			// DownloadScheduler does.
 			
-			new StopDownloadCommand(mWoT, identity)
+			new StopDownloadCommand(mWoT, identity.getID())
 				.storeWithoutCommit();
 			
 			mDownloadSchedulerThread.triggerExecution();
@@ -493,7 +493,7 @@ public final class IdentityDownloaderFast implements
 			// Thus we need to cancel the download in a separate transaction, which is what the
 			// DownloadScheduler does.
 			
-			new StopDownloadCommand(mWoT, identity)
+			new StopDownloadCommand(mWoT, identity.getID())
 				.storeWithoutCommit();
 			
 			mDownloadSchedulerThread.triggerExecution();
@@ -683,23 +683,6 @@ public final class IdentityDownloaderFast implements
 	public static abstract class DownloadSchedulerCommand extends Persistent {
 		@IndexedField private final String mIdentityID;
 
-		/**
-		 * Can and must be null for {@link StopDownloadCommand}: If the Identity object is to be
-		 * deleted the command will be processed after that and thus pointers to the Identity would
-		 * be nulled by db4o. See
-		 * {@link IdentityDownloader#storeRestoreOwnIdentityCommandWithoutCommit(Identity,
-		 * OwnIdentity)}.
-		 * FIXME: Thus make the code more solid by moving this to class StartDownloadCOmmand. */
-		protected final Identity mIdentity;
-
-		DownloadSchedulerCommand(WebOfTrust wot, Identity identity) {
-			assert(wot != null);
-			assert(identity != null);
-			initializeTransient(wot);
-			mIdentity = identity;
-			mIdentityID = mIdentity.getID();
-		}
-
 		DownloadSchedulerCommand(WebOfTrust wot, final String identityID) {
 			assert(wot != null);
 			// TODO: Code quality: Java 8: Replace with lambda expression
@@ -707,36 +690,19 @@ public final class IdentityDownloaderFast implements
 				IdentityID.constructAndValidateFromString(identityID);
 			}});
 			initializeTransient(wot);
-			mIdentity = null;
 			mIdentityID = identityID;
 		}
 
-		final Identity getIdentity() {
-			checkedActivate(1);
-			
-			// See JavaDoc of mIdentity
-			if(mIdentity == null)
-				throw new NullPointerException("The Identity was deleted, use getID() instead!");
-			
-			mIdentity.initializeTransient(mWebOfTrust);
-			return mIdentity;
-		}
-		
 		/** Returns the {@link Identity#getID()} of the associated {@link Identity}. */
 		@Override public final String getID() {
 			checkedActivate(1); // String is a db4o native type so 1 is enough
 			return mIdentityID;
 		}
-		
+
 		@Override public void startupDatabaseIntegrityTest() {
 			checkedActivate(1); // String is a db4o native type so 1 is enough
 			requireNonNull(mIdentityID);
 			IdentityID.constructAndValidateFromString(mIdentityID);
-			
-			if(mIdentity != null && !mIdentityID.equals(getIdentity().getID())) {
-				throw new IllegalStateException("mIdentityID does not match mIdentity.getID(): "
-					+ mIdentityID + " != " + getIdentity().getID());
-			}
 			
 			// Check whether only a single DownloadSchedulerCommand exists for mIdentityID by using
 			// getQueuedCommand() on mIdentityID - it will throw if there is more than one.
@@ -771,33 +737,45 @@ public final class IdentityDownloaderFast implements
 
 	@SuppressWarnings("serial")
 	public static final class StartDownloadCommand extends DownloadSchedulerCommand {
+		/**
+		 * Users of StartDownloadCommand will not only need the {@link Identity#getID()} which we
+		 * store in the parent class already but also the Identity object itself:
+		 * They will have to use e.g. {@link Identity#getNextEditionToFetch()} so by storing the
+		 * Identity object here we can avoid a database query to obtain it.
+		 * 
+		 * (Would have to be null for {@link StopDownloadCommand} which is why we don't store it
+		 * in the parent class: If the Identity object is to be deleted the StopDownloadCommand will
+		 * be processed after that and thus pointers to the Identity would be nulled by db4o.) */
+		private final Identity mIdentity;
+
 		StartDownloadCommand(WebOfTrust wot, Identity identity) {
-			super(wot, identity);
+			super(wot, identity.getID());
+			mIdentity = identity;
 		}
-		
+
+		Identity getIdentity() {
+			checkedActivate(1);
+			mIdentity.initializeTransient(mWebOfTrust);
+			return mIdentity;
+		}
+
 		@Override public void startupDatabaseIntegrityTest() {
 			super.startupDatabaseIntegrityTest();
 			
 			checkedActivate(1);
 			requireNonNull(mIdentity);
+			
+			if(!getIdentity().getID().equals(getID())) {
+				throw new IllegalStateException("mIdentity.getID() does not match mIdentityID: "
+					+ getIdentity().getID() + " != " + getID());
+			}
 		}
 	}
 
 	@SuppressWarnings("serial")
 	public static final class StopDownloadCommand extends DownloadSchedulerCommand {
-		StopDownloadCommand(WebOfTrust wot, Identity identity) {
-			// Use the constructor which doesn't store a pointer to the Identity object in the
-			// database as the Identity may be deleted from the database before the command is
-			// processed, see e.g. IdentityDownloader.storeRestoreOwnIdentityCommandWithoutCommit().
-			super(wot, identity.getID());
-		}
-
-		@Override public void startupDatabaseIntegrityTest() {
-			super.startupDatabaseIntegrityTest();
-			
-			checkedActivate(1);
-			if(mIdentity != null)
-				throw new IllegalStateException("mIdentity must be null for StopDownloadCommands!");
+		StopDownloadCommand(WebOfTrust wot, String identityID) {
+			super(wot, identityID);
 		}
 	}
 
