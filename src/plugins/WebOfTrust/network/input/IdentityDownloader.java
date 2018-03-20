@@ -118,6 +118,35 @@ public interface IdentityDownloader extends Daemon {
 	 * Therefore please also take the requirements of that callback into consideration for the
 	 * pending documentation of this callback here. */
 	void storeRestoreOwnIdentityCommandWithoutCommit(Identity oldIdentity, OwnIdentity newIdentity);
+	
+	/**
+	 * Called by {@link WebOfTrust#deleteOwnIdentity(String)} when the class of an
+	 * {@link OwnIdentity} changes to {@link Identity}.
+	 * 
+	 * Synchronization:
+	 * This function is guaranteed to be called while the following locks are being held in the
+	 * given order:
+	 * synchronized(Instance of WebOfTrust)
+	 * synchronized(WebOfTrust.getIdentityDownloaderController())
+	 * synchronized(Persistent.transactionLock(WebOfTrust.getDatabase()))
+	 * 
+	 * FIXME: Implement at the child classes. Adapt deleteOwnIdentity() to call it instead  of
+	 * {@link #storeTrustChangedCommandWithoutCommit(Trust, Trust)}. Then provide more JavaDoc here
+	 * once the requirements of the callback have become apparent by implementing it.
+	 * Also see {@link #storeRestoreOwnIdentityCommandWithoutCommit(Identity, OwnIdentity)} which
+	 * can be considered as a draft for this callback.
+	 * This callback was introduced during attempts to implement calling of
+	 * storeTrustChangedCommandWithoutCommit() by restoreOwnIdentty(), during which it was
+	 * discovered that it would be too complex to deploy that callback under the
+	 * circumstances of restoreOwnIdentity() - said circumstances are probably similar for
+	 * deleteOwnIdentity() which is subject of this callback here.
+	 * Those circumstances are described at the JavaDoc of that callback.
+	 * Therefore please also take the requirements of that callback into consideration for the
+	 * pending documentation of this callback here.
+	 * 
+	 * FIXME: The names of these callbacks are really getting excessively long, shorten all of them
+	 * in a coherent fashion at once. */
+	void storeDeleteOwnIdentityCommandWithoutCommit(OwnIdentity oldIdentity, Identity newIdentity);
 
 	/**
 	 * Called under almost the same circumstances as
