@@ -154,8 +154,11 @@ public abstract class Persistent implements Serializable {
 	 * Transient fields are NOT stored in the database. They are references to objects such as the IdentityManager.
 	 */
 	public final void initializeTransient(final WebOfTrustInterface myWebOfTrust) {
-		mWebOfTrust = myWebOfTrust;
-		mDB = mWebOfTrust.getDatabase();
+		// This function may be called very often, avoid uselessly calling getDatabase() if possible
+		if(myWebOfTrust != mWebOfTrust) {
+			mWebOfTrust = myWebOfTrust;
+			mDB = mWebOfTrust.getDatabase();
+		}
 	}
 
 	/**
@@ -164,8 +167,11 @@ public abstract class Persistent implements Serializable {
 	final void initializeTransient(final WebOfTrustInterface myWebOfTrust,
 			final int activatedUpTo) {
 		
-		mWebOfTrust = myWebOfTrust;
-		mDB = mWebOfTrust.getDatabase();
+		// This function may be called very often, avoid uselessly calling getDatabase() if possible
+		if(myWebOfTrust != mWebOfTrust) {
+			mWebOfTrust = myWebOfTrust;
+			mDB = mWebOfTrust.getDatabase();
+		}
 		mActivatedUpTo = activatedUpTo;
 	}
 
