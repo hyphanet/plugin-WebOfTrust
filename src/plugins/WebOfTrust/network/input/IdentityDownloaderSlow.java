@@ -967,6 +967,15 @@ public final class IdentityDownloaderSlow implements
 
 	/**
 	 * FIXME: Implement, see
+	 * {@link IdentityDownloader#storeDeleteOwnIdentityCommandWithoutCommit(OwnIdentity, Identity)}
+	 */
+	@Override public void storeDeleteOwnIdentityCommandWithoutCommit(OwnIdentity oldIdentity,
+			Identity newIdentity) {
+		throw new UnsupportedOperationException("Not implemented yet!");
+	}
+
+	/**
+	 * FIXME: Implement, see
 	 * {@link IdentityDownloader#storeRestoreOwnIdentityCommandWithoutCommit(Identity, OwnIdentity)}
 	 * When implementing it make sure to store an EditionHint for the edition of the newIdentity:
 	 * IdentityDownloaderFast won't restart a pending USK subscription to the Identity so it won't

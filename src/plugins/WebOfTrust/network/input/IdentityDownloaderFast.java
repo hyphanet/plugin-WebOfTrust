@@ -500,6 +500,15 @@ public final class IdentityDownloaderFast implements
 		}
 	}
 
+	/**
+	 * FIXME: Implement, see
+	 * {@link IdentityDownloader#storeDeleteOwnIdentityCommandWithoutCommit(OwnIdentity, Identity)}
+	 */
+	@Override public void storeDeleteOwnIdentityCommandWithoutCommit(OwnIdentity oldIdentity,
+			Identity newIdentity) {
+		throw new UnsupportedOperationException("Not implemented yet!");
+	}
+
 	@Override public void storeRestoreOwnIdentityCommandWithoutCommit(Identity oldIdentity,
 			OwnIdentity newIdentity) {
 		

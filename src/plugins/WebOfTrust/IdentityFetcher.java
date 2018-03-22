@@ -490,9 +490,20 @@ public final class IdentityFetcher implements
 		}
 	}
 
-	/** Not needed by this class. */
+	/**
+	 * Not implemented by this class, for historical reasons it instead relies on the callbacks
+	 * {@link #storeAbortFetchCommandWithoutCommit(Identity)} and
+	 * {@link #storeStartFetchCommandWithoutCommit(Identity)}. */
+	@Override public void storeDeleteOwnIdentityCommandWithoutCommit(OwnIdentity oldIdentity,
+			Identity newIdentity) {
+	}
+
+	/**
+	 * Not implemented by this class, for historical reasons it instead relies on the callbacks
+	 * {@link #storeAbortFetchCommandWithoutCommit(Identity)} and
+	 * {@link #storeStartFetchCommandWithoutCommit(Identity)}. */
 	@Override public void storeRestoreOwnIdentityCommandWithoutCommit(Identity oldIdentity,
-		OwnIdentity newIdentity) {
+			OwnIdentity newIdentity) {
 	}
 
 	/** This callback is not used by this class. */
