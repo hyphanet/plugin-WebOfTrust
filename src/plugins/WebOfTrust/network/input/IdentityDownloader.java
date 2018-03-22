@@ -97,29 +97,6 @@ public interface IdentityDownloader extends Daemon {
 	void storeAbortFetchCommandWithoutCommit(Identity identity);
 
 	/**
-	 * Called by {@link WebOfTrust#restoreOwnIdentityWithoutCommit(FreenetURI)} when the class of an
-	 * {@link Identity} changes to {@link OwnIdentity}.
-	 * 
-	 * Synchronization:
-	 * This function is guaranteed to be called while the following locks are being held in the
-	 * given order:
-	 * synchronized(Instance of WebOfTrust)
-	 * synchronized(WebOfTrust.getIdentityDownloaderController())
-	 * synchronized(Persistent.transactionLock(WebOfTrust.getDatabase())) 
-	 * 
-	 * FIXME: Implement at the child classes IdentityDownloaderFast and IdentityDownloaderSlow.
-	 * Adapt restoreOwnIdentity() to call it. Then JavaDoc this once the requirements of the
-	 * callback have been become apparent by implementing it. 
-	 * This callback was introduced during attempts to implement calling of
-	 * {@link #storeTrustChangedCommandWithoutCommit(Trust, Trust)} by restoreOwnIdentty(), during
-	 * which it was discovered that it would be too complex to deploy that callback under the
-	 * circumstances of restoreOwnIdentity(). Those circumstances are described at the JavaDoc of
-	 * that callback.
-	 * Therefore please also take the requirements of that callback into consideration for the
-	 * pending documentation of this callback here. */
-	void storeRestoreOwnIdentityCommandWithoutCommit(Identity oldIdentity, OwnIdentity newIdentity);
-	
-	/**
 	 * Called by {@link WebOfTrust#deleteOwnIdentity(String)} when the class of an
 	 * {@link OwnIdentity} changes to {@link Identity}.
 	 * 
@@ -147,6 +124,29 @@ public interface IdentityDownloader extends Daemon {
 	 * FIXME: The names of these callbacks are really getting excessively long, shorten all of them
 	 * in a coherent fashion at once. */
 	void storeDeleteOwnIdentityCommandWithoutCommit(OwnIdentity oldIdentity, Identity newIdentity);
+
+	/**
+	 * Called by {@link WebOfTrust#restoreOwnIdentityWithoutCommit(FreenetURI)} when the class of an
+	 * {@link Identity} changes to {@link OwnIdentity}.
+	 * 
+	 * Synchronization:
+	 * This function is guaranteed to be called while the following locks are being held in the
+	 * given order:
+	 * synchronized(Instance of WebOfTrust)
+	 * synchronized(WebOfTrust.getIdentityDownloaderController())
+	 * synchronized(Persistent.transactionLock(WebOfTrust.getDatabase())) 
+	 * 
+	 * FIXME: Implement at the child classes IdentityDownloaderFast and IdentityDownloaderSlow.
+	 * Adapt restoreOwnIdentity() to call it. Then JavaDoc this once the requirements of the
+	 * callback have been become apparent by implementing it. 
+	 * This callback was introduced during attempts to implement calling of
+	 * {@link #storeTrustChangedCommandWithoutCommit(Trust, Trust)} by restoreOwnIdentty(), during
+	 * which it was discovered that it would be too complex to deploy that callback under the
+	 * circumstances of restoreOwnIdentity(). Those circumstances are described at the JavaDoc of
+	 * that callback.
+	 * Therefore please also take the requirements of that callback into consideration for the
+	 * pending documentation of this callback here. */
+	void storeRestoreOwnIdentityCommandWithoutCommit(Identity oldIdentity, OwnIdentity newIdentity);
 
 	/**
 	 * Called under almost the same circumstances as
