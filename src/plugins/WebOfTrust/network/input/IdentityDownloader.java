@@ -81,6 +81,8 @@ public interface IdentityDownloader extends Daemon {
 	 *   - For restoring {@link #storeRestoreOwnIdentityCommandWithoutCommit(Identity, OwnIdentity)}
 	 *   - For deletion the preoposed similar callback, the proposal is at
 	 *     {@link #storeTrustChangedCommandWithoutCommit(Trust, Trust)}.
+	 *   (This also applies to {@link #storeStartFetchCommandWithoutCommit(Identity)}, see the FIXME
+	 *   at {@link WebOfTrust#restoreOwnIdentityWithoutCommit(FreenetURI)}.)
 	 *   That is probably necessary because in those special cases the Identity object will be
 	 *   deleted by WoT after the callback returns. This implies that the callback must not store
 	 *   a pointer to the Identity object to the database, which would be more obvious under the

@@ -5704,12 +5704,8 @@ public final class WebOfTrust extends WebOfTrustInterface
 				// (mFetcher must be notified *after* updating the Score database!)
 				mFetcher.storeAbortFetchCommandWithoutCommit(oldIdentity);
 				
-				// FIXME: The new IdentityDownloader interface allows implementations to store
-				// references to Identity objects. Thus before deleting the Identity object from the
-				// database we must ensure that all references are deleted by the IdentityDownloader
-				// implementations. Review their storeAbortFetchCommandWithoutCommit() for whether
-				// this is the case. Amend the storeAbortFetchCommandWithoutCommit() JavaDoc to
-				// state that they must do so.
+				mFetcher.storeRestoreOwnIdentityCommandWithoutCommit(oldIdentity, identity);
+				
 				oldIdentity.deleteWithoutCommit();
 				
 				// Update all given trusts. This will also cause given scores to be computed,
@@ -5721,6 +5717,11 @@ public final class WebOfTrust extends WebOfTrustInterface
 				
 				finishTrustListImport();
 				// Demands to be called when the Score database is valid so call it after the above
+				// FIXME: IdentityDownloaderFast's implementation of the above storeRestore...()
+				// already deals with starting the fetch of the new identity. Change the other
+				// IdentityDownloader implementations to do so as well and remove this call here;
+				// also update the JavaDoc of storeStartFetchCommand...() to reflect this.
+				// Apply the same concept to the above call to storeAboveFetchCommand..().
 				mFetcher.storeStartFetchCommandWithoutCommit(identity);
 			} catch (UnknownIdentityException e) { // The identity did NOT exist as non-own identity yet so we can just create an OwnIdentity and store it.
 				identity = new OwnIdentity(this, insertFreenetURI, null, false);

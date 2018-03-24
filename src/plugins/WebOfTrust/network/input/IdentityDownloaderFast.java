@@ -557,6 +557,21 @@ public final class IdentityDownloaderFast implements
 			new StartDownloadCommand(mWoT, newIdentity).storeWithoutCommit();
 			mDownloadSchedulerThread.triggerExecution();
 		}
+		
+		// FIXME: Decide whether we do this here or keep requiring callers to deal with it like it
+		// is currently implemented at WebOfTrust.restoreOwnIdentityWithoutCommit() (implicitly by
+		// its calls to storeTrustWithoutCommit()).
+		// Either way document the decision at the IdentityDownloader's specification of this
+		// callback.
+		/*
+		for(Trust t : mWoT.getGivenTrusts(newIdentity)) {
+			if(t.getValue() >= 0) {
+				// Start fetching it, perhaps using one of these:
+				// storeStartFetchCommandWithoutCommit(t.getTrustee());
+				// storeStartFetchCommandWithoutCommit_Checked(t.getTrustee());
+			}
+		}
+		 */
 	}
 
 	/**
