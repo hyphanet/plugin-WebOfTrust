@@ -128,6 +128,19 @@ public interface IdentityDownloader extends Daemon {
 	/**
 	 * Called by {@link WebOfTrust#restoreOwnIdentityWithoutCommit(FreenetURI)} when the class of an
 	 * {@link Identity} changes to {@link OwnIdentity}.
+	 * Is supposed to adjust the IdentityDownloader's decision of which {@link Identity}s to
+	 * download, e.g. due to the facts that:
+	 * - Identitys which have received a >= 0 Trust by an OwnIdentity are always supposed to be
+	 *   downloaded.
+	 * - OwnIdentitys are also always downloaded.
+	 * Please notice that the user may provide a {@link FreenetURI#getSuggestedEdition()} in the
+	 * USK URI when restoring the OwnIdentity, and thus if a download is already running the
+	 * edition may need to be adjusted to the {@link Identity#getNextEditionToFetch()} of the given
+	 * newIdentity.
+	 * 
+	 * Must ensure that no references to the oldIdentity object are stored in the db4o database by
+	 * the particular IdentityDownloader implementation as the object will be deleted from the
+	 * database after the callback returns.
 	 * 
 	 * Synchronization:
 	 * This function is guaranteed to be called while the following locks are being held in the
