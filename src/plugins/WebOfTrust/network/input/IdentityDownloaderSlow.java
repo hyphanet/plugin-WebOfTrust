@@ -891,6 +891,17 @@ public final class IdentityDownloaderSlow implements
 		Logger.normal(this, "storeStartFetchCommandWithoutCommit() finished.");
 	}
 
+	/**
+	 * In addition to the purpose as specified by the parent interface this is also safe to use
+	 * for the purpose of preparing the deletion of the given Identity:
+	 * It deletes all object references to the Identity in the db4o database table of this
+	 * class, i.e. it deletes all {@link EditionHint} objects which point to it by
+	 * {@link EditionHint#getSourceIdentity()} or {@link EditionHint#getTargetIdentity()}.
+	 * 
+	 * Using this function for that purpose is handled by this class itself at
+	 * {@link #storeDeleteOwnIdentityCommandWithoutCommit(OwnIdentity, Identity)} and
+	 * {@link #storeRestoreOwnIdentityCommandWithoutCommit(Identity, OwnIdentity)}, there is no
+	 * need for outside classes to call it for that purpose directly. */
 	@Override public void storeAbortFetchCommandWithoutCommit(Identity identity) {
 		Logger.normal(this, "storeAbortFetchCommandWithoutCommit(" + identity + ") ...");
 		
@@ -930,6 +941,7 @@ public final class IdentityDownloaderSlow implements
 			// entries, but that will call this.onFailure() on the same thread, which will remove
 			// the relevant entries from mDownloads.
 			HashMap<FreenetURI, ClientGetter> downloads = new HashMap<>(mDownloads);
+			boolean downloadSchedulingTriggered = false;
 			for(Entry<FreenetURI, ClientGetter> download : downloads.entrySet()) {
 				if(!download.getKey().equalsKeypair(identityURI))
 					continue;
@@ -940,20 +952,23 @@ public final class IdentityDownloaderSlow implements
 							+ download.getKey());
 				}
 				
-				// Must be called before cancel() to ensure the aforementioned assumption about
-				// transaction rollback applies.
-				mDownloadSchedulerThread.triggerExecution();
+				if(!downloadSchedulingTriggered) {
+					// Must be called before cancel() to ensure the aforementioned assumption about
+					// transaction rollback applies!
+					mDownloadSchedulerThread.triggerExecution();
+					downloadSchedulingTriggered = true;
+				}
 
 				download.getValue().cancel(mClientContext);
 			}
 		}
 		
-		// Also because the Identity isn't trustworthy enough to be fetched anymore we cannot trust
-		// its hints either and thus must delete them.
+		// Because the Identity isn't trustworthy enough to be fetched anymore we cannot trust
+		// its given hints either and thus must delete them.
 		// Technically their amount is constant, i.e. O(max number of trusts per Identity), so we
-		// would only risk a constant amount of bogus fetches if we didn't do this - but
-		// getEditionHintsBySourceIdentity() needs to exist anyway for the purpose of being able
-		// to handle deletion of an Identity so we may as well just use it here, too.
+		// would only risk a constant amount of bogus fetches if we didn't do this - but this
+		// function is also used for the purpose of handling deletion of an identity so we must
+		// delete all object references to it in the db4o database by deleting all its given hints.
 		for(EditionHint h : getEditionHintsBySourceIdentity(identity)) {
 			if(logMINOR)
 				Logger.minor(this, "storeAbortFetchCommandWithoutCommit(): Deleting " + h);
