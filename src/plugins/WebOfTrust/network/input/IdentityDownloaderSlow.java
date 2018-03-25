@@ -7,11 +7,13 @@ import static java.lang.Thread.currentThread;
 import static java.util.Collections.sort;
 import static java.util.Objects.requireNonNull;
 import static java.util.concurrent.TimeUnit.MINUTES;
+import static plugins.WebOfTrust.util.AssertUtil.assertDidThrow;
 
 import java.io.IOException;
 import java.io.InputStream;
 import java.util.ArrayList;
 import java.util.Comparator;
+import java.util.Date;
 import java.util.HashMap;
 import java.util.Map.Entry;
 import java.util.concurrent.Callable;
@@ -24,6 +26,7 @@ import plugins.WebOfTrust.IdentityFileQueue.IdentityFileStream;
 import plugins.WebOfTrust.OwnIdentity;
 import plugins.WebOfTrust.Persistent;
 import plugins.WebOfTrust.Persistent.InitializingObjectSet;
+import plugins.WebOfTrust.Score;
 import plugins.WebOfTrust.SubscriptionManager;
 import plugins.WebOfTrust.Trust;
 import plugins.WebOfTrust.Trust.TrustID;
@@ -57,6 +60,7 @@ import freenet.node.PrioRunnable;
 import freenet.node.RequestClient;
 import freenet.node.RequestStarter;
 import freenet.pluginmanager.PluginRespirator;
+import freenet.support.CurrentTimeUTC;
 import freenet.support.Logger;
 import freenet.support.PooledExecutor;
 import freenet.support.PrioritizedTicker;
@@ -856,7 +860,8 @@ public final class IdentityDownloaderSlow implements
 			// FIXME: This will likely fail in the case of this function having been called merely
 			// to tell us that markForRefetch() was called upon the passed identity, i.e. if the
 			// Identity *was* already eligible for fetching before the call.
-			AssertUtil.assertDidThrow(new Callable<EditionHint>() {
+			// This also applies to the similar assertDidThrow() below in this function.
+			assertDidThrow(new Callable<EditionHint>() {
 				@Override public EditionHint call() throws Exception {
 					return getEditionHint(truster, identity);
 				}
@@ -883,8 +888,63 @@ public final class IdentityDownloaderSlow implements
 		}
 		*/
 		
-		// FIXME: Add handling for the case "identity instanceof OwnIdentity", e.g. when this was
-		// called by restoreOwnIdentity().
+		// When this is called by WebOfTrust.restoreOwnIdentity() the given Identity is the restored
+		// OwnIdentity. The user may have provided an edition number in the URI of the Identity
+		// which is stored at identity.getNextEditionToFetch(). Thus we should create an EditionHint
+		// from that.
+		// FIXME: Review the rest of this function besides this if() for whether it is safe to use
+		// with restoreOwnIdentity().
+		if(identity instanceof OwnIdentity) {
+			int sourceCapacity;
+			int sourceScore;
+			try {
+				Score selfScore = mWoT.getScore((OwnIdentity)identity, identity);
+				
+				sourceCapacity = selfScore.getCapacity();
+				sourceScore = selfScore.getValue();
+			} catch (NotInTrustTreeException e) {
+				// Non self-trusting OwnIdentitys aren't used by the codebase yet but may be used
+				// in the future for purposes such as temporarily disabling an OwnIdentity, so
+				// we will obey that by not causing a download if it doesn't trust itself.
+				// Log a warning nevertheless so whoever implements the usage of not having a
+				// self-assigned Score will notice the places in the code to review for whether they
+				// handle it as desired for whatever purpose is then chosen for it.
+				Logger.warning(this, "No self-assigned Score found for OwnIdentity: " + identity,
+					new RuntimeException("Exception not thrown, for stack trace only."));
+				
+				sourceCapacity = 0;
+				assert(0 < EditionHint.MIN_CAPACITY);
+				sourceScore = Integer.MIN_VALUE; // Just to prevent uninitialized variable error.
+			}
+			
+			if(sourceCapacity > EditionHint.MIN_CAPACITY) {
+				// Don't use identity.getLastChangeDate() because if the restored OwnIdentity
+				// replaced a non-own Identity it may be far in the past - the time is the most
+				// significant factor in the download priority EditionHint.getPriority() so using
+				// the current time is a good idea:
+				// Restoring an OwnIdentity is something which the user will like to be fast.
+				// Also factually it is correct to use the current time as the user did just provide
+				// the hint to us by using restoreOwnIdentity().
+				Date hintDate = CurrentTimeUTC.get();
+				
+				EditionHint h = EditionHint.constructInsecure(mWoT, identity, identity, hintDate,
+					sourceCapacity, sourceScore, identity.getNextEditionToFetch());
+				
+				AssertUtil.assertDidThrow(new Callable<EditionHint>() {
+					@Override public EditionHint call() throws Exception {
+						return getEditionHint(identity, identity);
+					}
+				}, UnknownEditionHintException.class);
+				
+				h.storeWithoutCommit();
+				++mTotalQueuedDownloadsInSession;
+				
+				if(logMINOR) {
+					Logger.minor(this,
+						"Created EditionHint from OwnIdentity.getNextEditionToFetch(): " + h);
+				}
+			}
+		}
 		
 		mDownloadSchedulerThread.triggerExecution();
 		
