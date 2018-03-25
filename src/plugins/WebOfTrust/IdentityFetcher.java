@@ -498,12 +498,17 @@ public final class IdentityFetcher implements
 			Identity newIdentity) {
 	}
 
-	/**
-	 * Not implemented by this class, for historical reasons it instead relies on the callbacks
-	 * {@link #storeAbortFetchCommandWithoutCommit(Identity)} and
-	 * {@link #storeStartFetchCommandWithoutCommit(Identity)}. */
 	@Override public void storeRestoreOwnIdentityCommandWithoutCommit(Identity oldIdentity,
 			OwnIdentity newIdentity) {
+		
+		// This commented out code is not necessary, we can keep pre-existing downloads running (as
+		// we want to keep fetching the Identity anyway because it's an OwnIdentity):
+		// We don't store an object reference to the oldIdentity anywhere, we only store its ID.
+		// So there's no need to recreate the fetch...
+		/* storeAbortFetchCommandWithoutCommit(oldIdentity); */
+		
+		// ... but we do need to start it if it wasn't being fetched yet.
+		storeStartFetchCommandWithoutCommit(newIdentity);
 	}
 
 	/** This callback is not used by this class. */
