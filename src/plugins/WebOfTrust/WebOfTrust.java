@@ -5541,7 +5541,7 @@ public final class WebOfTrust extends WebOfTrustInterface
 	}
 
 	/**
-	 * NOTICE: When changing this function, please also take care of {@link OwnIdentity.isRestoreInProgress()}
+	 * NOTICE: When changing this function, please also take care of {@link OwnIdentity#isRestoreInProgress()}
 	 * 
 	 * This function does neither lock the database nor commit the transaction. You have to surround it with
 	 * <code>
@@ -5568,7 +5568,9 @@ public final class WebOfTrust extends WebOfTrustInterface
 				// This is irrelevant in our case as we will try to fetch the latest edition
 				// anyway, so we can just take the absolute value.
 				// Taking the max(edition, abs(...)) afterwards is necessary because abs()
-				// will the negative return Long.MIN_VALUE if the passed value was MIN_VALUE.
+				// will return the negative Long.MIN_VALUE if the passed value was MIN_VALUE.
+				// TODO: Code quality: Perhaps instead use Long.MAX_VALUE in that case? This should
+				// also be part of a unit test.
 				edition = max(edition, abs(insertFreenetURI.getEdition()));
 			} catch(IllegalStateException e) {
 				// The user supplied URI did not have an edition specified
