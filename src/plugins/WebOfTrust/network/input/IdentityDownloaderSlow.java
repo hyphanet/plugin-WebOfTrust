@@ -226,6 +226,15 @@ public final class IdentityDownloaderSlow implements
 
 	private final HashMap<FreenetURI, ClientGetter> mDownloads;
 
+	/**
+	 * TODO: Code quality: This is incremented inside transactions but not decremented upon
+	 * rollback. Fix by computing it from the database contents. E.g. use the number of still queued
+	 * EditionHints minus the numbers of succeeded and failed downloads.
+	 * On the other hand perhaps it is good to have this as an indicator in the UI: If queued
+	 * downloads are rolled back before they are processed that will show up by the other numbers
+	 * not adding up to this, which allows users to notice rollbacks. Perhaps a tradeoff would
+	 * be to show the difference in the UI.
+	 * The same issue may or may not apply to the other statistics. */
 	private int mTotalQueuedDownloadsInSession = 0;
 
 	private int mSucceededDownloads = 0;
