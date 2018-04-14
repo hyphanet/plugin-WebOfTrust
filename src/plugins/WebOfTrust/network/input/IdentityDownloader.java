@@ -102,6 +102,12 @@ public interface IdentityDownloader extends Daemon {
 	 * Called by {@link WebOfTrust#deleteOwnIdentity(String)} when the class of an
 	 * {@link OwnIdentity} changes to {@link Identity}.
 	 * 
+	 * The oldIdentity object will be deleted from the database immediately after this function
+	 * returns. Implementations must thus ensure that they remove any references to the Identity
+	 * object in their db4o databases.
+	 * The {@link Trust} and {@link Score} database is guaranteed to be up to date when this
+	 * function is called and thus can be used by it.
+	 * 
 	 * Synchronization:
 	 * This function is guaranteed to be called while the following locks are being held in the
 	 * given order:

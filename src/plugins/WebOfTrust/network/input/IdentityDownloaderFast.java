@@ -319,7 +319,8 @@ public final class IdentityDownloaderFast implements
 	 *   command is already queued to start one.
 	 * - This function is not to be used for handling {@link Identity#markForRefetch()}.
 	 * - This is a private function, not a public callback. Intended to be used by
-	 *   {@link #storeTrustChangedCommandWithoutCommit(Trust, Trust)}. */
+	 *   {@link #storeTrustChangedCommandWithoutCommit(Trust, Trust)} and
+	 *   {@link #storeDeleteOwnIdentityCommandWithoutCommit(OwnIdentity, Identity)}. */
 	private void storeStartFetchCommandWithoutCommit_Checked(Identity identity) {
 		DownloadSchedulerCommand c = getQueuedCommand(identity);
 		
@@ -447,7 +448,8 @@ public final class IdentityDownloaderFast implements
 	 *   However callers still don't need to ensure that the download wasn't already aborted yet /
 	 *   no command is already queued to abort it.
 	 * - This is a private function, not a public callback. Intended to be used by
-	 *   {@link #storeTrustChangedCommandWithoutCommit(Trust, Trust)}. */
+	 *   {@link #storeTrustChangedCommandWithoutCommit(Trust, Trust)} and
+	 *   {@link #storeDeleteOwnIdentityCommandWithoutCommit(OwnIdentity, Identity)}. */
 	private void storeAbortFetchCommandWithoutCommit_Checked(Identity identity) {
 		DownloadSchedulerCommand c = getQueuedCommand(identity);
 		
@@ -500,13 +502,39 @@ public final class IdentityDownloaderFast implements
 		}
 	}
 
-	/**
-	 * FIXME: Implement, see
-	 * {@link IdentityDownloader#storeDeleteOwnIdentityCommandWithoutCommit(OwnIdentity, Identity)}
-	 */
 	@Override public void storeDeleteOwnIdentityCommandWithoutCommit(OwnIdentity oldIdentity,
 			Identity newIdentity) {
-		throw new UnsupportedOperationException("Not implemented yet!");
+				
+		for(Trust t : mWoT.getGivenTrusts(newIdentity)) {
+			if(t.getValue() >= 0) {
+				// The trustee could possibly have been eligible for download due to having received
+				// this positive Trust from the Identity because it was an OwnIdentity.
+				// As it isn't an OwnIdentity anymore the Trust isn't a justification for
+				// downloading it anymore. So we need to check whether another Trust of a different
+				// OwnIdentity justifies to keep downloading it, and if not abort the download.
+				//
+				// Notice: This could be changed to not require the Score database to be correct
+				// if that becomes necessary for the caller someday. Instead of using
+				// shouldDownload() here (and below!) you would:
+				// - iterate over all OwnIdentitys and check whether the trustee has received a
+				//   positive Trust from any of them. If yes it is eligible for download.
+				// - also consider the trustee as eligible for download if it is an OwnIdentity
+				//   and mWoT.shouldDownload(trustee) returns true, see DownloadScheduler.testSelf()
+				//   for an explanation. (You'd do this before the more expensive above iteration).
+				Identity trustee = t.getTrustee();
+				if(!shouldDownload(trustee))
+					storeAbortFetchCommandWithoutCommit_Checked(trustee);
+			}
+		}
+		
+		// Given that the oldIdentity was an OwnIdentity it was probably eligible for download
+		// for the purpose of WebOfTrust.restoreOwnIdentity(). Thus we new to abort a potentially
+		// pre-existing download.
+		storeAbortFetchCommandWithoutCommit_Checked(oldIdentity);
+		// The replacement Identity may still be eligible for download if another OwnIdentity trusts
+		// it.
+		if(shouldDownload(newIdentity))
+			storeStartFetchCommandWithoutCommit_Checked(newIdentity);
 	}
 
 	@Override public void storeRestoreOwnIdentityCommandWithoutCommit(Identity oldIdentity,
