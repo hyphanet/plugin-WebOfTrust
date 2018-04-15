@@ -21,9 +21,21 @@ import freenet.support.CurrentTimeUTC;
 
 
 /**
- * The score of an Identity in an OwnIdentity's trust tree.
- * A score is the actual rating of how much an identity can be trusted from the point of view of the OwnIdentity which owns the score.
- * If the Score is negative, the identity is considered malicious, if it is zero or positive, it is trusted. 
+ * A score's {@link #getValue()} is the rating of how much an {@link Identity} is trusted from the
+ * point of view of the {@link OwnIdentity} which owns the score.
+ * If the Score is negative, the Identity is considered malicious, if it is zero or positive, it is
+ * trusted. If no Score exists for a given Identity it is also considered as distrusted (and as
+ * eligible for garbage collection once this is implemented:
+ * https://bugs.freenetproject.org/view.php?id=2509).
+ * Scores are the central "output" of WoT - they are what is computed from the {@link Trust} ratings
+ * of the user and the remote Identitys. They determine whether an Identity is to be downloaded by
+ * WoT and especially client applications.
+ * For a detailed explanation of how Scores are computed see the directory
+ * developer-documentation/core-developer-manual in this repository, or the reference implementation
+ * of Score computation at {@link WebOfTrust#computeAllScoresWithoutCommit()}.
+ * 
+ * NOTICE: In the web interface we nowadays only ever call this "computed trust" or "computed trust
+ * value". This was changed for usability purposes.
  * 
  * Concurrency:
  * Score does not provide locking of its own.
