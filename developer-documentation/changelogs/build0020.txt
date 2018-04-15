@@ -259,6 +259,14 @@ CHANGELOG about stuff only interesting for developers:
   FYI you can use e.g. jVisualVM to watch the memory usage and GC
   activity of Freenet.
 
+- 0006934: [Code quality] Replace "WithoutCommit" function name suffixes
+           with "@NeedsTransaction" annotation (xor)
+
+  The annotation was added to class Persistent.
+  Newly written functions will use that annotation from now on.
+  As the performance work is currently more important I will refrain
+  from renaming all preexisting functions for a while.
+
 - 0006929: [Bugs] Travis CI builds fail due to changes at fred (xor)
 
   The .travis.yml configuration of Travis CI has been fixed to be
