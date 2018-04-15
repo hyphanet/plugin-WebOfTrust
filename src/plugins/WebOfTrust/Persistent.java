@@ -110,7 +110,30 @@ public abstract class Persistent implements Serializable {
 	 * If a class is indexed you MUST add it to the list of persistent classes in {@link WebOfTrust.openDatabase} 
 	 */
 	public @interface IndexedClass { }
-	
+
+	/**
+	 * Functions which have this annotation must only be called while the call is wrapped in a
+	 * database transaction, e.g.:
+	 * synchronized(Lock(s) for the db4o database "tables" of the objects affected by the
+	 *              transaction, e.g. WebOfTrust, IntroductionPuzzleStore,
+	 *              IdentityDownloaderController, SubscriptionManager - in that order) {
+	 * synchronized(Persistent.transactionLock(...)) {
+	 *     try {
+	 *         functionWithThisAnnotation();
+	 *         Persistent.checkedCommit(...);
+	 *     } catch(RuntimeException | Error e) {
+	 *         Persistent.checkedRollback(...);
+	 *     }
+	 * }}
+	 * 
+	 * NOTICE: This annotation was only recently introduced to prepare replacing the "WithoutCommit"
+	 * suffix on many functions with it. Many functions will still have the suffix instead of
+	 * this annotation, and some may have neither the annotation nor the suffix.
+	 * Tracking issue: https://bugs.freenetproject.org/view.php?id=6934 */
+	@Target(ElementType.METHOD)
+	@Retention(RetentionPolicy.SOURCE)
+	public @interface NeedsTransaction { }
+
 	public void testDatabaseIntegrity() {
 		testDatabaseIntegrity(mWebOfTrust, mDB);
 	}
