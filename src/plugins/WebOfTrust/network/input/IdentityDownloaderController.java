@@ -194,4 +194,39 @@ public final class IdentityDownloaderController implements IdentityDownloader, D
 			d.deleteAllCommands();
 	}
 
+	@Override public void storePreDeleteOwnIdentityCommand(OwnIdentity oldIdentity) {
+		assert(oldIdentity != null);
+		
+		for(IdentityDownloader d : mDownloaders)
+			d.storePreDeleteOwnIdentityCommand(oldIdentity);
+	}
+
+	@Override public void storePostDeleteOwnIdentityCommand(Identity newIdentity) {
+		assert(newIdentity != null);
+		
+		for(IdentityDownloader d : mDownloaders)
+			d.storePostDeleteOwnIdentityCommand(newIdentity);
+	}
+
+	@Override public void storePreDeleteIdentityCommand(Identity oldIdentity) {
+		assert(oldIdentity != null);
+		
+		for(IdentityDownloader d : mDownloaders)
+			d.storePreDeleteIdentityCommand(oldIdentity);
+	}
+
+	@Override public void storePreRestoreOwnIdentityCommand(Identity oldIdentity) {
+		assert(oldIdentity != null);
+	
+		for(IdentityDownloader d : mDownloaders)
+			d.storePreRestoreOwnIdentityCommand(oldIdentity);
+	}
+
+	@Override public void storePostRestoreOwnIdentityCommand(OwnIdentity newIdentity) {
+		assert(newIdentity != null);
+		
+		for(IdentityDownloader d : mDownloaders)
+			d.storePostRestoreOwnIdentityCommand(newIdentity);
+	}
+
 }
