@@ -220,6 +220,18 @@ public final class IdentityDownloaderFast implements
 	/** Must be called while synchronized on {@link #mWoT}. */
 	private boolean shouldDownload(Identity identity) {
 		for(Score s : mWoT.getScores(identity)) {
+			if(shouldDownload(s))
+				return true;
+		}
+		
+		return false;
+	}
+
+	/**
+	 * True if the Identity {@link Score#getTrustee()} of the given Score should be downloaded.
+	 * 
+	 * Must be called while synchronized on {@link #mWoT}. */
+	private boolean shouldDownload(Score s) {
 			// Rank 1:
 			//   The Identity is directly trusted by an OwnIdentity and thereby from our primary
 			//   target group of identities which we should download - as long as the Score
@@ -252,7 +264,6 @@ public final class IdentityDownloaderFast implements
 					// The rank did not come from the OwnIdentity which provided the Score.
 				}
 			}
-		}
 		
 		return false;
 	}
