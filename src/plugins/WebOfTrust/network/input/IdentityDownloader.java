@@ -50,8 +50,8 @@ import freenet.keys.FreenetURI;
  * this interface. */
 public interface IdentityDownloader extends Daemon {
 
-	/* FIXME: These five should replace the complex cruft of using all the other callback functions
-	 * at:
+	/* FIXME: The following five function declarations should replace the complex cruft of using all
+	 * the other following functions at:
 	 * - WebOfTrust.deleteWithoutCommit(Identity)
 	 * - WebOfTrust.deleteOwnIdentity()
 	 * - WebOfTrust.restoreDownIdentity()
@@ -73,8 +73,26 @@ public interface IdentityDownloader extends Daemon {
 	 * The other functions will keep existing for their remaining other purposes and should have
 	 * their JavaDoc adapted to state that identity deletion/restoring is handled by these new
 	 * functions here. */
+	
+	/**
+	 * Called by {@link WebOfTrust#deleteOwnIdentity(String)} before any action is taken towards
+	 * deleting an {@link OwnIdentity}.
+	 * This implies that:
+	 * - the OwnIdentity still is stored in the database, the replacement
+	 *   {@link Identity} object has not been created yet.
+	 * - the {@link Trust} and {@link Score} database has not been changed yet. */
 	@NeedsTransaction void storePreDeleteOwnIdentityCommand(OwnIdentity oldIdentity);
+
+	/**
+	 * Called by {@link WebOfTrust#deleteOwnIdentity(String)} as the very last step of deleting
+	 * an {@link OwnIdentity}.
+	 * This implies that:
+	 * - the OwnIdentity has been deleted from the the database, the given replacement
+	 *   {@link Identity} object has been stored.
+	 * - the {@link Trust} and {@link Score} database has been fully updated to reflect the
+	 *   necessary changes. */
 	@NeedsTransaction void storePostDeleteOwnIdentityCommand(Identity newIdentity);
+
 	@NeedsTransaction void storePreDeleteIdentityCommand(Identity oldIdentity);
 	// There is no replacement Identity when a non-own Identity is deleted.
 	/* @NeedsTransaction void storePostDeleteIdentityCommand(Identity newIdentity); */

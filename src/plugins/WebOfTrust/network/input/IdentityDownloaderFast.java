@@ -513,27 +513,36 @@ public final class IdentityDownloaderFast implements
 		}
 	}
 
-	@Override public void storeDeleteOwnIdentityCommandWithoutCommit(OwnIdentity oldIdentity,
-			Identity newIdentity) {
-				
-		for(Trust t : mWoT.getGivenTrusts(newIdentity)) {
+	@Override public void storePreDeleteOwnIdentityCommand(OwnIdentity oldIdentity) {
+		for(Trust t : mWoT.getGivenTrusts(oldIdentity)) {
 			if(t.getValue() >= 0) {
 				// The trustee could possibly have been eligible for download due to having received
 				// this positive Trust from the Identity because it was an OwnIdentity.
 				// As it isn't an OwnIdentity anymore the Trust isn't a justification for
 				// downloading it anymore. So we need to check whether another Trust of a different
 				// OwnIdentity justifies to keep downloading it, and if not abort the download.
-				//
-				// Notice: This could be changed to not require the Score database to be correct
-				// if that becomes necessary for the caller someday. Instead of using
-				// shouldDownload() here (and below!) you would:
-				// - iterate over all OwnIdentitys and check whether the trustee has received a
-				//   positive Trust from any of them. If yes it is eligible for download.
-				// - also consider the trustee as eligible for download if it is an OwnIdentity
-				//   and mWoT.shouldDownload(trustee) returns true, see DownloadScheduler.testSelf()
-				//   for an explanation. (You'd do this before the more expensive above iteration).
+				
 				Identity trustee = t.getTrustee();
-				if(!shouldDownload(trustee))
+				boolean keepDownloadingTrustee = false;
+				
+				// Don't iterate over all OwnIdentitys to check whether the trustee had received a
+				// positive Trust but instead iterate over all Scores:
+				// That's faster because a Score's rank tells if the trustee has received a direct
+				// trust, so we only need one database query for the for() loop, not secondary ones
+				// for each Trust like we would need with a for() on the OwnIdentitys.
+				// Notice: This also covers the case of the trustee being an OwnIdentity, they
+				// assign a Score to themselves, see WebOfTrust.initTrustTreeWithoutCommit().
+				for(Score s : mWoT.getScores(trustee)) {
+					if(s.getTruster() == oldIdentity)
+						continue;
+					
+					if(shouldDownload(s)) {
+						keepDownloadingTrustee = true;
+						break;
+					}
+				}
+				
+				if(!keepDownloadingTrustee)
 					storeAbortFetchCommandWithoutCommit_Checked(trustee);
 			}
 		}
@@ -542,6 +551,10 @@ public final class IdentityDownloaderFast implements
 		// for the purpose of WebOfTrust.restoreOwnIdentity(). Thus we new to abort a potentially
 		// pre-existing download.
 		storeAbortFetchCommandWithoutCommit_Checked(oldIdentity);
+
+	}
+
+	@Override public void storePostDeleteOwnIdentityCommand(Identity newIdentity) {
 		// The replacement Identity may still be eligible for download if another OwnIdentity trusts
 		// it.
 		if(shouldDownload(newIdentity))
