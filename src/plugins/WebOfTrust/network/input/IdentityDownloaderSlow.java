@@ -981,7 +981,7 @@ public final class IdentityDownloaderSlow implements
 	 * {@link EditionHint#getSourceIdentity()} or {@link EditionHint#getTargetIdentity()}.
 	 * 
 	 * Using this function for that purpose is handled by this class itself at
-	 * {@link #storeDeleteOwnIdentityCommandWithoutCommit(OwnIdentity, Identity)} and
+	 * {@link #storePreDeleteOwnIdentityCommand(OwnIdentity)} and
 	 * {@link #storeRestoreOwnIdentityCommandWithoutCommit(Identity, OwnIdentity)}, there is no
 	 * need for outside classes to call it for that purpose directly. */
 	@Override public void storeAbortFetchCommandWithoutCommit(Identity identity) {
@@ -1062,13 +1062,31 @@ public final class IdentityDownloaderSlow implements
 		Logger.normal(this, "storeAbortFetchCommandWithoutCommit() finished");
 	}
 
-	/**
-	 * FIXME: Implement, see
-	 * {@link IdentityDownloader#storeDeleteOwnIdentityCommandWithoutCommit(OwnIdentity, Identity)}
-	 */
-	@Override public void storeDeleteOwnIdentityCommandWithoutCommit(OwnIdentity oldIdentity,
-			Identity newIdentity) {
-		throw new UnsupportedOperationException("Not implemented yet!");
+	@Override public void storePreDeleteOwnIdentityCommand(OwnIdentity oldIdentity) {
+		// Both stops the download of the Identity by deleting all EditionHint objects it has
+		// received as well as deleting all EditionHint objects it has given to other Identitys.
+		// Thus complies with our job of deleting all objects in the db4o database which point to
+		// the oldIdentity.
+		storeAbortFetchCommandWithoutCommit(oldIdentity);
+	}
+
+	@Override public void storePostDeleteOwnIdentityCommand(Identity newIdentity) {
+		if(mWoT.shouldFetchIdentity(newIdentity)) {
+			// Enqueues EditionHints for the Identity from its received Trusts
+			storeStartFetchCommandWithoutCommit(newIdentity);
+			// No need to enqueue EditionHints for other Identitys from the given Trusts of the
+			// newIdentity: An OwnIdentity only updates its edition hint when an edition of a remote
+			// identity is actually downloaded. The Identity was previously an OwnIdentity which
+			// means that its hinted editions have all been downloaded locally already and thus
+			// they won't be useful.
+			// FIXME: This might not apply to seed identities?
+		} else {
+			// No need to create any EditionHints: An Identity which is not trustworthy enough for
+			// download is also not trustworthy enough for accepting its hints (and we'd have to
+			// download it to obtain the hints).
+		}
+	}
+
 	}
 
 	/**
