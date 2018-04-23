@@ -490,12 +490,50 @@ public final class IdentityFetcher implements
 		}
 	}
 
-	/**
-	 * Not implemented by this class, for historical reasons it instead relies on the callbacks
-	 * {@link #storeAbortFetchCommandWithoutCommit(Identity)} and
-	 * {@link #storeStartFetchCommandWithoutCommit(Identity)}. */
-	@Override public void storeDeleteOwnIdentityCommandWithoutCommit(OwnIdentity oldIdentity,
-			Identity newIdentity) {
+	@Override public void storePreDeleteOwnIdentityCommand(OwnIdentity oldIdentity) {
+		for(Score s : mWoT.getGivenScores(oldIdentity)) {
+			if(mWoT.shouldMaybeFetchIdentity(s)) {
+				// The trustee could possibly have been eligible for download solely due to having
+				// received a positive Trust chain from the OwnIdentity.
+				// As it isn't an OwnIdentity anymore the Trust chain isn't a justification for
+				// downloading it anymore. So we need to check whether another Trust chain
+				// originating from a different OwnIdentity justifies to keep fetching it, and if
+				// not abort the fetch.
+				// The proper way to do so is to check whether a Score from another OwnIdentity
+				// exists which asks us to fetch the Identity: The purpose of Scores is to reflect
+				// the "is this Identity trustworthy enough to fetch?" decision of an
+				// OwnIdentity. If a single OwnIdentity asks us to fetch the remote Identity by that
+				// then we need to keep fetching it.
+				
+				Identity trustee = s.getTrustee();
+				boolean keepDownloadingTrustee = false;
+				
+				for(Score otherScore : mWoT.getScores(trustee)) {
+					if(otherScore == s)
+						continue;
+					
+					if(mWoT.shouldMaybeFetchIdentity(otherScore)) {
+						keepDownloadingTrustee = true;
+						break;
+					}
+				}
+				
+				if(!keepDownloadingTrustee)
+					storeAbortFetchCommandWithoutCommit(trustee);
+			}
+		}
+		
+		// Given that the oldIdentity was an OwnIdentity it was probably eligible for fetching
+		// for the purpose of WebOfTrust.restoreOwnIdentity(). Thus we new to abort a potentially
+		// pre-existing fetch.
+		storeAbortFetchCommandWithoutCommit(oldIdentity);
+	}
+
+	@Override public void storePostDeleteOwnIdentityCommand(Identity newIdentity) {
+		// The replacement Identity may still be eligible for download if another OwnIdentity trusts
+		// it.
+		if(mWoT.shouldFetchIdentity(newIdentity))
+			storeStartFetchCommandWithoutCommit(newIdentity);
 	}
 
 	@Override public void storeRestoreOwnIdentityCommandWithoutCommit(Identity oldIdentity,

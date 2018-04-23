@@ -516,8 +516,8 @@ public final class IdentityDownloaderFast implements
 	@Override public void storePreDeleteOwnIdentityCommand(OwnIdentity oldIdentity) {
 		for(Trust t : mWoT.getGivenTrusts(oldIdentity)) {
 			if(t.getValue() >= 0) {
-				// The trustee could possibly have been eligible for download due to having received
-				// this positive Trust from the Identity because it was an OwnIdentity.
+				// The trustee could possibly have been eligible for download solely due to having
+				// received this positive Trust from the Identity because it was an OwnIdentity.
 				// As it isn't an OwnIdentity anymore the Trust isn't a justification for
 				// downloading it anymore. So we need to check whether another Trust of a different
 				// OwnIdentity justifies to keep downloading it, and if not abort the download.

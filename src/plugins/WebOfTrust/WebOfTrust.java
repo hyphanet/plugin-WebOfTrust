@@ -3094,6 +3094,10 @@ public final class WebOfTrust extends WebOfTrustInterface
 		if(identity instanceof OwnIdentity) {
 			// TODO: Performance: Get rid of the self-score check and just return true.
 			// See main TODO at WoTTest.testSetTrust1().
+			// FIXME: Actually it not only seems to be a performance reason but also possibly a bug
+			// that we query the Score from the database. This function should only decide the
+			// passed Score, not from something else queried from the database!? Investigate why I
+			// wrote the function this way and if it is not necessary then remove this check.
 			try {
 				// Don't use getScore(OwnIdentity, Identity) because the callers pass clone()s to us
 				Score selfScore = getScore(new ScoreID(identity, identity).toString());
@@ -5442,6 +5446,12 @@ public final class WebOfTrust extends WebOfTrustInterface
 				// (No need to have this be a Set: We obtain the Identities from the Scores they
 				// received from the oldIdentity, and there can only be one Score for each truster+
 				// trustee pair, duplicates aren't possible.)
+				// FIXME: All IdentityDownloader implementations have been changed to deal with
+				// this on their own at their storePreDeleteOwnIdentityCommand() implementations.
+				// Remove this list and the related code and amend the documentation of the 
+				// declaration of that function at interface IdentityDownloader to state that
+				// implementations of it must deal with aborting downloads of Identitys whose
+				// trustworthiness is affected by the deletion of the OwnIdentity.
 				LinkedList<Identity> needAbortFetchCommand = new LinkedList<>();
 				
 				// Delete all given scores:
