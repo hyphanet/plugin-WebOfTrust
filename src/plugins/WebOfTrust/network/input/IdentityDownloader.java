@@ -77,10 +77,36 @@ public interface IdentityDownloader extends Daemon {
 	/**
 	 * Called by {@link WebOfTrust#deleteOwnIdentity(String)} before any action is taken towards
 	 * deleting an {@link OwnIdentity}.
-	 * This implies that:
-	 * - the OwnIdentity still is stored in the database, the replacement
-	 *   {@link Identity} object has not been created yet.
-	 * - the {@link Trust} and {@link Score} database has not been changed yet. */
+	 * 
+	 * After the callback returns the oldIdentity will be deleted from the database.
+	 * Any {@link Score}s it has given to other {@link Identity}s as specified by
+	 * {@link WebOfTrust#getGivenScores(OwnIdentity)} will be deleted then.
+	 * 
+	 * Thus implementations have to:
+	 * - remove any object references to the oldIdentity object from the db4o database as they
+	 *   would otherwise be nulled by the upcoming deletion of it.
+	 * - stop downloading of any Identitys who aren't eligible for download anymore because
+	 *   they were eligible solely due to one of the to-be-deleted Scores (see the JavaDoc of
+	 *   {@link Score} for when Scores justify downloading an Identity).
+	 * - stop downloading the oldIdentity (if it was eligible for download due to having received
+	 *   a self-assigned Score, see {@link WebOfTrust#initTrustTreeWithoutCommit(OwnIdentity}).
+	 * 
+	 * ATTENTION: Identitys which had received a Score from the oldIdentity may still be eligible
+	 * for download due to a Score received by a different OwnIdentity! Before aborting their
+	 * download check their other received Scores using {@link WebOfTrust#getScores(Identity)} and
+	 * {@link WebOfTrust#shouldMaybeFetchIdentity(Score)} for whether any of them justifies to keep
+	 * downloading the Identity.
+	 * 
+	 * Implementations can assume that when this function is called:
+	 * - the OwnIdentity still is stored in the database, the replacement Identity object has not
+	 *   been created yet.
+	 * - the Score database has not been changed yet.
+	 * I.e. they can assume that nothing has changed about the OwnIdentity or any other aspect
+	 * related to it yet.
+	 * 
+	 * After this callback has returned, and once the replacement Identity has been created and the
+	 * {@link Trust} and Score database fully adapted to it, WoT will call
+	 * {@link #storePostDeleteOwnIdentityCommand(Identity)}. */
 	@NeedsTransaction void storePreDeleteOwnIdentityCommand(OwnIdentity oldIdentity);
 
 	/**
