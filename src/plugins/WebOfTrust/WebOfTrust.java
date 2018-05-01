@@ -5301,7 +5301,9 @@ public final class WebOfTrust extends WebOfTrustInterface
 
 				// This function messes with the score graph manually so it is a good idea to check whether it is intact before and afterwards.
 				assert(computeAllScoresWithoutCommit());
-
+				
+				mFetcher.storePreDeleteOwnIdentityCommand(oldIdentity);
+				
 				final Identity newIdentity;
 				
 				try {
@@ -5363,22 +5365,6 @@ public final class WebOfTrust extends WebOfTrustInterface
 				newIdentity.forceSetNewEditionHint(oldIdentity.getLatestEditionHint());
 
 				newIdentity.storeWithoutCommit();
-				
-				// For calling mFetcher.storeTrustChangedCommandWithoutCommit()
-				// - it needs to be called after the Score database is correct so we must store
-				// the Trusts we modify in the ArrayLists temporarily.
-				// TODO: Performance: The initial size isn't very accurate because we also add
-				// received Trusts to the lists, but the used constant is about *given* trusts.
-				// The initial size should rather be the average amount of received Trusts as
-				// measured on the actual network + MAX_IDENTITY_XML_TRUSTEE_AMOUNT.
-				// While the performance benefit of that may be neglegible introducing a constant
-				// for it will allow developers to easily search the source code for things which
-				// need to change if the network grows so large that this won't fit into memory
-				// anymore for seed Identitys - for which you should please file a bug once you
-				// introduce such a constant. Then please also deal with the other TODO of the same
-				// subject which was added by the same commit as this one.
-				ArrayList<Trust> deletedTrusts = new ArrayList<>(MAX_IDENTITY_XML_TRUSTEE_AMOUNT);
-				ArrayList<Trust> createdTrusts = new ArrayList<>(MAX_IDENTITY_XML_TRUSTEE_AMOUNT);
 
 				// Copy all received Trusts.
 				// We don't use removeTrustWithoutCommit() + setTrustWithoutCommit() here to avoid
@@ -5402,20 +5388,6 @@ public final class WebOfTrust extends WebOfTrustInterface
 					// Certain member values such as the edition might not be equal.
 					/* assert(newReceivedTrust.equals(oldReceivedTrust)); */
 					
-					// We clone() the oldReceivedTrust because after deleting it its getters
-					// wouldn't be able to query its members from the database anymore. mFetcher is
-					// compatible with that.
-					// TODO: Performance: In theory we don't need to tell mFetcher about the deleted
-					// received Trusts as the effect of aborting fetching of the oldIdentity is
-					// already covered by the fact that we'll have to call
-					// storeAbortFetchCommandWithoutCommit() upon it (as it was an OwnIdentity which
-					// are always being fetched even without received Trusts, for restoring).
-					// However such hacks should first be explicitely allowed in the interface
-					// specification of IdentityDownloader - and perhaps the few CPU cycles are not
-					// worth the uglyness of such special cases.
-					deletedTrusts.add(oldReceivedTrust.clone());
-					createdTrusts.add(newReceivedTrust);
-					
 					oldReceivedTrust.deleteWithoutCommit();
 					newReceivedTrust.storeWithoutCommit();
 				}
@@ -5438,38 +5410,15 @@ public final class WebOfTrust extends WebOfTrustInterface
 				}
 
 				assert(getScores(oldIdentity).size() == 0);
-
-				// Identitys for which we have to call
-				// mFetcher.storeAbortFetchCommandWithoutCommit().
-				// We store them for being able to do this *after* updating the Scores as the
-				// fetcher demands the Score db to be valid when calling its callbacks.
-				// (No need to have this be a Set: We obtain the Identities from the Scores they
-				// received from the oldIdentity, and there can only be one Score for each truster+
-				// trustee pair, duplicates aren't possible.)
-				// FIXME: All IdentityDownloader implementations have been changed to deal with
-				// this on their own at their storePreDeleteOwnIdentityCommand() implementations.
-				// Remove this list and the related code and amend the documentation of the 
-				// declaration of that function at interface IdentityDownloader to state that
-				// implementations of it must deal with aborting downloads of Identitys whose
-				// trustworthiness is affected by the deletion of the OwnIdentity.
-				LinkedList<Identity> needAbortFetchCommand = new LinkedList<>();
 				
 				// Delete all given scores:
 				// Non-own identities do not assign scores to other identities so we can just delete them.
+				// The resulting potential changes of whether the Identitys which had received the
+				// Scores should be downloaded by mFetcher were already handled by our call to
+				// mFetcher.storePreDeleteOwnIdentityCommand().
 				for(Score oldScore : getGivenScores(oldIdentity)) {
-					final Identity trustee = oldScore.getTrustee();
-					// TODO: Performance: It might be possible to accelerate this using
-					// shouldMaybeFetchIdentity() to first check whether shouldFetchIdentity() could
-					// change. shouldMaybeFetchIdentity() does less database queries.
-					final boolean oldShouldFetchTrustee = shouldFetchIdentity(trustee);
-					
 					oldScore.deleteWithoutCommit();
 					mSubscriptionManager.storeScoreChangedNotificationWithoutCommit(oldScore, null);
-					
-					// If the OwnIdentity which we are converting was the only source of trust to the trustee
-					// of this Score value, the should-fetch state of the trustee might change to false.
-					if(oldShouldFetchTrustee && shouldFetchIdentity(trustee) == false)
-						needAbortFetchCommand.add(trustee);
 				}
 				
 				assert(getGivenScores(oldIdentity).size() == 0);
@@ -5495,9 +5444,6 @@ public final class WebOfTrust extends WebOfTrustInterface
 					// It would implicitly trigger oldIdentity.equals(identity) which is not the case:
 					// Certain member values such as the edition might not be equal.
 					/* assert(newGivenTrust.equals(oldGivenTrust)); */
-
-					deletedTrusts.add(oldGivenTrust.clone());
-					createdTrusts.add(newGivenTrust);
 					
 					oldGivenTrust.deleteWithoutCommit();
 					newGivenTrust.storeWithoutCommit();
@@ -5505,27 +5451,7 @@ public final class WebOfTrust extends WebOfTrustInterface
 
 				mPuzzleStore.onIdentityDeletion(oldIdentity);
 				
-				for(Trust t : deletedTrusts)
-					mFetcher.storeTrustChangedCommandWithoutCommit(t, null);
-				
-				for(Identity i : needAbortFetchCommand)
-					mFetcher.storeAbortFetchCommandWithoutCommit(i);
-				
-				mFetcher.storeAbortFetchCommandWithoutCommit(oldIdentity);
-				
-				// FIXME: The new IdentityDownloader interface allows implementations to store
-				// references to Identity objects. Thus before deleting the Identity object from the
-				// database we must ensure that all references are deleted by the IdentityDownloader
-				// implementations. Review their storeAbortFetchCommandWithoutCommit() for whether
-				// this is the case. Amend the storeAbortFetchCommandWithoutCommit() JavaDoc to
-				// state that they must do so.
 				oldIdentity.deleteWithoutCommit();
-
-				if(shouldFetchIdentity(newIdentity))
-					mFetcher.storeStartFetchCommandWithoutCommit(newIdentity);
-
-				for(Trust t : createdTrusts)
-					mFetcher.storeTrustChangedCommandWithoutCommit(null, t);
 				
 				mSubscriptionManager.storeIdentityChangedNotificationWithoutCommit(oldIdentity, newIdentity);
 				
@@ -5533,7 +5459,9 @@ public final class WebOfTrust extends WebOfTrustInterface
 				// data of the deleted OwnIdentity. 
 				mConfig.scheduleDefragmentationWithoutCommit();
 				mConfig.storeWithoutCommit();
-
+				
+				mFetcher.storePostDeleteOwnIdentityCommand(newIdentity);
+				
 				// This function messes with the score graph manually so it is a good idea to check whether it is intact before and afterwards.
 				assert(computeAllScoresWithoutCommit());
 
