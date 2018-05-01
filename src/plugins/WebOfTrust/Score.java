@@ -16,6 +16,8 @@ import java.util.UUID;
 
 import plugins.WebOfTrust.Identity.IdentityID;
 import plugins.WebOfTrust.Trust.TrustID;
+import plugins.WebOfTrust.network.input.IdentityDownloader;
+import plugins.WebOfTrust.ui.fcp.FCPInterface;
 import plugins.WebOfTrust.util.ReallyCloneable;
 import freenet.support.CurrentTimeUTC;
 
@@ -23,13 +25,24 @@ import freenet.support.CurrentTimeUTC;
 /**
  * A score's {@link #getValue()} is the rating of how much an {@link Identity} is trusted from the
  * point of view of the {@link OwnIdentity} which owns the score.
+ * Scores are the central "output" of WoT - they are what is computed from the {@link Trust} ratings
+ * of the user and the remote Identitys. They determine whether an Identity is to be downloaded by
+ * WoT and especially client applications.
+ * 
  * If the Score is negative, the Identity is considered malicious, if it is zero or positive, it is
  * trusted. If no Score exists for a given Identity it is also considered as distrusted (and as
  * eligible for garbage collection once this is implemented:
  * https://bugs.freenetproject.org/view.php?id=2509).
- * Scores are the central "output" of WoT - they are what is computed from the {@link Trust} ratings
- * of the user and the remote Identitys. They determine whether an Identity is to be downloaded by
- * WoT and especially client applications.
+ * 
+ * Client applications should download their type of content published by an Identity if the
+ * Identity has their context contained in {@link Identity#getContexts()} and any Score for it
+ * exists with {@link Score#getValue()} >= 0. They should determine that by FCP using the
+ * {@link FCPInterface#handleSubscribe(freenet.clients.fcp.FCPPluginConnection,
+ * freenet.clients.fcp.FCPPluginMessage) Subscribe} FCP API.
+ * An Identity is downloaded by WoT's {@link IdentityDownloader} implementations if it has received
+ * any Score by an OwnIdentity which satisfies {@link WebOfTrust#shouldMaybeFetchIdentity(Score)}.
+ * This can also be determined by {@link WebOfTrust#shouldFetchIdentity(Identity)}.
+ * 
  * For a detailed explanation of how Scores are computed see the directory
  * developer-documentation/core-developer-manual in this repository, or the reference implementation
  * of Score computation at {@link WebOfTrust#computeAllScoresWithoutCommit()}.
@@ -44,8 +57,15 @@ import freenet.support.CurrentTimeUTC;
  * TODO: Performance: Scores are not entered by the user, they are only ever computed by WoT on
  * its own. Thus convert all if() checks of proper input values to asserts().
  *
- * @author xor (xor@freenetproject.org)
- * @author Julien Cornuwel (batosai@freenetproject.org)
+ * @see WebOfTrust#getAllScores()
+ * @see WebOfTrust#getScores(Identity)
+ * @see WebOfTrust#getGivenScores(OwnIdentity)
+ * @see WebOfTrust#getScore(OwnIdentity, Identity)
+ * @see WebOfTrust#getScore(String)
+ * @see WebOfTrust#shouldMaybeFetchIdentity(Score)
+ * @see WebOfTrust#shouldFetchIdentity(Identity)
+ * @see FCPInterface#handleSubscribe(freenet.clients.fcp.FCPPluginConnection,
+ *      freenet.clients.fcp.FCPPluginMessage)
  */
 public final class Score extends Persistent implements ReallyCloneable<Score>, EventSource {
 	
