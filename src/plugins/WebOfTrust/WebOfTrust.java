@@ -2782,6 +2782,14 @@ public final class WebOfTrust extends WebOfTrustInterface
 			if(logDEBUG) Logger.debug(this, "Deleting received scores...");
 			for(Score score : getScores(identity)) {
 				score.deleteWithoutCommit();
+				// FIXME: The Score object won't be able to loads its members from the database
+				// at this point because we just deleted it so we should clone() it before
+				// deleteWithoutCommit() and then pass the clone to SubscriptionManager. This
+				// won't need database upgrade code to repair old databases because the
+				// mSubscriptionManager database is currently deleted at every restart (but that
+				// will change soon due to https://freenet.mantishub.io/view.php?id=6113).
+				// This also applies to all other mSubscriptionManager callbacks in this
+				// function.
 				mSubscriptionManager.storeScoreChangedNotificationWithoutCommit(score, null);
 			}
 
