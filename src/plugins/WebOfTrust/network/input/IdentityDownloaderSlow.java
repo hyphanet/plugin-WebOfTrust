@@ -1091,13 +1091,17 @@ public final class IdentityDownloaderSlow implements
 	}
 
 	@Override public void storePreDeleteIdentityCommand(Identity oldIdentity) {
-		// Both stops the download of the Identity by deleting all EditionHint objects it has
-		// received as well as deleting all EditionHint objects it has given to other Identitys.
-		// Thus complies with our job of deleting all objects in the db4o database which point to
-		// the oldIdentity and those induced by Trusts/Scores it has given/received (in our case
-		// only by the Trusts as we don't store anything due to Scores, but Scores are a consequence
-		// of Trusts and thus are also dealt with implicitly).
-		storeAbortFetchCommandWithoutCommit(oldIdentity);
+		if(oldIdentity instanceof OwnIdentity) {
+			storePreDeleteOwnIdentityCommand((OwnIdentity)oldIdentity);
+		} else {
+			// Both stops the download of the Identity by deleting all EditionHint objects it has
+			// received as well as deleting all EditionHint objects it has given to other Identitys.
+			// Thus complies with our job of deleting all objects in the db4o database which point
+			// to the oldIdentity and those induced by Trusts/Scores it has given/received (in our
+			// case only by the Trusts as we don't store anything due to Scores, but Scores are a
+			// consequence of Trusts and thus are also dealt with implicitly).
+			storeAbortFetchCommandWithoutCommit(oldIdentity);
+		}
 	}
 
 	/**
