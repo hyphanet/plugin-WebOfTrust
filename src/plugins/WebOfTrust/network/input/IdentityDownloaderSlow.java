@@ -981,7 +981,8 @@ public final class IdentityDownloaderSlow implements
 	 * {@link EditionHint#getSourceIdentity()} or {@link EditionHint#getTargetIdentity()}.
 	 * 
 	 * Using this function for that purpose is handled by this class itself at
-	 * {@link #storePreDeleteOwnIdentityCommand(OwnIdentity)} and
+	 * {@link #storePreDeleteOwnIdentityCommand(OwnIdentity)},
+	 * {@link #storePreDeleteIdentityCommand(Identity)} and
 	 * {@link #storeRestoreOwnIdentityCommandWithoutCommit(Identity, OwnIdentity)}, there is no
 	 * need for outside classes to call it for that purpose directly. */
 	@Override public void storeAbortFetchCommandWithoutCommit(Identity identity) {
@@ -1066,7 +1067,9 @@ public final class IdentityDownloaderSlow implements
 		// Both stops the download of the Identity by deleting all EditionHint objects it has
 		// received as well as deleting all EditionHint objects it has given to other Identitys.
 		// Thus complies with our job of deleting all objects in the db4o database which point to
-		// the oldIdentity.
+		// the oldIdentity and those induced by the Scores it has given (in our case only by the
+		// given Trusts as we don't store anything due to Scores, but Scores are a consequence of
+		// Trusts and thus are also dealt with implicitly).
 		storeAbortFetchCommandWithoutCommit(oldIdentity);
 	}
 
@@ -1087,6 +1090,14 @@ public final class IdentityDownloaderSlow implements
 		}
 	}
 
+	@Override public void storePreDeleteIdentityCommand(Identity oldIdentity) {
+		// Both stops the download of the Identity by deleting all EditionHint objects it has
+		// received as well as deleting all EditionHint objects it has given to other Identitys.
+		// Thus complies with our job of deleting all objects in the db4o database which point to
+		// the oldIdentity and those induced by Trusts/Scores it has given/received (in our case
+		// only by the Trusts as we don't store anything due to Scores, but Scores are a consequence
+		// of Trusts and thus are also dealt with implicitly).
+		storeAbortFetchCommandWithoutCommit(oldIdentity);
 	}
 
 	/**
