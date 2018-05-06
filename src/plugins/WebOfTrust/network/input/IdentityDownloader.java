@@ -23,15 +23,20 @@ import freenet.keys.FreenetURI;
  * They are then fed as {@link IdentityFile} to the {@link IdentityFileQueue}, which is consumed by
  * the {@link IdentityFileProcessor}.
  * 
+ * Implementations are allowed to and do store pointers to {@link Identity} and {@link OwnIdentity}
+ * objects in their database, currently as part of {@link EditionHint} objects.
+ * They must not store references to any other objects which are not a type managed by their own
+ * database, e.g. {@link Trust} or {@link Score} (because this interface only has callbacks for
+ * changes to Identity objects).
  * FIXME: 
- * Implementations are allowed to and do store pointers to Identity objects in their database,
- * currently as part of {@link EditionHint} objects.
  * Thus we must introduce a new callback which gets called before deletion of an Identity to ensure
  * the IdentityDownloader implementations delete the objects pointing to the to-be-deleted Identity.
  * Further at least the following functions must be amended to call the new callback:
  * - {@link WebOfTrust#deleteWithoutCommit(Identity)}
  * - {@link WebOfTrust#deleteOwnIdentity(String)}
  * - {@link WebOfTrust#restoreOwnIdentityWithoutCommit(freenet.keys.FreenetURI)}
+ * EDIT: This is being resolved by the five new callbacks at the beginning of the interface, it can
+ * be removed once they're done (as specified by the FIXMEs there).
  * 
  * <b>Locking:</b>
  * Implementations  must synchronize transactions by taking the following locks in the given order:
