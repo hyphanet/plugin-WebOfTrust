@@ -84,8 +84,16 @@ public interface IdentityDownloader extends Daemon {
 	 * deleting an {@link OwnIdentity}.
 	 * 
 	 * After the callback returns the oldIdentity will be deleted from the database.
-	 * Any {@link Score}s it has given to other {@link Identity}s as specified by
+	 * It will be replaced by a non-own {@link Identity} object. Its given and received
+	 * {@link Trust}s, and its received {@link Score}s will keep existing by being replaced with
+	 * objects which to point to the replacement Identity.
+	 * Any Scores the oldIdentity has given to other Identitys as specified by
 	 * {@link WebOfTrust#getGivenScores(OwnIdentity)} will be deleted then.
+	 * 
+	 * After this callback has returned, and once the replacement Identity has been created and the
+	 * {@link Trust} and Score database fully adapted to it, WoT will call
+	 * {@link #storePostDeleteOwnIdentityCommand(Identity)} in order to allow implementations to
+	 * start download of the replacement Identity if it is eligible for download.
 	 * 
 	 * Thus implementations have to:
 	 * - remove any object references to the oldIdentity object from the db4o database as they
@@ -105,13 +113,7 @@ public interface IdentityDownloader extends Daemon {
 	 * Implementations can assume that when this function is called:
 	 * - the OwnIdentity still is stored in the database, the replacement Identity object has not
 	 *   been created yet.
-	 * - the Score database has not been changed yet.
-	 * I.e. they can assume that nothing has changed about the OwnIdentity or any other aspect
-	 * related to it yet.
-	 * 
-	 * After this callback has returned, and once the replacement Identity has been created and the
-	 * {@link Trust} and Score database fully adapted to it, WoT will call
-	 * {@link #storePostDeleteOwnIdentityCommand(Identity)}. */
+	 * - the Trust and Score database has not been changed yet. */
 	@NeedsTransaction void storePreDeleteOwnIdentityCommand(OwnIdentity oldIdentity);
 
 	/**
