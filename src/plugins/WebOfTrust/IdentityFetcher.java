@@ -536,6 +536,13 @@ public final class IdentityFetcher implements
 			storeStartFetchCommandWithoutCommit(newIdentity);
 	}
 
+	@Override public void storePreDeleteIdentityCommand(Identity oldIdentity) {
+		if(oldIdentity instanceof OwnIdentity)
+			storePreDeleteOwnIdentityCommand((OwnIdentity)oldIdentity);
+		else
+			storeAbortFetchCommandWithoutCommit(oldIdentity);
+	}
+
 	@Override public void storeRestoreOwnIdentityCommandWithoutCommit(Identity oldIdentity,
 			OwnIdentity newIdentity) {
 		
