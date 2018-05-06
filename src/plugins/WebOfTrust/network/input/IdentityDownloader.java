@@ -139,6 +139,13 @@ public interface IdentityDownloader extends Daemon {
 	 * - {@link WebOfTrust#getGivenScores(OwnIdentity)} if the Identity was an {@link OwnIdentity}.
 	 * - {@link WebOfTrust#getScores(Identity)}
 	 * 
+	 * After this callback has returned, in opposite to the other callbacks of this interface, no
+	 * such callback as "storePostDeleteIdentityCommand()" will be called. This is because:
+	 * - there will be no replacement Identity to pass by a callback.
+	 * - deletion of an Identity can only cause abortion of downloads, not starting - which would
+	 *   typically be the job of a Post-deletion version of this callback with starting the download
+	 *   of the replacement Identity if necessary, but there will be none.
+	 * 
 	 * Thus implementations have to:
 	 * - remove any object references to the oldIdentity object from the db4o database as they
 	 *   would otherwise be nulled by the upcoming deletion of it.
@@ -155,16 +162,7 @@ public interface IdentityDownloader extends Daemon {
 	 * 
 	 * Implementations can assume that when this function is called:
 	 * - the Identity still is stored in the database.
-	 * - the Trust and Score database has not been changed yet.
-	 * I.e. they can assume that nothing has changed about the Identity or any other aspect related
-	 * to it yet.
-	 * 
-	 * After this callback has returned, in opposite to the other callbacks of this interface, no
-	 * such callback as "storePostDeleteIdentityCommand()" will be called. This is because:
-	 * - there will be no replacement object for the deleted Identity
-	 * - deletion of an Identity can only cause aborting of downloads, not starting - which would
-	 *   typically be the job of a Post-deletion version of this callback with starting the download
-	 *   of the replacement Identity if necessary. */
+	 * - the Trust and Score database has not been changed yet. */
 	@NeedsTransaction void storePreDeleteIdentityCommand(Identity oldIdentity);
 
 	// There is no replacement Identity when a non-own Identity is deleted.
