@@ -2779,6 +2779,11 @@ public final class WebOfTrust extends WebOfTrustInterface
 			
 			if(logDEBUG) Logger.debug(this, "Deleting identity " + identity + " ...");
 			
+			if(mFetcher != null) { // Can be null if we use this function in upgradeDB()
+				if(logDEBUG) Logger.debug(this, "Aborting download of the Identity...");
+				mFetcher.storePreDeleteIdentityCommand(identity);
+			}
+			
 			if(logDEBUG) Logger.debug(this, "Deleting received scores...");
 			for(Score score : getScores(identity)) {
 				score.deleteWithoutCommit();
@@ -2801,36 +2806,15 @@ public final class WebOfTrust extends WebOfTrustInterface
 					mSubscriptionManager.storeScoreChangedNotificationWithoutCommit(score, null);
 				}
 			}
-
-			// While deleting Trusts now we will preserve them here as we will need to pass them to
-			// mFetcher after Scores are updated.
-			// TODO: Performance: The initial size for receivedTrusts should rather be a multiply of
-			// the average amount of *received* Trusts as measured on the actual network, the used
-			// constant is about *given* Trusts (though it may be the same as the average received
-			// Trust amount anyway if Trusts are distributed completely random among Identitys).
-			// While the performance benefit of that may be neglegible introducing a constant
-			// for it will allow developers to easily search the source code for things which
-			// need to change if the network grows so large that this won't fit into memory
-			// anymore for seed Identitys - for which you should please file a bug once you
-			// introduce such a constant. Then please also deal with the other TODO of the same
-			// subject which was added by the same commit as this one.
-			ArrayList<Trust> receivedTrusts = new ArrayList<>(MAX_IDENTITY_XML_TRUSTEE_AMOUNT);
-			ArrayList<Trust> givenTrusts = new ArrayList<>(MAX_IDENTITY_XML_TRUSTEE_AMOUNT);
 			
 			if(logDEBUG) Logger.debug(this, "Deleting received trusts...");
 			for(Trust trust : getReceivedTrusts(identity)) {
-				// Besides the fact that mFetcher will want a clone() anyway, we must also clone it
-				// because after deleting it it won't anymore be possible to activate() it
-				// = load its members from the database.
-				receivedTrusts.add(trust.clone());
-				
 				trust.deleteWithoutCommit();
 				mSubscriptionManager.storeTrustChangedNotificationWithoutCommit(trust, null);
 			}
 
 			if(logDEBUG) Logger.debug(this, "Deleting given trusts...");
 			for(Trust givenTrust : getGivenTrusts(identity)) {
-				givenTrusts.add(givenTrust.clone());
 				// We call computeAllScoresWithoutCommit() by finishTrustListImport() so we do not
 				// have to use removeTrustWithoutCommit() to compute Score changes individually
 				givenTrust.deleteWithoutCommit();
@@ -2841,36 +2825,7 @@ public final class WebOfTrust extends WebOfTrustInterface
 
 			if(logDEBUG) Logger.debug(this, "Deleting associated introduction puzzles ...");
 			mPuzzleStore.onIdentityDeletion(identity);
-			
-			if(logDEBUG) Logger.debug(this, "Storing an abort-fetch-command...");
-			
-			// (mFetcher must be notified *after* updating the Score database!)
-			if(mFetcher != null) { // Can be null if we use this function in upgradeDB()
-				// FIXME: The new IdentityDownloader interface allows implementations to store
-				// references to Identity objects. Thus before deleting the Identity object from the
-				// database we must ensure that all references are deleted by the IdentityDownloader
-				// implementations. Review their storeAbortFetchCommandWithoutCommit() for whether
-				// this is the case. Amend the storeAbortFetchCommandWithoutCommit() JavaDoc to
-				// state that they must do so. If this is not possible then ensure to execute the
-				// queue processor of the implementations after storing the commands here. This
-				// may be possible as we anyway are holding the required locks at this point
-				// probably. Further review all other similar callers of storeAbortFetchCommand...()
-				// to do the same, e.g. deleteOwnIdentity() / restoreOwnIdentity().
-				// EDIT: It would NOT be valid to process the command queue here as suggested above:
-				// Aborting downloads then wouldn't be covered by a rollback of the unfinished
-				// database transaction, they would stay aborted. So the only option we have is to
-				// change storeAbortFetchCommandWithoutCommit() to not store a reference to the
-				// Identity object. That will be possible though: For aborting a download typically
-				// only the ID of the Identity is needed - the fred downloaders are typically stored
-				// in a HashMap by the ID of the identity they belong to.
-				// EDIT: This FIXME also applies to the below deployments of the
-				// mFetcher.storeTrustChangedCommandWithoutCommit() callbacks.
-				// EDIT: IdentityDownloaderFast has been fixed to not store a reference to the
-				// Identity when storeAbortFetchCommandWithoutCommit() is used, it only stores the
-				// ID of the Identity.
-				mFetcher.storeAbortFetchCommandWithoutCommit(identity);
-			}
-		
+					
 			if(logDEBUG) Logger.debug(this, "Deleting the identity...");
 			identity.deleteWithoutCommit();
 
@@ -2879,27 +2834,11 @@ public final class WebOfTrust extends WebOfTrustInterface
 			if(!trustListImportWasInProgress)
 				finishTrustListImport();
 			
-			if(mFetcher != null) {
-				// In opposite to SubscriptionManager's callback the callback we deploy now must be
-				// called *after* Scores are updated.
-				
-				// TODO: Performance: In theory we don't need to tell it about the deleted received
-				// Trusts as that effect is already covered by having already called
-				// storeAbortFetchCommandWithoutCommit() above.
-				// However such hacks should first be explicitely allowed in the interface
-				// specification of IdentityDownloader. As this function here is for debug purposes
-				// and database upgrade code mostly currently it's not worth doing that now.
-				for(Trust t : receivedTrusts)
-					mFetcher.storeTrustChangedCommandWithoutCommit(t, null);
-				
-				// TODO: Performance: In theory this only needs to be called if the trust giver
-				// was an OwnIdentity, otherwise the only current implementation of
-				// IdentityDownloader which uses this callback - IdentityDownloaderFast - wouldn't
-				// have used the trust as a reason to download anything anyway.
-				// However the same concerns about resolving this TODO apply as at the above TODO.
-				for(Trust t : givenTrusts)
-					mFetcher.storeTrustChangedCommandWithoutCommit(t, null);
-			}
+			// No such callback exists, see the JavaDoc of storePreDeleteIdentityCommand()
+			/*
+			if(mFetcher != null)
+				mFetcher.storePostDeleteIdentityCommand(oldIdentity);
+			*/
 		}
 		catch(RuntimeException e) {
 			if(!trustListImportWasInProgress)
