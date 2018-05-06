@@ -2761,6 +2761,8 @@ public final class WebOfTrust extends WebOfTrustInterface
 	 *   However, the implementations of those functions might cause leaks by forgetting to delete certain object members.
 	 *   If you call this function for ALL identities in a database, EVERYTHING should be deleted and the database SHOULD be empty.
 	 *   You then can check whether the database actually IS empty to test for leakage.
+	 * - In the future it may be used as a foundation for code for garbage collection of Identitys.
+	 *   See https://bugs.freenetproject.org/view.php?id=2509
 	 * 
 	 * You have to lock the WebOfTrust, the IntroductionPuzzleStore, the IdentityFetcher, the
 	 * SubscriptionManager and the Persistent.transactionLock() before calling this function.
@@ -2821,9 +2823,10 @@ public final class WebOfTrust extends WebOfTrustInterface
 			if(logDEBUG) Logger.debug(this, "Deleting given trusts...");
 			for(Trust givenTrust : getGivenTrusts(identity)) {
 				givenTrusts.add(givenTrust.clone());
+				// We call computeAllScoresWithoutCommit() by finishTrustListImport() so we do not
+				// have to use removeTrustWithoutCommit() to compute Score changes individually
 				givenTrust.deleteWithoutCommit();
 				mSubscriptionManager.storeTrustChangedNotificationWithoutCommit(givenTrust, null);
-				// We call computeAllScores anyway so we do not use removeTrustWithoutCommit()
 			}
 			
 			mFullScoreComputationNeeded = true; // finishTrustListImport will call computeAllScoresWithoutCommit for us.
