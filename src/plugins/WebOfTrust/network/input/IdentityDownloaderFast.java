@@ -551,7 +551,6 @@ public final class IdentityDownloaderFast implements
 		// for the purpose of WebOfTrust.restoreOwnIdentity(). Thus we new to abort a potentially
 		// pre-existing download.
 		storeAbortFetchCommandWithoutCommit_Checked(oldIdentity);
-
 	}
 
 	@Override public void storePostDeleteOwnIdentityCommand(Identity newIdentity) {
