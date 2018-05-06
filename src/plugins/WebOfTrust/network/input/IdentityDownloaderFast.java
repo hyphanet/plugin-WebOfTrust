@@ -560,6 +560,15 @@ public final class IdentityDownloaderFast implements
 			storeStartFetchCommandWithoutCommit_Checked(newIdentity);
 	}
 
+	@Override public void storePreDeleteIdentityCommand(Identity oldIdentity) {
+		if(oldIdentity instanceof OwnIdentity)
+			storePreDeleteOwnIdentityCommand((OwnIdentity)oldIdentity);
+		else {
+			if(shouldDownload(oldIdentity))
+				storeAbortFetchCommandWithoutCommit_Checked(oldIdentity);
+		}
+	}
+
 	@Override public void storeRestoreOwnIdentityCommandWithoutCommit(Identity oldIdentity,
 			OwnIdentity newIdentity) {
 		
