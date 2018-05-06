@@ -119,7 +119,47 @@ public interface IdentityDownloader extends Daemon {
 	 *   necessary changes. */
 	@NeedsTransaction void storePostDeleteOwnIdentityCommand(Identity newIdentity);
 
+	/**
+	 * Called by {@link WebOfTrust#deleteWithoutCommit(Identity)} before any action is taken towards
+	 * deleting an {@link Identity}.
+	 * 
+	 * After the callback returns the oldIdentity will be deleted from the database.
+	 * In opposite to {@link WebOfTrust#deleteOwnIdentity(String)} there will be no replacement
+	 * Identity object created for the deleted Identity - even if it was an {@link OwnIdentity}!
+	 * Any {@link Trust}s and {@link Score}s it has given or received will be deleted, see:
+	 * - {@link WebOfTrust#getGivenTrusts(Identity)}
+	 * - {@link WebOfTrust#getReceivedTrusts(Identity)}
+	 * - {@link WebOfTrust#getGivenScores(OwnIdentity)} if the Identity was an {@link OwnIdentity}.
+	 * - {@link WebOfTrust#getScores(Identity)}
+	 * 
+	 * Thus implementations have to:
+	 * - remove any object references to the oldIdentity object from the db4o database as they
+	 *   would otherwise be nulled by the upcoming deletion of it.
+	 * - stop downloading of any Identitys who aren't eligible for download anymore because
+	 *   they were eligible solely due to one of the to-be-deleted Scores (see the JavaDoc of
+	 *   {@link Score} for when Scores justify downloading an Identity).
+	 * - stop downloading the oldIdentity.
+	 * 
+	 * ATTENTION: Identitys which had received a Score from the oldIdentity may still be eligible
+	 * for download due to a Score received by a different OwnIdentity! Before aborting their
+	 * download check their other received Scores using {@link WebOfTrust#getScores(Identity)} and
+	 * {@link WebOfTrust#shouldMaybeFetchIdentity(Score)} for whether any of them justifies to keep
+	 * downloading the Identity.
+	 * 
+	 * Implementations can assume that when this function is called:
+	 * - the Identity still is stored in the database.
+	 * - the Trust and Score database has not been changed yet.
+	 * I.e. they can assume that nothing has changed about the Identity or any other aspect related
+	 * to it yet.
+	 * 
+	 * After this callback has returned, in opposite to the other callbacks of this interface, no
+	 * such callback as "storePostDeleteIdentityCommand()" will be called. This is because:
+	 * - there will be no replacement object for the deleted Identity
+	 * - deletion of an Identity can only cause aborting of downloads, not starting - which would
+	 *   typically be the job of a Post-deletion version of this callback with starting the download
+	 *   of the replacement Identity if necessary. */
 	@NeedsTransaction void storePreDeleteIdentityCommand(Identity oldIdentity);
+
 	// There is no replacement Identity when a non-own Identity is deleted.
 	/* @NeedsTransaction void storePostDeleteIdentityCommand(Identity newIdentity); */
 	@NeedsTransaction void storePreRestoreOwnIdentityCommand(Identity oldIdentity);
