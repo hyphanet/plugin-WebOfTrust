@@ -46,12 +46,14 @@ before_install:
   - ( cd lib/freenet && ln -sf ../../build/output/freenet-ext*.jar freenet-ext.jar )
   - ( cd lib && ln -sf ../build/output/bcprov*.jar bcprov.jar )
   - ( cd lib && ln -sf ../build/output/jna-?.?.?.jar jna.jar )
+  - ( cd lib && ln -sf ../build/output/jna-platform-*.jar jna-platform.jar )
   - cd "$TRAVIS_BUILD_DIR"
   # Print the checksums of the WoT dependencies - for debugging
   - sha256sum ../fred/dist/freenet.jar
   - sha256sum ../fred/lib/freenet/freenet-ext.jar
   - sha256sum ../fred/lib/bcprov.jar
   - sha256sum ../fred/lib/jna.jar
+  - sha256sum ../fred/lib/jna-platform.jar
 
 script: ant
 
