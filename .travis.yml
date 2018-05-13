@@ -12,6 +12,8 @@ addons:
     - junit4
     - libhamcrest-java
   # TODO: Code quality: Remove this workaround for https://github.com/travis-ci/travis-ci/issues/5227
+  hosts:
+    - freenet-plugin-WebOfTrust
   hostname: freenet-plugin-WebOfTrust
 
 before_cache:
