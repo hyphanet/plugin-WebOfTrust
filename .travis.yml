@@ -32,12 +32,9 @@ before_install:
   - if [ ! -e fred/src ]; then git clone https://github.com/freenet/fred.git --branch next --single-branch --depth 1 fred ; else cd fred ; git pull ; cd .. ; fi
   - cd fred
   - echo -e "org.gradle.parallel = true\norg.gradle.jvmargs=-Xms256m -Xmx1024m\norg.gradle.configureondemand=true\ntasks.withType(Test) {\n maxParallelForks = Runtime.runtime.availableProcessors()\n}" > gradle.properties
-  # "jar" builds fred. "copyRuntimeLibs" copies the JAR *and*
-  # dependencies - which WoT also needs - to build/output/
-  # TODO: Code quality: Do we also need to do "gradle clean" or is
-  # Gradle smart enough to notice if Git changed things? I suppose it
-  # is?
-  - gradle jar copyRuntimeLibs -x test
+  # "copyRuntimeLibs" copies the JAR *and* dependencies - which WoT also
+  # needs - to build/output/
+  - gradle clean jar copyRuntimeLibs -x test
   # Create symlink to JARs in the places where they used to be with the old
   # fred Ant builder so WoT finds them and we can keep WoT's Ant
   # builder compatible with old fred releases for now.
