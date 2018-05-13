@@ -34,7 +34,7 @@ before_install:
   - echo -e "org.gradle.parallel = true\norg.gradle.jvmargs=-Xms256m -Xmx1024m\norg.gradle.configureondemand=true\ntasks.withType(Test) {\n maxParallelForks = Runtime.runtime.availableProcessors()\n}" > gradle.properties
   # "copyRuntimeLibs" copies the JAR *and* dependencies - which WoT also
   # needs - to build/output/
-  - gradle clean jar copyRuntimeLibs -x test
+  - ./gradlew clean jar copyRuntimeLibs -x test
   # Create symlink to JARs in the places where they used to be with the old
   # fred Ant builder so WoT finds them and we can keep WoT's Ant
   # builder compatible with old fred releases for now.
@@ -58,6 +58,6 @@ jdk:
   - oraclejdk9
   - oraclejdk8
   - openjdk8
-  - openjdk7
-  # oraclejdk7: Not supported anymore: https://github.com/travis-ci/travis-ci/issues/7884#issuecomment-308451879
   # openjdk9: As of 2018-05-12 isn't available on Travis yet.
+  # oraclejdk7: Not supported anymore: https://github.com/travis-ci/travis-ci/issues/7884#issuecomment-308451879
+  # openjdk7: Not supported anymore: https://github.com/travis-ci/travis-ci/issues/8503
