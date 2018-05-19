@@ -3,6 +3,8 @@
  * any later version). See http://www.gnu.org/ for details of the GPL. */
 package plugins.WebOfTrust;
 
+import static java.lang.System.out;
+
 import java.io.File;
 import java.lang.reflect.Array;
 import java.lang.reflect.Field;
@@ -139,6 +141,19 @@ public class AbstractJUnit3BaseTest extends TestCase {
 			{
 				final Object originalField = field.get(original);
 				final Object clonedField = field.get(clone);
+				
+				if(field.getName().equals("$assertionsDisabled")) {
+					out.println("For debugging why assertNotSame() fails for $assertionsDisabled:");
+					out.println("original is Boolean: " + (originalField instanceof Boolean));
+					out.println("clone is Boolean:    " + (clonedField instanceof Boolean));
+					out.println("==:       " + (originalField == clonedField));
+					out.println("equals(): " + originalField.equals(clonedField));
+					out.println("original hash:      " + System.identityHashCode(originalField));
+					out.println("clone hash:         " + System.identityHashCode(clonedField));
+					out.println("Boolean.FALSE hash: " + System.identityHashCode(Boolean.FALSE));
+					out.println("Boolean.TRUE hash:  " + System.identityHashCode(Boolean.TRUE));
+				}
+				
 				if(originalField != null)
 					assertNotSame(field.toGenericString(), originalField, clonedField);
 				else
