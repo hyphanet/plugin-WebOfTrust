@@ -129,8 +129,10 @@ public class AbstractJUnit3BaseTest extends TestCase {
 					testClone(originalArray.getClass(), Array.get(originalArray, i), Array.get(clonedArray, i));
 				}
 			}
-				
 			
+			// Check all fields for whether assertNotSame() applies to them, i.e. for whether the
+			// clone does not wrongly re-use objects of the original.
+			// Exclude fields for which using the same object would be safe.
 			if(!field.getType().isEnum() // Enum objects exist only once
 				&& field.getType() != String.class // Strings are interned and therefore might also exist only once
 				&& !Modifier.isTransient(field.getModifiers())) // Persistent.mWebOfTurst/mDB are transient field which have the same value everywhere
