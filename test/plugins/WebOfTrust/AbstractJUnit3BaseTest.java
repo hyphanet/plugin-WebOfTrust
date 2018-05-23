@@ -129,14 +129,19 @@ public class AbstractJUnit3BaseTest extends TestCase {
 					testClone(originalArray.getClass(), Array.get(originalArray, i), Array.get(clonedArray, i));
 				}
 			}
-				
 			
-			if(!field.getType().isEnum() // Enum objects exist only once
-				&& field.getType() != String.class // Strings are interned and therefore might also exist only once
-				&& !Modifier.isTransient(field.getModifiers())) // Persistent.mWebOfTurst/mDB are transient field which have the same value everywhere
+			// Check all fields for whether assertNotSame() applies to them, i.e. for whether the
+			// clone does not wrongly re-use objects of the original.
+			// Exclude fields for which using the same object would be safe.
+			if(    !field.getType().isPrimitive() // int etc. aren't objects. See testIsPrimitive().
+				&& !field.getType().isEnum() // Enum objects exist only once
+				&&  field.getType() != String.class // Strings are interned and therefore might also exist only once
+				&& !Modifier.isTransient(field.getModifiers()) // Persistent.mWebOfTurst/mDB are transient field which have the same value everywhere
+				&& !Modifier.isStatic(field.getModifiers()))
 			{
 				final Object originalField = field.get(original);
 				final Object clonedField = field.get(clone);
+				
 				if(originalField != null)
 					assertNotSame(field.toGenericString(), originalField, clonedField);
 				else
@@ -144,7 +149,35 @@ public class AbstractJUnit3BaseTest extends TestCase {
 			}
 		}
 	}
-	
+
+	/**
+	 * Tests what we assume about {@link Class#isPrimitive()} assume at {@link #testClone(Class,
+	 * Object, Object)} because its documentation is a bit ambiguous:
+	 * isPrimitive() should only return true for types such as int, not for their wrapper classes
+	 * such as Integer. */
+	public static void testIsPrimitive() {
+		// Instead of accessing e.g. boolean.class directly wrap the primitives in classes to
+		// ensure we use the same codepath through class.getDeclaredFields() as testClone() does.
+		@SuppressWarnings("unused") class Primitives {
+			boolean a; byte b; char c;      short d; int f;     long g; float h; double i; };
+		@SuppressWarnings("unused") class NonPrimitives {
+			Boolean a; Byte b; Character c; Short d; Integer f; Long g; Float h; Double i; };
+		
+		for(Field f : Primitives.class.getDeclaredFields()) {
+			// Local classes cannot be static so ignore the pointer to the parent object.
+			if(f.getType() == AbstractJUnit3BaseTest.class)
+				continue;
+			
+			assertTrue(f.getType().isPrimitive());
+		}
+		for(Field f : NonPrimitives.class.getDeclaredFields()) {
+			if(f.getType() == AbstractJUnit3BaseTest.class)
+				continue;
+			
+			assertFalse(f.getType().isPrimitive());
+		}
+	}
+
 	/**
 	 * Generates a String containing random characters of the lowercase Latin alphabet.
 	 * @param The length of the returned string.
