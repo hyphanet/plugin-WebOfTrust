@@ -29,6 +29,13 @@ CHANGELOG - prefixed with the bugtracker issue number:
   Thanks to nextgens for insipiring this by setting up Travis CI at
   fred!
 
+- 0007016: [Bugs] Fix unit test failure on Java 9 (xor)
+
+  Fixes a bug in the unit tests, not in the actual code.
+  Symptom was:
+    junit.framework.AssertionFailedError: static final boolean
+    plugins.WebOfTrust.Persistent.$assertionsDisabled expected not same
+
 Thanks to:
   - ArneBab for being willing to review and deploy WoT.
   - nextgens for Travis CI.
