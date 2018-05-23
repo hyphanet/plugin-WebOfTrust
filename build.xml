@@ -3,6 +3,8 @@
 
 <project name="WoT" default="dist" basedir="." xmlns:if="ant:if" xmlns:unless="ant:unless">
 	<property file="override.properties"/>
+	<property name="db4o-submodule.location" location="db4o-7.4"/>
+	<property name="db4o.location" location="${db4o-submodule.location}/db4o.jar"/>
 	<property name="freenet-cvs-snapshot.location" location="../fred/dist/freenet.jar"/>
 	<property name="freenet-ext.location" location="../fred/lib/freenet/freenet-ext.jar"/>
 	<property name="bcprov.location" location="../fred/lib/bcprov.jar"/>
@@ -31,6 +33,11 @@
 	<available file="${cobertura.location}" property="cobertura.present"/>
 	<property name="test.coverage" unless:set="${test.coverage}" if:true="${cobertura.present}" value="true"/>
 
+	<!-- Libraries whose classes are to be bundled in our own JAR. -->
+	<path id="submodules.path">
+		<pathelement location="${db4o.location}"/>
+	</path>
+	<!-- Libraries which we get from fred. -->
 	<path id="lib.path">
 		<pathelement location="${bcprov.location}"/>
 		<pathelement location="${jna-platform.location}"/>
@@ -76,12 +83,28 @@
 		</and>
 	</condition>
 
+	<target name="get-submodules" description="Downloads the git submodules required by WoT">
+		<exec executable="git">
+			<arg line="submodule update --init"/>
+		</exec>
+	</target>
+
+	<target name="db4o" depends="get-submodules" description="Compiles the database submodule">
+		<ant dir="${db4o-submodule.location}" inheritAll="false" useNativeBasedir="true"/>
+	</target>
+
+	<target name="clean-db4o" depends="get-submodules" description="Cleans the database submodule">
+		<ant dir="${db4o-submodule.location}" target="clean" inheritAll="false"
+			useNativeBasedir="true"/>
+	</target>
+
 	<target name="mkdir">
 		<mkdir dir="${build}"/>
 		<mkdir dir="${build-test}"/>
 		<mkdir dir="${build-test}/test"/>
 		<mkdir dir="${build-test-coverage}"/>
 		<mkdir dir="${dist}"/>
+		<echo message="Using ${db4o.location} as db4o.jar"/>
 		<echo message="Using ${freenet-cvs-snapshot.location} as freenet-cvs-snapshot.jar"/>
 		<echo message="Using ${freenet-ext.location} as freenet-ext.jar"/>
 		<echo message="Using ${bcprov.location} as bcprov.jar"/>
@@ -91,7 +114,7 @@
 	</target>
 
 	<!-- ================================================== -->
-	<target name="compile" depends="mkdir" >
+	<target name="compile" depends="db4o, mkdir" >
 		<!-- Create the time stamp -->
 		<tstamp/>
 
@@ -106,6 +129,7 @@
 		<!-- Force compile of Version.java in case compile of ${src} didn't trigger it -->
 		<javac srcdir="${build}" destdir="${build}" debug="on" optimize="on" source="${source-version}" target="${target-version}">
 			<classpath>
+				<path refid="submodules.path"/>
 				<path refid="lib.path"/>
 			</classpath>
 			<include name="${version.src}"/>
@@ -114,6 +138,7 @@
 		<!-- FIXME: remove the debug and replace with optimize -->
 		<javac srcdir="src/" destdir="${build}" debug="on" optimize="on" source="${source-version}" target="${target-version}" encoding="UTF-8">
 			<classpath>
+				<path refid="submodules.path"/>
 				<path refid="lib.path"/>
 			</classpath>
 			<include name="**/*.java"/>
@@ -140,6 +165,7 @@
 				source="${source-version}" target="${target-version}" >
 			
 			<classpath>
+				<path refid="submodules.path"/>
 				<path refid="lib.path"/>
 				<pathelement path="${build}"/>
 				<pathelement location="${junit.location}"/>
@@ -183,6 +209,9 @@
 			</fileset>
 			
 			<fileset dir="${build-test}/test/"/> <!-- Separate directory to exclude the JAR -->
+			<zipfileset>
+				<path refid="submodules.path"/>
+			</zipfileset>
 		</jar>
 	</target>
 
@@ -232,6 +261,7 @@
 						unless="test.unreliable" />
 					<exclude name="**/TickerDelayedBackgroundJobTest.class"
 						unless="test.unreliable" />
+					<exclude name="com/db4o/**"/>
 				</zipfileset>
 			</batchtest>
 			
@@ -270,6 +300,7 @@
 					     JUnit would then complain that those classes do not contain a public
 					     constructor. -->
 					<exclude name="**/*$*.class"/>
+					<exclude name="com/db4o/**"/>
 				</zipfileset>
 			</batchtest>
 			
@@ -292,13 +323,20 @@
 				<include name="*.txt"/> <!-- Include the GPL -->
 			</fileset>
 			<fileset dir="${build}/"/>
+			<zipfileset>
+				<path refid="submodules.path"/>
+			</zipfileset>
 		</jar>
 	</target>
 
 	<!-- ================================================== -->
 	<target name="javadoc" description="generate javadocs">
 		<delete dir="${javadoc}"/>
-		<javadoc classpathref="lib.path" destdir="${javadoc}" author="true" version="true" use="true" private="true">
+		<path id="javadoc.classpath">
+			<path refid="submodules.path"/>
+			<path refid="lib.path"/>
+		</path>
+		<javadoc classpathref="javadoc.classpath" destdir="${javadoc}" author="true" version="true" use="true" private="true">
 			<fileset dir="src/" defaultexcludes="yes">
 				<include name="**/*.java"/>
 			</fileset>
@@ -308,7 +346,7 @@
 	</target>
 
 	<!-- ================================================== -->
-	<target name="clean" description="Delete class files and docs dir and the plugin file in plugins/ of your debug node.">
+	<target name="clean" depends="clean-db4o" description="Delete class files and docs dir and the plugin file in plugins/ of your debug node.">
 		<delete dir="${build}"/>
 		<delete dir="${build-test}"/>
 		<delete dir="${build-test-coverage}"/>
