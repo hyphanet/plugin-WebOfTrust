@@ -32,9 +32,18 @@ CHANGELOG - prefixed with the bugtracker issue number:
 - 0007016: [Bugs] Fix unit test failure on Java 9 (xor)
 
   Fixes a bug in the unit tests, not in the actual code.
+
   Symptom was:
     junit.framework.AssertionFailedError: static final boolean
     plugins.WebOfTrust.Persistent.$assertionsDisabled expected not same
+
+- 0007017: [Bugs] Fix unit test failure on Java 9 (xor)
+
+  Fixes a bug in the unit tests, not in the actual code.
+
+  Symptom was:
+    testExportIntroduction() would fail due to the Java 9 XML
+    generation code changing the way indentation was produced.
 
 Thanks to:
   - ArneBab for being willing to review and deploy WoT.
