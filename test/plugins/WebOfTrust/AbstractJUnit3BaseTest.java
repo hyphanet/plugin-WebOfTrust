@@ -3,8 +3,6 @@
  * any later version). See http://www.gnu.org/ for details of the GPL. */
 package plugins.WebOfTrust;
 
-import static java.lang.System.out;
-
 import java.io.File;
 import java.lang.reflect.Array;
 import java.lang.reflect.Field;
