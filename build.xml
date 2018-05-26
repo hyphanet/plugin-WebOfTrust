@@ -372,6 +372,6 @@
 		<delete dir="${build-test}"/>
 		<delete dir="${build-test-coverage}"/>
 		<delete dir="${dist}"/>
-		<delete file="${debug-node-WebOfTrust-plugin.location}"/>
+		<delete file="${debug-node-wot-plugin.location}"/>
 	</target>
 </project>
