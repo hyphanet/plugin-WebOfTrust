@@ -2,6 +2,10 @@
 <!-- ant build file for WoT -->
 
 <project name="WoT" default="dist" basedir="." xmlns:if="ant:if" xmlns:unless="ant:unless">
+	<!-- ======================================================================================= -->
+	<!-- Configuration                                                                           -->
+	<!-- ======================================================================================= -->
+		
 	<!-- You can use these file to override the below properties. -->
 	<property file="override.properties"/>
 	<!-- Dependencies. These are the most important to configure! -->
@@ -13,14 +17,24 @@
 	<property name="junit.location" value="/usr/share/java/junit4.jar"/>
 	<property name="hamcrest.location" value="/usr/share/java/hamcrest-core.jar"/>
 	<property name="cobertura.location" value="/usr/share/java/cobertura.jar"/>
-	
-	<!-- Configuration which you should probably leave alone. -->
-	<property name="db4o-submodule.location" location="db4o-7.4"/>
-	<property name="db4o.location" location="${db4o-submodule.location}/db4o.jar"/>
-	<property name="debug-node-wot-plugin.location" location="../fred/plugins/WebOfTrust.jar"/>
-	<property name="svn.revision" value="@custom@"/>
+	<!-- Minimum Java version which fred officially requires
+	   = Maximum version which WoT's code can use features of. -->
 	<property name="source-version" value="7"/>
 	<property name="target-version" value="7"/>
+	<!-- To allow you to restart your debug node after recompiling without manually reloading
+	     the WoT plugin you can specifiy this property to point to the node's WebOfTrust.jar.
+	     The Ant builder will delete it automatically as part of the "clean" target. -->
+	<property name="debug-node-wot-plugin.location" location="../fred/plugins/WebOfTrust.jar"/>
+	
+	<!-- ======================================================================================= -->
+	<!-- Configuration which you should probably leave as is!                                    -->
+	<!-- ======================================================================================= -->
+	
+	<!-- Git submodule directory of the db4o source code. Will be compiled automatically! -->
+	<property name="db4o-submodule.location" location="db4o-7.4"/>
+	<!-- JAR which the Ant builder of db4o produces. -->
+	<property name="db4o.location" location="${db4o-submodule.location}/db4o.jar"/>
+	<property name="svn.revision" value="@custom@"/>
 	<property name="build" location="build/"/>
 	<property name="build-test" location="build-test/"/>
 	<property name="build-test-jar" location="${build-test}/WebOfTrust-with-unit-tests.jar"/>
