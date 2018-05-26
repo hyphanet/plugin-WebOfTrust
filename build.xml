@@ -12,8 +12,8 @@
 	<property name="jna-platform.location" location="../fred/lib/jna-platform.jar"/>
 	<property name="debug-node-wot-plugin.location" location="../fred/plugins/WebOfTrust.jar"/>
 	<property name="svn.revision" value="@custom@"/>
-	<property name="source-version" value="1.7"/>
-	<property name="target-version" value="1.7"/>
+	<property name="source-version" value="7"/>
+	<property name="target-version" value="7"/>
 	<property name="build" location="build/"/>
 	<property name="build-test" location="build-test/"/>
 	<property name="build-test-jar" location="${build-test}/WebOfTrust-with-unit-tests.jar"/>
@@ -343,7 +343,7 @@
 			<fileset dir="src/" defaultexcludes="yes">
 				<include name="**/*.java"/>
 			</fileset>
-			<link href="http://docs.oracle.com/javase/6/docs/api/"/>
+			<link href="http://docs.oracle.com/javase/${source-version}/docs/api/"/>
 			<link href="http://freenetproject.org/javadocs/"/>
 		</javadoc>
 	</target>
