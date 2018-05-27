@@ -44,7 +44,7 @@ before_install:
   - ./gradlew jar copyRuntimeLibs -x test
   - cd "$TRAVIS_BUILD_DIR"
   # Print the checksums of the WoT dependencies - for debugging
-  - sha256sum ../fred/output/*
+  - sha256sum ../fred/build/output/*
 
 script: ant
 
