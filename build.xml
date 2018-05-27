@@ -117,12 +117,14 @@
 	</condition>
 
 	<target name="get-submodules" description="Downloads the git submodules required by WoT">
+		<echo>Downloading db4o git submodule if it doesn't exist already...</echo>
 		<exec executable="git">
 			<arg line="submodule update --init"/>
 		</exec>
 	</target>
 
 	<target name="db4o" depends="get-submodules" description="Compiles the database submodule">
+		<echo>Compiling db4o submodule...</echo>
 		<ant dir="${db4o-submodule.location}" inheritAll="false" useNativeBasedir="true">
 			<property name="javac.source.version" value="${source-version}"/>
 			<property name="javac.target.version" value="${target-version}"/>
@@ -130,6 +132,7 @@
 	</target>
 
 	<target name="clean-db4o" depends="get-submodules" description="Cleans the database submodule">
+		<echo>Cleaning db4o submodule...</echo>
 		<ant dir="${db4o-submodule.location}" target="clean" inheritAll="false"
 			useNativeBasedir="true"/>
 	</target>
