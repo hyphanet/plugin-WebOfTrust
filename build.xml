@@ -64,7 +64,9 @@
 	</path>
 	<!-- Libraries which we get from fred. -->
 	<path id="lib.path">
-		<pathelement location="${freenet.lib.new.location}"/>
+		<fileset dir="${freenet.lib.new.location}" casesensitive="no">
+			<include name="**/*.jar"/>
+		</fileset>
 		<pathelement location="${freenet.lib.old.location.1}"/>
 		<pathelement location="${freenet.lib.old.location.2}"/>
 		<pathelement location="${freenet.lib.old.location.3}"/>
@@ -143,7 +145,7 @@
 		<echo>External libraries on classpath - please ensure they exist:</echo>
 		<echo>- For the fred libs either fred/build/output/ should contain all of them (use</echo>
 		<echo>  "./gradlew jar copyRuntimeLibs") or their old pre-build01481 filenames below</echo>
-		<echo>  it should be valid.</echo>
+		<echo>  should be valid.</echo>
 		<echo>${all.path.printable}</echo>
 	</target>
 
