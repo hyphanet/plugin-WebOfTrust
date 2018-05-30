@@ -60,6 +60,8 @@ jdk:
 
 deploy:
   provider: script
+  # Prevent Travis from deleting the JAR before we can deploy it (wtf?)
+  skip_cleanup: true
   script: ./.travis.upload-jar-to-freenet.sh
   on:
     all_branches: true
