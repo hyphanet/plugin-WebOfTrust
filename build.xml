@@ -73,11 +73,11 @@
 		<fileset dir="${freenet.lib.new.location}" erroronmissingdir="no" casesensitive="no">
 			<include name="**/*.jar"/>
 		</fileset>
-		<fileset file="${freenet.lib.old.location.1}"/>
-		<fileset file="${freenet.lib.old.location.2}"/>
-		<fileset file="${freenet.lib.old.location.3}"/>
-		<fileset file="${freenet.lib.old.location.4}"/>
-		<fileset file="${freenet.lib.old.location.5}"/>
+		<fileset file="${freenet.lib.old.location.1}" erroronmissingdir="no"/>
+		<fileset file="${freenet.lib.old.location.2}" erroronmissingdir="no"/>
+		<fileset file="${freenet.lib.old.location.3}" erroronmissingdir="no"/>
+		<fileset file="${freenet.lib.old.location.4}" erroronmissingdir="no"/>
+		<fileset file="${freenet.lib.old.location.5}" erroronmissingdir="no"/>
 	</path>
 
 	<path id="cobertura.path">
