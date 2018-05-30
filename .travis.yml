@@ -42,22 +42,9 @@ before_install:
   # "copyRuntimeLibs" copies the JAR *and* dependencies - which WoT also
   # needs - to build/output/
   - ./gradlew jar copyRuntimeLibs -x test
-  # Create symlink to JARs in the places where they used to be with the old
-  # fred Ant builder so WoT finds them and we can keep WoT's Ant
-  # builder compatible with old fred releases for now.
-  - mkdir -p dist lib lib/freenet
-  - ( cd dist && ln -sf ../build/output/freenet.jar freenet.jar )
-  - ( cd lib/freenet && ln -sf ../../build/output/freenet-ext*.jar freenet-ext.jar )
-  - ( cd lib && ln -sf ../build/output/bcprov*.jar bcprov.jar )
-  - ( cd lib && ln -sf ../build/output/jna-?.?.?.jar jna.jar )
-  - ( cd lib && ln -sf ../build/output/jna-platform-*.jar jna-platform.jar )
   - cd "$TRAVIS_BUILD_DIR"
   # Print the checksums of the WoT dependencies - for debugging
-  - sha256sum ../fred/dist/freenet.jar
-  - sha256sum ../fred/lib/freenet/freenet-ext.jar
-  - sha256sum ../fred/lib/bcprov.jar
-  - sha256sum ../fred/lib/jna.jar
-  - sha256sum ../fred/lib/jna-platform.jar
+  - sha256sum ../fred/build/output/*
 
 script: ant
 

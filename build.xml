@@ -2,16 +2,47 @@
 <!-- ant build file for WoT -->
 
 <project name="WoT" default="dist" basedir="." xmlns:if="ant:if" xmlns:unless="ant:unless">
+	<!-- ======================================================================================= -->
+	<!-- Configuration                                                                           -->
+	<!-- ======================================================================================= -->
+		
+	<!-- You can use these file to override the below properties. -->
 	<property file="override.properties"/>
-	<property name="freenet-cvs-snapshot.location" location="../fred/dist/freenet.jar"/>
-	<property name="freenet-ext.location" location="../fred/lib/freenet/freenet-ext.jar"/>
-	<property name="bcprov.location" location="../fred/lib/bcprov.jar"/>
-	<property name="jna.location" location="../fred/lib/jna.jar"/>
-	<property name="jna-platform.location" location="../fred/lib/jna-platform.jar"/>
+	<!-- Dependencies. These are the most important to configure!                               -->
+	<!--                                                                                        -->
+	<!-- Freenet build01481 compiled with "./gradlew jar copyRuntimeLibs" will copy the         -->
+	<!-- freenet.jar and its dependencies to this directory:                                    -->
+	<property name="freenet.lib.new.location"   location="../fred/build/output/"/>
+	<!-- Older Freenet builds will use these places for the JARs, some of which have to be      -->
+	<!-- downloaded manually:                                                                   -->
+	<property name="freenet.lib.old.location.1" location="../fred/lib/bcprov.jar"/>
+	<property name="freenet.lib.old.location.2" location="../fred/lib/jna-platform.jar"/>
+	<property name="freenet.lib.old.location.3" location="../fred/lib/jna.jar"/>
+	<property name="freenet.lib.old.location.4" location="../fred/lib/freenet/freenet-ext.jar"/>
+	<property name="freenet.lib.old.location.5" location="../fred/dist/freenet.jar"/>
+	<!-- Unit test dependencies                                                                 -->
+	<property name="junit.location" value="/usr/share/java/junit4.jar"/>
+	<property name="hamcrest.location" value="/usr/share/java/hamcrest-core.jar"/>
+	<!-- Optional, only needed if using "ant -Dtest.coverage=true"                              -->
+	<property name="cobertura.location" value="/usr/share/java/cobertura.jar"/>
+	<!-- Minimum Java version which fred officially requires
+	   = Maximum version which WoT's code can use features of. -->
+	<property name="source-version" value="7"/>
+	<property name="target-version" value="7"/>
+	<!-- To allow you to restart your debug node after recompiling without manually reloading
+	     the WoT plugin you can specifiy this property to point to the node's WebOfTrust.jar.
+	     The Ant builder will delete it automatically as part of the "clean" target. -->
 	<property name="debug-node-wot-plugin.location" location="../fred/plugins/WebOfTrust.jar"/>
+	
+	<!-- ======================================================================================= -->
+	<!-- Configuration which you should probably leave as is!                                    -->
+	<!-- ======================================================================================= -->
+	
+	<!-- Git submodule directory of the db4o source code. Will be compiled automatically! -->
+	<property name="db4o-submodule.location" location="db4o-7.4"/>
+	<!-- JAR which the Ant builder of db4o produces. -->
+	<property name="db4o.location" location="${db4o-submodule.location}/db4o.jar"/>
 	<property name="svn.revision" value="@custom@"/>
-	<property name="source-version" value="1.7"/>
-	<property name="target-version" value="1.7"/>
 	<property name="build" location="build/"/>
 	<property name="build-test" location="build-test/"/>
 	<property name="build-test-jar" location="${build-test}/WebOfTrust-with-unit-tests.jar"/>
@@ -19,9 +50,6 @@
 	<property name="dist" location="dist/"/>
 	<property name="src" location="src/"/>
 	<property name="javadoc" location="javadoc/"/>
-	<property name="junit.location" value="/usr/share/java/junit4.jar"/>
-	<property name="hamcrest.location" value="/usr/share/java/hamcrest-core.jar"/>
-	<property name="cobertura.location" value="/usr/share/java/cobertura.jar"/>
 	<property name="version.src" value="plugins/WebOfTrust/Version.java" />
 	<property name="version.build" value="plugins/WebOfTrust/Version.class" />
 
@@ -31,16 +59,40 @@
 	<available file="${cobertura.location}" property="cobertura.present"/>
 	<property name="test.coverage" unless:set="${test.coverage}" if:true="${cobertura.present}" value="true"/>
 
+	<!-- Libraries whose classes are to be bundled in our own JAR. -->
+	<path id="submodules.path">
+		<pathelement location="${db4o.location}"/>
+	</path>
+	<!-- Libraries which we get from fred. -->
 	<path id="lib.path">
-		<pathelement location="${bcprov.location}"/>
-		<pathelement location="${jna-platform.location}"/>
-		<pathelement location="${jna.location}"/>
-		<pathelement location="${freenet-ext.location}"/>
-		<pathelement location="${freenet-cvs-snapshot.location}"/>
+		<!-- Use filesets instead of <pathelement> to:
+		     - allow using wildcards when including freenet.lib.new.location so we don't need to
+		       synchronize the list of JARs which fred needs with what this build file includes.
+		     - for the old JAR locations ensure the print-libs task won't print files which don't
+		       exist as that is what he wildcard usage dictates for thew new location already. -->
+		
+		<fileset dir="${freenet.lib.new.location}" erroronmissingdir="no" casesensitive="no">
+			<include name="**/*.jar"/>
+		</fileset>
+		<fileset file="${freenet.lib.old.location.1}" erroronmissingdir="no"/>
+		<fileset file="${freenet.lib.old.location.2}" erroronmissingdir="no"/>
+		<fileset file="${freenet.lib.old.location.3}" erroronmissingdir="no"/>
+		<fileset file="${freenet.lib.old.location.4}" erroronmissingdir="no"/>
+		<fileset file="${freenet.lib.old.location.5}" erroronmissingdir="no"/>
 	</path>
 
 	<path id="cobertura.path">
 		<pathelement location="${cobertura.location}"/>
+	</path>
+	
+	<!-- For print-libs task: All runtime dependencies of WoT plus the build-time dependencies.
+	     Uses <fileset> instead of <pathelement> so it only contains only those which exist as that
+	     is what lib.path does already. -->
+	<path id="lib.external.all.path">
+		<path refid="lib.path"/>
+		<fileset file="${junit.location}" />
+		<fileset file="${hamcrest.location}"/>
+		<fileset file="${cobertura.location}"/>
 	</path>
 
 	<presetdef name="javac">
@@ -76,22 +128,53 @@
 		</and>
 	</condition>
 
+	<target name="get-submodules" description="Downloads the git submodules required by WoT">
+		<echo>Downloading db4o git submodule if it doesn't exist already...</echo>
+		<exec executable="git">
+			<arg line="submodule update --init"/>
+		</exec>
+	</target>
+
+	<target name="db4o" depends="get-submodules" description="Compiles the database submodule">
+		<echo>Compiling db4o submodule...</echo>
+		<ant dir="${db4o-submodule.location}" inheritAll="false" useNativeBasedir="true">
+			<property name="javac.source.version" value="${source-version}"/>
+			<property name="javac.target.version" value="${target-version}"/>
+		</ant>
+	</target>
+
+	<target name="clean-db4o" depends="get-submodules" description="Cleans the database submodule">
+		<echo>Cleaning db4o submodule...</echo>
+		<ant dir="${db4o-submodule.location}" target="clean" inheritAll="false"
+			useNativeBasedir="true"/>
+	</target>
+
+
+	<target name="print-libs">
+		<echo>External dependencies on classpath follow, but ONLY those which did exist.</echo>
+		<echo>(This cannot tell which JARs are missing because that would require ant-contrib</echo>
+		<echo>and I don't want to require Freenet release managers to install it. Sorry.)</echo>
+		<echo></echo>
+		<echo>If compiling fails due to missing classes please:</echo>
+		<echo>- ensure fred was built with "./gradlew jar copyRuntimeLibs" to make it copy</echo>
+		<echo>  its dependencies' JARs to "build/output/".</echo>
+		<echo>- compare the found JARs against the configuration at top of build.xml to find</echo>
+		<echo>  out which JARs are missing.</echo>
+		<echo></echo>
+		<pathconvert refid="lib.external.all.path" pathsep="${line.separator}" property="all.path.printable"/>
+		<echo>${all.path.printable}</echo>
+	</target>
+
 	<target name="mkdir">
 		<mkdir dir="${build}"/>
 		<mkdir dir="${build-test}"/>
 		<mkdir dir="${build-test}/test"/>
 		<mkdir dir="${build-test-coverage}"/>
 		<mkdir dir="${dist}"/>
-		<echo message="Using ${freenet-cvs-snapshot.location} as freenet-cvs-snapshot.jar"/>
-		<echo message="Using ${freenet-ext.location} as freenet-ext.jar"/>
-		<echo message="Using ${bcprov.location} as bcprov.jar"/>
-		<echo message="Using ${jna.location} as jna.jar"/>
-		<echo message="Using ${jna-platform.location} as jna-platform.jar"/>
-		<echo message="Using ${cobertura.location} as cobertura.jar"/>
 	</target>
 
 	<!-- ================================================== -->
-	<target name="compile" depends="mkdir" >
+	<target name="compile" depends="print-libs, db4o, mkdir">
 		<!-- Create the time stamp -->
 		<tstamp/>
 
@@ -106,6 +189,7 @@
 		<!-- Force compile of Version.java in case compile of ${src} didn't trigger it -->
 		<javac srcdir="${build}" destdir="${build}" debug="on" optimize="on" source="${source-version}" target="${target-version}">
 			<classpath>
+				<path refid="submodules.path"/>
 				<path refid="lib.path"/>
 			</classpath>
 			<include name="${version.src}"/>
@@ -114,6 +198,7 @@
 		<!-- FIXME: remove the debug and replace with optimize -->
 		<javac srcdir="src/" destdir="${build}" debug="on" optimize="on" source="${source-version}" target="${target-version}" encoding="UTF-8">
 			<classpath>
+				<path refid="submodules.path"/>
 				<path refid="lib.path"/>
 			</classpath>
 			<include name="**/*.java"/>
@@ -140,6 +225,7 @@
 				source="${source-version}" target="${target-version}" >
 			
 			<classpath>
+				<path refid="submodules.path"/>
 				<path refid="lib.path"/>
 				<pathelement path="${build}"/>
 				<pathelement location="${junit.location}"/>
@@ -183,6 +269,9 @@
 			</fileset>
 			
 			<fileset dir="${build-test}/test/"/> <!-- Separate directory to exclude the JAR -->
+			<zipfileset>
+				<path refid="submodules.path"/>
+			</zipfileset>
 		</jar>
 	</target>
 
@@ -232,6 +321,7 @@
 						unless="test.unreliable" />
 					<exclude name="**/TickerDelayedBackgroundJobTest.class"
 						unless="test.unreliable" />
+					<exclude name="com/db4o/**"/>
 				</zipfileset>
 			</batchtest>
 			
@@ -270,6 +360,7 @@
 					     JUnit would then complain that those classes do not contain a public
 					     constructor. -->
 					<exclude name="**/*$*.class"/>
+					<exclude name="com/db4o/**"/>
 				</zipfileset>
 			</batchtest>
 			
@@ -292,27 +383,34 @@
 				<include name="*.txt"/> <!-- Include the GPL -->
 			</fileset>
 			<fileset dir="${build}/"/>
+			<zipfileset>
+				<path refid="submodules.path"/>
+			</zipfileset>
 		</jar>
 	</target>
 
 	<!-- ================================================== -->
 	<target name="javadoc" description="generate javadocs">
 		<delete dir="${javadoc}"/>
-		<javadoc classpathref="lib.path" destdir="${javadoc}" author="true" version="true" use="true" private="true">
+		<path id="javadoc.classpath">
+			<path refid="submodules.path"/>
+			<path refid="lib.path"/>
+		</path>
+		<javadoc classpathref="javadoc.classpath" destdir="${javadoc}" author="true" version="true" use="true" private="true">
 			<fileset dir="src/" defaultexcludes="yes">
 				<include name="**/*.java"/>
 			</fileset>
-			<link href="http://docs.oracle.com/javase/6/docs/api/"/>
+			<link href="http://docs.oracle.com/javase/${source-version}/docs/api/"/>
 			<link href="http://freenetproject.org/javadocs/"/>
 		</javadoc>
 	</target>
 
 	<!-- ================================================== -->
-	<target name="clean" description="Delete class files and docs dir and the plugin file in plugins/ of your debug node.">
+	<target name="clean" depends="clean-db4o" description="Delete class files and docs dir and the plugin file in plugins/ of your debug node.">
 		<delete dir="${build}"/>
 		<delete dir="${build-test}"/>
 		<delete dir="${build-test-coverage}"/>
 		<delete dir="${dist}"/>
-		<delete file="${debug-node-WebOfTrust-plugin.location}"/>
+		<delete file="${debug-node-wot-plugin.location}"/>
 	</target>
 </project>

@@ -10,6 +10,71 @@ Outlook blah blah.
 
 CHANGELOG - prefixed with the bugtracker issue number:
 
+- 0006737: [Code quality] Prepare for fred's removal of freenet-ext.jar
+           and db4o
+
+  Freenet build01482 is scheduled to split up freenet-ext.jar into
+  multiple JARs, and during this procedure remove db4o from the set of
+  JARs which fred ships.
+
+  To prepare for that, the following has been done:
+
+  - the WoT build script has been amended to bundle db4o in WoT's own
+    JAR. To achieve that a db4o-7.4 repository has been extracted from
+    the Freenet "contrib" repository.
+    WoT's build script has been amended to automatically clone that git
+    repository and compile db4o locally.
+    To ensure the least possible effort is required by Freenet release
+    managers in validating that these db4o binaries match what had been
+    deployed as part of freenet-ext previously, the following steps were
+    taken:
+      - the db4o-7.4 repository is pulled by the build script using a
+        "git submodule" which ensures that the specific commit which is
+        pulled is hardcoded into the WoT repository and can only be
+        changed manually by whoever has push access to the WoT
+        repository hosted by Freenet.
+        This means that I can host the db4o-7.4 repository on my own
+        GitHub account (xor-freenet) WITHOUT being able to change what
+        people get when they pull WoT from Freenet's GitHub.
+        In turn Freenet does not have to host a clone of the db4o
+        repository on their own.
+      - the db4o-7.4 repository was extracted from Freenet's contrib
+        repository, not from the original db4o SVN. This allows Freenet
+        release managers to simply use:
+          $ git verify-tag v29
+          $ gitk v29..HEAD
+        to see what has changed between the deployed freenet-ext and
+        the new db4o-7.4 repository.
+        Keeping the db4o version which WoT uses as close to what it has
+        been using previously is critically important because my test
+        runs have shown that newer db4o versions trigger severe bugs.
+        That is also why the repository is called "db4o-7.4" instead of
+        just "db4o" - to document that WoT currently needs precisly that
+        version.
+        Once I am ready to deal with fixing the bugs triggered by newer
+        versions I will publish the original db4o SVN repository as a
+        git repository called "db4o" and switch WoT to use that. So the
+        db4o commit history is not lost yet :)
+
+  - WoT's build script has been changed to not hardcode any specific
+    filenames of JARs which fred and thereby WoT needs as dependencies.
+    Instead all JARs in the directory
+      ../fred/build/output/
+    are included on the classpath when building WoT. That directory is
+    populated if fred is built with:
+      $ ./gradlew jar copyRuntimeLibs
+    To allow you to test whether the WoT builder finds all JARs a new
+    Ant task was introduced:
+      $ ant print-libs
+    It should show all runtime dependencies of fred (see its Gradle
+    build file), plus "junit4.jar", "hamcrest-core.jar" and
+    optionally "cobertura.jar" if using "ant -Dtest.coverage=true".
+    (The db4o JAR won't be shown as that is not an external dependency,
+    i.e. WoT obtains it automatically, you don't have to provide it.)
+    If compiling fails due to missing classes see the "Configuration"
+    section at top of "build.xml" for the configured locations - all
+    external JARs have been moved to that section.
+
 - 0006929: [Bugs] Travis CI builds fail due to changes at fred (xor)
 
   The .travis.yml configuration of Travis CI has been fixed to be
