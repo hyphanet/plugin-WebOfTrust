@@ -68,7 +68,7 @@ CHANGELOG - prefixed with the bugtracker issue number:
       $ ant print-libs
     It should show all runtime dependencies of fred (see its Gradle
     build file), plus "junit4.jar", "hamcrest-core.jar" and
-    "cobertura.jar".
+    optionally "cobertura.jar" if using "ant -Dtest.coverage=true".
     (The db4o JAR won't be shown as that is not an external dependency,
     i.e. WoT obtains it automatically, you don't have to provide it.)
 

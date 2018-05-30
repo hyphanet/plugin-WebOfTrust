@@ -23,6 +23,7 @@
 	<!-- Unit test dependencies                                                                 -->
 	<property name="junit.location" value="/usr/share/java/junit4.jar"/>
 	<property name="hamcrest.location" value="/usr/share/java/hamcrest-core.jar"/>
+	<!-- Optional, only needed if using "ant -Dtest.coverage=true"                              -->
 	<property name="cobertura.location" value="/usr/share/java/cobertura.jar"/>
 	<!-- Minimum Java version which fred officially requires
 	   = Maximum version which WoT's code can use features of. -->
