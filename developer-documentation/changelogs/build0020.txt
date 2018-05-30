@@ -91,8 +91,6 @@ CHANGELOG - prefixed with the bugtracker issue number:
   in Travis CI is really happening to meet its definition:
   I don't have a Gradle build setup for fred branch next yet so it is of
   true benefit to be able to test it elsewhere :)
-  Thanks to nextgens for insipiring this by setting up Travis CI at
-  fred!
 
 - 0007016: [Bugs] Fix unit test failure on Java 9 (xor)
 
@@ -112,7 +110,3 @@ CHANGELOG - prefixed with the bugtracker issue number:
 
 Thanks to:
   - ArneBab for being willing to review and deploy WoT.
-  - nextgens for Travis CI.
-
-Links:
-  [1] https://...
