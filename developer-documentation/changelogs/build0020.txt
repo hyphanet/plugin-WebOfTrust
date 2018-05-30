@@ -1,11 +1,21 @@
 Web of Trust Version 0.4.5 build0020
 ------------------------------------------------------------------------
 
-SUMMARY AND OUTLOOK (detailed changelog is below):
+SUMMARY (detailed changelog is below):
 
-Summary blah blah. Blah blah reference to link [1].
+This is a maintenance build which provides no functional changes.
 
-Outlook blah blah.
+It prepares WoT for the removal of the library freenet-ext.jar and
+its contained db4o library from Freenet.
+It does so by bundling db4o inside WoT's JAR.
+This should work in theory work on existing Freenet installations where
+db4o is both contained in Freenet and in WoT - but it would be nice to
+have some confirmation from testers whether this does indeed work on
+various operating systems and Java versions.
+So please provide feedback on whether it works on your installation :)
+
+For developers this build provides some improvements to the build script
+and Travis CI.
 
 
 CHANGELOG - prefixed with the bugtracker issue number:
