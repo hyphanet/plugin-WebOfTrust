@@ -64,25 +64,34 @@
 	</path>
 	<!-- Libraries which we get from fred. -->
 	<path id="lib.path">
+		<!-- Use filesets instead of <pathelement> to:
+		     - allow using wildcards when including freenet.lib.new.location so we don't need to
+		       synchronize the list of JARs which fred needs with what this build file includes.
+		     - for the old JAR locations ensure the print-libs task won't print files which don't
+		       exist as that is what he wildcard usage dictates for thew new location already. -->
+		
 		<fileset dir="${freenet.lib.new.location}" erroronmissingdir="no" casesensitive="no">
 			<include name="**/*.jar"/>
 		</fileset>
-		<pathelement location="${freenet.lib.old.location.1}"/>
-		<pathelement location="${freenet.lib.old.location.2}"/>
-		<pathelement location="${freenet.lib.old.location.3}"/>
-		<pathelement location="${freenet.lib.old.location.4}"/>
-		<pathelement location="${freenet.lib.old.location.5}"/>
+		<fileset file="${freenet.lib.old.location.1}"/>
+		<fileset file="${freenet.lib.old.location.2}"/>
+		<fileset file="${freenet.lib.old.location.3}"/>
+		<fileset file="${freenet.lib.old.location.4}"/>
+		<fileset file="${freenet.lib.old.location.5}"/>
 	</path>
 
 	<path id="cobertura.path">
 		<pathelement location="${cobertura.location}"/>
 	</path>
 	
+	<!-- For print-libs task: All runtime dependencies of WoT plus the build-time dependencies.
+	     Uses <fileset> instead of <pathelement> so it only contains only those which exist as that
+	     is what lib.path does already. -->
 	<path id="lib.external.all.path">
 		<path refid="lib.path"/>
-		<pathelement location="${junit.location}"/>
-		<pathelement location="${hamcrest.location}"/>
-		<path refid="cobertura.path"/>
+		<fileset file="${junit.location}" />
+		<fileset file="${hamcrest.location}"/>
+		<fileset file="${cobertura.location}"/>
 	</path>
 
 	<presetdef name="javac">
@@ -141,11 +150,17 @@
 
 
 	<target name="print-libs">
+		<echo>External dependencies on classpath follow, but ONLY those which did exist.</echo>
+		<echo>(This cannot tell which JARs are missing because that would require ant-contrib</echo>
+		<echo>and I don't want to require Freenet release managers to install it. Sorry.)</echo>
+		<echo></echo>
+		<echo>If compiling fails due to missing classes please:</echo>
+		<echo>- ensure fred was built with "./gradlew jar copyRuntimeLibs" to make it copy</echo>
+		<echo>  its dependencies' JARs to "build/output/".</echo>
+		<echo>- compare the found JARs against the configuration at top of build.xml to find</echo>
+		<echo>  out which JARs are missing.</echo>
+		<echo></echo>
 		<pathconvert refid="lib.external.all.path" pathsep="${line.separator}" property="all.path.printable"/>
-		<echo>External libraries on classpath - please ensure they exist:</echo>
-		<echo>- For the fred libs either fred/build/output/ should contain all of them (use</echo>
-		<echo>  "./gradlew jar copyRuntimeLibs") or their old pre-build01481 filenames below</echo>
-		<echo>  should be valid.</echo>
 		<echo>${all.path.printable}</echo>
 	</target>
 
