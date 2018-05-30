@@ -64,7 +64,7 @@
 	</path>
 	<!-- Libraries which we get from fred. -->
 	<path id="lib.path">
-		<fileset dir="${freenet.lib.new.location}" casesensitive="no">
+		<fileset dir="${freenet.lib.new.location}" erroronmissingdir="no" casesensitive="no">
 			<include name="**/*.jar"/>
 		</fileset>
 		<pathelement location="${freenet.lib.old.location.1}"/>
