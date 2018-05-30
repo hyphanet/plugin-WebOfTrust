@@ -13,6 +13,8 @@ addons:
     - ant-optional
     - junit4
     - libhamcrest-java
+    # For .travis.upload-jar-to-freenet.sh
+    - python3-pip
   # TODO: Code quality: Remove this workaround for https://github.com/travis-ci/travis-ci/issues/5227
   hosts:
     - freenet-plugin-WebOfTrust
@@ -55,3 +57,9 @@ jdk:
   # openjdk9: As of 2018-05-12 isn't available on Travis yet.
   # oraclejdk7: Not supported anymore: https://github.com/travis-ci/travis-ci/issues/7884#issuecomment-308451879
   # openjdk7: Not supported anymore: https://github.com/travis-ci/travis-ci/issues/8503
+
+deploy:
+  provider: script
+  script: ./.travis.upload-jar-to-freenet.sh
+  on:
+    all_branches: true
