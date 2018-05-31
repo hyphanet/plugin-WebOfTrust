@@ -46,8 +46,19 @@ echo "Giving node 60s to boot..."
 sleep 60s
 
 echo "Uploading WoT JAR to $URI..."
+
+# Echo something every minute to prevent Travis from killing the job
+# after 10 minutes of silence.
+(
+	minutes=0
+	while sleep 1m ; do
+		echo Minutes passed: $((++minutes))
+	done
+) &
+
 # TODO: As of 2018-05-30 fcpupload's "--timeout" doesn't work, using coreutils' timeout, try again later
-if ! time timeout 10m fcpupload --wait "$URI" "$TRAVIS_BUILD_DIR/dist/WebOfTrust.jar" ; then
+# TODO: As of 2018-05-30 fcpupload's "--compress" also doesn't work.
+if ! time timeout 20m fcpupload --wait "$URI" "$TRAVIS_BUILD_DIR/dist/WebOfTrust.jar" ; then
 	echo "Uploading WebOfTrust.jar to Freenet failed!" >&2
 	
 	# The commented out lines are for debugging fcpupload's "--spawn".
