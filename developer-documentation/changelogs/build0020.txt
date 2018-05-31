@@ -56,6 +56,7 @@ DOWNLOAD
 Until it has been shipped with a Freenet release this build is available
 using "WebOfTrust Testing Versions" at "Configuration / Plugins" of a
 standard Freenet node.
+You need to unload the regular WoT first!
 
 CHANGELOG - prefixed with the bugtracker issue number
 
