@@ -74,7 +74,9 @@ if ! time timeout 20m fcpupload --wait "$URI" "$TRAVIS_BUILD_DIR/dist/WebOfTrust
 	exit 1
 fi
 
-kill "$(jobs -p)"
+# Can't use "kill $(jobs -p)" as that fails if a job exits in between
+jobs -p | xargs --no-run-if-empty kill || true
+
 if ! wait ; then
 	echo "Node exit code indicates error!" >&2
 	exit 1
