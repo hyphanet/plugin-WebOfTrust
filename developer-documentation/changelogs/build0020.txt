@@ -1,0 +1,217 @@
+Web of Trust Version 0.4.5 build0020
+------------------------------------------------------------------------
+
+SUMMARY (detailed changelog is below)
+
+This is an intermediate maintenance build which caters mostly to
+developers, testers and paranoid users.
+Especially Freenet core developers shall benefit from its two primary
+goals:
+
+1) It prepares WoT for the removal of the library freenet-ext.jar and
+   its contained db4o library from Freenet.
+   It does so by bundling db4o inside WoT's JAR and making WoT
+   independent from the naming of the JARs which Freenet depends on.
+
+2) The cloud service Travis CI, which was previously only used for
+   running WoT unit tests, now automatically uploads the resulting
+   WoT binary to Freenet after it has compiled and tested it.
+
+Users and testers can also benefit from aspect 2 by using it to have an
+independent service validate that the published WoT binary matches the
+source code, see the below full changelog at issue 0007018.
+
+The bundling of db4o should in theory work on existing Freenet
+installations where db4o is both contained in Freenet and in WoT - but
+it would be nice to have some confirmation from testers that this does
+indeed work on various operating systems and Java versions.
+So feedback on whether it works on your installation would be
+appreciated.
+
+TESTING
+
+Make sure to backup the WebOfTrust directory (located in the directory
+Freenet is installed to) before you use this!
+
+Easy high level testing:
+- Check the Community / Statistics page for unusual stuff. E.g.:
+  - Data loss, e.g. decreasing count of own identities, non-own
+    identities or trust values as compared to your database before
+    installation of the testing version.
+  - High count of "Failed files" at the Identity file queue / Identity
+    file processor section.
+  - No significant progress in average downloaded / queued / processed
+    identity XML files  even after a day of uptime.
+
+Tedious low level testing:
+- Check "freenet-latest.log" for ERRORs of plugins.WebOfTrust.*
+  You can filter for this by configuring logging as:
+  - Set "Minimum priority to log messages at" to "NONE".
+  - Set "Detailed priority thresholds" to "plugins.WebOfTrust:ERROR".
+    Now any logging except WoT errors is disabled.
+  Besides you should probably increase "Log rotation interval" to
+  "48HOUR" (yes, no S in HOUR), the default is very low, 1 hour IIRC.
+  Before you report anything from the log file make VERY sure to review
+  it for private data! It might even contain the secret insert URIs of
+  your identities!
+
+DOWNLOAD
+
+Until it has been shipped with a Freenet release this build is available
+using "WebOfTrust Testing Versions" at "Configuration / Plugins" of a
+standard Freenet node.
+You need to unload the regular WoT first!
+
+CHANGELOG - prefixed with the bugtracker issue number
+
+- 0007018: [Code quality] Travis CI: Upload WebOfTrust.jar to Freenet
+           using pyFreenet (xor)
+
+  Travis CI is a cloud service which allows us to automatically compile
+  WoT from the source code and run the unit tests.
+
+  WoT's Travis script has been amended to spawn a Freenet node and
+  upload the compiled WoT binary to Freenet.
+  This can be a great stress reduction for release managers as the trust
+  they need to put into the security of their machine is greatly reduced
+  if they can choose to build the binaries elsewhere.
+  The overall security of that might be a bit better because Travis is a
+  large, widely used service and thereby they have more resources at
+  hand to ensure a secure infrastructure.
+  Further users can use it as a third-party verification that we didn't
+  put secret code into the binaries before we uploaded them (see below).
+
+  To obtain the Freenet URI of an uploaded WoT JAR search the raw Travis
+  job log for "CHK@". Jobs are at:
+    https://travis-ci.org/xor-freenet/plugin-WebOfTrust/builds
+    https://travis-ci.org/freenet/plugin-WebOfTrust/builds
+  For every build there are usually different jobs for various Java
+  versions. For WoT testing releases I will be using the CHK as compiled
+  by OpenJDK in the version which is the minimal requirement of Freenet
+  at time of the release. For this WoT release that is OpenJDK 7.
+
+  The JAR will only be uploaded if compiling and testing did succeed,
+  otherwise there will be no CHK@ in the output.
+
+  If Freenet release managers choose to use Travis CI for compiling then
+  the CHK@ URI which they put into fred will match what Travis CI has
+  published in the build job for the git tag build0020 (= commit
+  "Version 0.4.5 build0020") of this release.
+  As the CHK contains a strong hash of the file it being identical
+  proves that it indeed serves the same file as Travis CI produced.
+  Once testing of this build is finished and it has been released as
+  part of a regular Freenet release you can check the CHK@ in the
+  following file of the fred repository:
+    src/freenet/pluginmanager/OfficialPlugins.java
+  which is hosted at
+    https://git.io/vhcsV
+
+  While this release is still in testing verification works differently
+  because the testing URI is an USK:
+  Download the Travis CHK and the testing USK (listed in the above
+  file) and compare a checksum of the resulting file, e.g. with the
+  sha256sum command.
+
+- 0006737: [Code quality] Prepare for fred's removal of freenet-ext.jar
+           and db4o
+
+  Freenet build01482 is scheduled to split up freenet-ext.jar into
+  multiple JARs, and during this procedure remove db4o from the set of
+  JARs which Freenet ships.
+
+  To prepare for that, the following has been done:
+
+  - the WoT build script has been amended to bundle db4o in WoT's own
+    JAR. To achieve that a db4o-7.4 repository has been extracted from
+    the Freenet "contrib" repository.
+    WoT's build script has been amended to automatically clone that git
+    repository and compile db4o locally.
+    To ensure the least possible effort is required by Freenet release
+    managers in validating that these db4o binaries match what had been
+    deployed as part of freenet-ext previously, the following steps were
+    taken:
+      - the db4o-7.4 repository is pulled by the build script using a
+        "git submodule" which ensures that the specific commit which is
+        pulled is hardcoded into the WoT repository and can only be
+        changed manually by whoever has push access to the WoT
+        repository hosted by Freenet.
+        This means that I can host the db4o-7.4 repository on my own
+        GitHub account (xor-freenet) WITHOUT being able to change what
+        people get when they pull WoT from Freenet's GitHub.
+        In turn Freenet does not have to host a clone of the db4o
+        repository on their own.
+      - the db4o-7.4 repository was extracted from Freenet's contrib
+        repository, not from the original db4o SVN. This allows Freenet
+        release managers to simply use:
+          $ git verify-tag v29
+          $ gitk v29..HEAD
+        to see what has changed between the deployed freenet-ext and
+        the new db4o-7.4 repository.
+        Keeping the db4o version which WoT uses as close to what it has
+        been using previously is critically important because my test
+        runs have shown that newer db4o versions trigger severe bugs.
+        That is also why the repository is called "db4o-7.4" instead of
+        just "db4o" - to document that WoT currently needs precisely that
+        version.
+        Once I am ready to deal with fixing the bugs triggered by newer
+        versions I will publish the original db4o SVN repository as a
+        git repository called "db4o" and switch WoT to use that. So the
+        db4o commit history is not lost yet :)
+
+  - WoT's build script has been changed to not hardcode any specific
+    filenames of JARs which fred and thereby WoT needs as dependencies.
+    Instead all JARs in the directory
+      ../fred/build/output/
+    are included on the classpath when building WoT. That directory is
+    populated if fred is built with:
+      $ ./gradlew jar copyRuntimeLibs
+    To allow you to test whether the WoT builder finds all JARs a new
+    Ant task was introduced:
+      $ ant print-libs
+    It should show all runtime dependencies of fred (see its Gradle
+    build file), plus "junit4.jar", "hamcrest-core.jar" and
+    optionally "cobertura.jar" if using "ant -Dtest.coverage=true".
+    (The db4o JAR won't be shown as that is not an external dependency,
+    i.e. WoT obtains it automatically, you don't have to provide it.)
+    If compiling fails due to missing classes see the "Configuration"
+    section at top of "build.xml" for the configured locations - all
+    external JARs have been moved to that section.
+
+- 0006929: [Bugs] Travis CI builds fail due to changes at fred (xor)
+
+  The .travis.yml configuration of Travis CI has been fixed to be
+  compatible to the huge changeset of the Freenet core fred which is
+  being developed on fred's next branch.
+  Specifically it was adapted to be compatible with the new Gradle
+  builder of fred which has replaced Ant there - while keeping Ant at
+  WoT so we don't have too much migration efforts going on for now.
+
+  The unit tests of WoT do succeed against the new fred code so
+  hopefully WoT won't delay the release of the fred changes any further
+  than they have already been delayed.
+  This also the first time where the "CI" = continuous integration
+  in Travis CI is really happening to meet its definition:
+  I don't have a Gradle build setup for fred branch next yet so it is of
+  true benefit to be able to test it elsewhere :)
+
+- 0007016: [Bugs] Fix unit test failure on Java 9 (xor)
+
+  Fixes a bug in the unit tests, not in the actual code.
+
+  Symptom was:
+    junit.framework.AssertionFailedError: static final boolean
+    plugins.WebOfTrust.Persistent.$assertionsDisabled expected not same
+
+- 0007017: [Bugs] Fix unit test failure on Java 9 (xor)
+
+  Fixes a bug in the unit tests, not in the actual code.
+
+  Symptom was:
+    testExportIntroduction() would fail due to the Java 9 XML
+    generation code changing the way indentation was produced.
+
+THANKS TO
+
+- ArneBab for being willing to review and deploy WoT.
+- ArneBab for providing pyFreenet which greatly helped in
+  automatically uploading the WoT JAR using Travis CI.
