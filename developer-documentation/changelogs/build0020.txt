@@ -72,9 +72,9 @@ CHANGELOG - prefixed with the bugtracker issue number
 
   WoT's Travis script has been amended to spawn a Freenet node and
   upload the compiled WoT binary to Freenet.
-  This is a great stress reduction for release managers as the trust
+  This can be a great stress reduction for release managers as the trust
   they need to put into the security of their machine is greatly reduced
-  if we build the binaries elsewhere.
+  if they can choose to build the binaries elsewhere.
   The overall security of that might be a bit better because Travis is a
   large, widely used service and thereby they have more resources at
   hand to ensure a secure infrastructure.
