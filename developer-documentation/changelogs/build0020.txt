@@ -1,7 +1,7 @@
 Web of Trust Version 0.4.5 build0020
 ------------------------------------------------------------------------
 
-SUMMARY (detailed changelog is below):
+SUMMARY (detailed changelog is below)
 
 This is an intermediate maintenance build which only provides new
 features for developers and testers, no user-side stuff.
@@ -57,7 +57,7 @@ Until it has been shipped with a Freenet release this build is available
 using "WebOfTrust Testing Versions" at "Configuration / Plugins" of a
 standard Freenet node.
 
-CHANGELOG - prefixed with the bugtracker issue number:
+CHANGELOG - prefixed with the bugtracker issue number
 
 - 0007018: [Code quality] Travis CI: Upload WebOfTrust.jar to Freenet
            using pyFreenet (xor)
@@ -181,7 +181,8 @@ CHANGELOG - prefixed with the bugtracker issue number:
     testExportIntroduction() would fail due to the Java 9 XML
     generation code changing the way indentation was produced.
 
-Thanks to:
-  - ArneBab for being willing to review and deploy WoT.
-  - ArneBab for providing pyFreenet which greatly helped in
-    automatically uploading the WoT JAR using Travis CI.
+THANKS TO
+
+- ArneBab for being willing to review and deploy WoT.
+- ArneBab for providing pyFreenet which greatly helped in
+  automatically uploading the WoT JAR using Travis CI.
