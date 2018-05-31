@@ -29,6 +29,28 @@ TESTING
 Make sure to backup the WebOfTrust directory (located in the directory
 Freenet is installed to) before you use this!
 
+Easy high level testing:
+- Check the Community / Statistics page for unusual stuff. E.g.:
+  - Data loss, e.g. decreasing count of own identities, non-own
+    identities or trust values as compared to your database before
+    installation of the testing version.
+  - High count of "Failed files" at the Identity file queue / Identity
+    file processor section.
+  - No significant progress in average downloaded / queued / processed
+    identity XML files  even after a day of uptime.
+
+Tedious low level testing:
+- Check "freenet-latest.log" for ERRORs of plugins.WebOfTrust.*
+  You can filter for this by configuring logging as:
+  - Set "Minimum priority to log messages at" to "NONE".
+  - Set "Detailed priority thresholds" to "plugins.WebOfTrust:ERROR".
+    Now any logging besides WoT errors is disabled.
+  Besides you should probably inrease "Log rotation interval" to
+  "48HOUR" (yes, no S in HOUR), the default is very low, 1 hour IIRC.
+  Before you report anything from the log file make VERY sure to review
+  it for private data! It might even contain the insert URIs of your
+  identities!
+
 CHANGELOG - prefixed with the bugtracker issue number:
 
 - 0007018: [Code quality] Travis CI: Upload WebOfTrust.jar to Freenet
