@@ -86,7 +86,7 @@ CHANGELOG - prefixed with the bugtracker issue number
     https://travis-ci.org/xor-freenet/plugin-WebOfTrust/builds
     https://travis-ci.org/freenet/plugin-WebOfTrust/builds
   For every build there are usually different jobs for various Java
-  versions. For WoT releases I will be using the CHK as compiled
+  versions. For WoT testing releases I will be using the CHK as compiled
   by OpenJDK in the version which is the minimal requirement of Freenet
   at time of the release. For this WoT release that is OpenJDK 7.
 
@@ -97,6 +97,8 @@ CHANGELOG - prefixed with the bugtracker issue number
   the CHK@ URI which they put into fred will match what Travis CI has
   published in the build job for the git tag build0020 (= commit
   "Version 0.4.5 build0020") of this release.
+  As the CHK contains a strong hash of the file it being identical
+  proves that it indeed serves the same file as Travis CI produced.
   Once testing of this build is finished and it has been released as
   part of a regular Freenet release you can check the CHK@ in the
   following file of the fred repository:
@@ -149,7 +151,7 @@ CHANGELOG - prefixed with the bugtracker issue number
         been using previously is critically important because my test
         runs have shown that newer db4o versions trigger severe bugs.
         That is also why the repository is called "db4o-7.4" instead of
-        just "db4o" - to document that WoT currently needs precisly that
+        just "db4o" - to document that WoT currently needs precisely that
         version.
         Once I am ready to deal with fixing the bugs triggered by newer
         versions I will publish the original db4o SVN repository as a
