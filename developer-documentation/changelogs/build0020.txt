@@ -3,8 +3,8 @@ Web of Trust Version 0.4.5 build0020
 
 SUMMARY (detailed changelog is below)
 
-This is an intermediate maintenance build which only provides new
-features for developers and testers, no user-side stuff.
+This is an intermediate maintenance build which caters mostly to
+developers, testers and paranoid users.
 Especially Freenet core developers shall benefit from its two primary
 goals:
 
