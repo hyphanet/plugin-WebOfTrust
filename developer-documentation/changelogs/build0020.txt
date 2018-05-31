@@ -10,6 +10,30 @@ Outlook blah blah.
 
 CHANGELOG - prefixed with the bugtracker issue number:
 
+- 0007018: [Code quality] Travis CI: Upload WebOfTrust.jar to Freenet
+           using pyFreenet (xor)
+
+  Travis CI is a cloud service which allows us to automatically compile
+  WoT from the source code and run the unit tests.
+
+  WoT's Travis script has been amended to spawn a Freenet node and
+  upload the compiled WoT binary to Freenet.
+  This is a great stress reduction for release managers as the trust
+  they need to put into the security of their machine is greatly reduced
+  if we build the binaries elsewhere.
+  The overall security of that might be a bit better because Travis is a
+  large, widely used service and thereby they have more money at hand to
+  ensure a secure infrastructure.
+  Further users can use it as a third-party verification that we didn't
+  put secret code into the binaries before we uploaded them.
+
+  To obtain the Freenet URI of an uploaded WoT JAR search the raw Travis
+  job log for "CHK@". The filename WebOfTrust.jar wouldn't work because
+  it is renamed to include the specific version which was compiled.
+
+  The JAR will only be uploaded if compiling and testing did succeed,
+  otherwise there will be no CHK@ in the output.
+
 - 0006737: [Code quality] Prepare for fred's removal of freenet-ext.jar
            and db4o
 
@@ -112,6 +136,8 @@ CHANGELOG - prefixed with the bugtracker issue number:
 
 Thanks to:
   - ArneBab for being willing to review and deploy WoT.
+  - ArneBab for providing pyFreenet which greatly helped in
+    automatically uploading the WoT JAR using Travis CI.
   - nextgens for Travis CI.
 
 Links:
