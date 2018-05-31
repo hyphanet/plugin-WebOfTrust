@@ -51,6 +51,12 @@ Tedious low level testing:
   it for private data! It might even contain the insert URIs of your
   identities!
 
+DOWNLOAD
+
+Until it has been shipped with a Freenet release this build is available
+using "WebOfTrust Testing Versions" at "Configuration / Plugins" of a
+standard Freenet node.
+
 CHANGELOG - prefixed with the bugtracker issue number:
 
 - 0007018: [Code quality] Travis CI: Upload WebOfTrust.jar to Freenet
