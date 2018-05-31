@@ -11,7 +11,7 @@ goals:
 1) It prepares WoT for the removal of the library freenet-ext.jar and
    its contained db4o library from Freenet.
    It does so by bundling db4o inside WoT's JAR and making WoT
-   independent from the naming of the JARs which fred depends on.
+   independent from the naming of the JARs which Freenet depends on.
 
 2) The cloud service Travis CI, which was previously only used for
    running WoT unit tests, now automatically uploads the resulting
@@ -44,12 +44,12 @@ Tedious low level testing:
   You can filter for this by configuring logging as:
   - Set "Minimum priority to log messages at" to "NONE".
   - Set "Detailed priority thresholds" to "plugins.WebOfTrust:ERROR".
-    Now any logging besides WoT errors is disabled.
-  Besides you should probably inrease "Log rotation interval" to
+    Now any logging except WoT errors is disabled.
+  Besides you should probably increase "Log rotation interval" to
   "48HOUR" (yes, no S in HOUR), the default is very low, 1 hour IIRC.
   Before you report anything from the log file make VERY sure to review
-  it for private data! It might even contain the insert URIs of your
-  identities!
+  it for private data! It might even contain the secret insert URIs of
+  your identities!
 
 DOWNLOAD
 
@@ -72,8 +72,8 @@ CHANGELOG - prefixed with the bugtracker issue number
   they need to put into the security of their machine is greatly reduced
   if we build the binaries elsewhere.
   The overall security of that might be a bit better because Travis is a
-  large, widely used service and thereby they have more money at hand to
-  ensure a secure infrastructure.
+  large, widely used service and thereby they have more resources at
+  hand to ensure a secure infrastructure.
   Further users can use it as a third-party verification that we didn't
   put secret code into the binaries before we uploaded them.
 
@@ -89,7 +89,7 @@ CHANGELOG - prefixed with the bugtracker issue number
 
   Freenet build01482 is scheduled to split up freenet-ext.jar into
   multiple JARs, and during this procedure remove db4o from the set of
-  JARs which fred ships.
+  JARs which Freenet ships.
 
   To prepare for that, the following has been done:
 
