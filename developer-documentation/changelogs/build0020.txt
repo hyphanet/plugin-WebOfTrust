@@ -17,6 +17,10 @@ goals:
    running WoT unit tests, now automatically uploads the resulting
    WoT binary to Freenet after it has compiled and tested it.
 
+Users and testers can also benefit from aspect 2 by using it to have an
+independent service validate that the published WoT binary matches the
+source code, see the below full changelog at issue 0007018.
+
 The bundling of db4o should in theory work on existing Freenet
 installations where db4o is both contained in Freenet and in WoT - but
 it would be nice to have some confirmation from testers that this does
@@ -75,14 +79,36 @@ CHANGELOG - prefixed with the bugtracker issue number
   large, widely used service and thereby they have more resources at
   hand to ensure a secure infrastructure.
   Further users can use it as a third-party verification that we didn't
-  put secret code into the binaries before we uploaded them.
+  put secret code into the binaries before we uploaded them (see below).
 
   To obtain the Freenet URI of an uploaded WoT JAR search the raw Travis
-  job log for "CHK@". The filename WebOfTrust.jar wouldn't work because
-  it is renamed to include the specific version which was compiled.
+  job log for "CHK@". Jobs are at:
+    https://travis-ci.org/xor-freenet/plugin-WebOfTrust/builds
+    https://travis-ci.org/freenet/plugin-WebOfTrust/builds
+  For every build there are usually different jobs for various Java
+  versions. For WoT releases I will be using the CHK as compiled
+  by OpenJDK in the version which is the minimal requirement of Freenet
+  at time of the release. For this WoT release that is OpenJDK 7.
 
   The JAR will only be uploaded if compiling and testing did succeed,
   otherwise there will be no CHK@ in the output.
+
+  If Freenet release managers choose to use Travis CI for compiling then
+  the CHK@ URI which they put into fred will match what Travis CI has
+  published in the build job for the git tag build0020 (= commit
+  "Version 0.4.5 build0020") of this release.
+  Once testing of this build is finished and it has been released as
+  part of a regular Freenet release you can check the CHK@ in the
+  following file of the fred repository:
+    src/freenet/pluginmanager/OfficialPlugins.java
+  which is hosted at
+    https://git.io/vhcsV
+
+  While this release is still in testing verification works differently
+  because the testing URI is an USK:
+  Download the Travis CHK and the testing USK (listed in the above
+  file) and compare a checksum of the resulting file, e.g. with the
+  sha256sum command.
 
 - 0006737: [Code quality] Prepare for fred's removal of freenet-ext.jar
            and db4o
