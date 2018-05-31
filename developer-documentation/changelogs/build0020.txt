@@ -3,26 +3,31 @@ Web of Trust Version 0.4.5 build0020
 
 SUMMARY (detailed changelog is below):
 
-This is an intermediate maintenance build which provides no functional
-changes.
+This is an intermediate maintenance build which only provides new
+features for developers and testers, no user-side stuff.
+Especially Freenet core developers shall benefit from its two primary
+goals:
 
-It prepares WoT for the removal of the library freenet-ext.jar and
-its contained db4o library from Freenet.
-It does so by bundling db4o inside WoT's JAR.
+1) It prepares WoT for the removal of the library freenet-ext.jar and
+   its contained db4o library from Freenet.
+   It does so by bundling db4o inside WoT's JAR and making WoT
+   independent from the naming of the JARs which fred depends on.
 
-This should in theory work on existing Freenet installations where db4o
-is both contained in Freenet and in WoT - but it would be nice to
-have some confirmation from testers that this does indeed work on
-various operating systems and Java versions.
-So please provide feedback on whether it works on your installation.
+2) The cloud service Travis CI, which was previously only used for
+   running WoT unit tests, now automatically uploads the resulting
+   WoT binary to Freenet after it has compiled and tested it.
+
+The bundling of db4o should in theory work on existing Freenet
+installations where db4o is both contained in Freenet and in WoT - but
+it would be nice to have some confirmation from testers that this does
+indeed work on various operating systems and Java versions.
+So feedback on whether it works on your installation would be
+appreciated.
+
+TESTING
+
 Make sure to backup the WebOfTrust directory (located in the directory
-Freenet is installed to) before.
-
-For testers and developers this build provides some improvements to the
-build script and Travis CI.
-Most notably Travis CI now after compiling WoT automatically uploads the
-resulting binary to Freenet.
-
+Freenet is installed to) before you use this!
 
 CHANGELOG - prefixed with the bugtracker issue number:
 
