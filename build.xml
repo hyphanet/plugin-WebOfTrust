@@ -6,7 +6,7 @@
 	<!-- Configuration                                                                           -->
 	<!-- ======================================================================================= -->
 		
-	<!-- You can use these file to override the below properties. -->
+	<!-- You can use this file to override the below properties. -->
 	<property file="override.properties"/>
 	<!-- Dependencies. These are the most important to configure!                               -->
 	<!--                                                                                        -->
