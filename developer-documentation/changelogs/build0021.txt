@@ -1,4 +1,4 @@
-Web of Trust Version 0.4.6 build0020
+Web of Trust Version 0.4.6 build0021
 ------------------------------------------------------------------------
 
 SUMMARY AND OUTLOOK (detailed changelog is below):
