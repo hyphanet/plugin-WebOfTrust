@@ -1,0 +1,3 @@
+[submodule "db4o-7.4"]
+	path = db4o-7.4
+	url = https://github.com/xor-freenet/db4o-7.4.git

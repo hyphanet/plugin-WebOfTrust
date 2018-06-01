@@ -118,7 +118,14 @@ public class XMLTransformerTest extends AbstractJUnit3BaseTest {
 							+ "</IdentityIntroduction>"
 							+ "</" + WebOfTrustInterface.WOT_NAME + ">";
 		
-		assertEquals(expectedXML, os.toString().replaceAll("[\n\r]", ""));
+		String withoutLineBreaks = os.toString().replaceAll("[\n\r]", "");
+		// Workaround for https://bugs.freenetproject.org/view.php?id=7017 while we cannot disable
+		// indentation in the XMLTransformer because it is needed as a workaround for
+		// https://bugs.freenetproject.org/view.php?id=4850 - once that issue is resolved and its
+		// workarounds have been removed please revert the commit which added this.
+		String withoutIndentation = withoutLineBreaks.replaceAll("    ", "");
+		
+		assertEquals(expectedXML, withoutIndentation);
 	}
 
 	public void testImportIntroduction() throws SAXException, IOException, InvalidParameterException {
