@@ -1,7 +1,7 @@
 Web of Trust Version 0.4.6 build0021
 ------------------------------------------------------------------------
 
-SUMMARY AND OUTLOOK (detailed changelog is below):
+SUMMARY AND OUTLOOK (detailed changelog is below)
 
 Summary blah blah. Blah blah reference to link [1].
 
@@ -12,7 +12,7 @@ since the previous release, efforts have begun towards achieving 100%
 test coverage in WoT.
 
 
-CHANGELOG - prefixed with the bugtracker issue number:
+CHANGELOG - prefixed with the bugtracker issue number
 
 - 0000001: [category_of_issue_1] title_of_issue_1.......................
            more_lines_of_title (developer_of_issue_1)...................
@@ -85,8 +85,7 @@ CHANGELOG - prefixed with the bugtracker issue number:
     acquired. Without stats, it is impossible to take good guesses which
     random nicknames belong to whom.
 
-
-CHANGELOG about stuff only interesting for developers:
+CHANGELOG about stuff only interesting for developers
 
 - 0006804: [Code quality] Unit tests: Recycle fred simulator code to
            allow tests which do real inserts/fetches (xor)
@@ -288,29 +287,6 @@ CHANGELOG about stuff only interesting for developers:
   As the performance work is currently more important I will refrain
   from renaming all preexisting functions for a while.
 
-- 0006929: [Bugs] Travis CI builds fail due to changes at fred (xor)
+THANKS TO
 
-  The .travis.yml configuration of Travis CI has been fixed to be
-  compatible to the huge changeset of the Freenet core fred which is
-  being developed on fred's next branch.
-  Specifically it was adapted to be compatible with the new Gradle
-  builder of fred which has replaced Ant there - while keeping Ant at
-  WoT so we don't have too much migration efforts going on for now.
-
-  The unit tests of WoT branch next do succeed against the new fred code
-  so hopefully WoT won't delay the release of the fred changes any
-  further than they have already been delayed.
-  This also the first time where the "CI" = continuous integration
-  in Travis CI is really happening to meet its definition:
-  I don't have a Gradle build setup for fred branch next yet so it is of
-  true benefit to be able to test it elsewhere :)
-  Thanks to nextgens for insipiring this by setting up Travis CI at
-  fred!
-
-Thanks to:
   - ArneBab
-  - nextgens
-
-
-Links:
-  [1] https://...

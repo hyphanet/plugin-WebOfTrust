@@ -1,14 +1,16 @@
 Web of Trust Version 0.4.4 build0018
 ------------------------------------------------------------------------
 
-SUMMARY AND OUTLOOK (detailed changelog is below):
+SUMMARY AND OUTLOOK (detailed changelog is below)
 
 Summary blah blah. Blah blah reference to link [1].
 
 Outlook blah blah.
 
+FIXME: Add "TESTING" / "DOWNLOAD" sections from build0020.txt
+Also add that to build0021.txt
 
-CHANGELOG - prefixed with the bugtracker issue number:
+CHANGELOG - prefixed with the bugtracker issue number
 
 - 0000001: [category_of_issue_1] title_of_issue_1.......................
            more_lines_of_title (developer_of_issue_1)...................
@@ -24,8 +26,7 @@ CHANGELOG - prefixed with the bugtracker issue number:
   Blah.
   Blah.
 
-
-CHANGELOG about stuff only interesting for developers:
+CHANGELOG about stuff only interesting for developers
 
 - 0000004: .............................................................
            .............................................................
@@ -33,11 +34,7 @@ CHANGELOG about stuff only interesting for developers:
   Blah.
   Blah.
 
+THANKS TO
 
-Thanks to:
   - Person1
   - Person2
-
-
-Links:
-  [1] https://...
