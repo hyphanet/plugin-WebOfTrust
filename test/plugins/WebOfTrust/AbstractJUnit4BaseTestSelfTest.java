@@ -4,8 +4,11 @@
 package plugins.WebOfTrust;
 
 import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertNotEquals;
+import static org.junit.Assert.assertTrue;
 
+import java.lang.reflect.Field;
 import java.net.MalformedURLException;
 
 import org.junit.Before;
@@ -56,5 +59,35 @@ public class AbstractJUnit4BaseTestSelfTest extends AbstractJUnit4BaseTest {
     @Override protected WebOfTrust getWebOfTrust() {
         return mWebOfTrust;
     }
+
+
+	/**
+	 * Tests what we assume about {@link Class#isPrimitive()} assume at {@link #testClone(Class,
+	 * Object, Object)} because its documentation is a bit ambiguous:
+	 * isPrimitive() should only return true for types such as int, not for their wrapper classes
+	 * such as Integer. */
+	@Test
+	public void testIsPrimitive() {
+		// Instead of accessing e.g. boolean.class directly wrap the primitives in classes to
+		// ensure we use the same codepath through class.getDeclaredFields() as testClone() does.
+		@SuppressWarnings("unused") class Primitives {
+			boolean a; byte b; char c;      short d; int f;     long g; float h; double i; };
+		@SuppressWarnings("unused") class NonPrimitives {
+			Boolean a; Byte b; Character c; Short d; Integer f; Long g; Float h; Double i; };
+		
+		for(Field f : Primitives.class.getDeclaredFields()) {
+			// Local classes cannot be static so ignore the pointer to the parent object.
+			if(f.getType() == AbstractJUnit4BaseTestSelfTest.class)
+				continue;
+			
+			assertTrue(f.getType().isPrimitive());
+		}
+		for(Field f : NonPrimitives.class.getDeclaredFields()) {
+			if(f.getType() == AbstractJUnit4BaseTestSelfTest.class)
+				continue;
+			
+			assertFalse(f.getType().isPrimitive());
+		}
+	}
 
 }

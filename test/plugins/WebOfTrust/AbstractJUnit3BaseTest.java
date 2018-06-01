@@ -162,7 +162,9 @@ public class AbstractJUnit3BaseTest extends TestCase {
 	 * Tests what we assume about {@link Class#isPrimitive()} assume at {@link #testClone(Class,
 	 * Object, Object)} because its documentation is a bit ambiguous:
 	 * isPrimitive() should only return true for types such as int, not for their wrapper classes
-	 * such as Integer. */
+	 * such as Integer.
+	 * @deprecated Use {@link AbstractJUnit4BaseTestSelfTest#testIsPrimitive()} */
+	@Deprecated
 	public static void testIsPrimitive() {
 		// Instead of accessing e.g. boolean.class directly wrap the primitives in classes to
 		// ensure we use the same codepath through class.getDeclaredFields() as testClone() does.
