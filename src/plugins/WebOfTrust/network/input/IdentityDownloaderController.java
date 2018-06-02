@@ -203,6 +203,7 @@ public final class IdentityDownloaderController implements IdentityDownloader, D
 
 	@Override public void storePostDeleteOwnIdentityCommand(Identity newIdentity) {
 		assert(newIdentity != null);
+		assert(!(newIdentity instanceof OwnIdentity));
 		
 		for(IdentityDownloader d : mDownloaders)
 			d.storePostDeleteOwnIdentityCommand(newIdentity);
@@ -210,6 +211,8 @@ public final class IdentityDownloaderController implements IdentityDownloader, D
 
 	@Override public void storePreDeleteIdentityCommand(Identity oldIdentity) {
 		assert(oldIdentity != null);
+		// It *CAN* be an OwnIdentity!
+		/* assert(!(newIdentity instanceof OwnIdentity)); */
 		
 		for(IdentityDownloader d : mDownloaders)
 			d.storePreDeleteIdentityCommand(oldIdentity);
@@ -217,7 +220,8 @@ public final class IdentityDownloaderController implements IdentityDownloader, D
 
 	@Override public void storePreRestoreOwnIdentityCommand(Identity oldIdentity) {
 		assert(oldIdentity != null);
-	
+		assert(!(oldIdentity instanceof OwnIdentity));
+		
 		for(IdentityDownloader d : mDownloaders)
 			d.storePreRestoreOwnIdentityCommand(oldIdentity);
 	}
