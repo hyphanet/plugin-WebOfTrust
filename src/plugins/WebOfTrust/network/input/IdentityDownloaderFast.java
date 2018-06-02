@@ -143,8 +143,18 @@ public final class IdentityDownloaderFast implements
 	/**
 	 * Uses as lock to guard concurrent read/write access to {@link #mDownloads} and write access to
 	 * {@link #mDownloadSchedulerThread}.
-	 * Also uses as lock for the database table of objects of class
-	 * {@link DownloadSchedulerCommand} and its child classes. */
+	 * Also uses as lock for the database table of our download scheduling queue, i.e. objects of
+	 * class {@link DownloadSchedulerCommand} and its child classes.
+	 * 
+	 * Is set to the value of {@link WebOfTrust#getIdentityDownloaderController()}.
+	 * Thereby is equal to the lock which is specified in the {@link IdentityDownloader} interface
+	 * as lock for its callbacks. This means we can assume this lock to be held in all
+	 * IdentityDownloader callbacks which are implemented here, and thus there we can safely access
+	 * our downloads, download scheduler command queue and download scheduler without further
+	 * locking.
+	 * 
+	 * FIXME: Remove documentation about locking from the rest of the class similar to the one
+	 * removed by the commit which added this FIXME and the above documentation. */
 	private final IdentityDownloaderController mLock;
 
 	private final ExtObjectContainer mDB;
@@ -569,14 +579,12 @@ public final class IdentityDownloaderFast implements
 		}
 	}
 
-	@Override public void storeRestoreOwnIdentityCommandWithoutCommit(Identity oldIdentity,
-			OwnIdentity newIdentity) {
-		
-		// OwnIdentitys are always downloaded by this class, non-own Identitys are not.
-		// Thus we must ensure it will be downloaded now, and correct potentially pre-existing
-		// DownloadSchedulerCommands for it it in the command queue.
-		// - The fact that the ID is equal for both the old and the new identity means pre-existing
-		// commands will continue to affect the new identity.
+	@Override public void storePreRestoreOwnIdentityCommand(Identity oldIdentity) {
+		// The fact that the ID is equal for both the oldIdentity and the upcoming replacement
+		// OwnIdentity means pre-existing DownloadSchedulerCommands will continue to affect the
+		// replacement.
+		// Thus we must ensure the following call to storePostRestoreOwnIdentityCommand() is able
+		// to start the download by deleting pre-existing commands for the oldIdentity.
 		String id = oldIdentity.getID();
 		DownloadSchedulerCommand pendingCommand = getQueuedCommand(id);
 		if(pendingCommand != null) {
@@ -590,20 +598,17 @@ public final class IdentityDownloaderFast implements
 				
 				pendingCommand.deleteWithoutCommit();
 				
-				// At first glance we could always return here because if a StopDownloadCommand
-				// exists that means the download is still running - but the loop which processes
-				// the StopDownloadCommands only deletes them if none of the code for aborting a
-				// download at fred did throw. So if the command wasn't deleted yet that doesn't
-				// mean that fred didn't abort the download yet. Thus we better program defensively
-				// and check whether the download is *really* still running.
-				// (mDownloads is valid to use from a concurrency perspective, is guarded by mLock
-				// which callers are required to hold.)
-				if(mDownloads.containsKey(id))
-					return;
-				else
-					assert(false) : "StopDownloadCommand queued but no download running for " + id;
+				assert(mDownloads.containsKey(id))
+					: "StopDownloadCommand queued but no download running for " + id;
 			}
 		}
+	}
+
+	// FIXME: This function was created from splitting up the previous
+	// storeRestoreOwnIdentityCommandWithoutCommit() into Pre/Post functions as demanded by the
+	// new IdentityDownloader interface specfication. The Pre one was reviewed, the post one was not
+	// yet reviewed. -> Review this once the interace for the Post function has been specified.
+	@Override public void storePostRestoreOwnIdentityCommand(OwnIdentity newIdentity) {
 		
 		// Keep a potentially running download as is so we don't lose fred's progress on polling the
 		// USK.
@@ -613,7 +618,7 @@ public final class IdentityDownloaderFast implements
 		// The IdentityDownloaderSlow will store an EditionHint for the edition of the newIdentity
 		// in its implementation of this callback to conduct a download attempt on the higher
 		// edition.
-		if(!mDownloads.containsKey(id)) {
+		if(!mDownloads.containsKey(newIdentity.getID())) {
 			new StartDownloadCommand(mWoT, newIdentity).storeWithoutCommit();
 			mDownloadSchedulerThread.triggerExecution();
 		}
