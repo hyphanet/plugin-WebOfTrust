@@ -123,7 +123,10 @@ public interface IdentityDownloader extends Daemon {
 	 * - the OwnIdentity has been deleted from the the database, the given replacement
 	 *   {@link Identity} object has been stored.
 	 * - the {@link Trust} and {@link Score} database has been fully updated to reflect the
-	 *   necessary changes. */
+	 *   necessary changes.
+	 * 
+	 * FIXME: {@link #storePreDeleteOwnIdentityCommand(OwnIdentity)} documents more of the duties
+	 * of this callback, should be documented here as well. */
 	@NeedsTransaction void storePostDeleteOwnIdentityCommand(Identity newIdentity);
 
 	/**
@@ -167,7 +170,39 @@ public interface IdentityDownloader extends Daemon {
 
 	// There is no replacement Identity when a non-own Identity is deleted.
 	/* @NeedsTransaction void storePostDeleteIdentityCommand(Identity newIdentity); */
+
+	/**
+	 * Called by {@link WebOfTrust#restoreOwnIdentity(FreenetURI)} before any action is taken
+	 * towards restoring an {@link OwnIdentity}.
+	 * 
+	 * After the callback returns the non-own oldIdentity will be deleted from the database.
+	 * It will be replaced by an {@link OwnIdentity} object. Its given and received
+	 * {@link Trust}s, and its received {@link Score}s will keep existing by being replaced with
+	 * objects which to point to the replacement OwnIdentity.
+	 * (No given Scores could have existed for the oldIdentity because only OwnIdentitys are allowed
+	 * to give Scores.)
+	 * 
+	 * After this callback has returned, and once the replacement OwnIdentity has been created and
+	 * the {@link Trust} and Score database fully adapted to it, WoT will call
+	 * {@link #storePostRestoreOwnIdentityCommand(OwnIdentity)} in order to allow implementations to
+	 * start download of both the replacement OwnIdentity if it is eligible for download as well as
+	 * the recipients of its newly created positive {@link WebOfTrust#getGivenScores(OwnIdentity)}.
+	 * 
+	 * Thus implementations have to:
+	 * - remove any object references to the oldIdentity object from the db4o database as they
+	 *   would otherwise be nulled by the upcoming deletion of it.
+	 * - stop downloading the oldIdentity.
+	 * 
+	 * Implementations can assume that when this function is called:
+	 * - the Identity still is stored in the database, the replacement OwnIdentity object has not
+	 *   been created yet.
+	 * - the Trust and Score database has not been changed yet. */
 	@NeedsTransaction void storePreRestoreOwnIdentityCommand(Identity oldIdentity);
+
+	/**
+	 * FIXME: Document similar to the above callbacks.
+	 * Document that for technical reasons the downloads to be started from the given Scores can
+	 * have already been started (due to restoreOwnIdentity using setTrustWithoutCommit()). */
 	@NeedsTransaction void storePostRestoreOwnIdentityCommand(OwnIdentity newIdentity);
 
 	/**
