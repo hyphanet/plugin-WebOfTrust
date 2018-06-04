@@ -983,8 +983,8 @@ public final class IdentityDownloaderSlow implements
 	 * Using this function for that purpose is handled by this class itself at
 	 * {@link #storePreDeleteOwnIdentityCommand(OwnIdentity)},
 	 * {@link #storePreDeleteIdentityCommand(Identity)} and
-	 * {@link #storeRestoreOwnIdentityCommandWithoutCommit(Identity, OwnIdentity)}, there is no
-	 * need for outside classes to call it for that purpose directly. */
+	 * {@link #storePreRestoreOwnIdentityCommand(Identity)}, there is no need for outside classes to
+	 * call it for that purpose directly. */
 	@Override public void storeAbortFetchCommandWithoutCommit(Identity identity) {
 		Logger.normal(this, "storeAbortFetchCommandWithoutCommit(" + identity + ") ...");
 		
@@ -1102,6 +1102,13 @@ public final class IdentityDownloaderSlow implements
 			// consequence of Trusts and thus are also dealt with implicitly).
 			storeAbortFetchCommandWithoutCommit(oldIdentity);
 		}
+	}
+
+	@Override public void storePreRestoreOwnIdentityCommand(Identity oldIdentity) {
+		// Deletes all EditionHint objects it has received or given to other Identitys.
+		// Thus complies with our job of deleting all objects in the db4o database which point to
+		// the oldIdentity, as well as with aborting the download of it.
+		storeAbortFetchCommandWithoutCommit(oldIdentity);
 	}
 
 	/**
