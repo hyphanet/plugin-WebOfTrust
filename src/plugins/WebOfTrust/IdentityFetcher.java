@@ -543,17 +543,26 @@ public final class IdentityFetcher implements
 			storeAbortFetchCommandWithoutCommit(oldIdentity);
 	}
 
-	@Override public void storeRestoreOwnIdentityCommandWithoutCommit(Identity oldIdentity,
-			OwnIdentity newIdentity) {
+	@Override public void storePreRestoreOwnIdentityCommand(Identity oldIdentity) {
+		// With regards to our duty of deleting object references to the oldIdentity from the
+		// database the commented out code is not necessary as AbortFetchCommand doesn't contain
+		// any, it only stores the ID String.
+		// We can also keep pre-existing downloads running as we want to keep fetching the Identity
+		// anyway because once it became an OwnIdentity it is supposed to be fetched for restoring.
+		// There is also no need to delete a potentially pre-existing AbortFetchCommand here:
+		// storePostRestoreOwnIdentityCommand() will use storeStartFetchCommandWithoutCommit(), and
+		// that function will delete the pre-existing command.
 		
-		// This commented out code is not necessary, we can keep pre-existing downloads running (as
-		// we want to keep fetching the Identity anyway because it's an OwnIdentity):
-		// We don't store an object reference to the oldIdentity anywhere, we only store its ID.
-		// So there's no need to recreate the fetch...
 		/* storeAbortFetchCommandWithoutCommit(oldIdentity); */
-		
-		// ... but we do need to start it if it wasn't being fetched yet.
+	}
+
+	@Override public void storePostRestoreOwnIdentityCommand(OwnIdentity newIdentity) {
+		// Will also delete pre-existing AbortFetchCommands, which is necessary because
+		// storePreRestoreOwnIdentityCommand() doesn't deal with that.
 		storeStartFetchCommandWithoutCommit(newIdentity);
+		
+		// FIXME: Implement the rest of this, e.g. starting the download of the trustees if that
+		// is required by the upcoming interface specification of this function.
 	}
 
 	/** This callback is not used by this class. */
