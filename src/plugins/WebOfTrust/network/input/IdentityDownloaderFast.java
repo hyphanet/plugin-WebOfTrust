@@ -604,39 +604,19 @@ public final class IdentityDownloaderFast implements
 		}
 	}
 
-	// FIXME: This function was created from splitting up the previous
-	// storeRestoreOwnIdentityCommandWithoutCommit() into Pre/Post functions as demanded by the
-	// new IdentityDownloader interface specfication. The Pre one was reviewed, the post one was not
-	// yet reviewed. -> Review this once the interace for the Post function has been specified.
 	@Override public void storePostRestoreOwnIdentityCommand(OwnIdentity newIdentity) {
-		
 		// Keep a potentially running download as is so we don't lose fred's progress on polling the
 		// USK.
 		// Notice: When entering the USK for restoring the user may have supplied a higher edition
 		// than what we had passed to the running USK subscription so it is necessary to somehow
 		// make the USK code aware of that. There is no need to do so in this class:
-		// The IdentityDownloaderSlow will store an EditionHint for the edition of the newIdentity
-		// in its implementation of this callback to conduct a download attempt on the higher
-		// edition.
+		// The IdentityDownloaderSlow by contract of the interface will have to store an EditionHint
+		// for the edition of the newIdentity in its implementation of this callback.
+		// FIXME: Ensure it really does that.
 		if(!mDownloads.containsKey(newIdentity.getID())) {
 			new StartDownloadCommand(mWoT, newIdentity).storeWithoutCommit();
 			mDownloadSchedulerThread.triggerExecution();
 		}
-		
-		// FIXME: Decide whether we do this here or keep requiring callers to deal with it like it
-		// is currently implemented at WebOfTrust.restoreOwnIdentityWithoutCommit() (implicitly by
-		// its calls to storeTrustWithoutCommit()).
-		// Either way document the decision at the IdentityDownloader's specification of this
-		// callback.
-		/*
-		for(Trust t : mWoT.getGivenTrusts(newIdentity)) {
-			if(t.getValue() >= 0) {
-				// Start fetching it, perhaps using one of these:
-				// storeStartFetchCommandWithoutCommit(t.getTrustee());
-				// storeStartFetchCommandWithoutCommit_Checked(t.getTrustee());
-			}
-		}
-		 */
 	}
 
 	/**
