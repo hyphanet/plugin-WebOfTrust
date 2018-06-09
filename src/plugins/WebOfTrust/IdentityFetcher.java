@@ -559,10 +559,11 @@ public final class IdentityFetcher implements
 	@Override public void storePostRestoreOwnIdentityCommand(OwnIdentity newIdentity) {
 		// Will also delete pre-existing AbortFetchCommands, which is necessary because
 		// storePreRestoreOwnIdentityCommand() doesn't deal with that.
+		//
+		// If the download is already running the command will cause the download to be restarted.
+		// This fulfills our duty of dealing with a user-supplied edition hint as returned by
+		// newIdentity.getNextEditionToFetch().
 		storeStartFetchCommandWithoutCommit(newIdentity);
-		
-		// FIXME: Implement the rest of this, e.g. starting the download of the trustees if that
-		// is required by the upcoming interface specification of this function.
 	}
 
 	/** This callback is not used by this class. */
