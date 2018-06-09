@@ -215,11 +215,15 @@ public interface IdentityDownloader extends Daemon {
 	 *   The user may have provided a {@link FreenetURI#getSuggestedEdition()} in the
 	 *   USK URI when restoring the OwnIdentity.
 	 * 
-	 * NOTICE: Implementations do NOT have to start the download of the {@link Score} recipients of
-	 * the OwnIdentity.
-	 * This is because for technical reasons the downloads to be started from the given Scores of
-	 * the newIdentity will have already been started by other callbacks having been triggered by
-	 * restoreOwnidentity(). */
+	 * NOTICE: Implementations do NOT have to start the download of the {@link Trust} and
+	 * {@link Score} recipients of the OwnIdentity.
+	 * This is because for technical reasons the downloads to be started from the given Trusts and
+	 * Scores of the newIdentity will have already been started by other callbacks having been
+	 * triggered by restoreOwnidentity().
+	 * These callbacks might e.g. be:
+	 * - {@link #storeStartFetchCommandWithoutCommit(Identity)}
+	 * - {@link #storeTrustChangedCommandWithoutCommit(Trust, Trust)}
+	 * Implementations of this callback here must be safe against side effects from that. */
 	@NeedsTransaction void storePostRestoreOwnIdentityCommand(OwnIdentity newIdentity);
 
 	/**
