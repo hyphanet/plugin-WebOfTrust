@@ -834,6 +834,17 @@ public final class IdentityDownloaderSlow implements
 		return DOWNLOADER_THREAD_PRIORITY;
 	}
 
+	/**
+	 * In addition to the purpose as specified by the parent interface this is also safe to use
+	 * for the purpose of handling
+	 * {@link IdentityDownloader#storePostRestoreOwnIdentityCommand(OwnIdentity)}.
+	 * 
+	 * Using this function for that purpose is handled by this class itself at
+	 * {@link #storePostRestoreOwnIdentityCommand(OwnIdentity)}, there is no need for outside
+	 * classes to call it for that purpose directly.
+	 * 
+	 * FIXME: There's other local stuff which uses this function as well, document that like
+	 * the above documentation. Also review IdentityDownloaderFast for similar lack of doc. */
 	@Override public void storeStartFetchCommandWithoutCommit(final Identity identity) {
 		Logger.normal(this, "storeStartFetchCommandWithoutCommit(" + identity + ") ...");
 		
@@ -883,6 +894,13 @@ public final class IdentityDownloaderSlow implements
 			// to tell us that markForRefetch() was called upon the passed identity, i.e. if the
 			// Identity *was* already eligible for fetching before the call.
 			// This also applies to the similar assertDidThrow() below in this function.
+			//
+			// Further, in the case of this function having been called by
+			// storePostRestoreOwnIdentityCommand() the EditionHint may have also already been
+			// created because, as specified for that callback at IdentityDownloader,
+			// restoreOwnIdentity() might have called this function here for the trustees of the
+			// OwnIdentity. One of them might have provided the EditionHint we're trying to store
+			// here.
 			assertDidThrow(new Callable<EditionHint>() {
 				@Override public EditionHint call() throws Exception {
 					return getEditionHint(truster, identity);
@@ -910,12 +928,10 @@ public final class IdentityDownloaderSlow implements
 		}
 		*/
 		
-		// When this is called by WebOfTrust.restoreOwnIdentity() the given Identity is the restored
-		// OwnIdentity. The user may have provided an edition number in the URI of the Identity
-		// which is stored at identity.getNextEditionToFetch(). Thus we should create an EditionHint
-		// from that.
-		// FIXME: Review the rest of this function besides this if() for whether it is safe to use
-		// with restoreOwnIdentity().
+		// When this is called by storePostRestoreOwnIdentityCommand() the given Identity is the
+		// restored OwnIdentity. The user may have provided an edition number in the URI of the
+		// OwnIdentity which is stored at identity.getNextEditionToFetch(). Thus we should create an
+		// EditionHint from that.
 		if(identity instanceof OwnIdentity) {
 			int sourceCapacity;
 			int sourceScore;
@@ -1109,6 +1125,13 @@ public final class IdentityDownloaderSlow implements
 		// Thus complies with our job of deleting all objects in the db4o database which point to
 		// the oldIdentity, as well as with aborting the download of it.
 		storeAbortFetchCommandWithoutCommit(oldIdentity);
+	}
+
+	@Override public void storePostRestoreOwnIdentityCommand(OwnIdentity newIdentity) {
+		// Enqueues EditionHints for the OwnIdentity from its received Trusts.
+		// Also deals with storing an EditionHint for the newIdentity.getNextEditionToFetch() as
+		// that was potentially supplied by the user.
+		storeStartFetchCommandWithoutCommit(newIdentity);
 	}
 
 	/**
