@@ -57,6 +57,7 @@ public final class IdentityDownloaderController implements IdentityDownloader, D
 	 * are actually implemented. */
 	public static final boolean USE_LEGACY_REFERENCE_IMPLEMENTATION = true;
 
+	private final WebOfTrust mWoT;
 
 	private final IdentityDownloaderSlow mIdentityDownloaderSlow;
 
@@ -66,6 +67,7 @@ public final class IdentityDownloaderController implements IdentityDownloader, D
 
 
 	public IdentityDownloaderController(WebOfTrust wot, PluginRespirator pr, IdentityFileQueue q) {
+		mWoT = wot;
 		if(!USE_LEGACY_REFERENCE_IMPLEMENTATION) {
 			mIdentityDownloaderSlow = new IdentityDownloaderSlow(wot);
 			mIdentityDownloaderFast = new IdentityDownloaderFast(wot);
@@ -228,6 +230,16 @@ public final class IdentityDownloaderController implements IdentityDownloader, D
 
 	@Override public void storePostRestoreOwnIdentityCommand(OwnIdentity newIdentity) {
 		assert(newIdentity != null);
+		// Check whether download of the OwnIdentity is enabled:
+		// Formally an OwnIdentity is only eligible for download if a self-assigned Score of it
+		// was created using WebOfTrust.initTrustTreeWithoutCommit().
+		// In the future it may be possible to temporarily disable the download by deleting the
+		// self-assigned Score or setting it to a negative value.
+		// The specification of this callback doesn't allow that currently though, it specifies that
+		// the download of the OwnIdentity should always be started. If this is allowed some day
+		// please change the specification before removing this assert.
+		assert(mWoT.shouldFetchIdentity(newIdentity))
+			: "Asked to start download of restored OwnIdentity but downloading it is disallowed?";
 		
 		for(IdentityDownloader d : mDownloaders)
 			d.storePostRestoreOwnIdentityCommand(newIdentity);
