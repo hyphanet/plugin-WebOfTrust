@@ -200,9 +200,26 @@ public interface IdentityDownloader extends Daemon {
 	@NeedsTransaction void storePreRestoreOwnIdentityCommand(Identity oldIdentity);
 
 	/**
-	 * FIXME: Document similar to the above callbacks.
-	 * Document that for technical reasons the downloads to be started from the given Scores can
-	 * have already been started (due to restoreOwnIdentity using setTrustWithoutCommit()). */
+	 * Called by {@link WebOfTrust#restoreOwnIdentity(FreenetURI)} after an {@link OwnIdentity}
+	 * was restored, either by replacing a non-own {@link Identity} with it or by creating it from
+	 * scratch.
+	 * 
+	 * For understanding the surrounding conditions of restoreOwnIdentity() please read the
+	 * documentation of {@link #storePreRestoreOwnIdentityCommand(Identity)} which is called before
+	 * this callback here.
+	 * 
+	 * Implementations have to:
+	 * - start the download of the given newIdentity.
+	 * - If a download is already running adjust the edition to the
+	 *   {@link Identity#getNextEditionToFetch()} of the newIdentity:
+	 *   The user may have provided a {@link FreenetURI#getSuggestedEdition()} in the
+	 *   USK URI when restoring the OwnIdentity.
+	 * 
+	 * NOTICE: Implementations do NOT have to start the download of the {@link Score} recipients of
+	 * the OwnIdentity.
+	 * This is because for technical reasons the downloads to be started from the given Scores of
+	 * the newIdentity will have already been started by other callbacks having been triggered by
+	 * restoreOwnidentity(). */
 	@NeedsTransaction void storePostRestoreOwnIdentityCommand(OwnIdentity newIdentity);
 
 	/**
