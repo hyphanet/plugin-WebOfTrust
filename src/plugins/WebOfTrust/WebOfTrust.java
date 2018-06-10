@@ -5564,10 +5564,10 @@ public final class WebOfTrust extends WebOfTrustInterface
 				}
 				
 				// Only OwnIdentitys assign Scores to other Identitys so there are no old *given*
-				// Scores to deal with, there only were received ones.
+				// Scores to copy, there only were received ones.
 				// Now that the Identity is becoming an OwnIdentity we will have to ensure its given
-				// Scores are computed by using setTrustWithoutCommit() to re-create its Trusts
-				// after we've deleted the old ones.
+				// Scores are computed by using setTrustWithoutCommit() to re-create its given
+				// Trusts after we've deleted the old ones.
 				// We can for now only delete the Trust objects, not re-create them, as the Score
 				// computation code which is invoked by setTrustWithoutCommit() would not work
 				// if two Identitys with the same ID existed at the same time.
@@ -5597,7 +5597,7 @@ public final class WebOfTrust extends WebOfTrustInterface
 				
 				oldIdentity.deleteWithoutCommit();
 				
-				// Update all given trusts. This will also cause given scores to be computed,
+				// Re-create all given Trusts. This will also cause given Scores to be computed,
 				// which is why we had not set them yet.
 				// And it will tell mFetcher to start downloads of trustees which became eligible
 				// for download due to now having received a chain of Trust from an OwnIdentity.
