@@ -120,24 +120,6 @@ public final class IdentityDownloaderController implements IdentityDownloader, D
 			d.storeAbortFetchCommandWithoutCommit(identity);
 	}
 
-	@Override public void storeDeleteOwnIdentityCommandWithoutCommit(OwnIdentity oldIdentity,
-			Identity newIdentity) {
-		
-		assert(oldIdentity.getID() == newIdentity.getID());
-		
-		for(IdentityDownloader d : mDownloaders)
-			d.storeDeleteOwnIdentityCommandWithoutCommit(oldIdentity, newIdentity);
-	}
-
-	@Override public void storeRestoreOwnIdentityCommandWithoutCommit(Identity oldIdentity,
-			OwnIdentity newIdentity) {
-		
-		assert(oldIdentity.getID() == newIdentity.getID());
-		
-		for(IdentityDownloader d : mDownloaders)
-			d.storeRestoreOwnIdentityCommandWithoutCommit(oldIdentity, newIdentity);
-	}
-
 	@Override public void storeTrustChangedCommandWithoutCommit(Trust oldTrust, Trust newTrust) {
 		// Check sanity of passed Trusts.
 		assert(oldTrust != null || newTrust != null);
