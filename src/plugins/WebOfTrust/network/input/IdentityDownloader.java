@@ -65,7 +65,7 @@ public interface IdentityDownloader extends Daemon {
 	 * start download of the replacement Identity if it is eligible for download.
 	 * 
 	 * Thus implementations have to:
-	 * - remove any object references to the oldIdentity object from the db4o database as they
+	 * - remove any object references to the oldIdentity object from their db4o database as they
 	 *   would otherwise be nulled by the upcoming deletion of it.
 	 * - stop downloading of any Identitys who aren't eligible for download anymore because
 	 *   they were eligible solely due to one of the to-be-deleted Scores (see the JavaDoc of
@@ -119,7 +119,7 @@ public interface IdentityDownloader extends Daemon {
 	 *   of the replacement Identity if necessary, but there will be none.
 	 * 
 	 * Thus implementations have to:
-	 * - remove any object references to the oldIdentity object from the db4o database as they
+	 * - remove any object references to the oldIdentity object from their db4o database as they
 	 *   would otherwise be nulled by the upcoming deletion of it.
 	 * - stop downloading of any Identitys who aren't eligible for download anymore because
 	 *   they were eligible solely due to one of the to-be-deleted Scores (see the JavaDoc of
@@ -158,7 +158,7 @@ public interface IdentityDownloader extends Daemon {
 	 * the recipients of its newly created positive {@link WebOfTrust#getGivenScores(OwnIdentity)}.
 	 * 
 	 * Thus implementations have to:
-	 * - remove any object references to the oldIdentity object from the db4o database as they
+	 * - remove any object references to the oldIdentity object from their db4o database as they
 	 *   would otherwise be nulled by the upcoming deletion of it.
 	 * - stop downloading the oldIdentity.
 	 * 
