@@ -5561,9 +5561,6 @@ public final class WebOfTrust extends WebOfTrustInterface
 					
 					oldScore.deleteWithoutCommit();
 					newScore.storeWithoutCommit();
-					
-					// Nothing has changed about the actual score so we do not notify.
-					// mSubscriptionManager.storeScoreChangedNotificationWithoutCommit(oldScore, newScore);
 				}
 				
 				// Only OwnIdentitys assign Scores to other Identitys so there are no old *given*
