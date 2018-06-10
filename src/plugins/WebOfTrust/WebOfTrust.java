@@ -5474,7 +5474,7 @@ public final class WebOfTrust extends WebOfTrustInterface
 		try {
 			OwnIdentity identity;
 			
-			try { // Try replacing an existing non-own version of the identity with an OwnIdentity
+			try { // If it was seen as non-own Identity already replace it with an OwnIdentity
 				Identity oldIdentity = getIdentityByURI(insertFreenetURI);
 				
 				if(oldIdentity instanceof OwnIdentity) {
@@ -5496,7 +5496,6 @@ public final class WebOfTrust extends WebOfTrustInterface
 				
 				mFetcher.storePreRestoreOwnIdentityCommand(oldIdentity);
 				
-				// We already have fetched this identity as a stranger's one. We need to update the database.
 				identity = new OwnIdentity(this, insertFreenetURI, oldIdentity.getNickname(), oldIdentity.doesPublishTrustList());
 				
 				/* We re-fetch the most recent edition to make sure all trustees are imported */
