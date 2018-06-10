@@ -241,7 +241,8 @@ public interface IdentityDownloader extends Daemon {
 	 *   rated it as trustworthy enough for us to download it.
 	 *   The {@link Trust} and {@link Score} database is guaranteed to be up to date when this
 	 *   function is called and thus can be used by it.
-	 * - in special cases such as creation/deletion/restoring of an OwnIdentity.
+	 * - when an OwnIdentity is created (but not when it is deleted/restored, see the other
+	 *   callbacks for that).
 	 * - May also be called to notify the IdentityDownloader about a changed
 	 *   {@link Identity#getNextEditionToFetch()} (e.g. due to  {@link Identity#markForRefetch()})
 	 *   even if the Identity was already eligible for fetching before.
