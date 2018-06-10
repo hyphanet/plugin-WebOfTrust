@@ -44,6 +44,9 @@ import freenet.keys.FreenetURI;
  * 
  * TODO: Code quality: Rename the event handlers to "on...()".
  *
+ * TODO: Code quality: Sort callbacks in an order which makes their purpose the most easy to
+ * understand, also in implementing classes.
+ *
  * FIXME: Review the whole of class {@link IdentityFetcher} for any important JavaDoc and add it to
  * this interface. */
 public interface IdentityDownloader extends Daemon {
