@@ -5484,6 +5484,8 @@ public final class WebOfTrust extends WebOfTrustInterface
 				// but we must also store the own version to be able to modify the trust graph.
 				beginTrustListImport();
 				
+				mFetcher.storePreRestoreOwnIdentityCommand(oldIdentity);
+				
 				// We already have fetched this identity as a stranger's one. We need to update the database.
 				identity = new OwnIdentity(this, insertFreenetURI, oldIdentity.getNickname(), oldIdentity.doesPublishTrustList());
 				
@@ -5591,28 +5593,25 @@ public final class WebOfTrust extends WebOfTrustInterface
 	
 				mPuzzleStore.onIdentityDeletion(oldIdentity);
 				
-				// (mFetcher must be notified *after* updating the Score database!)
-				mFetcher.storeAbortFetchCommandWithoutCommit(oldIdentity);
-				
-				mFetcher.storeRestoreOwnIdentityCommandWithoutCommit(oldIdentity, identity);
-				
 				oldIdentity.deleteWithoutCommit();
 				
 				// Update all given trusts. This will also cause given scores to be computed,
 				// which is why we had not set them yet.
+				// And it will tell mFetcher to start downloads of trustees which became eligible
+				// for download due to now having received a chain of Trust from an OwnIdentity.
 				// FIXME: Performance: This could maybe be optimized by setting
-				// mFullScoreComputationNeeded to true. Do benchmarks.
+				// mFullScoreComputationNeeded to true to delay Score computation until finishTrustListImport().
+				// Do benchmarks. However first the problem of storePostRestoreOwnIdentityCommand() having to be
+				// called before finishTrustListImport() as elaborated below must be resolved.
 				for(Trust givenTrust : oldGivenTrusts)
 					setTrustWithoutCommit(identity, givenTrust.getTrustee(), givenTrust.getValue(), givenTrust.getComment());
 				
+				// Tell mFetcher to start downloading the restored OwnIdentity.
+				// Must be called before finishTrustListImport(): That function contains asserts to
+				// check whether Identitys which should be downloaded are in fact being downloaded.
+				mFetcher.storePostRestoreOwnIdentityCommand(identity);
+				
 				finishTrustListImport();
-				// Demands to be called when the Score database is valid so call it after the above
-				// FIXME: IdentityDownloaderFast's implementation of the above storeRestore...()
-				// already deals with starting the fetch of the new identity. Change the other
-				// IdentityDownloader implementations to do so as well and remove this call here;
-				// also update the JavaDoc of storeStartFetchCommand...() to reflect this.
-				// Apply the same concept to the above call to storeAboveFetchCommand..().
-				mFetcher.storeStartFetchCommandWithoutCommit(identity);
 			} catch (UnknownIdentityException e) { // The identity did NOT exist as non-own identity yet so we can just create an OwnIdentity and store it.
 				identity = new OwnIdentity(this, insertFreenetURI, null, false);
 				
@@ -5625,7 +5624,7 @@ public final class WebOfTrust extends WebOfTrustInterface
 				mSubscriptionManager.storeIdentityChangedNotificationWithoutCommit(null, identity);
 				
 				initTrustTreeWithoutCommit(identity);
-				mFetcher.storeStartFetchCommandWithoutCommit(identity);
+				mFetcher.storePostRestoreOwnIdentityCommand(identity);
 			}
 
 			// This function messes with the trust graph manually so it is a good idea to check whether it is intact afterwards.
