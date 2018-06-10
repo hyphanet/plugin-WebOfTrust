@@ -274,41 +274,6 @@ public interface IdentityDownloader extends Daemon {
 	void storeAbortFetchCommandWithoutCommit(Identity identity);
 
 	/**
-	 * Called by {@link WebOfTrust#deleteOwnIdentity(String)} when the class of an
-	 * {@link OwnIdentity} changes to {@link Identity}.
-	 * 
-	 * The oldIdentity object will be deleted from the database immediately after this function
-	 * returns. Implementations must thus ensure that they remove any references to the Identity
-	 * object in their db4o databases.
-	 * The {@link Trust} and {@link Score} database is guaranteed to be up to date when this
-	 * function is called and thus can be used by it.
-	 * 
-	 * Synchronization:
-	 * This function is guaranteed to be called while the following locks are being held in the
-	 * given order:
-	 * synchronized(Instance of WebOfTrust)
-	 * synchronized(WebOfTrust.getIdentityDownloaderController())
-	 * synchronized(Persistent.transactionLock(WebOfTrust.getDatabase()))
-	 * 
-	 * FIXME: Implement at the child classes. Adapt deleteOwnIdentity() to call it instead  of
-	 * {@link #storeTrustChangedCommandWithoutCommit(Trust, Trust)}. Then provide more JavaDoc here
-	 * once the requirements of the callback have become apparent by implementing it.
-	 * Also see {@link #storeRestoreOwnIdentityCommandWithoutCommit(Identity, OwnIdentity)} which
-	 * can be considered as a draft for this callback.
-	 * This callback was introduced during attempts to implement calling of
-	 * storeTrustChangedCommandWithoutCommit() by restoreOwnIdentty(), during which it was
-	 * discovered that it would be too complex to deploy that callback under the
-	 * circumstances of restoreOwnIdentity() - said circumstances are probably similar for
-	 * deleteOwnIdentity() which is subject of this callback here.
-	 * Those circumstances are described at the JavaDoc of that callback.
-	 * Therefore please also take the requirements of that callback into consideration for the
-	 * pending documentation of this callback here.
-	 * 
-	 * FIXME: The names of these callbacks are really getting excessively long, shorten all of them
-	 * in a coherent fashion at once. */
-	void storeDeleteOwnIdentityCommandWithoutCommit(OwnIdentity oldIdentity, Identity newIdentity);
-
-	/**
 	 * Called by {@link WebOfTrust#restoreOwnIdentityWithoutCommit(FreenetURI)} when the class of an
 	 * {@link Identity} changes to {@link OwnIdentity}.
 	 * Is supposed to adjust the IdentityDownloader's decision of which {@link Identity}s to
