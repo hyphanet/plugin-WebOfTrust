@@ -1140,6 +1140,8 @@ public final class IdentityDownloaderFast implements
 	}
 
 	@Override public boolean getShouldFetchState(Identity identity) {
+		// Will implicitly check for contradicting commands, i.e. both StartDownloadCommand
+		// and StopDownloadCommand existing at once, or duplicate commands, and throw upon that.
 		DownloadSchedulerCommand c = getQueuedCommand(identity);
 		
 		// If a command is stored then the interface specification demands that our return value is

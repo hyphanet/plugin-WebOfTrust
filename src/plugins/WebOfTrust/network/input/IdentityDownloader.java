@@ -332,10 +332,6 @@ public interface IdentityDownloader extends Daemon {
 	 * Returns the effective state of whether the downloader will download an {@link Identity}
 	 * = returns what was last instructed to this downloader using all the callbacks in this
 	 * interface.
-	 * 
-	 * This considers both queued commands as well as already processed commands.
-	 * It will also check for contradictory commands in the command queue which would be a bug
-	 * (= both start and stop command at once).
 	 *
 	 * Synchronization:
 	 * This function is guaranteed to be called while the following locks are being held in the
