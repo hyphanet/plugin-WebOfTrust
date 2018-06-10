@@ -15,6 +15,7 @@ import plugins.WebOfTrust.Score;
 import plugins.WebOfTrust.SubscriptionManager;
 import plugins.WebOfTrust.Trust;
 import plugins.WebOfTrust.WebOfTrust;
+import plugins.WebOfTrust.network.input.IdentityDownloaderFast.DownloadSchedulerCommand;
 import plugins.WebOfTrust.util.Daemon;
 import freenet.keys.FreenetURI;
 
@@ -24,7 +25,8 @@ import freenet.keys.FreenetURI;
  * the {@link IdentityFileProcessor}.
  * 
  * Implementations are allowed to and do store pointers to {@link Identity} and {@link OwnIdentity}
- * objects in their database, currently as part of {@link EditionHint} objects.
+ * objects in their database, e.g. as part of {@link EditionHint} objects and
+ * {@link DownloadSchedulerCommand}s.
  * They must not store references to any other objects which are not a type managed by their own
  * database, e.g. {@link Trust} or {@link Score} (because this interface only has callbacks for
  * changes to Identity objects).
