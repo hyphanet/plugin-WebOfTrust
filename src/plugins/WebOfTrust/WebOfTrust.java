@@ -46,6 +46,7 @@ import plugins.WebOfTrust.introduction.IntroductionPuzzleStore;
 import plugins.WebOfTrust.introduction.IntroductionServer;
 import plugins.WebOfTrust.introduction.OwnIntroductionPuzzle;
 import plugins.WebOfTrust.network.input.EditionHint;
+import plugins.WebOfTrust.network.input.IdentityDownloader;
 import plugins.WebOfTrust.network.input.IdentityDownloaderController;
 import plugins.WebOfTrust.network.input.IdentityDownloaderFast;
 import plugins.WebOfTrust.ui.fcp.DebugFCPClient;
@@ -3257,7 +3258,12 @@ public final class WebOfTrust extends WebOfTrustInterface
 	
 	/**
 	 * Gives some {@link Trust} to another Identity.
-	 * It creates or updates an existing Trust object and make the trustee compute its {@link Score}.
+	 * 
+	 * It creates or updates an existing Trust object and computes the received {@link Score}s of
+	 * the trustee.
+	 * It will notify the {@link IdentityDownloader} about resulting changes of whether the trustee
+	 * is eligible for download.
+	 * The {@link SubscriptionManager} will be notified about the changed Trust and changed Scores.
 	 * 
 	 * This function does neither lock the database nor commit the transaction. You have to surround it with
 	 * synchronized(WebOfTrust.this) {
