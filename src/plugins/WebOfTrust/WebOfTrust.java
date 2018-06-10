@@ -3441,8 +3441,12 @@ public final class WebOfTrust extends WebOfTrustInterface
 	 *     try { ... initTrustTreeWithoutCommit(...); Persistent.checkedCommit(mDB, this); }
 	 *     catch(RuntimeException e) { Persistent.checkedRollbackAndThrow(mDB, this, e); }
 	 * }}
+	 * 
+	 * TODO: Code quality: Rename to something else as what it does is creating a Score, not
+	 * a Trust.
 	 *  
 	 * @throws DuplicateScoreException if there already is more than one Score for this identity (should never happen)
+	 *         TODO: Code quality: Throw a plain RuntimeException instead.
 	 */
 	private void initTrustTreeWithoutCommit(OwnIdentity identity) throws DuplicateScoreException {
 		try {
