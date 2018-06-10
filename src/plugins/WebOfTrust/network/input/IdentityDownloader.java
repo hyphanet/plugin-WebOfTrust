@@ -289,18 +289,14 @@ public interface IdentityDownloader extends Daemon {
 	 *   However the existing implementation of this callback here don't care about this, and in
 	 *   fact it does need the Scores, so this difference is hereby required.
 	 * 
-	 * - May not be called for all changes to attributes of the Trust but will be called upon:
+	 * - Is not called for all changes to attributes of the Trust but will only be called upon:
 	 *   * {@link Trust#getValue()} changes.
-	 *   * {@link Trust#getTruster()} changes its type from OwnIdentity to Identity or vice versa.
-	 *       FIXME: It may not actually be called in the above cases because the implementations of
-	 *       {@link WebOfTrust#restoreOwnIdentity(FreenetURI)} and
-	 *       {@link WebOfTrust#deleteOwnIdentity(String)} probably handle the type change by
-	 *       deleting the trust objects and re-creating them in separate calls to
-	 *       {@link WebOfTrust#removeTrust(String, String)} and
-	 *       {@link WebOfTrust#setTrust(String, String, byte, String)}.
-	 *       EDIT: It certainly is not called in the case of restoreOwnIdentity(), see
-	 *       {@link #storeRestoreOwnIdentityCommandWithoutCommit(Identity, OwnIdentity)}.
 	 *   * a Trust is created or deleted.
+	 * 
+	 * - Is NOT called if the {@link Trust#getTruster()} / {@link Trust#getTrustee()} is deleted,
+	 *   {@link #storePreDeleteIdentityCommand(Identity)} is called for that case.
+	 *   For the truster / trustee changing their type due to deleting / restoring an
+	 *   {@link OwnIdentity} there are also separate callbacks.
 	 * 
 	 * - Synchronization requirements:
 	 *   This function is guaranteed to be called while the following locks are being held in the
@@ -318,64 +314,29 @@ public interface IdentityDownloader extends Daemon {
 	 * passes a clone for newTrust, consider to change it to not call this callback as suggested by
 	 * the comments there, and relax the "ATTENTION" to only be about oldTrust (which usually always
 	 * be a clone because it represents a historical state).
+	 * EDIT: The above FIXME was written before the case of truster/trustee changing their class
+	 * between OwnIdentity and Identity was moved to separate callbacks, which also includes
+	 * deleteWithoutCommit(Identity). Thus what it assumes about deleteWithoutCommit() likely
+	 * doesn't apply anymore.
 	 * 
 	 * FIXME: Make the WebOfTrust actually call it. Find the places where to call it by using your
 	 * IDE to look up where WoT calls the similar function at SubscriptionManager.
+	 * Also use use Eclipse's "Open Call Hierarchy" feature to inspect all places where
+	 * {@link Trust#storeWithoutCommit()} and {@link Trust#deleteWithoutCommit()} are called.
 	 * Do not call it in the very same place but some lines later *after* Score computation is
 	 * finished to obey that requirement as aforementioned.
-	 * EDIT: It is actually not true that the set of calls to
-	 * {@link SubscriptionManager#storeTrustChangedNotificationWithoutCommit()} includes every
-	 * place where we need to call this callback:
-	 * At least {@link WebOfTrust#deleteOwnIdentity(String)} and p
-	 * {@link WebOfTrust#restoreOwnIdentityWithoutCommit(FreenetURI)} don't call the
-	 * SubscriptionManager's callback but are very relevant to the {@link IdentityDownloaderFast}
-	 * because the set of Identitys it wants to download is precisely those which have received a
-	 * Trust by an OwnIdentity. Thus when resolving this FIXME please think about all potential
-	 * places where this callback needs to be called. An inspiration for this may be
+	 * Further an inspiration for determining whether everything is covered is
 	 * AbstractJUnit4BaseTest's function doRandomChangesToWoT(), it attempts to cover all types of
 	 * changes to the database.
-	 * The proper approach though may be to use Eclipse's "Open Call Hierarchy" feature to inspect
-	 * all places where {@link Trust#storeWithoutCommit()} and {@link Trust#deleteWithoutCommit()}
-	 * are called.
-	 * Further it might make sense to change the JavaDoc of this callback here to not compare it
+	 * 
+	 * FIXME: It might make sense to change the JavaDoc of this callback here to not compare it
 	 * to SubscriptionManager's callback anymore as the set of differences has already become too
 	 * large.
 	 * 
 	 * FIXME: Rename to storeOwnTrustChanged...(), make callers only call it for Trusts where
 	 * the truster is an OwnIdentity.
 	 * They currently are the only ones which IdentityDownloaderFast is interested in, and it likely
-	 * will stay as is for a long time. Yes, it it is easy to just implement this function there to
-	 * ignore non-own Trusts. But my efforts to adapt all of WoT, specifically
-	 * restoreOwnIdentity...(), to call the function for non-own Trusts as well have shown that it
-	 * seems rather difficult to do so *while* obeying its requirements. Namely calling it *after*
-	 * the Score database has been updated seems to be difficult in the context of
-	 * restoreOwnIdentity() (because it calls setTrustWithoutCommit(), which does call this
-	 * function here on its own. Though perhaps that is not a problem, I was rather tired when I
-	 * noticed it).
-	 * Spending the effort of figuring that out is probably more work than it would take to rename
-	 * the function and change the callers to only call it for own Trusts.
-	 * And even if in the future some other implementation of IdentityDownloader is written which is
-	 * interested in non-own Trusts it may then probably be necessary to review the conditions under
-	 * which the function is called anyway - so we might postpone the task of calling it for non-own
-	 * Trusts to that point in time, if it ever happens.
-	 * EDIT: The above great effort to adapt restoreOwnIdentity...() to be able to call this may
-	 * become a lot less complex if we just fully bail out on having to call this function there by
-	 * introducing a separate callback for signaling restoreOwnIdentity..() to the
-	 * IdentityDownloader, i.e. "storeRestoreOwnIdentityCommand...(Identity oldIdentity, OwnIdentity
-	 * newIdentity). That would avoid useless computations completely and also be very easy to
-	 * implement at IdentityDownloaderFast: It merely would have to start downloads for all trustees
-	 * of the OwnIdentity. Further it would likely resolve the issue of IdentityDownloaderFast's
-	 * DownloadSchedulerCommand objects containing database pointers to the Identity object which
-	 * have to be deleted as the Identity object is deleted by restoreOwnIdentity() -
-	 * IdentityDownloaderFast would become aware of the necessity to get rid of the stale pointers
-	 * before they become stale. Right now with the existing naming and purpose of this callback it
-	 * would receive a lot of calls where the Trust objects of the to-be-deleted Identity are
-	 * deleted, which would mean that it would store DownloadSchedulerCommand objects pointing to
-	 * the deleted Identity, so it would create even more stale pointers.
-	 * If the IdentityDownloaderFast becomes aware of Identity deletion with a separate 
-	 * storeRestoreOwnIdentityCommand...() then it can likely handle the pointers properly.
-	 * ... If you go for the approach of the separate callback you then should also deal in the
-	 * same way with WebOfTrust.deleteOwnIdentity...(), it has the same issues.*/
+	 * will stay as is for a long time. */
 	void storeTrustChangedCommandWithoutCommit(Trust oldTrust, Trust newTrust);
 
 	/**
