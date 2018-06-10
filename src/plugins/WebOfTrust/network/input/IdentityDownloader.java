@@ -57,30 +57,6 @@ import freenet.keys.FreenetURI;
  * this interface. */
 public interface IdentityDownloader extends Daemon {
 
-	/* FIXME: The following five function declarations should replace the complex cruft of using all
-	 * the other following functions at:
-	 * - WebOfTrust.deleteWithoutCommit(Identity)
-	 * - WebOfTrust.deleteOwnIdentity()
-	 * - WebOfTrust.restoreDownIdentity()
-	 * 
-	 * Namely they will resolve the issue of having deletion/restoring only being handled by
-	 * single callbacks instead of having pre/post callbacks, which used to cause the problems of:
-	 * - The Trust and especially Score database not yet being fully updated to reflect the Identity
-	 *   type changes at the point when the old callbacks were being called, but the callbacks
-	 *   needing that (fully updating them before wasn't possible due to constraints of the
-	 *   implementations of the said functions at WebOfTrust. E.g. Score computation doesn't work if
-	 *   two copies of the same Identity exist in the database).
-	 * - both the old and the new Identity existing at the same time when the callbacks were being
-	 *   called, which would break database queries for the Identity by ID.
-	 * 
-	 * Their implementations should fully replace:
-	 * - storeDeleteOwnIdentityCommandWithoutCommit()
-	 * - storeRestoreOwnIdentityCommandWithoutCommit().
-	 * 
-	 * The other functions will keep existing for their remaining other purposes and should have
-	 * their JavaDoc adapted to state that identity deletion/restoring is handled by these new
-	 * functions here. */
-	
 	/**
 	 * Called by {@link WebOfTrust#deleteOwnIdentity(String)} before any action is taken towards
 	 * deleting an {@link OwnIdentity}.
