@@ -5455,24 +5455,24 @@ public final class WebOfTrust extends WebOfTrustInterface
 	 */
 	public OwnIdentity restoreOwnIdentityWithoutCommit(FreenetURI insertFreenetURI) throws MalformedURLException, InvalidParameterException {
 		Logger.normal(this, "restoreOwnIdentity(): Starting... ");
-
+		
+		long edition = 0;
+		try {
+			// A negative sign in an USK edition indicates that Freenet should try to fetch
+			// the latest edition before showing something to the user.
+			// This is irrelevant in our case as we will try to fetch the latest edition
+			// anyway, so we can just take the absolute value.
+			// Taking the max(edition, abs(...)) afterwards is necessary because abs()
+			// will return the negative Long.MIN_VALUE if the passed value was MIN_VALUE.
+			// TODO: Code quality: Perhaps instead use Long.MAX_VALUE in that case? This should
+			// also be part of a unit test.
+			edition = max(edition, abs(insertFreenetURI.getEdition()));
+		} catch(IllegalStateException e) {
+			// The user supplied URI did not have an edition specified
+		}
+		
 		try {
 			OwnIdentity identity;
-			long edition = 0;
-			
-			try {
-				// A negative sign in an USK edition indicates that Freenet should try to fetch
-				// the latest edition before showing something to the user.
-				// This is irrelevant in our case as we will try to fetch the latest edition
-				// anyway, so we can just take the absolute value.
-				// Taking the max(edition, abs(...)) afterwards is necessary because abs()
-				// will return the negative Long.MIN_VALUE if the passed value was MIN_VALUE.
-				// TODO: Code quality: Perhaps instead use Long.MAX_VALUE in that case? This should
-				// also be part of a unit test.
-				edition = max(edition, abs(insertFreenetURI.getEdition()));
-			} catch(IllegalStateException e) {
-				// The user supplied URI did not have an edition specified
-			}
 			
 			try { // Try replacing an existing non-own version of the identity with an OwnIdentity
 				Identity oldIdentity = getIdentityByURI(insertFreenetURI);
