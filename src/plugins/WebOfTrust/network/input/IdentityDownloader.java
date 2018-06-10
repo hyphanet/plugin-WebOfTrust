@@ -204,6 +204,12 @@ public interface IdentityDownloader extends Daemon {
 	 * was restored, either by replacing a non-own {@link Identity} with it or by creating it from
 	 * scratch.
 	 * 
+	 * This implies that:
+	 * - the non-own Identity has been deleted from the the database, the given replacement
+	 *   OwnIdentity object has been stored.
+	 * - the {@link Trust} and {@link Score} database has been fully updated to reflect the
+	 *   necessary changes.
+	 * 
 	 * For understanding the surrounding conditions of restoreOwnIdentity() please read the
 	 * documentation of {@link #storePreRestoreOwnIdentityCommand(Identity)} which is called before
 	 * this callback here.

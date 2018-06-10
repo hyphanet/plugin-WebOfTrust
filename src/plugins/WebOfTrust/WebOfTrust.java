@@ -5605,6 +5605,13 @@ public final class WebOfTrust extends WebOfTrustInterface
 				// mFullScoreComputationNeeded to true to delay Score computation until finishTrustListImport().
 				// Do benchmarks. However first the problem of storePostRestoreOwnIdentityCommand() having to be
 				// called before finishTrustListImport() as elaborated below must be resolved.
+				// Calling it after that would also ensure that the existing documentation of
+				// storePostRestoreOwnIdentityCommand() is fully correct against future changes:
+				// It claims the Score database has been updated when it is called, but
+				// the purpose of beginTrustListImport() and finishTrustListImport() used to be
+				// to defer Score computation until the latter is called. Currently that isn't the
+				// case anymore (as Score computation was optimized recently as part of build0018)
+				// but it may be changed in the future to defer it again for certain optimizations.
 				for(Trust givenTrust : oldGivenTrusts)
 					setTrustWithoutCommit(identity, givenTrust.getTrustee(), givenTrust.getValue(), givenTrust.getComment());
 				
