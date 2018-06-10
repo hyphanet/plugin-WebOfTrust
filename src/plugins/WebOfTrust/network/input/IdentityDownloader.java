@@ -262,19 +262,8 @@ public interface IdentityDownloader extends Daemon {
 	 *   has rated it as trustworthy enough for us to download it.
 	 *   The {@link Trust} and {@link Score} database is guaranteed to be up to date when this
 	 *   function is called and thus can be used by it.
-	 * - in special cases such as deletion/restoring of an OwnIdentity.
-	 *   FIXME: For those special cases we probably shouldn't call it but instead only call:
-	 *   - For restoring {@link #storeRestoreOwnIdentityCommandWithoutCommit(Identity, OwnIdentity)}
-	 *   - For deletion the preoposed similar callback, the proposal is at
-	 *     {@link #storeTrustChangedCommandWithoutCommit(Trust, Trust)}.
-	 *   (This also applies to {@link #storeStartFetchCommandWithoutCommit(Identity)}, see the FIXME
-	 *   at {@link WebOfTrust#restoreOwnIdentityWithoutCommit(FreenetURI)}.)
-	 *   That is probably necessary because in those special cases the Identity object will be
-	 *   deleted by WoT after the callback returns. This implies that the callback must not store
-	 *   a pointer to the Identity object to the database, which would be more obvious under the
-	 *   circumstances of special callbacks for restoring/deletion: They will be passed two
-	 *   Identity objects so it is obvious that one is going away. Further deploying two callbacks
-	 *   for the same event is more confusing than having only one.
+	 * - but is not called upon deletion/restoring of an OwnIdentity, see the other callbacks for
+	 *   that.
 	 * 
 	 * Synchronization:
 	 * This function is guaranteed to be called while the following locks are being held in the
