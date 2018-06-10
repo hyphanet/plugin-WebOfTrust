@@ -85,7 +85,14 @@ public interface IdentityDownloader extends Daemon {
 	 * Implementations can assume that when this function is called:
 	 * - the OwnIdentity still is stored in the database, the replacement Identity object has not
 	 *   been created yet.
-	 * - the Trust and Score database has not been changed yet. */
+	 * - the Trust and Score database has not been changed yet.
+	 * 
+	 * Synchronization:
+	 * This function is guaranteed to be called while the following locks are being held in the
+	 * given order:
+	 * synchronized(Instance of WebOfTrust)
+	 * synchronized(WebOfTrust.getIdentityDownloaderController())
+	 * synchronized(Persistent.transactionLock(WebOfTrust.getDatabase())) */
 	@NeedsTransaction void storePreDeleteOwnIdentityCommand(OwnIdentity oldIdentity);
 
 	/**
@@ -98,7 +105,14 @@ public interface IdentityDownloader extends Daemon {
 	 *   necessary changes.
 	 * 
 	 * FIXME: {@link #storePreDeleteOwnIdentityCommand(OwnIdentity)} documents more of the duties
-	 * of this callback, should be documented here as well. */
+	 * of this callback, should be documented here as well.
+	 * 
+	 * Synchronization:
+	 * This function is guaranteed to be called while the following locks are being held in the
+	 * given order:
+	 * synchronized(Instance of WebOfTrust)
+	 * synchronized(WebOfTrust.getIdentityDownloaderController())
+	 * synchronized(Persistent.transactionLock(WebOfTrust.getDatabase())) */
 	@NeedsTransaction void storePostDeleteOwnIdentityCommand(Identity newIdentity);
 
 	/**
@@ -137,7 +151,14 @@ public interface IdentityDownloader extends Daemon {
 	 * 
 	 * Implementations can assume that when this function is called:
 	 * - the Identity still is stored in the database.
-	 * - the Trust and Score database has not been changed yet. */
+	 * - the Trust and Score database has not been changed yet.
+	 * 
+	 * Synchronization:
+	 * This function is guaranteed to be called while the following locks are being held in the
+	 * given order:
+	 * synchronized(Instance of WebOfTrust)
+	 * synchronized(WebOfTrust.getIdentityDownloaderController())
+	 * synchronized(Persistent.transactionLock(WebOfTrust.getDatabase())) */
 	@NeedsTransaction void storePreDeleteIdentityCommand(Identity oldIdentity);
 
 	// There is no replacement Identity when a non-own Identity is deleted.
@@ -168,7 +189,14 @@ public interface IdentityDownloader extends Daemon {
 	 * Implementations can assume that when this function is called:
 	 * - the Identity still is stored in the database, the replacement OwnIdentity object has not
 	 *   been created yet.
-	 * - the Trust and Score database has not been changed yet. */
+	 * - the Trust and Score database has not been changed yet.
+	 * 
+	 * Synchronization:
+	 * This function is guaranteed to be called while the following locks are being held in the
+	 * given order:
+	 * synchronized(Instance of WebOfTrust)
+	 * synchronized(WebOfTrust.getIdentityDownloaderController())
+	 * synchronized(Persistent.transactionLock(WebOfTrust.getDatabase())) */
 	@NeedsTransaction void storePreRestoreOwnIdentityCommand(Identity oldIdentity);
 
 	/**
@@ -201,7 +229,14 @@ public interface IdentityDownloader extends Daemon {
 	 * These callbacks might e.g. be:
 	 * - {@link #storeStartFetchCommandWithoutCommit(Identity)}
 	 * - {@link #storeTrustChangedCommandWithoutCommit(Trust, Trust)}
-	 * Implementations of this callback here must be safe against side effects from that. */
+	 * Implementations of this callback here must be safe against side effects from that.
+	 * 
+	 * Synchronization:
+	 * This function is guaranteed to be called while the following locks are being held in the
+	 * given order:
+	 * synchronized(Instance of WebOfTrust)
+	 * synchronized(WebOfTrust.getIdentityDownloaderController())
+	 * synchronized(Persistent.transactionLock(WebOfTrust.getDatabase())) */
 	@NeedsTransaction void storePostRestoreOwnIdentityCommand(OwnIdentity newIdentity);
 
 	/**
@@ -268,13 +303,6 @@ public interface IdentityDownloader extends Daemon {
 	 *   For the truster / trustee changing their type due to deleting / restoring an
 	 *   {@link OwnIdentity} there are also separate callbacks.
 	 * 
-	 * - Synchronization requirements:
-	 *   This function is guaranteed to be called while the following locks are being held in the
-	 *   given order:
-	 *   synchronized(Instance of WebOfTrust)
-	 *   synchronized(WebOfTrust.getIdentityDownloaderController())
-	 *   synchronized(Persistent.transactionLock(WebOfTrust.getDatabase()))
-	 * 
 	 * ATTENTION: The passed {@link Trust} objects may be {@link Trust#clone()}s of the original
 	 * objects. Hence when you want to do database queries using e.g. them, their
 	 * {@link Trust#getTruster()} or {@link Trust#getTrustee()} you need to first re-query those
@@ -306,7 +334,14 @@ public interface IdentityDownloader extends Daemon {
 	 * FIXME: Rename to storeOwnTrustChanged...(), make callers only call it for Trusts where
 	 * the truster is an OwnIdentity.
 	 * They currently are the only ones which IdentityDownloaderFast is interested in, and it likely
-	 * will stay as is for a long time. */
+	 * will stay as is for a long time.
+	 * 
+	 * Synchronization:
+	 * This function is guaranteed to be called while the following locks are being held in the
+	 * given order:
+	 * synchronized(Instance of WebOfTrust)
+	 * synchronized(WebOfTrust.getIdentityDownloaderController())
+	 * synchronized(Persistent.transactionLock(WebOfTrust.getDatabase())) */
 	void storeTrustChangedCommandWithoutCommit(Trust oldTrust, Trust newTrust);
 
 	/**
@@ -340,13 +375,30 @@ public interface IdentityDownloader extends Daemon {
 	 * This function is guaranteed to be called while the following locks are being held in the
 	 * given order:
 	 * synchronized(Instance of WebOfTrust)
-	 * synchronized(WebOfTrust.getIdentityDownloaderController()) */
+	 * synchronized(WebOfTrust.getIdentityDownloaderController())
+	 * synchronized(Persistent.transactionLock(WebOfTrust.getDatabase())) */
 	boolean getShouldFetchState(Identity identity);
 
 	/**
 	 * ATTENTION: For debugging purposes only.
 	 * 
-	 * Specifically: {@link WebOfTrust#checkForDatabaseLeaks()} uses this for debugging. */
+	 * Specifically: {@link WebOfTrust#checkForDatabaseLeaks()} uses this for debugging.
+	 * 
+	 * Synchronization:
+	 * This function is NOT called with any locks held! It has to create a database transaction of
+	 * its own as follows, while taking the thereby listed locks:
+	 * <code>
+	 * synchronized(Instance of WebOfTrust) {
+	 * synchronized(WebOfTrust.getIdentityDownloaderController()) {
+	 * synchronized(Persistent.transactionLock(WebOfTrust.getDatabase())) {
+	 *     try {
+	 *        deleteTheCommands();
+	 *        Persistent.checkedCommit(database, this);
+	 *     } catch(RuntimeException e) {
+	 *         Persistent.checkedRollbackAndThrow(database, this, e);
+	 *     }
+	 * }}}
+	 * </code> */
 	void deleteAllCommands();
 
 }
