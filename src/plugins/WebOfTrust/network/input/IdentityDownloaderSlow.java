@@ -1134,41 +1134,6 @@ public final class IdentityDownloaderSlow implements
 		storeStartFetchCommandWithoutCommit(newIdentity);
 	}
 
-	/**
-	 * FIXME: Implement, see
-	 * {@link IdentityDownloader#storeRestoreOwnIdentityCommandWithoutCommit(Identity, OwnIdentity)}
-	 * When implementing it make sure to store an EditionHint for the edition of the newIdentity:
-	 * IdentityDownloaderFast won't restart a pending USK subscription to the Identity so it won't
-	 * become aware of the user having provided a higher edition number when entering the USK of
-	 * the OwnIdentity.
-	 */
-	@Override public void storeRestoreOwnIdentityCommandWithoutCommit(Identity oldIdentity,
-			OwnIdentity newIdentity) {
-		
-		// These are what WebOfTrust.restoreOwnIdentity() used to call before this callback here
-		// was added. When resolving the above FIXME of actually implementing this function you
-		// should review whether what they do is sufficient to deal with the requirements.
-		// Also notice that the point in time where storeStartFetchCommandWithoutCommit() is called
-		// was changed by moving it to this place: Previously it was being called by
-		// WebOfTrust.restoreOwnIdenityWithoutCommit() after the Trust/Score database was fully
-		// updated to comply with the restoring procedure. Now by inlineing the call to it into
-		// this function here it is called after having replaced the Trusts/Scores pointing to
-		// the oldIdentity, but before restoring its given Trusts using
-		// WebOfTrust.storeTrustWithoutCommit(). This intermediate state of the Trust/Score database
-		// may have bad side effects on the database queries of storeStartFetchCommand...().
-		// To alleviate that it may be indicated to split up this callback into two:
-		// storePreRestoreOwnIdentityCommand...() and storePostRestoreOwnIdentityCommand...().
-		// The former would be called before deletion of the oldIdentity, the latter after the
-		// Trust/Score database has been fully updated.
-		// Perhaps we can also go for handling part of restoring as a special case of Identity
-		// deletion by introducing a storeDeleteIdentityCommmand() instead of storePre...().
-		// That function could also fulfill the purpose of storeDeleteOwnIdentityCommand...().
-		/*
-		storeAbortFetchCommandWithoutCommit(oldIdentity);
-		storeStartFetchCommandWithoutCommit(newIdentity);
-		*/
-	}
-
 	/** This callback is not used by this class. */
 	@Override public void storeTrustChangedCommandWithoutCommit(Trust oldTrust, Trust newTrust) {
 	}
