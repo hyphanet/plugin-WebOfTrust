@@ -274,42 +274,6 @@ public interface IdentityDownloader extends Daemon {
 	void storeAbortFetchCommandWithoutCommit(Identity identity);
 
 	/**
-	 * Called by {@link WebOfTrust#restoreOwnIdentityWithoutCommit(FreenetURI)} when the class of an
-	 * {@link Identity} changes to {@link OwnIdentity}.
-	 * Is supposed to adjust the IdentityDownloader's decision of which {@link Identity}s to
-	 * download, e.g. due to the facts that:
-	 * - Identitys which have received a >= 0 Trust by an OwnIdentity are always supposed to be
-	 *   downloaded.
-	 * - OwnIdentitys are also always downloaded.
-	 * Please notice that the user may provide a {@link FreenetURI#getSuggestedEdition()} in the
-	 * USK URI when restoring the OwnIdentity, and thus if a download is already running the
-	 * edition may need to be adjusted to the {@link Identity#getNextEditionToFetch()} of the given
-	 * newIdentity.
-	 * 
-	 * Must ensure that no references to the oldIdentity object are stored in the db4o database by
-	 * the particular IdentityDownloader implementation as the object will be deleted from the
-	 * database after the callback returns.
-	 * 
-	 * Synchronization:
-	 * This function is guaranteed to be called while the following locks are being held in the
-	 * given order:
-	 * synchronized(Instance of WebOfTrust)
-	 * synchronized(WebOfTrust.getIdentityDownloaderController())
-	 * synchronized(Persistent.transactionLock(WebOfTrust.getDatabase())) 
-	 * 
-	 * FIXME: Implement at the child classes IdentityDownloaderFast and IdentityDownloaderSlow.
-	 * Adapt restoreOwnIdentity() to call it. Then JavaDoc this once the requirements of the
-	 * callback have been become apparent by implementing it. 
-	 * This callback was introduced during attempts to implement calling of
-	 * {@link #storeTrustChangedCommandWithoutCommit(Trust, Trust)} by restoreOwnIdentty(), during
-	 * which it was discovered that it would be too complex to deploy that callback under the
-	 * circumstances of restoreOwnIdentity(). Those circumstances are described at the JavaDoc of
-	 * that callback.
-	 * Therefore please also take the requirements of that callback into consideration for the
-	 * pending documentation of this callback here. */
-	void storeRestoreOwnIdentityCommandWithoutCommit(Identity oldIdentity, OwnIdentity newIdentity);
-
-	/**
 	 * Called under almost the same circumstances as
 	 * {@link SubscriptionManager#storeTrustChangedNotificationWithoutCommit()} except for the
 	 * following differences:
