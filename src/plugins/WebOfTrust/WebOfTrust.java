@@ -5498,10 +5498,9 @@ public final class WebOfTrust extends WebOfTrustInterface
 				
 				identity = new OwnIdentity(this, insertFreenetURI, oldIdentity.getNickname(), oldIdentity.doesPublishTrustList());
 				
-				/* We re-fetch the most recent edition to make sure all trustees are imported */
 				edition = max(edition, oldIdentity.getLastFetchedEdition());
 				identity.restoreEdition(edition, oldIdentity.getLastFetchedDate());
-			
+				
 				identity.setContexts(oldIdentity.getContexts());
 				identity.setProperties(oldIdentity.getProperties());
 				
