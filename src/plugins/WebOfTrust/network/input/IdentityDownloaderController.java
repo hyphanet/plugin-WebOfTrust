@@ -153,9 +153,7 @@ public final class IdentityDownloaderController implements IdentityDownloader, D
 		// function for whether they are safe in all those cases.
 		assert(
 			(newTrust == null ^ oldTrust == null) ||
-			(newTrust.getValue() != oldTrust.getValue()) ||
-			(	  (newTrust.getTruster() instanceof OwnIdentity)
-				^ (oldTrust.getTruster() instanceof OwnIdentity))
+			(newTrust.getValue() != oldTrust.getValue())
 		) : "storeTrustChangedCommandWithoutCommit() called for irrelevant Trust change!";
 		
 		
