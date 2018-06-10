@@ -5548,8 +5548,6 @@ public final class WebOfTrust extends WebOfTrustInterface
 					newReceivedTrust.storeWithoutCommit();
 				}
 				
-				assert(getReceivedTrusts(oldIdentity).size() == 0);
-	
 				// Copy all received Scores.
 				// We don't have to modify them for the same reason as explained above for Trusts.
 				for(Score oldScore : getScores(oldIdentity)) {
@@ -5567,7 +5565,6 @@ public final class WebOfTrust extends WebOfTrustInterface
 					// Nothing has changed about the actual score so we do not notify.
 					// mSubscriptionManager.storeScoreChangedNotificationWithoutCommit(oldScore, newScore);
 				}
-				assert(getScores(oldIdentity).size() == 0);
 				
 				// Only OwnIdentitys assign Scores to other Identitys so there are no old *given*
 				// Scores to deal with, there only were received ones.
@@ -5594,8 +5591,6 @@ public final class WebOfTrust extends WebOfTrustInterface
 					
 					oldGivenTrust.deleteWithoutCommit();
 				}
-				
-				assert(getGivenTrusts(oldIdentity).size() == 0);
 				
 				// We do not call finishTrustListImport() now: It might trigger execution of computeAllScoresWithoutCommit
 				// which would re-create scores of the old identity. We later call it AFTER deleting the old identity.
