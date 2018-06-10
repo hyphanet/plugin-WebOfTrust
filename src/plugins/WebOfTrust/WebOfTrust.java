@@ -5540,6 +5540,8 @@ public final class WebOfTrust extends WebOfTrustInterface
 					// The following assert() cannot be added because it would always fail:
 					// It would implicitly trigger oldIdentity.equals(identity) which is not the case:
 					// Certain member values such as the edition might not be equal.
+					// TODO: Code quality: Add equalsShallow() and use that. Apply the same concept
+					// for Score in the below loop, and at deleteOwnIdentity().
 					/* assert(newReceivedTrust.equals(oldReceivedTrust)); */
 					
 					oldReceivedTrust.deleteWithoutCommit();
