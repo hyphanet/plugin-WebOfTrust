@@ -593,6 +593,10 @@ public final class IdentityDownloaderFast implements
 				// which would become null by the upcoming deletion of the Identity.
 				// Thus we must delete the stale command to create a fresh one later on.
 				pendingCommand.deleteWithoutCommit();
+				
+				// Not valid here: StartDownloadCommands may be stored when there already is a
+				// download - for handling of Identity.markForRefetch().
+				/* assert(!mDownloads.containsKey(id)); */
 			} else {
 				assert(pendingCommand instanceof StopDownloadCommand);
 				
