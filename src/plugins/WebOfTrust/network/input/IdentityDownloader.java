@@ -397,7 +397,12 @@ public interface IdentityDownloader extends Daemon {
 	/**
 	 * ATTENTION: For debugging purposes only.
 	 * 
-	 * Specifically: {@link WebOfTrust#checkForDatabaseLeaks()} uses this for debugging.
+	 * Should delete all queued commands about starting/stopping downloads.
+	 * I.e. it should delete the whole db4o database table of the implementation.
+	 * TODO: Code quality: Hence rename to e.g. deleteDatabaseContents().
+	 * 
+	 * This is to allow {@link WebOfTrust#checkForDatabaseLeaks()} to test for whether there are
+	 * any database leaks in the subsystems of WoT.
 	 * 
 	 * Synchronization:
 	 * This function is NOT called with any locks held! It has to create a database transaction of
