@@ -31,16 +31,31 @@ import freenet.keys.FreenetURI;
  * database, e.g. {@link Trust} or {@link Score} (because this interface only has callbacks for
  * changes to Identity objects).
  * 
- * <b>Locking:</b>
- * Implementations  must synchronize transactions by taking the following locks in the given order:
- * - the {@link WebOfTrust} object
- * - the {@link WebOfTrust#getIdentityDownloaderController()} object, notably INSTEAD OF locking
- *   upon themselves. This is to allow the {@link IdentityDownloaderController} to be the central
- *   lock in case multiple types of IdentityDownloader are running in parallel. That in turn allows
- *   the WoT core to not have to synchronize upon whichever specific IdentityDownloader
- *   implementations are being used currently. It can instead just synchronize upon the single
- *   {@link IdentityDownloaderController} instance.
- * - the {@link Persistent#transactionLock(com.db4o.ext.ExtObjectContainer)}
+ * Synchronization:
+ * 
+ * Most (but not all!) callbacks are guaranteed to be called while the following locks are being
+ * held in the following order for the following purposes:
+ * 1. synchronized(Instance of WebOfTrust):
+ *      In order to allow them to access the db4o database table of the Identity, Trust and Score
+ *      objects. Especially the Score objects, and in some cases the Trust objects, will be
+ *      necessary for them to decide whether to download an Identity.
+ * 2. synchronized({@link WebOfTrust#getIdentityDownloaderController()}):
+ *      To serve as central db4o database "table" lock for all objects which IdentityDownloader
+ *      implementations store inside the db4o database. These are e.g {@link EditionHint} and
+ *      {@link DownloadSchedulerCommand} objects.
+ *      Having the central lock for the implementations be dictated to be the single
+ *      {@link IdentityDownloaderController} allows the code which calls the callbacks to provide
+ *      thread-safety independent of how multiple IdentityDownloader implementations, which can be
+ *      running in parallel, work internally.
+ * 3. synchronized(Persistent.transactionLock(WebOfTrust.getDatabase())):
+ *      Due to the callbacks being part of a database transaction and hence being allowed to change
+ *      the database contents.
+ * 
+ * Thus any threads which implementations run on their own must use at least locks 2 and 3 to guard
+ * access to their own objects in their db4o database. This ensures concurrent calls to the
+ * callbacks by WoT threads are thread-safe.
+ * If an implementation also stores references to Identity objects inside of its own objects, as
+ * allowed above, then it must further take lock 1 before taking the other ones.
  * 
  * TODO: Code quality: Rename the event handlers to "on...()".
  *
