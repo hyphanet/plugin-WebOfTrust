@@ -9,7 +9,6 @@ import plugins.WebOfTrust.IdentityFile;
 import plugins.WebOfTrust.IdentityFileProcessor;
 import plugins.WebOfTrust.IdentityFileQueue;
 import plugins.WebOfTrust.OwnIdentity;
-import plugins.WebOfTrust.Persistent;
 import plugins.WebOfTrust.Persistent.NeedsTransaction;
 import plugins.WebOfTrust.Score;
 import plugins.WebOfTrust.SubscriptionManager;
