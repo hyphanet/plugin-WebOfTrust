@@ -61,9 +61,10 @@ import freenet.keys.FreenetURI;
  *
  * TODO: Code quality: Sort callbacks in an order which makes their purpose the most easy to
  * understand, also in implementing classes.
- *
- * FIXME: Review the whole of class {@link IdentityFetcher} for any important JavaDoc and add it to
- * this interface. */
+ * 
+ * TODO: Code quality: Review the whole of class {@link IdentityFetcher}, which is the reference
+ * implementation of Identity downloading we had before this one, for any important JavaDoc and add
+ * it to this interface. */
 public interface IdentityDownloader extends Daemon {
 
 	/**
