@@ -64,7 +64,10 @@ import freenet.keys.FreenetURI;
  * 
  * TODO: Code quality: Review the whole of class {@link IdentityFetcher}, which is the reference
  * implementation of Identity downloading we had before this one, for any important JavaDoc and add
- * it to this interface. */
+ * it to this interface.
+ * 
+ * FIXME: Once all FIXMEs here are finished review call hierarchy of all callbacks once more for
+ * whether they're being called in the correct places. */
 public interface IdentityDownloader extends Daemon {
 
 	/**
