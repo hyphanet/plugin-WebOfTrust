@@ -1180,14 +1180,7 @@ public final class IdentityDownloaderFast implements
 				Logger.warning(this, "Deleting all DownloadSchedulerCommands, should only happen "
 				                   + " for debugging purposes! ...");
 				
-				int amount = 0;
-				for(DownloadSchedulerCommand c : getAllQueuedCommands()) {
-					c.deleteWithoutCommit();
-					++amount;
-				}
-				
-				Logger.warning(this, "Deleted " + amount + " DownloadSchedulerCommands.");
-				
+				deleteAllCommandsWithoutCommit();
 				Persistent.checkedCommit(mDB, this);
 			}
 			catch(RuntimeException e) {
@@ -1196,6 +1189,19 @@ public final class IdentityDownloaderFast implements
 		}
 		}
 		}
+	}
+
+	private void deleteAllCommandsWithoutCommit() {
+		Logger.normal(this, "deleteAllCommandsWithoutCommit()...");
+		
+		int amount = 0;
+		for(DownloadSchedulerCommand c : getAllQueuedCommands()) {
+			c.deleteWithoutCommit();
+			++amount;
+		}
+		
+		Logger.normal(this, "deleteAllCommandsWithoutCommit(): Deleted " + amount +
+			" DownloadSchedulerCommands.");
 	}
 
 	/** @see #getQueuedCommand(String) */
