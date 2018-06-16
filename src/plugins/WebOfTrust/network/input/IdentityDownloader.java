@@ -335,16 +335,6 @@ public interface IdentityDownloader extends Daemon {
 	 * deleteWithoutCommit(Identity). Thus what it assumes about deleteWithoutCommit() likely
 	 * doesn't apply anymore.
 	 * 
-	 * FIXME: Make the WebOfTrust actually call it. Find the places where to call it by using your
-	 * IDE to look up where WoT calls the similar function at SubscriptionManager.
-	 * Also use use Eclipse's "Open Call Hierarchy" feature to inspect all places where
-	 * {@link Trust#storeWithoutCommit()} and {@link Trust#deleteWithoutCommit()} are called.
-	 * Do not call it in the very same place but some lines later *after* Score computation is
-	 * finished to obey that requirement as aforementioned.
-	 * Further an inspiration for determining whether everything is covered is
-	 * AbstractJUnit4BaseTest's function doRandomChangesToWoT(), it attempts to cover all types of
-	 * changes to the database.
-	 * 
 	 * FIXME: It might make sense to change the JavaDoc of this callback here to not compare it
 	 * to SubscriptionManager's callback anymore as the set of differences has already become too
 	 * large.
