@@ -9,6 +9,7 @@ import java.util.NoSuchElementException;
 import java.util.UUID;
 
 import plugins.WebOfTrust.exceptions.DuplicateObjectException;
+import plugins.WebOfTrust.network.input.IdentityDownloaderFast;
 import plugins.WebOfTrust.network.input.IdentityDownloaderSlow;
 import plugins.WebOfTrust.ui.fcp.FCPInterface.FCPCallFailedException;
 import plugins.WebOfTrust.util.Daemon;
@@ -1262,26 +1263,28 @@ public final class SubscriptionManager implements Daemon, PrioRunnable {
 	 * {@link #run()} on this {@link DelayedBackgroundJob}.
 	 * The execution typically is scheduled after a delay of {@link #PROCESS_NOTIFICATIONS_DELAY}.
 	 * 
-     * The value distinguishes the run state of this SubscriptionManager as follows:
-     * - Until {@link #start()} was called, defaults to {@link MockDelayedBackgroundJob#DEFAULT}
-     *   with {@link DelayedBackgroundJob#isTerminated()} == true.
-     * - Once {@link #start()} has been called, becomes a
-     *   {@link TickerDelayedBackgroundJob} with {@link DelayedBackgroundJob#isTerminated()}
-     *   == false.
-     * - Once {@link #stop()} has been called, stays a {@link TickerDelayedBackgroundJob} but has
-     *   {@link DelayedBackgroundJob#isTerminated()} == true for ever.
-     * 
-     * There can be exactly one start() - stop() lifecycle, a SubscriptionManager cannot be
-     * recycled.
-     * 
-     * Volatile since {@link #stop()} needs to use it without synchronization.
-     * 
-     * {@link IdentityDownloaderSlow#mJob} and {@link IdentityFetcher#mJob} are related to this,
-     * please apply changes there as well.
-     * 
-     * TODO: Code quality: Rename to mEventSenderThread or similar to make more self-explanatory. */
-    private volatile DelayedBackgroundJob mJob = MockDelayedBackgroundJob.DEFAULT;
-
+	 * The value distinguishes the run state of this SubscriptionManager as follows:
+	 * - Until {@link #start()} was called, defaults to {@link MockDelayedBackgroundJob#DEFAULT}
+	 *   with {@link DelayedBackgroundJob#isTerminated()} == true.
+	 * - Once {@link #start()} has been called, becomes a
+	 *   {@link TickerDelayedBackgroundJob} with {@link DelayedBackgroundJob#isTerminated()}
+	 *   == false.
+	 * - Once {@link #stop()} has been called, stays a {@link TickerDelayedBackgroundJob} but has
+	 *   {@link DelayedBackgroundJob#isTerminated()} == true for ever.
+	 * 
+	 * There can be exactly one start() - stop() lifecycle, a SubscriptionManager cannot be
+	 * recycled.
+	 * 
+	 * Concurrent write access to this variable by start() is guarded by synchronizing on this
+	 * SubscriptionManager.
+	 * Volatile since stop() needs to read it without synchronization.
+	 * 
+	 * {@link IdentityDownloaderFast#mDownloadSchedulerThread} and
+	 * {@link IdentityDownloaderSlow#mDownloadSchedulerThread} are related to this, please apply
+	 * changes there as well.
+	 * 
+	 * TODO: Code quality: Rename to mEventSenderThread or similar to make more self-explanatory. */
+	private volatile DelayedBackgroundJob mJob = MockDelayedBackgroundJob.DEFAULT;
 
 	/** Automatically set to true by {@link Logger} if the log level is set to {@link LogLevel#DEBUG} for this class.
 	 * Used as performance optimization to prevent construction of the log strings if it is not necessary. */
@@ -1919,7 +1922,9 @@ public final class SubscriptionManager implements Daemon, PrioRunnable {
 	}
 
 	/**
-	 * ATTENTION: For internal use only! TODO: Code quality: Wrap in a private class to hide it.
+	 * ATTENTION: For internal use only! TODO: Code quality: Wrap in a private class to hide it like
+	 * e.g. {@link IdentityDownloaderFast.DownloadScheduler}. Update the documentation of
+	 * {@link #mJob} to reflect that.
 	 * 
 	 * Sends out the {@link Notification} queue of each {@link Client}.
 	 * 
