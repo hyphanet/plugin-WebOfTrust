@@ -82,6 +82,18 @@ public final class IdentityDownloaderFast implements
 		USKRetrieverCallback {
 
 	/**
+	 * Once we have stored a {@link DownloadSchedulerCommand}, the {@link DownloadScheduler} is
+	 * scheduled to execute and start/stopo downloading of the specified command's {@link Identity}
+	 * after this delay.
+	 * The delay is non-zero to ensure we don't have to do multiple database queries if multiple
+	 * commands arrive in a short timespan - database queries are likely the most expensive
+	 * operation.
+	 * FIXME: Performance: Use a delay of 0 if no downloads are running currently, i.e. if
+	 * mDownloads.size() == 0.
+	 * TODO: Code quality: Make configurable. */
+	public static final long QUEUE_BATCHING_DELAY_MS = MINUTES.toMillis(1);
+
+	/**
 	 * Priority of USK subscription network requests, relative to {@link IdentityDownloaderSlow} as
 	 * we use a single {@link RequestClient} for that downloader and this one.
 	 * 
@@ -164,9 +176,15 @@ public final class IdentityDownloaderFast implements
 	 * processing at this {@link IdentityFileQueue}. */
 	private final IdentityFileQueue mOutputQueue;
 
+	/** Starts/stops downloads according to {@link DownloadSchedulerCommand}s.
+	 *  @see DownloadScheduler */
+	private final DownloadScheduler mDownloadScheduler = new DownloadScheduler();
+
 	/**
 	 * FIXME: Document similarly to {@link IdentityDownloaderSlow#mJob}.
 	 * FIXME: Initialize & implement.
+	 * 
+	 * The thread which runs the {@link #mDownloadScheduler}.
 	 * 
 	 * Concurrent write access to this variable is guarded by {@link #mLock}. 
 	 * 
