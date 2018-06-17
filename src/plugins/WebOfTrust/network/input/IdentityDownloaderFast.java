@@ -23,6 +23,7 @@ import plugins.WebOfTrust.OwnIdentity;
 import plugins.WebOfTrust.Persistent;
 import plugins.WebOfTrust.Persistent.InitializingObjectSet;
 import plugins.WebOfTrust.Score;
+import plugins.WebOfTrust.SubscriptionManager;
 import plugins.WebOfTrust.Trust;
 import plugins.WebOfTrust.WebOfTrust;
 import plugins.WebOfTrust.XMLTransformer;
@@ -33,6 +34,8 @@ import plugins.WebOfTrust.introduction.IntroductionPuzzle;
 import plugins.WebOfTrust.util.Daemon;
 import plugins.WebOfTrust.util.IdentifierHashSet;
 import plugins.WebOfTrust.util.jobs.DelayedBackgroundJob;
+import plugins.WebOfTrust.util.jobs.MockDelayedBackgroundJob;
+import plugins.WebOfTrust.util.jobs.TickerDelayedBackgroundJob;
 
 import com.db4o.ObjectSet;
 import com.db4o.ext.Db4oException;
@@ -181,15 +184,28 @@ public final class IdentityDownloaderFast implements
 	private final DownloadScheduler mDownloadScheduler = new DownloadScheduler();
 
 	/**
-	 * FIXME: Document similarly to {@link IdentityDownloaderSlow#mJob}.
-	 * FIXME: Initialize & implement.
+	 * The thread which runs the {@link DownloadScheduler} {@link #mDownloadScheduler}.
+	 * The execution typically is scheduled after a delay of {@link #QUEUE_BATCHING_DELAY_MS}.
 	 * 
-	 * The thread which runs the {@link #mDownloadScheduler}.
+	 * The value distinguishes the run state of this IdentityDownloader as follows:
+	 * - Until {@link #start()} was called, defaults to {@link MockDelayedBackgroundJob#DEFAULT}
+	 *   with {@link DelayedBackgroundJob#isTerminated()} == true.
+	 * - Once {@link #start()} has been called, becomes a
+	 *   {@link TickerDelayedBackgroundJob} with {@link DelayedBackgroundJob#isTerminated()}
+	 *   == false.
+	 * - Once {@link #stop()} has been called, stays a {@link TickerDelayedBackgroundJob} but has
+	 *   {@link DelayedBackgroundJob#isTerminated()} == true for ever.
 	 * 
-	 * Concurrent write access to this variable is guarded by {@link #mLock}. 
+	 * There can be exactly one start() - stop() lifecycle, an IdentityDownloader cannot be
+	 * recycled.
 	 * 
-	 * @see DownloadScheduler */
-	private volatile DelayedBackgroundJob mDownloadSchedulerThread = null;
+	 * Concurrent write access to this variable by start() is guarded by {@link #mLock}. 
+	 * Volatile since stop() needs to read it without synchronization.
+	 * 
+	 * {@link IdentityDownloaderSlow#mDownloadSchedulerThread} and {@link SubscriptionManager#mJob}
+	 * are related to this, please apply changes there as well. */
+	private volatile DelayedBackgroundJob mDownloadSchedulerThread
+		= MockDelayedBackgroundJob.DEFAULT;
 
 	/**
 	 * Key = {@link Identity#getID()}.
