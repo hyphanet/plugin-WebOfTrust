@@ -96,7 +96,7 @@ public interface IdentityDownloader extends Daemon {
 	 *        scheduleCommandProcesing();
 	 *        Persistent.checkedCommit(database, this);
 	 *     } catch(RuntimeException e) {
-	 *         Persistent.checkedRollbackAndThrow(database, this, e);
+	 *        Persistent.checkedRollbackAndThrow(database, this, e);
 	 *     }
 	 * }}}
 	 * </code>*/
@@ -462,7 +462,7 @@ public interface IdentityDownloader extends Daemon {
 	 *        deleteTheCommands();
 	 *        Persistent.checkedCommit(database, this);
 	 *     } catch(RuntimeException e) {
-	 *         Persistent.checkedRollbackAndThrow(database, this, e);
+	 *        Persistent.checkedRollbackAndThrow(database, this, e);
 	 *     }
 	 * }}}
 	 * </code> */
