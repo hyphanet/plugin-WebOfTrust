@@ -144,7 +144,7 @@ StatisticsPage.IdentityDownloaderSlowBox.DataNotFoundDownloads=Permanent fehlges
 StatisticsPage.IdentityDownloaderSlowBox.FailedPermanentlyDownloads=Permanent fehlgeschlagene Downloads:
 StatisticsPage.IdentityDownloaderSlowBox.FailedTemporarilyDownloads=Temporär fehlgeschlagene Downloads:
 StatisticsPage.IdentityDownloaderSlowBox.Header=Identitäts-Downloads durch SSK-Editionshinweise
-StatisticsPage.IdentityDownloaderSlowBox.MaxRunningDownloads=Maximale Anzahl an laufenden Downloads:
+StatisticsPage.IdentityDownloaderSlowBox.MaxRunningDownloads=Maximale Anzahl an laufenden Downloads (= "Maximal erlaubte Anzahl von temporären USK-Abrufern" Freenet Einstellung):
 StatisticsPage.IdentityDownloaderSlowBox.QueuedDownloads=Wartende Downloads:
 StatisticsPage.IdentityDownloaderSlowBox.RunningDownloads=Laufende Downloads:
 StatisticsPage.IdentityDownloaderSlowBox.SkippedDownloads=Übersprungene Downloads:
