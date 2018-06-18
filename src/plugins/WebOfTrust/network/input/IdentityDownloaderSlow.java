@@ -754,6 +754,12 @@ public final class IdentityDownloaderSlow implements
 				ClientGetter removed = (uri != null ? mDownloads.remove(uri) : null);
 				assert(state == removed);
 				
+				// Schedule new downloads. Intentionally don't not do that if the failure mode is
+				// CANCELLED, i.e. if we are shutting down:
+				// The shutdown function stop() will disable mDownloadSchedulerThread anyway,
+				// so we don't need to introduce additional check here which would get executed
+				// during the whole uptime only for being useful for a finite amount of executions
+				// during shutdown.
 				if(mDownloads.size() < getMinRunningDownloadCount())
 					mDownloadSchedulerThread.triggerExecution(0);
 			}
