@@ -172,7 +172,7 @@ public final class IdentityDownloaderSlow implements
 	 * FIXME: Performance: Use a delay of 0 if no downloads are running currently, i.e. if
 	 * mDownloads.size() == 0.
 	 * TODO: Code quality: Make configurable. */
-	public static transient final long QUEUE_BATCHING_DELAY_MS = MINUTES.toMillis(1);
+	public static final long QUEUE_BATCHING_DELAY_MS = MINUTES.toMillis(1);
 
 	/**
 	 * Priority of network requests, relative to {@link IdentityDownloaderFast} as we use a single
