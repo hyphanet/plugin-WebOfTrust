@@ -304,6 +304,10 @@ public final class IdentityDownloaderSlow implements
 		
 		synchronized(mWoT) {
 		synchronized(mLock) {
+		// A transaction block is not necessary: We only do read access.
+		/* synchronized(Persistent.transactionLock(mDB)) {
+		   try { */
+			
 			// This is thread-safe guard against concurrent multiple calls to start() / stop() since
 			// stop() does not modify the variable and start() is synchronized. 
 			if(mDownloadSchedulerThread != MockDelayedBackgroundJob.DEFAULT)
@@ -312,6 +316,12 @@ public final class IdentityDownloaderSlow implements
 			if(logDEBUG)
 				testDatabaseIntegrity();
 			
+			// No need to schedule downloads by creating EditionHints, we can keep using the
+			// EditionHints of the last run of WoT:
+			// We don't delete EditionHints when having started a download from the queue, we only
+			// delete them once the download is finished. So the running downloads of the previous
+			// session which were aborted during shutdown are not lost, they're still scheduled in
+			// the queue.
 			mTotalQueuedDownloadsInSession = getQueue().size();
 			
 			PluginRespirator respirator = mWoT.getPluginRespirator();
