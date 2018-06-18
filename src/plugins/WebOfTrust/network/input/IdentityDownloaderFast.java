@@ -274,7 +274,7 @@ public final class IdentityDownloaderFast implements
 		synchronized(Persistent.transactionLock(mDB)) {
 			try {
 				// This is thread-safe guard against concurrent multiple calls to start() / stop()
-				// since terminate() does not modify the job and start() is synchronized(mLock). 
+				// since stop() does not modify the job and start() is synchronized(mLock). 
 				if(mDownloadSchedulerThread != MockDelayedBackgroundJob.DEFAULT)
 					throw new IllegalStateException("start() was already called!");
 				
