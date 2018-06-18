@@ -91,7 +91,7 @@ public final class IdentityDownloaderFast implements
 
 	/**
 	 * Once we have stored a {@link DownloadSchedulerCommand}, the {@link DownloadScheduler} is
-	 * scheduled to execute and start/stopo downloading of the specified command's {@link Identity}
+	 * scheduled to execute and start/stop downloading of the specified command's {@link Identity}
 	 * after this delay.
 	 * The delay is non-zero to ensure we don't have to do multiple database queries if multiple
 	 * commands arrive in a short timespan - database queries are likely the most expensive
