@@ -204,14 +204,19 @@ public class StatisticsPage extends WebPageImpl {
 			SimpleDateFormat dateFormat = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss");
 			
 			for(EditionHint h : downloader.getQueue()) {
-				q.addChild("td", Integer.toString(index));
-				q.addChild("td", dateFormat.format(h.getDate()));
-				q.addChild("td", Byte.toString(h.getSourceCapacity()));
-				q.addChild("td", Byte.toString(h.getSourceScore()));
-				q.addChild("td").addChild(IdentityPage.getLinkWithNickname(mWebInterface,
+				HTMLNode r = q.addChild("tr");
+				r.addChild("td", Integer.toString(index));
+				r.addChild("td", dateFormat.format(h.getDate()));
+				r.addChild("td", Byte.toString(h.getSourceCapacity()));
+				r.addChild("td", Byte.toString(h.getSourceScore()));
+				// FIXME: Show pubkey if nick is not available yet because the identity was not
+				// downloaded yet, which will often happen as this is the download queue.
+				// (Not necessary for the source identity below as we can only have received this
+				// EditionHint from it by having downloaded it, which provides the nickname.)
+				r.addChild("td").addChild(IdentityPage.getLinkWithNickname(mWebInterface,
 					h.getTargetIdentity()));
-				q.addChild("td", Long.toString(h.getEdition()));
-				q.addChild("td").addChild(IdentityPage.getLinkWithNickname(mWebInterface,
+				r.addChild("td", Long.toString(h.getEdition()));
+				r.addChild("td").addChild(IdentityPage.getLinkWithNickname(mWebInterface,
 					h.getSourceIdentity()));
 				
 				if(++index > toDisplay)
