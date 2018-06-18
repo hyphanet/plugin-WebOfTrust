@@ -265,7 +265,9 @@ public final class IdentityDownloaderFast implements
 	 * {@link DownloadScheduler#run()} on {@link #mDownloadScheduler}.
 	 * 
 	 * Related to {@link SubscriptionManager#start()} and {@link IdentityDownloaderSlow#start()}
-	 * - please apply changes there as well. */
+	 * - please apply changes there as well.
+	 * FIXME: There have been improvements to this here, diff against the above versions and
+	 * backport the changes. */
 	@Override public void start() {
 		Logger.normal(this, "start()...");
 		
@@ -386,8 +388,109 @@ public final class IdentityDownloaderFast implements
 		}}}
 	}
 
+	/**
+	 * Is merely a wrapper around stop() in preparation of the TODO at {@link Daemon#terminate()}
+	 * which requests renaming it to stop(). */
 	@Override public void terminate() {
-		// FIXME
+		stop();
+	}
+
+	/**
+	 * Related to {@link SubscriptionManager#stop()} and {@link IdentityDownloaderSlow#stop()},
+	 * please apply changes there as well.
+	 * FIXME: There have been improvements to this here, diff against the above versions and
+	 * backport the changes. */
+	private void stop() {
+		Logger.normal(this, "stop()...");
+		
+		// The following code intentionally does NOT write to the mDownloadSchedulerThread variable
+		// so it does not have to use synchronized(mLock). We do not want to synchronize because:
+		// 1) DownloadScheduler.run() is synchronized(mLock), so we would not get the lock until
+		//    run() is finished. But we want to call mDownloadSchedulerThread.terminate()
+		//    immediately while run() is still executing to make it call Thread.interrupt() upon
+		//    run() to speed up its termination. So we shouldn't require acquisition of the lock
+		//    before mDownloadSchedulerThread.terminate().
+		// 2) Keeping mDownloadSchedulerThread as is makes sure that start() is not possible anymore
+		//    so this object can only have a single lifecycle. Recycling needs to be impossible:
+		//    If we allowed restarting, the cleanup of the USKRetrievers at the end of this function
+		//    could damage the new lifecycle because its synchronization block does not include
+		//    mDownloadSchedulerThread.terminate() and thus it would not be possible to guarantee
+		//    that we kill the USKRetrievers of the same cycle.
+		
+		// Since mDownloadSchedulerThread can only transition from not "not started yet", as implied
+		// by the "==" here, to "started" as implied by "!=", but never backwards, is volatile, and
+		// is set by start() *after* everything is initialized, this makes this function safe
+		// against concurrent calls to start().
+		if(mDownloadSchedulerThread == MockDelayedBackgroundJob.DEFAULT)
+			throw new IllegalStateException("start() not called/finished yet!");
+		
+		// We cannot guard against concurrent stop() here since we don't synchronize, we can only
+		// probabilistically detect it by assert(). Concurrent stop() is not a problem though since
+		// restarting jobs is not possible: We cannot run into a situation where we accidentally
+		// stop the wrong lifecycle. It can only happen that we do cleanup the cleanup which a
+		// different thread would have done, but they won't care since all actions below will
+		// succeed silently if done multiple times.
+		assert !mDownloadSchedulerThread.isTerminated() : "stop() called already";
+		
+		mDownloadSchedulerThread.terminate();
+		try {
+			// We must wait without timeout since we need to cancel our requests at the core of
+			// Freenet (see below synchronized(mLock)) and the job thread might create requests
+			// until it is terminated.
+			mDownloadSchedulerThread.waitForTermination(Long.MAX_VALUE);
+		} catch (InterruptedException e) {
+			// We are a shutdown function, there is no sense in sending a shutdown signal to us.
+			Logger.error(this, "stop() should not be interrupt()ed.", e);
+		}
+		
+		// We are safe now to terminate all existing Freenet requests since no new ones can be
+		// created anymore:
+		// DownloadScheduler.run() can only be executed by mDownloadSchedulerThread, and that will
+		// not do so after waitForTermination().
+		// It can also not be re-enabled since start() does not allow restarting.
+		// 
+		// Nevertheless we must keep guarding access to mDownloads by synchronized(mLock) as usual
+		// because WebOfTrust.terminate() is fully parallelized and thus all our callbacks may be
+		// called concurrently - and some of them will access mDownloads to check whether a download
+		// for a certain Identity is running (but not start a download if not, they merely queue
+		// DownloadSchedulerCommands, which doesn't matter since the DownloadScheduler is off).
+		synchronized(mLock) {
+			if(logMINOR)
+				Logger.minor(this, "stop(): Stopping running USK subscriptions...");
+			
+			// TODO: Code quality: IdentityFetcher.stop(), which this code is based on, did copy the
+			// map values() like we do here, instead of iterating over them directly. Why did it do
+			// that? Perhaps this merely is cargo cult programming: SSK-based downloaders such as
+			// IdentityDownloaderSlow have to copy their request map before canceling requests
+			// because with SSK requests there is an onFailure() callback which gets called when
+			// canceling a request. Their implementation of onFailure() will typically remove the
+			// request from the map as well so they need to copy it first before canceling the
+			// requests to avoid concurrent modification of the map. USK subscriptions do not have
+			// such a callback IIRC so it likely is not necessary to copy the map.
+			USKRetriever[] retrievers
+				= mDownloads.values().toArray(new USKRetriever[mDownloads.size()]);
+			int counter = 0;
+			for(USKRetriever r : retrievers) {
+				if(r == null) {
+					// fetch(USK) returns null in tests.
+					// FIXME: The above was the case for IdentityFetcher which inspired this
+					// function, IIRC for unit tests. It's not implemented for
+					// IdentityDownloaderFast yet I think. Determine whether it is needed for it.
+					// Remove the assert(false) if yes.
+					assert(false);
+					continue;
+				}
+				r.cancel(mClientContext);
+				mUSKManager.unsubscribeContent(r.getOriginalUSK(), r, true);
+				++counter;
+			}
+			mDownloads.clear();
+			
+			if(logMINOR)
+				Logger.minor(this, "stop(): Stopped " + counter + " USK subscriptions.");
+		}
+		
+		Logger.normal(this, "stop() finished.");
 	}
 
 	/** Must be called while synchronized on {@link #mWoT}. */
