@@ -3171,6 +3171,10 @@ public final class WebOfTrust extends WebOfTrustInterface
 	 * Gets given trust values of an identity matching a specified trust value criteria.
 	 * You have to synchronize on this WoT when calling the function and processing the returned list!
 	 * 
+	 * TODO: Performance: Review all uses of {@link #getGivenTrusts(Identity)}, which doesn't
+	 * provide a filter for >= 0 / < 0 Trusts, for whether they can be done by this function
+	 * instead. It's faster to let the database do filtering before returning the query results.
+	 * 
 	 * @param truster The identity which given the trust values.
 	 * @param select Trust value criteria, can be > zero, zero or negative. Greater than zero returns all trust values >= 0, zero returns trust values equal to 0.
 	 * 		Negative returns trust values < 0. Zero is included in the positive range by convention because solving an introduction puzzle gives you a value of 0.

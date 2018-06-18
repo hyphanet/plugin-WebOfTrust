@@ -6,12 +6,14 @@ package plugins.WebOfTrust.network.input;
 import static java.lang.Thread.currentThread;
 import static java.util.Objects.requireNonNull;
 import static java.util.concurrent.TimeUnit.MINUTES;
+import static plugins.WebOfTrust.XMLTransformer.MAX_IDENTITY_XML_TRUSTEE_AMOUNT;
 import static plugins.WebOfTrust.util.AssertUtil.assertDidNotThrow;
 
 import java.io.IOException;
 import java.io.InputStream;
 import java.net.MalformedURLException;
 import java.util.HashMap;
+import java.util.HashSet;
 
 import plugins.WebOfTrust.Identity;
 import plugins.WebOfTrust.Identity.FetchState;
@@ -57,6 +59,9 @@ import freenet.node.RequestClient;
 import freenet.node.RequestStarter;
 import freenet.pluginmanager.PluginRespirator;
 import freenet.support.Logger;
+import freenet.support.PooledExecutor;
+import freenet.support.PrioritizedTicker;
+import freenet.support.Ticker;
 import freenet.support.api.Bucket;
 import freenet.support.io.Closer;
 import freenet.support.io.NativeThread;
@@ -247,14 +252,123 @@ public final class IdentityDownloaderFast implements
 	}
 
 	@Override public void start() {
-		// FIXME: Implement.
-		// Constraints for the upcoming implementation:
-		// - It should delete all existing DownloadSchedulerCommands as they were referring to the
-		//   set of downloads which were running before the restart which have all been aborted
-		//   by restarting Freenet.
-		// - It must store a StartDownloadCommand for each OwnIdentity's trustees with trust >= 0,
-		//   and for the OwnIdentitys themselves (for the purposes of
-		//   WebOfTrust.restoreOwnIdentity()).
+		Logger.normal(this, "start()...");
+		
+		synchronized(mWoT) {
+		synchronized(mLock) {
+		synchronized(Persistent.transactionLock(mDB)) {
+			try {
+				// This is thread-safe guard against concurrent multiple calls to start() / stop()
+				// since terminate() does not modify the job and start() is synchronized(mLock). 
+				if(mDownloadSchedulerThread != MockDelayedBackgroundJob.DEFAULT)
+					throw new IllegalStateException("start() was already called!");
+				
+				// Delete all DownloadSchedulerCommands of the previous WoT execution as they've
+				// become invalid by restarting Freenet:
+				// We don't do persistent downloads, so all downloads are lost upon restart and we
+				// must recreate them. This means that commands of the previous session are invalid
+				// as well because they were relative to the set of already running downloads.
+				//
+				// This must be called while synchronized on mLock, and the lock must be
+				// held until mDownloadSchedulerThread is set:
+				// Holding the lock prevents DownloadSchedulerCommands from being created before
+				// the mDownloadSchedulerThread is enabled later on. 
+				// It is critically necessary for the thread to be initialized before
+				// any commands can be created: Commands will only be processed if the thread's
+				// triggerExecution() is enabled at the moment a command is created.
+				deleteAllCommandsWithoutCommit();
+				
+				assert(mDownloads.size() == 0);
+				
+				// Now we'll store a StartDownloadCommand for all Identitys which are eligible for
+				// download. Not starting the downloads here but scheduling them to be started by
+				// the mDownloadSchedulerThread speeds up startup.
+				// We'll create a set of the IDs of all Identitys for which we already stored a
+				// StartDownloadCommand to avoid issuing multiple commands for the same Identity.
+				// If this some day grows too large to fit into memory you can instead query the
+				// database for whether a command already exists. See what e.g.
+				// storeStartFetchCommandWithoutCommit_Checked() does.
+				// Since WoT currently is intended to be used by a single user this will typically
+				// at most contain the number of trustees an OwnIdentity has on average so for now
+				// this will fit into memory just fine and we can avoid the database queries to
+				// speed up startup.
+				// TODO: Code quality: Replace initial size with AVERAGE_IDENTITY_TRUSTEE_AMOUNT
+				// or MAX_OWNIDENTITY_TRUSTEE_AMOUNT once such a constant exists.
+				HashSet<String> alreadyStarted = new HashSet<>(MAX_IDENTITY_XML_TRUSTEE_AMOUNT);
+				Logger.normal(this, "start(): Scheduling downloads of rank=1 Identitys...");
+				for(OwnIdentity truster : mWoT.getAllOwnIdentities()) {
+					if(!alreadyStarted.contains(truster.getID())
+							&& mWoT.shouldFetchIdentity(truster)) {
+						
+						// For the purpose of WebOfTrust.restoreOwnIdentity()
+						new StartDownloadCommand(mWoT, truster).storeWithoutCommit();
+						alreadyStarted.add(truster.getID());
+					}
+					
+					for(Trust trust : mWoT.getGivenTrusts(truster, 1)) {
+						assert(trust.getValue() >= 0);
+						
+						Identity toDownload = trust.getTrustee();
+						if(!alreadyStarted.contains(toDownload.getID())) {
+							if(logMINOR)
+								Logger.minor(this, "start(): Scheduling download of " + toDownload);
+							
+							new StartDownloadCommand(mWoT, toDownload).storeWithoutCommit();
+							alreadyStarted.add(toDownload.getID());
+						} else {
+							if(logMINOR) {
+								Logger.minor(this, "start(): Already scheduled download, ignoring: "
+									+ toDownload);
+							}
+						}
+					}
+				}
+				Logger.normal(this, "start(): Finished scheduling downloads.");
+				
+				PluginRespirator respirator = mWoT.getPluginRespirator();
+				Ticker ticker;
+				Runnable jobRunnable;
+				
+				if(respirator != null) { // We are connected to a real Freenet node
+					ticker = respirator.getNode().getTicker();
+					jobRunnable = mDownloadScheduler;
+				} else { // We are inside of a unit test
+					Logger.warning(this, "No PluginRespirator available, will never run job. "
+						+ "This should only happen in unit tests!");
+					
+					// Generate our own Ticker so we can set mDownloadSchedulerThread to be a real
+					// TickerDelayedBackgroundJob.
+					// This is better than leaving it be a MockDelayedBackgroundJob because it
+					// allows us to clearly distinguish the run state (start() not called, start()
+					// called, stop() called) by checking whether mDownloadSchedulerThread is at the
+					// default value or not, and if not checking the run state of it.
+					ticker = new PrioritizedTicker(new PooledExecutor(), 0);
+					jobRunnable = new Runnable() { @Override public void run() {
+						// Do nothing because:
+						// - Unit tests execute instantly after loading the WoT plugin, so delayed
+						//   jobs should not happen since their timing cannot be guaranteed to match
+						//   the unit tests execution state.
+						// - We shouldn't do work on custom executors, we should only ever use the
+						//   main one of the node.
+						}
+					};
+				}
+				
+				// Set the volatile mDownloadSchedulerThread after everything which stop() must
+				// cleanup is initialized to ensure that stop() can use the variable (without
+				// synchronization) to check whether cleanup will cover everything.
+				mDownloadSchedulerThread = new TickerDelayedBackgroundJob(
+					jobRunnable, "WoT IdentityDownloaderFast", QUEUE_BATCHING_DELAY_MS, ticker);
+				
+				mDownloadSchedulerThread.triggerExecution();
+				
+				Persistent.checkedCommit(mDB, this);
+			} catch(RuntimeException e) {
+				Persistent.checkedRollbackAndThrow(mDB, this, e);
+			} finally {
+				Logger.normal(this, "start() finished.");
+			}
+		}}}
 	}
 
 	@Override public void terminate() {

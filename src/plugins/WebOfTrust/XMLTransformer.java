@@ -98,7 +98,14 @@ public final class XMLTransformer {
 	 * This value has been computed by XMLTransformerTest.testMaximalOwnIdentityXMLSize - that function is able to generate a XML file with all
 	 * data fields (nicknames, comments, etc) maxed out and add identities until it exceeds the maximal XML byte size.
 	 * In other words: If you ever need to re-adjust this value to fit into a new MAX_IDENTITY_XML_BYTE_SIZE, look at XMLTransformerTest.testMaximalOwnIdentityXMLSize.
-	 */
+	 * 
+	 * TODO: Code quality: Other constants which would be useful:
+	 * - AVERAGE_IDENTITY_TRUSTEE_AMOUNT for choosing initial HashSet sizes in various code.
+	 * - MAX_OWNIDENTITY_TRUSTEE_AMOUNT as a finite limit for locally given trusts to speed up Score
+	 *   computation (would require significant changes to the codebase, or at least the UI!).
+	 * They should probably be added to class {@link Configuration} or {@link WebOfTrustInterface}.
+	 * Once you've introduced those constants please search the source code for their names to find
+	 * existing TODOs of where they would be useful. */
 	public static final int MAX_IDENTITY_XML_TRUSTEE_AMOUNT = 512;
 	
 	private final WebOfTrust mWoT;
