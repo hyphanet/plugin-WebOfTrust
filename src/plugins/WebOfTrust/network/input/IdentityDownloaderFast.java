@@ -196,7 +196,7 @@ public final class IdentityDownloaderFast implements
 	 * - Once {@link #stop()} has been called, stays a {@link TickerDelayedBackgroundJob} but has
 	 *   {@link DelayedBackgroundJob#isTerminated()} == true for ever.
 	 * 
-	 * There can be exactly one start() - stop() lifecycle, an IdentityDownloader cannot be
+	 * There can be exactly one start() - stop() lifecycle, an IdentityDownloaderFast cannot be
 	 * recycled.
 	 * 
 	 * Concurrent write access to this variable by start() is guarded by {@link #mLock}. 
