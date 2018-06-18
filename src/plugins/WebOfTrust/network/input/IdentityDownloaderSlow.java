@@ -3,9 +3,9 @@
  * any later version). See http://www.gnu.org/ for details of the GPL. */
 package plugins.WebOfTrust.network.input;
 
+import static java.lang.Math.max;
 import static java.lang.Thread.currentThread;
 import static java.util.Collections.sort;
-import static java.util.Objects.requireNonNull;
 import static java.util.concurrent.TimeUnit.MINUTES;
 import static plugins.WebOfTrust.util.AssertUtil.assertDidThrow;
 
@@ -181,6 +181,18 @@ public final class IdentityDownloaderSlow implements
 	 * Also see the file "developer-documentation/RequestClient and priority map.txt" */
 	public static transient final short DOWNLOAD_PRIORITY
 		= RequestStarter.BULK_SPLITFILE_PRIORITY_CLASS;
+
+	/**
+	 * When a download completes new downloads will be started immediately if the number of still
+	 * running downloads is less than {@link #getMaxRunningDownloadCount()} divided by this
+	 * constant.
+	 * See {@link #getMinRunningDownloadCount()} and its callers.
+	 * 
+	 * TODO: Performance: Profile the performance impact of various values of this - refilling the
+	 * downloads does a dababase query by {@link #getQueue()}, which returns all {@link EditionHint}
+	 * objects in the database. Those can be in the multiple thousands so it may take some CPU time
+	 * while we're not configuring db4o to do lazy query evaluation yet. */
+	public static final int DOWNLOAD_REFILL_THRESHOLD = 2;
 
 	/**
 	 * Priority of the {@link #run()} thread which starts downloads of the edition hint queue.
@@ -551,6 +563,18 @@ public final class IdentityDownloaderSlow implements
 		return mNodeClientCore.maxBackgroundUSKFetchers();
 	}
 
+	/** @see #DOWNLOAD_REFILL_THRESHOLD */
+	public int getMinRunningDownloadCount() {
+		int maxDownloads = getMaxRunningDownloadCount();
+		
+		if(maxDownloads == 0)
+			return 0;
+		
+		// Because maxDownloads can be configured by the user it is possible that they configure it
+		// so low that integer division by the threshold results in 0. Thus return at least 1.
+		return max(1, maxDownloads / DOWNLOAD_REFILL_THRESHOLD);
+	}
+
 	/** Must be called while synchronized on {@link #mLock}. */
 	private boolean isDownloadInProgress(EditionHint h) {
 		return mDownloads.containsKey(h.getURI());
@@ -670,11 +694,10 @@ public final class IdentityDownloaderSlow implements
 			synchronized(mLock) {
 				ClientGetter removed = (uri != null ? mDownloads.remove(uri) : null);
 				assert(state == removed);
+				
+				if(mDownloads.size() < getMinRunningDownloadCount())
+					mDownloadSchedulerThread.triggerExecution(0);
 			}
-			
-			// TODO: Performance: Estimate how long it will take until all downloads have finished
-			// and use min(QUEUE_BATCHING_DELAY_MS, estimate) as execution delay.
-			mDownloadSchedulerThread.triggerExecution();
 		}
 	}
 
@@ -730,9 +753,10 @@ public final class IdentityDownloaderSlow implements
 			synchronized(mLock) {
 				ClientGetter removed = (uri != null ? mDownloads.remove(uri) : null);
 				assert(state == removed);
+				
+				if(mDownloads.size() < getMinRunningDownloadCount())
+					mDownloadSchedulerThread.triggerExecution(0);
 			}
-			
-			mDownloadSchedulerThread.triggerExecution();
 		}
 	}
 
