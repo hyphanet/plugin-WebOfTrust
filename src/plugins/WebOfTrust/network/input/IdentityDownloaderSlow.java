@@ -227,13 +227,14 @@ public final class IdentityDownloaderSlow implements
 	 * - Once {@link #stop()} has been called, stays a {@link TickerDelayedBackgroundJob} but has
 	 *   {@link DelayedBackgroundJob#isTerminated()} == true for ever.
 	 * 
-	 * There can be exactly one start() - stop() lifecycle, a IdentityDownloaderSlow cannot be
+	 * There can be exactly one start() - stop() lifecycle, an IdentityDownloaderSlow cannot be
 	 * recycled.
 	 * 
-	 * Volatile since {@link #stop()} needs to use it without synchronization.
+	 * Concurrent write access to this variable by start() is guarded by {@link #mLock}.
+	 * Volatile since stop() needs to read it without synchronization.
 	 * 
-	 * {@link SubscriptionManager#mJob} and {@link IdentityFetcher#mJob} are related to this, please
-	 * apply changes there as well. */
+	 * {@link IdentityDownloaderFast#mDownloadSchedulerThread} and {@link SubscriptionManager#mJob}
+	 * are related to this, please apply changes there as well. */
 	private volatile DelayedBackgroundJob mDownloadSchedulerThread
 		= MockDelayedBackgroundJob.DEFAULT;
 
@@ -449,8 +450,9 @@ public final class IdentityDownloaderSlow implements
 	}
 
 	/**
-	 * ATTENTION: For internal use only! TODO: Code quality: Wrap in a private class to hide it,
-	 * like {@link IdentityDownloaderFast.DownloadScheduler}.
+	 * ATTENTION: For internal use only! TODO: Code quality: Wrap in a private class to hide it like
+	 * e.g. {@link IdentityDownloaderFast.DownloadScheduler}. Update the documentation of
+	 * {@link #mDownloadSchedulerThread} to reflect that.
 	 * 
 	 * The actual downloader. Starts fetches for the head of {@link #getQueue()}.
 	 * 
