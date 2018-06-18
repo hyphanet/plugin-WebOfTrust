@@ -103,6 +103,27 @@ public interface IdentityDownloader extends Daemon {
 	@Override public void start();
 
 	/**
+	 * Is called by {@link WebOfTrust#terminate()} at shutdown of WoT.
+	 * Should stop all downloads which the IdentityDownloader has created at Freenet.
+	 * 
+	 * Must be safe against concurrent calls to {@link #start()}.
+	 * 
+	 * Must be safe against concurrent calls to the download scheduling callbacks (such as e.g.
+	 * {@link #storeStartFetchCommandWithoutCommit(Identity)}):
+	 * {@link WebOfTrust#terminate()} terminates all WoT subsystems concurrently and thus subsystems
+	 * which call the download scheduling callbacks may still operate while the IdentityDownloader's
+	 * terminate() is running, or even aftwards.
+	 * 
+	 * This can typically be guaranteed by the following locking pattern:
+	 * <code>
+	 * synchronized(WebOfTrust.getIdentityDownloaderController()) {
+	 *     disableDownloadCommandProcessing();
+	 *     abortExistingDownloadsAtFreenet();
+	 * }
+	 * </code> */
+	@Override public void terminate();
+
+	/**
 	 * Called by {@link WebOfTrust#deleteOwnIdentity(String)} before any action is taken towards
 	 * deleting an {@link OwnIdentity}.
 	 * 
