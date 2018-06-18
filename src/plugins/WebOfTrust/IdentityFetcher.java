@@ -17,6 +17,7 @@ import plugins.WebOfTrust.exceptions.UnknownIdentityException;
 import plugins.WebOfTrust.network.input.EditionHint;
 import plugins.WebOfTrust.network.input.IdentityDownloader;
 import plugins.WebOfTrust.network.input.IdentityDownloaderController;
+import plugins.WebOfTrust.network.input.IdentityDownloaderFast;
 import plugins.WebOfTrust.network.input.IdentityDownloaderSlow;
 import plugins.WebOfTrust.util.Daemon;
 import plugins.WebOfTrust.util.jobs.DelayedBackgroundJob;
@@ -133,10 +134,12 @@ public final class IdentityFetcher implements
      * 
      * There can be exactly one start() - stop() lifecycle, an IdentityFetcher cannot be recycled.
      * 
-     * Volatile since {@link #stop()} needs to use it without synchronization.
+     * Concurrent write access to this variable by start() is guarded by {@link #mLock}.
+     * Volatile since stop() needs to read it without synchronization.
      * 
-     * {@link SubscriptionManager#mJob} and {@link IdentityDownloaderSlow#mJob} are related to this,
-     * please apply changes there as well. */
+     * {@link IdentityDownloaderFast#mDownloadSchedulerThread},
+     * {@link IdentityDownloaderSlow#mDownloadSchedulerThread} and {@link SubscriptionManager#mJob}
+     * are related to this, please apply changes there as well. */
     private volatile DelayedBackgroundJob mJob = MockDelayedBackgroundJob.DEFAULT;
 
     /** Fetched identity files are stored for processing at this {@link IdentityFileQueue}. */
