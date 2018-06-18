@@ -303,8 +303,9 @@ public final class IdentityDownloaderSlow implements
 		Logger.normal(this, "start() ...");
 		
 		// Acquire locks even though our own thread isn't running yet to guard against concurrent
-		// startup of WoT subsystems such as IdentityFileProcessor which may feed us external
-		// callbacks during startup already.
+		// startup of other WoT subsystems which may feed us external callbacks during startup
+		// already. In theory that shouldn't happen as of the current implementation of
+		// WebOfTrust.runPlugin() but it's better to be safe against it.
 		synchronized(mWoT) {
 		synchronized(mLock) {
 			// This is thread-safe guard against concurrent multiple calls to start() / stop() since
