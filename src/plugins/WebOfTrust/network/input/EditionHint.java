@@ -212,7 +212,9 @@ public final class EditionHint extends Persistent implements Comparable<EditionH
 		requireNonNull(sourceIdentity);
 		requireNonNull(targetIdentity);
 
-		if(sourceIdentity == targetIdentity) {
+		// Only OwnIdentitys are allowed to assign hints upon themselves, for
+		// WebOfTrust.restoreOwnIdentity().
+		if(sourceIdentity == targetIdentity && !(sourceIdentity instanceof OwnIdentity)) {
 			throw new IllegalArgumentException(
 				"Identity is trying to assign edition hint to itself: " + sourceIdentity);
 		}
