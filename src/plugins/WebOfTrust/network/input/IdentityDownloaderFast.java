@@ -251,6 +251,21 @@ public final class IdentityDownloaderFast implements
 		mOutputQueue = mWoT.getIdentityFileQueue();
 	}
 
+	/**
+	 * Initializes and enables the {@link DownloadScheduler} and hence enables automated starting
+	 * and stopping of downloads based on the received callbacks of interface
+	 * {@link IdentityDownloader}.
+	 * 
+	 * Any callbacks received before this function was called are ignored and unnecessary, the state
+	 * of which Identitys to download is fully initialized from the {@link WebOfTrust} database.
+	 * 
+	 * ATTENTION: Does NOT enable {@link DownloadSchedulerCommand} processing in unit tests if
+	 * {@link WebOfTrust#getPluginRespirator()} is null, i.e. if the plugin wasn't loaded into a
+	 * full node. If you want processing to happen then you must manually trigger it by calling
+	 * {@link DownloadScheduler#run()} on {@link #mDownloadScheduler}.
+	 * 
+	 * Related to {@link SubscriptionManager#start()} and {@link IdentityDownloaderSlow#start()}
+	 * - please apply changes there as well. */
 	@Override public void start() {
 		Logger.normal(this, "start()...");
 		
