@@ -309,9 +309,9 @@ public final class IdentityDownloaderFast implements
 				// at most contain the number of trustees an OwnIdentity has on average so for now
 				// this will fit into memory just fine and we can avoid the database queries to
 				// speed up startup.
-				// TODO: Code quality: Replace initial size with AVERAGE_IDENTITY_TRUSTEE_AMOUNT
-				// or MAX_OWNIDENTITY_TRUSTEE_AMOUNT once such a constant exists.
-				HashSet<String> alreadyStarted = new HashSet<>(MAX_IDENTITY_XML_TRUSTEE_AMOUNT);
+				// TODO: Code quality: Replace initial size with AVERAGE_IDENTITY_TRUSTEE_AMOUNT * 2
+				// or MAX_OWNIDENTITY_TRUSTEE_AMOUNT * 2 once such a constant exists.
+				HashSet<String> alreadyStarted = new HashSet<>(MAX_IDENTITY_XML_TRUSTEE_AMOUNT * 2);
 				Logger.normal(this, "start(): Scheduling downloads of rank=1 Identitys...");
 				for(OwnIdentity truster : mWoT.getAllOwnIdentities()) {
 					if(!alreadyStarted.contains(truster.getID())
