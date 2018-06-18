@@ -893,11 +893,7 @@ public final class IdentityFetcher implements
 	 * this, please apply changes there as well. */
 	@Override public void start() {
         Logger.normal(this, "start()...");
-
-        // Acquire locks even though our own thread isn't running yet to guard against concurrent
-        // startup of other WoT subsystems which may feed us external callbacks during startup
-        // already. In theory that shouldn't happen as of the current implementation of
-        // WebOfTrust.runPlugin() but it's better to be safe against it.
+        
         synchronized (mWoT) {
         synchronized (mLock) {
 

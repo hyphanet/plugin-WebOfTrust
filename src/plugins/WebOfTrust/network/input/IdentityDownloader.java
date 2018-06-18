@@ -70,6 +70,39 @@ import freenet.keys.FreenetURI;
 public interface IdentityDownloader extends Daemon {
 
 	/**
+	 * Is called by {@link WebOfTrust#runPlugin(freenet.pluginmanager.PluginRespirator)} at
+	 * startup of the plugin / Freenet.
+	 * Should schedule starting the downloads of all Identitys which are eligible for download.
+	 * This is necessary because:
+	 * - IdentityDownloader implementations are not supposed to create persistent downloads at
+	 *   the Freenet node, downloads will typically be lost during restart of Freenet.
+	 * - WoT will **NOT** initialize the downloader by calling download scheduling callbacks such as
+	 *   {@link #storeStartFetchCommandWithoutCommit(Identity)} for eligible Identitys at startup.
+	 *   The download scheduling callbacks are only deployed for changes during the runtime!
+	 * 
+	 * Must be safe against concurrent calls to {@link #terminate()}.
+	 * 
+	 * Concurrent calls to the download scheduling callbacks are not to be expected as of the
+	 * current implementation of runPlugin().
+	 * Nevertheless this function should be implemented to be safe against this changing in the
+	 * future. This can typically be guaranteed by the following locking pattern:
+	 * <code>
+	 * synchronized(Instance of WebOfTrust) { // If Identity objects are queried/used
+	 * synchronized(WebOfTrust.getIdentityDownloaderController()) {
+	 * synchronized(Persistent.transactionLock(WebOfTrust.getDatabase())) {
+	 *     try {
+	 *        deleteExistingCommands();
+	 *        storeStartFetchCommandsForAllEligibleIdentitiys();
+	 *        scheduleCommandProcesing();
+	 *        Persistent.checkedCommit(database, this);
+	 *     } catch(RuntimeException e) {
+	 *         Persistent.checkedRollbackAndThrow(database, this, e);
+	 *     }
+	 * }}}
+	 * </code>*/
+	@Override public void start();
+
+	/**
 	 * Called by {@link WebOfTrust#deleteOwnIdentity(String)} before any action is taken towards
 	 * deleting an {@link OwnIdentity}.
 	 * 
