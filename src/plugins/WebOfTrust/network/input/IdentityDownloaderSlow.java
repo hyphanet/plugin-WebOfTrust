@@ -271,10 +271,11 @@ public final class IdentityDownloaderSlow implements
 	}
 
 
-	public IdentityDownloaderSlow(WebOfTrust wot) {
-		requireNonNull(wot);
+	public IdentityDownloaderSlow(IdentityDownloaderController controller) {
+		assert(controller != null);
 		
-		mWoT = wot;
+		mWoT = controller.getWebOfTrust();
+		
 		PluginRespirator pr = mWoT.getPluginRespirator();
 		if(pr != null) {
 			mNodeClientCore = pr.getNode().clientCore;
@@ -287,7 +288,7 @@ public final class IdentityDownloaderSlow implements
 		}
 		
 		mRequestClient = mWoT.getRequestClient();
-		mLock = mWoT.getIdentityDownloaderController();
+		mLock = controller;
 		mDB = mWoT.getDatabase();
 		mOutputQueue = mWoT.getIdentityFileQueue();
 		mDownloads = new HashMap<>(getMaxRunningDownloadCount() * 2);

@@ -228,10 +228,10 @@ public final class IdentityDownloaderFast implements
 	}
 
 
-	public IdentityDownloaderFast(WebOfTrust wot) {
-		requireNonNull(wot);
+	public IdentityDownloaderFast(IdentityDownloaderController controller) {
+		assert(controller != null);
 		
-		mWoT = wot;
+		mWoT = controller.getWebOfTrust();
 		
 		PluginRespirator pr = mWoT.getPluginRespirator();
 		if(pr != null) {
@@ -246,7 +246,7 @@ public final class IdentityDownloaderFast implements
 		}
 		
 		mRequestClient = mWoT.getRequestClient();
-		mLock = mWoT.getIdentityDownloaderController();
+		mLock = controller;
 		mDB = mWoT.getDatabase();
 		mOutputQueue = mWoT.getIdentityFileQueue();
 	}

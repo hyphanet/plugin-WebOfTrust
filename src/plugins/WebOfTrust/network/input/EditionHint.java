@@ -470,8 +470,8 @@ public final class EditionHint extends Persistent implements Comparable<EditionH
 		
 		// Check for whether there is only one hint with our mID
 		try {
-			EditionHint queried
-				= new IdentityDownloaderSlow((WebOfTrust)mWebOfTrust).getEditionHintByID(mID);
+			EditionHint queried = ((WebOfTrust)mWebOfTrust).getIdentityDownloaderController()
+				.getIdentityDownloaderSlow().getEditionHintByID(mID);
 			
 			if(queried != this)
 				throw new RuntimeException("getEditionHintByID() returned wrong hint for: " + mID);

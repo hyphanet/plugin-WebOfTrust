@@ -69,8 +69,8 @@ public final class IdentityDownloaderController implements IdentityDownloader, D
 	public IdentityDownloaderController(WebOfTrust wot, PluginRespirator pr, IdentityFileQueue q) {
 		mWoT = wot;
 		if(!USE_LEGACY_REFERENCE_IMPLEMENTATION) {
-			mIdentityDownloaderSlow = new IdentityDownloaderSlow(wot);
-			mIdentityDownloaderFast = new IdentityDownloaderFast(wot);
+			mIdentityDownloaderSlow = new IdentityDownloaderSlow(this);
+			mIdentityDownloaderFast = new IdentityDownloaderFast(this);
 			mDownloaders = new IdentityDownloader[] {
 				mIdentityDownloaderFast,
 				mIdentityDownloaderSlow
@@ -82,6 +82,10 @@ public final class IdentityDownloaderController implements IdentityDownloader, D
 				new IdentityFetcher(wot, pr, q, this)
 			};
 		}
+	}
+
+	public WebOfTrust getWebOfTrust() {
+		return mWoT;
 	}
 
 	/**
