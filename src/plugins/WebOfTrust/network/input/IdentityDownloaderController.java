@@ -3,8 +3,6 @@
  * any later version). See http://www.gnu.org/ for details of the GPL. */
 package plugins.WebOfTrust.network.input;
 
-import java.util.ArrayList;
-
 import plugins.WebOfTrust.Identity;
 import plugins.WebOfTrust.IdentityFetcher;
 import plugins.WebOfTrust.IdentityFetcher.IdentityFetcherCommand;
@@ -14,7 +12,6 @@ import plugins.WebOfTrust.Trust;
 import plugins.WebOfTrust.WebOfTrust;
 import plugins.WebOfTrust.util.Daemon;
 import freenet.pluginmanager.PluginRespirator;
-import freenet.support.Logger;
 
 
 /**
@@ -153,26 +150,28 @@ public final class IdentityDownloaderController implements IdentityDownloader, D
 	}
 
 	@Override public boolean getShouldFetchState(Identity identity) {
-		ArrayList<Boolean> shouldFetch = new ArrayList<Boolean>();
+		// FIXME: This being used for the function's intended usage purpose of detecting whether an
+		// Identity is not being downloaded even though it should be is insufficient:
+		// It won't detect the case where e.g. the IdentityDownloaderSlow is downloading an
+		// Identity but in fact it should be downloaded by the IdentityDownloaderFast.
+		// In fact it won't ever detect if an Identity is not being downloaded at all even though it
+		// should because IdentityDownloaderSlow will resort to returning true if it has no
+		// EditionHints stored for the given Identity and WoT says it is wanted for download, so the
+		// whole function here will always return true if an Identity is wanted for download. 
+		// The fix of only returning true if all of the downloaders returned true won't work because
+		// not every downloader downloads every identity.
+		// Hence the proper fix would be to have each IdentityDownloader figure out how to self-test
+		// on their own instead of having the caller of this callback interpret a return value.
+		// This could be done by either having a periodic self-test run by their thread like
+		// IdentityDownloaderFast does, or by introducing a "testSelf()" callback which could be
+		// called instead of this function at particularly interesting points of Score computation.
 		
-		for(IdentityDownloader d : mDownloaders)
-			shouldFetch.add(d.getShouldFetchState(identity));
-		
-		// Normally this should be an assert() but the parent interface specifies this whole
-		// function to be for debugging purposes only so we can be very careful.
-		if(shouldFetch.contains(!shouldFetch.get(0))) {
-			Logger.error(this, "My downloaders don't return the same getShouldFetchState("
-			                   + identity + ") each: ");
-			
-			for(IdentityDownloader d : mDownloaders) {
-				Logger.error(this, d + " getShouldFetchState(): "
-				                     + d.getShouldFetchState(identity));
-			}
-			
-			assert(false);
+		for(IdentityDownloader d : mDownloaders) {
+			if(d.getShouldFetchState(identity) == true)
+				return true;
 		}
 		
-		return shouldFetch.contains(true);
+		return false;
 	}
 
 	@Override public void deleteAllCommands() {
