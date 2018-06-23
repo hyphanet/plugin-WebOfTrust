@@ -1557,11 +1557,13 @@ public final class IdentityDownloaderFast implements
 	
 		public IdentityDownloaderFastStatistics() {
 			synchronized(IdentityDownloaderFast.this) {
-				mRunningDownloads = mDownloads.size();
+				mRunningDownloads = IdentityDownloaderFast.this
+					.mDownloads.size();
 			}
-			mDownloadedEditions = IdentityDownloaderFast.this.mDownloadedEditions.get();
-			mDownloadProcessingFailures
-				= IdentityDownloaderFast.this.mDownloadProcessingFailures.get();
+			mDownloadedEditions = IdentityDownloaderFast.this
+				.mDownloadedEditions.get();
+			mDownloadProcessingFailures = IdentityDownloaderFast.this
+				.mDownloadProcessingFailures.get();
 		}
 	}
 }
