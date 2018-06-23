@@ -1189,26 +1189,26 @@ public final class IdentityDownloaderSlow implements
 		// doesn't, so we better check whether the enforcement works.
 		assert(newHint.getSourceCapacity() > 0);
 		
-			Identity target = newHint.getTargetIdentity();
-			
-			if(target.getLastFetchedEdition() >= newHint.getEdition()) {
-				if(logMINOR)
-					Logger.minor(this, "EditionHint is obsolete, ignoring: " + newHint);
-				return;
-			}
-			
-			// XMLTransformer, our typical caller, does checks whether the source Identity is
-			// allowed to store hints and doesn't call us if it is not - but it doesn't check
-			// whether the target Identity should be fetched so we must do that on our own.
-			// (This is because the primary validation job of the XMLTransformer is to decide
-			// whether it should accept input of the Identity which was downloaded - interpreting
-			// the input isn't its job, and deciding whether to download the target is
-			// interpretation.)
-			if(!mWoT.shouldFetchIdentity(target)) {
-				if(logMINOR)
-					Logger.minor(this, "EditionHint has non-trusted target, ignoring: " + newHint);
-				return;
-			}
+		Identity target = newHint.getTargetIdentity();
+
+		if(target.getLastFetchedEdition() >= newHint.getEdition()) {
+			if(logMINOR)
+				Logger.minor(this, "EditionHint is obsolete, ignoring: " + newHint);
+			return;
+		}
+
+		// XMLTransformer, our typical caller, does checks whether the source Identity is
+		// allowed to store hints and doesn't call us if it is not - but it doesn't check
+		// whether the target Identity should be fetched so we must do that on our own.
+		// (This is because the primary validation job of the XMLTransformer is to decide
+		// whether it should accept input of the Identity which was downloaded - interpreting
+		// the input isn't its job, and deciding whether to download the target is
+		// interpretation.)
+		if(!mWoT.shouldFetchIdentity(target)) {
+			if(logMINOR)
+				Logger.minor(this, "EditionHint has non-trusted target, ignoring: " + newHint);
+			return;
+		}
 		
 		try {
 			EditionHint oldHint = getEditionHintByID(newHint.getID());
