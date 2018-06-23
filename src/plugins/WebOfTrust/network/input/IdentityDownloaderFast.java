@@ -14,6 +14,7 @@ import java.io.InputStream;
 import java.net.MalformedURLException;
 import java.util.HashMap;
 import java.util.HashSet;
+import java.util.concurrent.atomic.AtomicInteger;
 
 import plugins.WebOfTrust.Identity;
 import plugins.WebOfTrust.Identity.FetchState;
@@ -218,6 +219,19 @@ public final class IdentityDownloaderFast implements
 	 * Concurrent read/write access to the HashMap is guarded by {@link #mLock}. */
 	private final HashMap<String, USKRetriever> mDownloads = new HashMap<>();
 
+	/**
+	 * See {@link IdentityDownloaderFastStatistics#mDownloadedEditions}.
+	 * 
+	 * Is not guarded by {@link #mLock} but an {@link AtomicInteger} instead to allow
+	 * {@link #onFound(USK, long, FetchResult)} to not have to wait for mLock. */
+	private final AtomicInteger mDownloadedEditions = new AtomicInteger(0);
+
+	/**
+	 * See {@link IdentityDownloaderFastStatistics#mDownloadProcessingFailures}.
+	 * 
+	 * Is not guarded by {@link #mLock} but an {@link AtomicInteger} instead to allow
+	 * {@link #onFound(USK, long, FetchResult)} to not have to wait for mLock. */
+	private final AtomicInteger mDownloadProcessingFailures = new AtomicInteger(0);
 
 	private static transient volatile boolean logDEBUG = false;
 
@@ -1408,7 +1422,10 @@ public final class IdentityDownloaderFast implements
 			// FIXME: It is very unsafe to assume the stream implementation won't be changed to
 			// need closure, just close it here anyway.
 			mOutputQueue.add(new IdentityFileStream(realURI, inputStream));
+			
+			mDownloadedEditions.incrementAndGet();
 		} catch(IOException | RuntimeException | Error e) {
+			mDownloadProcessingFailures.incrementAndGet();
 			Logger.error(this, "onFound(): Failed for URI: " + origUSK +
 				               "; edition: " + edition, e);
 		} finally {
@@ -1520,4 +1537,31 @@ public final class IdentityDownloaderFast implements
 		return getQueuedCommands(DownloadSchedulerCommand.class);
 	}
 
+	public final class IdentityDownloaderFastStatistics {
+		/** Number of running Freenet {@link USKManager} subscriptions.
+		 *  
+		 *  This should be equal to the number of {@link Identity}s to which the user's
+		 *  {@link OwnIdentity}s have assigned a {@link Trust} with {@link Trust#getValue()} >= 0,
+		 *  plus the number of OwnIdentitys as they are subscribed to as well for
+		 *  {@link WebOfTrust#restoreOwnIdentity(FreenetURI)}. */
+		public final int mRunningDownloads;
+	
+		/** Number of USK editions, i.e. {@link IdentityFile}s, which the {@link USKManager}
+		 *  subscriptions have downloaded. */
+		public final int mDownloadedEditions;
+	
+		/** Number of editions which were downloaded successfully but for which adding them to the
+		 *  {@link IdentityFileQueue} failed, either due to errors at its side or ours. */
+		public final int mDownloadProcessingFailures;
+	
+	
+		public IdentityDownloaderFastStatistics() {
+			synchronized(IdentityDownloaderFast.this) {
+				mRunningDownloads = mDownloads.size();
+			}
+			mDownloadedEditions = IdentityDownloaderFast.this.mDownloadedEditions.get();
+			mDownloadProcessingFailures
+				= IdentityDownloaderFast.this.mDownloadProcessingFailures.get();
+		}
+	}
 }
