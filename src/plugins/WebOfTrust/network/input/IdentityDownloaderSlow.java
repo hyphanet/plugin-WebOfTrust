@@ -1189,8 +1189,7 @@ public final class IdentityDownloaderSlow implements
 		// doesn't, so we better check whether the enforcement works.
 		assert(newHint.getSourceCapacity() > 0);
 		
-		try {
-			Identity target = mWoT.getIdentityByID(newHint.getID());
+			Identity target = newHint.getTargetIdentity();
 			
 			if(target.getLastFetchedEdition() >= newHint.getEdition()) {
 				if(logMINOR)
@@ -1210,10 +1209,6 @@ public final class IdentityDownloaderSlow implements
 					Logger.minor(this, "EditionHint has non-trusted target, ignoring: " + newHint);
 				return;
 			}
-		} catch(UnknownIdentityException e) {
-			// Should not happen
-			throw new RuntimeException(e);
-		}
 		
 		try {
 			EditionHint oldHint = getEditionHintByID(newHint.getID());
