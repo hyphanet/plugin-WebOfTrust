@@ -1394,7 +1394,19 @@ public final class IdentityDownloaderFast implements
 			if(logMINOR)
 				Logger.minor(this, "onFound(): Downloaded Identity XML: " + realURI);
 			
+			// Thanks to IdentityFileQueue we do NOT have to take mLock while consuming the
+			// InputStream:
+			// The queue exists to allow delaying import of the IdentityFileStream into the db4o
+			// database by serializing it to disk and having the separate thread of
+			// IdentityFileProcessor do the importing.
+			// This was implemented because download of IdentityFiles is usually faster than
+			// their processing and happens in parallel, so possibly many threads would call this 
+			// function here concurrently - but processing requires mLock so hundreds of threads
+			// would stall here if we did the processing in this function already.
+			//
 			// IdentityFileStream currently does not need to be close()d so we don't store it
+			// FIXME: It is very unsafe to assume the stream implementation won't be changed to
+			// need closure, just close it here anyway.
 			mOutputQueue.add(new IdentityFileStream(realURI, inputStream));
 		} catch(IOException | RuntimeException | Error e) {
 			Logger.error(this, "onFound(): Failed for URI: " + origUSK +
