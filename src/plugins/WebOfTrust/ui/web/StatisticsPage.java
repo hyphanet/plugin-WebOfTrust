@@ -181,6 +181,8 @@ public class StatisticsPage extends WebPageImpl {
 		box.addChild(ul);
 	}
 
+	// FIXME: Create the same for IdentityDownloaderFast's running downloads once the FIXMEs in this
+	// are finished
 	private void makeIdentityDownloaderSlowQueueBox() {
 		final IdentityDownloaderSlow downloader
 			= mWebOfTrust.getIdentityDownloaderController().getIdentityDownloaderSlow();
