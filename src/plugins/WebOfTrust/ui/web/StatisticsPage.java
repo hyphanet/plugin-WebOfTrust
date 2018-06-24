@@ -21,6 +21,8 @@ import plugins.WebOfTrust.SubscriptionManager;
 import plugins.WebOfTrust.WebOfTrust;
 import plugins.WebOfTrust.introduction.IntroductionPuzzleStore;
 import plugins.WebOfTrust.network.input.EditionHint;
+import plugins.WebOfTrust.network.input.IdentityDownloaderFast;
+import plugins.WebOfTrust.network.input.IdentityDownloaderFast.IdentityDownloaderFastStatistics;
 import plugins.WebOfTrust.network.input.IdentityDownloaderSlow;
 import plugins.WebOfTrust.network.input.IdentityDownloaderSlow.IdentityDownloaderSlowStatistics;
 import freenet.clients.http.ToadletContext;
@@ -51,6 +53,7 @@ public class StatisticsPage extends WebPageImpl {
 	@Override
 	public void make(final boolean mayWrite) {
 		makeSummary();
+		makeIdentityDownloaderFastBox();
 		makeIdentityDownloaderSlowBox();
 		makeIdentityDownloaderSlowQueueBox();
 		makeIdentityFileQueueBox();
@@ -116,6 +119,33 @@ public class StatisticsPage extends WebPageImpl {
 		return editionSum;
 	}
 
+	private void makeIdentityDownloaderFastBox() {
+		IdentityDownloaderFast downloader
+			= mWebOfTrust.getIdentityDownloaderController().getIdentityDownloaderFast();
+		
+		if(downloader == null)
+			return;
+		
+		BaseL10n l = l10n();
+		String p = "StatisticsPage.IdentityDownloaderFastBox.";
+		HTMLNode box = addContentBox(l.getString(p + "Header"));
+		HTMLNode ul = new HTMLNode("ul");
+		IdentityDownloaderFastStatistics s = downloader.new IdentityDownloaderFastStatistics();
+		
+		ul.addChild(new HTMLNode("li", l.getString(p + "ScheduledForStartingDownloads")
+			+ " " + s.mScheduledForStartingDownloads));
+		ul.addChild(new HTMLNode("li", l.getString(p + "ScheduledForStoppingDownloads")
+			+ " " + s.mScheduledForStoppingDownloads));
+		ul.addChild(new HTMLNode("li", l.getString(p + "RunningDownloads")
+			+ " " + s.mRunningDownloads));
+		ul.addChild(new HTMLNode("li", l.getString(p + "DownloadedEditions")
+			+ " " + s.mDownloadedEditions));
+		ul.addChild(new HTMLNode("li", l.getString(p + "DownloadProcessingFailures")
+			+ " " + s.mDownloadProcessingFailures));
+		
+		box.addChild(ul);
+	}
+
 	private void makeIdentityDownloaderSlowBox() {
 		IdentityDownloaderSlow downloader
 			= mWebOfTrust.getIdentityDownloaderController().getIdentityDownloaderSlow();
@@ -125,7 +155,7 @@ public class StatisticsPage extends WebPageImpl {
 		
 		BaseL10n l = l10n();
 		String p = "StatisticsPage.IdentityDownloaderSlowBox.";
-		HTMLNode box = addContentBox(l10n().getString(p + "Header"));
+		HTMLNode box = addContentBox(l.getString(p + "Header"));
 		HTMLNode ul = new HTMLNode("ul");
 		IdentityDownloaderSlowStatistics s = downloader.new IdentityDownloaderSlowStatistics();
 		
