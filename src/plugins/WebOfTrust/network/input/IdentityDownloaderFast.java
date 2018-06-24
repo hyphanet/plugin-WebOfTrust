@@ -1538,12 +1538,24 @@ public final class IdentityDownloaderFast implements
 	}
 
 	public final class IdentityDownloaderFastStatistics {
-		/** Number of running Freenet {@link USKManager} subscriptions.
+		/** Number of queued {@link StartDownloadCommand}s which request us to start downloading an
+		 *  {@link Identity}. */
+		public final int mScheduledForStartingDownloads;
+	
+		/** Number of queued {@link StopDownloadCommand}s which request us to stop downloading an
+		 *  {@link Identity}. */
+		public final int mScheduledForStoppingDownloads;
+	
+		/** Number of running Freenet {@link USKManager} subscriptions, i.e. running permanent
+		 *  download requests which ship all updates of an {@link Identity}.
 		 *  
 		 *  This should be equal to the number of {@link Identity}s to which the user's
 		 *  {@link OwnIdentity}s have assigned a {@link Trust} with {@link Trust#getValue()} >= 0,
 		 *  plus the number of OwnIdentitys as they are subscribed to as well for
-		 *  {@link WebOfTrust#restoreOwnIdentity(FreenetURI)}. */
+		 *  {@link WebOfTrust#restoreOwnIdentity(FreenetURI)}.
+		 *  
+		 *  Downloads are not counted into this while they are in the scheduling queue, see
+		 *  {@link #mScheduledForStartingDownloads}. */
 		public final int mRunningDownloads;
 	
 		/** Number of USK editions, i.e. {@link IdentityFile}s, which the {@link USKManager}
@@ -1556,10 +1568,15 @@ public final class IdentityDownloaderFast implements
 	
 	
 		public IdentityDownloaderFastStatistics() {
+			synchronized(IdentityDownloaderFast.this.mWoT) { // For getQueuedCommands()
 			synchronized(IdentityDownloaderFast.this) {
 				mRunningDownloads = IdentityDownloaderFast.this
 					.mDownloads.size();
-			}
+				mScheduledForStartingDownloads = IdentityDownloaderFast.this
+					.getQueuedCommands(StartDownloadCommand.class).size();
+				mScheduledForStoppingDownloads = IdentityDownloaderFast.this
+					.getQueuedCommands(StopDownloadCommand.class).size();
+			}}
 			mDownloadedEditions = IdentityDownloaderFast.this
 				.mDownloadedEditions.get();
 			mDownloadProcessingFailures = IdentityDownloaderFast.this
