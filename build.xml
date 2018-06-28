@@ -41,9 +41,9 @@
 	<!-- Git submodule directories of dependencies. Will be compiled automatically! -->
 	<property name="db4o-submodule.location" location="db4o-7.4"/>
 	<property name="xchart-submodule.location" location="XChart"/>
-	<!-- JARs which the Ant builders of the submodules produce. -->
-	<property name="db4o.location" location="${db4o-submodule.location}/db4o.jar"/>
-	<property name="xchart.location" location="${xchart-submodule.location}/xchart.jar"/>
+	<!-- After compiling the submodule JARs are copied into this directory and used from there.
+	     (Copying is necessary because <zipgroupfileset> needs to consume a directory.) -->
+	<property name="dependencies.location" location="dependencies/"/>
 	<property name="svn.revision" value="@custom@"/>
 	<property name="build" location="build/"/>
 	<property name="build-test" location="build-test/"/>
@@ -61,12 +61,10 @@
 	<available file="${cobertura.location}" property="cobertura.present"/>
 	<property name="test.coverage" unless:set="${test.coverage}" if:true="${cobertura.present}" value="true"/>
 
-	<!-- Submodule libraries whose classes are to be bundled in our own JAR. -->
-	<path id="submodules.path">
-		<pathelement location="${db4o.location}"/>
-		<pathelement location="${xchart.location}"/>
-	</path>
-	<!-- Libraries which we get from fred. -->
+	<!-- Libraries which we get from fred.
+	     TODO: Code quality: Copy them to dependencies.location and use them from there, delete them
+	     at clean task. This will allow compiling if fred isn't currently compiled as long as clean
+	     isn't run. -->
 	<path id="lib.path">
 		<!-- Use filesets instead of <pathelement> to:
 		     - allow using wildcards when including freenet.lib.new.location so we don't need to
@@ -82,6 +80,13 @@
 		<fileset file="${freenet.lib.old.location.3}" erroronmissingdir="no"/>
 		<fileset file="${freenet.lib.old.location.4}" erroronmissingdir="no"/>
 		<fileset file="${freenet.lib.old.location.5}" erroronmissingdir="no"/>
+	</path>
+
+	<!-- Submodule libraries whose classes are to be bundled in our own JAR. -->
+	<path id="submodules.path">
+		<fileset dir="${dependencies.location}" erroronmissingdir="yes" casesensitive="no">
+			<include name="*.jar"/>
+		</fileset>
 	</path>
 
 	<path id="cobertura.path">
@@ -150,6 +155,9 @@
 			<property name="javac.source.version" value="${source-version}"/>
 			<property name="javac.target.version" value="${target-version}"/>
 		</ant>
+		
+		<copy file="${db4o-submodule.location}/db4o.jar" todir="${dependencies.location}" overwrite="true"/>
+		<copy file="${xchart-submodule.location}/xchart.jar" todir="${dependencies.location}" overwrite="true"/>
 	</target>
 
 	<target name="clean-submodules" depends="get-submodules" description="Cleans the compile output of the dependencies">
@@ -281,11 +289,7 @@
 			</fileset>
 			
 			<fileset dir="${build-test}/test/"/> <!-- Separate directory to exclude the JAR -->
-			<archives>
-				<zips>
-					<path refid="submodules.path"/>
-				</zips>
-			</archives>
+			<zipgroupfileset dir="${dependencies.location}" casesensitive="no" includes="*.jar"/>
 		</jar>
 	</target>
 
@@ -407,11 +411,7 @@
 				<include name="*.txt"/> <!-- Include the GPL -->
 			</fileset>
 			<fileset dir="${build}/"/>
-			<archives>
-				<zips>
-					<path refid="submodules.path"/>
-				</zips>
-			</archives>
+			<zipgroupfileset dir="${dependencies.location}" casesensitive="no" includes="*.jar"/>
 		</jar>
 	</target>
 
@@ -436,6 +436,7 @@
 		<delete dir="${build}"/>
 		<delete dir="${build-test}"/>
 		<delete dir="${build-test-coverage}"/>
+		<delete dir="${dependencies.location}"/>
 		<delete dir="${dist}"/>
 		<delete file="${debug-node-wot-plugin.location}"/>
 	</target>
