@@ -131,22 +131,20 @@
 		</and>
 	</condition>
 
-	<target name="get-submodules" description="Downloads the git submodules required by WoT">
+	<target name="get-submodules" description="Downloads the git submodule dependencies required by WoT">
 		<echo>Downloading git submodules if they don't exist already...</echo>
 		<exec executable="git">
 			<arg line="submodule update --init"/>
 		</exec>
 	</target>
 
-	<target name="db4o" depends="get-submodules" description="Compiles the database submodule">
+	<target name="compile-submodules" depends="get-submodules" description="Compiles the dependencies">
 		<echo>Compiling db4o submodule...</echo>
 		<ant dir="${db4o-submodule.location}" inheritAll="false" useNativeBasedir="true">
 			<property name="javac.source.version" value="${source-version}"/>
 			<property name="javac.target.version" value="${target-version}"/>
 		</ant>
-	</target>
-
-	<target name="xchart" depends="get-submodules" description="Compiles the plotting submodule">
+		
 		<echo>Compiling XChart submodule...</echo>
 		<ant dir="${xchart-submodule.location}" inheritAll="false" useNativeBasedir="true">
 			<property name="javac.source.version" value="${source-version}"/>
@@ -154,18 +152,15 @@
 		</ant>
 	</target>
 
-	<target name="clean-db4o" depends="get-submodules" description="Cleans the database submodule">
+	<target name="clean-submodules" depends="get-submodules" description="Cleans the compile output of the dependencies">
 		<echo>Cleaning db4o submodule...</echo>
 		<ant dir="${db4o-submodule.location}" target="clean" inheritAll="false"
 			useNativeBasedir="true"/>
-	</target>
-
-	<target name="clean-xchart" depends="get-submodules" description="Cleans the plotting submodule">
+		
 		<echo>Cleaning XChart submodule...</echo>
 		<ant dir="${xchart-submodule.location}" target="clean" inheritAll="false"
 			useNativeBasedir="true"/>
 	</target>
-
 
 	<target name="print-libs">
 		<echo>External dependencies on classpath follow, but ONLY those which did exist.</echo>
@@ -191,7 +186,7 @@
 	</target>
 
 	<!-- ================================================== -->
-	<target name="compile" depends="print-libs, db4o, xchart, mkdir">
+	<target name="compile" depends="print-libs, compile-submodules, mkdir">
 		<!-- Create the time stamp -->
 		<tstamp/>
 
@@ -437,7 +432,7 @@
 	</target>
 
 	<!-- ================================================== -->
-	<target name="clean" depends="clean-db4o, clean-xchart" description="Delete class files and docs dir and the plugin file in plugins/ of your debug node.">
+	<target name="clean" depends="clean-submodules" description="Delete class files and docs dir and the plugin file in plugins/ of your debug node.">
 		<delete dir="${build}"/>
 		<delete dir="${build-test}"/>
 		<delete dir="${build-test-coverage}"/>
