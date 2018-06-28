@@ -38,10 +38,12 @@
 	<!-- Configuration which you should probably leave as is!                                    -->
 	<!-- ======================================================================================= -->
 	
-	<!-- Git submodule directory of the db4o source code. Will be compiled automatically! -->
+	<!-- Git submodule directories of dependencies. Will be compiled automatically! -->
 	<property name="db4o-submodule.location" location="db4o-7.4"/>
-	<!-- JAR which the Ant builder of db4o produces. -->
+	<property name="xchart-submodule.location" location="XChart"/>
+	<!-- JARs which the Ant builders of the submodules produce. -->
 	<property name="db4o.location" location="${db4o-submodule.location}/db4o.jar"/>
+	<property name="xchart.location" location="${xchart-submodule.location}/xchart.jar"/>
 	<property name="svn.revision" value="@custom@"/>
 	<property name="build" location="build/"/>
 	<property name="build-test" location="build-test/"/>
@@ -59,9 +61,10 @@
 	<available file="${cobertura.location}" property="cobertura.present"/>
 	<property name="test.coverage" unless:set="${test.coverage}" if:true="${cobertura.present}" value="true"/>
 
-	<!-- Libraries whose classes are to be bundled in our own JAR. -->
+	<!-- Submodule libraries whose classes are to be bundled in our own JAR. -->
 	<path id="submodules.path">
 		<pathelement location="${db4o.location}"/>
+		<pathelement location="${xchart.location}"/>
 	</path>
 	<!-- Libraries which we get from fred. -->
 	<path id="lib.path">
@@ -129,7 +132,7 @@
 	</condition>
 
 	<target name="get-submodules" description="Downloads the git submodules required by WoT">
-		<echo>Downloading db4o git submodule if it doesn't exist already...</echo>
+		<echo>Downloading git submodules if they don't exist already...</echo>
 		<exec executable="git">
 			<arg line="submodule update --init"/>
 		</exec>
@@ -143,9 +146,23 @@
 		</ant>
 	</target>
 
+	<target name="xchart" depends="get-submodules" description="Compiles the plotting submodule">
+		<echo>Compiling XChart submodule...</echo>
+		<ant dir="${xchart-submodule.location}" inheritAll="false" useNativeBasedir="true">
+			<property name="javac.source.version" value="${source-version}"/>
+			<property name="javac.target.version" value="${target-version}"/>
+		</ant>
+	</target>
+
 	<target name="clean-db4o" depends="get-submodules" description="Cleans the database submodule">
 		<echo>Cleaning db4o submodule...</echo>
 		<ant dir="${db4o-submodule.location}" target="clean" inheritAll="false"
+			useNativeBasedir="true"/>
+	</target>
+
+	<target name="clean-xchart" depends="get-submodules" description="Cleans the plotting submodule">
+		<echo>Cleaning XChart submodule...</echo>
+		<ant dir="${xchart-submodule.location}" target="clean" inheritAll="false"
 			useNativeBasedir="true"/>
 	</target>
 
@@ -174,7 +191,7 @@
 	</target>
 
 	<!-- ================================================== -->
-	<target name="compile" depends="print-libs, db4o, mkdir">
+	<target name="compile" depends="print-libs, db4o, xchart, mkdir">
 		<!-- Create the time stamp -->
 		<tstamp/>
 
@@ -269,9 +286,11 @@
 			</fileset>
 			
 			<fileset dir="${build-test}/test/"/> <!-- Separate directory to exclude the JAR -->
-			<zipfileset>
-				<path refid="submodules.path"/>
-			</zipfileset>
+			<archives>
+				<zips>
+					<path refid="submodules.path"/>
+				</zips>
+			</archives>
 		</jar>
 	</target>
 
@@ -330,6 +349,7 @@
 					<exclude name="**/TickerDelayedBackgroundJobTest.class"
 						unless="test.unreliable" />
 					<exclude name="com/db4o/**"/>
+					<exclude name="org/knowm/xchart/**"/>
 				</zipfileset>
 			</batchtest>
 			
@@ -369,6 +389,7 @@
 					     constructor. -->
 					<exclude name="**/*$*.class"/>
 					<exclude name="com/db4o/**"/>
+					<exclude name="org/knowm/xchart/**"/>
 				</zipfileset>
 			</batchtest>
 			
@@ -391,9 +412,11 @@
 				<include name="*.txt"/> <!-- Include the GPL -->
 			</fileset>
 			<fileset dir="${build}/"/>
-			<zipfileset>
-				<path refid="submodules.path"/>
-			</zipfileset>
+			<archives>
+				<zips>
+					<path refid="submodules.path"/>
+				</zips>
+			</archives>
 		</jar>
 	</target>
 
@@ -414,7 +437,7 @@
 	</target>
 
 	<!-- ================================================== -->
-	<target name="clean" depends="clean-db4o" description="Delete class files and docs dir and the plugin file in plugins/ of your debug node.">
+	<target name="clean" depends="clean-db4o, clean-xchart" description="Delete class files and docs dir and the plugin file in plugins/ of your debug node.">
 		<delete dir="${build}"/>
 		<delete dir="${build-test}"/>
 		<delete dir="${build-test-coverage}"/>
