@@ -11,8 +11,10 @@ import java.io.InputStream;
 import java.util.Arrays;
 
 import plugins.WebOfTrust.Identity.IdentityID;
+import plugins.WebOfTrust.util.Pair;
 import plugins.WebOfTrust.util.jobs.BackgroundJob;
 import freenet.keys.FreenetURI;
+import freenet.support.CurrentTimeUTC;
 import freenet.support.Logger;
 import freenet.support.Logger.LogLevel;
 
@@ -124,7 +126,14 @@ final class IdentityFileDiskQueue implements IdentityFileQueue {
 			++mStatistics.mQueuedFiles;
 			++mStatistics.mTotalQueuedFiles;
 		}
-
+		
+		if(mStatistics.mTotalQueuedFiles > 0) {
+			// mTimesOfQueuing contains an initial entry for 0 files, which is wrong so remove it.
+			mStatistics.mTimesOfQueuing.clear();
+			mStatistics.mTimesOfQueuing.addLast(
+				new Pair<>(mStatistics.mStartupTimeMilliseconds, mStatistics.mTotalQueuedFiles));
+		}
+		
 		Logger.normal(this, "cleanDirectories(): Old queued files: " + mStatistics.mQueuedFiles);
 
 		// Processing dir policy:
@@ -197,6 +206,8 @@ final class IdentityFileDiskQueue implements IdentityFileQueue {
 			// included: This ensures that the user might notice dropped files from the statistics
 			// in the UI.
 			++mStatistics.mTotalQueuedFiles;
+			mStatistics.mTimesOfQueuing.addLast(
+				new Pair<>(CurrentTimeUTC.getInMillis(), mStatistics.mTotalQueuedFiles));
 			
 			File filename = getQueueFilename(identityFileStream.mURI);
 			// Delete for deduplication

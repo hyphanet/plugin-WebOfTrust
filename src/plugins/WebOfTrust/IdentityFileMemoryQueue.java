@@ -6,7 +6,9 @@ package plugins.WebOfTrust;
 import java.io.ByteArrayInputStream;
 import java.util.LinkedList;
 
+import freenet.support.CurrentTimeUTC;
 import freenet.support.Logger;
+import plugins.WebOfTrust.util.Pair;
 import plugins.WebOfTrust.util.jobs.BackgroundJob;
 
 /**
@@ -72,6 +74,8 @@ final class IdentityFileMemoryQueue implements IdentityFileQueue {
 			throw e;
 		} finally {
 			++mStatistics.mTotalQueuedFiles;
+			mStatistics.mTimesOfQueuing.addLast(
+				new Pair<>(CurrentTimeUTC.getInMillis(), mStatistics.mTotalQueuedFiles));
 			assert(checkConsistency());
 		}
 	}

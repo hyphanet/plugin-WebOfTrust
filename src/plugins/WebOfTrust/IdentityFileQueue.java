@@ -119,8 +119,8 @@ public interface IdentityFileQueue {
 		 * = {@link #mTotalQueuedFiles}.
 		 * 
 		 * Additionally, for allowing external code to work without checks for emptiness, a first
-		 * Pair is added at construction to represent the initial amount of files at time of
-		 * construction, even if that amount is 0. */
+		 * Pair is added at construction to represent the initial amount of 0 files at time of
+		 * construction. */
 		public LimitedArrayDeque<Pair<Long, Integer>> mTimesOfQueuing
 			= new LimitedArrayDeque<>(MAX_TIMES_OF_QUEUING_SIZE);
 	
@@ -175,10 +175,6 @@ public interface IdentityFileQueue {
 	
 	
 		IdentityFileQueueStatistics() {
-			// FIXME: If files are left over from the previous session then mTotalQueuedFiles
-			// is currently initialized *after* this constructor by IdentityFileQueue
-			// implementations. Fix that code to pass it to this constructor instead so we use the
-			// right value here.
 			mTimesOfQueuing.addLast(new Pair<>(mStartupTimeMilliseconds, mTotalQueuedFiles));
 		}
 	
