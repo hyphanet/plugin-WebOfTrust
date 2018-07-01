@@ -6,6 +6,7 @@ package plugins.WebOfTrust;
 import java.io.FilterInputStream;
 import java.io.InputStream;
 
+import plugins.WebOfTrust.network.input.IdentityDownloader;
 import plugins.WebOfTrust.util.LimitedArrayDeque;
 import plugins.WebOfTrust.util.Pair;
 import plugins.WebOfTrust.util.jobs.BackgroundJob;
@@ -102,21 +103,29 @@ public interface IdentityFileQueue {
 
 	public static final class IdentityFileQueueStatistics implements Cloneable {
 		/**
-		 * Count of files which were passed to {@link #add(IdentityFileStream)}.<br>
-		 * This <b>includes</b> files which:<br>
-		 * - are not queued anymore (see {@link #mFinishedFiles}).<br>
-		 * - are still queued (see {@link #mQueuedFiles}).<br>
-		 * - were deleted due to deduplication (see {@link #mDeduplicatedFiles}).<br>
-		 * - failed en-/dequeuing due to errors (see {@link #mFailedFiles}).<br><br>
+		 * Count of files which were passed to {@link #add(IdentityFileStream)}.
+		 * This is equal to the total number of downloaded Identity files as the contract of
+		 * {@link IdentityDownloader} specifies that strictly all downloaded files are passed to the
+		 * IdentityFileQueue.
+		 * 
+		 * Thus this includes files which:
+		 * - are not queued anymore (see {@link #mFinishedFiles}).
+		 * - are still queued (see {@link #mQueuedFiles}).
+		 * - were deleted due to deduplication (see {@link #mDeduplicatedFiles}).
+		 * - failed en-/dequeuing due to errors (see {@link #mFailedFiles}).
 		 * 
 		 * The lost files are included to ensure that errors can be noticed by the user from
-		 * statistics in the UI. */
+		 * statistics in the UI, and because this variable shall represent the total number of
+		 * downloaded files. */
 		public int mTotalQueuedFiles = 0;
 	
 		/**
 		 * For each queued file, i.e. each file part of {@link #mTotalQueuedFiles}, a {@link Pair}
 		 * is added with {@link Pair#x} = {@link CurrentTimeUTC#getInMillis()} and {@link Pair#y}
 		 * = {@link #mTotalQueuedFiles}.
+		 * 
+		 * Thus this contains the X/Y values for a plot of total downloaded Identity files across
+		 * the uptime of WoT.
 		 * 
 		 * Additionally, for allowing external code to work without checks for emptiness, a first
 		 * Pair is added at construction to represent the initial amount of 0 files at time of
