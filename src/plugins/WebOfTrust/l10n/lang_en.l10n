@@ -180,6 +180,9 @@ StatisticsPage.IdentityFileQueueBox.TotalQueuedFiles=Total ever enqueued (= down
 StatisticsPage.MaintenanceBox.Header=Maintenance
 StatisticsPage.MaintenanceBox.LastDefrag=Last defragmentation of database: ${lastTime} (schedule: every ${interval})
 StatisticsPage.MaintenanceBox.LastScoreVerification=Last verification of incrementally computed trust values: ${lastTime} (schedule: every ${interval})
+StatisticsPage.PlotBox.TotalDownloadCountPlot.Title=Total downloaded identity files
+StatisticsPage.PlotBox.TotalDownloadCountPlot.XAxis.Minutes=Minutes
+StatisticsPage.PlotBox.TotalDownloadCountPlot.YAxis=Files
 StatisticsPage.SummaryBox.EventNotifications.Pending=Event notifications queued for sending: ${amount}
 StatisticsPage.SummaryBox.EventNotifications.Total=Total event notifications ever created (only for current clients): ${amount}
 StatisticsPage.SummaryBox.FetchProgress=Sum of all edition numbers: ${editionCount}
