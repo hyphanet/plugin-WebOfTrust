@@ -6,6 +6,8 @@ package plugins.WebOfTrust;
 import java.io.FilterInputStream;
 import java.io.InputStream;
 
+import plugins.WebOfTrust.util.LimitedArrayDeque;
+import plugins.WebOfTrust.util.Pair;
 import plugins.WebOfTrust.util.jobs.BackgroundJob;
 import freenet.keys.FreenetURI;
 import freenet.support.CurrentTimeUTC;
@@ -110,7 +112,20 @@ public interface IdentityFileQueue {
 		 * The lost files are included to ensure that errors can be noticed by the user from
 		 * statistics in the UI. */
 		public int mTotalQueuedFiles = 0;
-		
+	
+		/**
+		 * For each queued file, i.e. each file part of {@link #mTotalQueuedFiles}, a {@link Pair}
+		 * is added with {@link Pair#x} = {@link CurrentTimeUTC#getInMillis()} and {@link Pair#y}
+		 * = {@link #mTotalQueuedFiles}.
+		 * 
+		 * Additionally, for allowing external code to work without checks for emptiness, a first
+		 * Pair is added at construction to represent the initial amount of files at time of
+		 * construction, even if that amount is 0. */
+		public LimitedArrayDeque<Pair<Long, Integer>> mTimesOfQueuing
+			= new LimitedArrayDeque<>(MAX_TIMES_OF_QUEUING_SIZE);
+	
+		public static final int MAX_TIMES_OF_QUEUING_SIZE = 128 * 1024;
+	
 		/**
 		 * Count of files which have been passed to {@link #add(IdentityFileStream)} but have not
 		 * been dequeued by {@link #poll()} yet. */
@@ -157,11 +172,21 @@ public interface IdentityFileQueue {
 
 		/** Value of {@link CurrentTimeUTC#getInMillis()} when this object was created. */
 		public final long mStartupTimeMilliseconds = CurrentTimeUTC.getInMillis();
-
-
+	
+	
+		IdentityFileQueueStatistics() {
+			// FIXME: If files are left over from the previous session then mTotalQueuedFiles
+			// is currently initialized *after* this constructor by IdentityFileQueue
+			// implementations. Fix that code to pass it to this constructor instead so we use the
+			// right value here.
+			mTimesOfQueuing.addLast(new Pair<>(mStartupTimeMilliseconds, mTotalQueuedFiles));
+		}
+	
 		@Override public IdentityFileQueueStatistics clone() {
 			try {
-				return (IdentityFileQueueStatistics)super.clone();
+				IdentityFileQueueStatistics result = (IdentityFileQueueStatistics)super.clone();
+				result.mTimesOfQueuing = result.mTimesOfQueuing.clone();
+				return result;
 			} catch (CloneNotSupportedException e) {
 				throw new RuntimeException(e);
 			}
@@ -185,7 +210,10 @@ public interface IdentityFileQueue {
 		boolean checkConsistency() {
 			return (
 					(mTotalQueuedFiles >= 0)
-					
+				
+				 && (mTimesOfQueuing.size() == (mTotalQueuedFiles + 1 /* for initial entry */)
+					|| mTimesOfQueuing.size() == MAX_TIMES_OF_QUEUING_SIZE)
+				
 				 && (mQueuedFiles >= 0)
 				 
 				 && (mProcessingFiles >= 0)
