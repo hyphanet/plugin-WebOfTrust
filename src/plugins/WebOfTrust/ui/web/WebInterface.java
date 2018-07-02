@@ -305,14 +305,7 @@ public class WebInterface {
 		}
 
 		public URI getURI(String puzzleID) {
-			final URI baseURI = getURI();
-			
-			try {
-				// The parameter which is baseURI.getPath() may not be null, otherwise the last directory is stripped.
-				return baseURI.resolve(new URI(null, null, baseURI.getPath(), "PuzzleID=" + puzzleID, null));
-			} catch (URISyntaxException e) {
-				throw new RuntimeException(e);
-			}
+			return getURIWithParams("PuzzleID=" + puzzleID);
 		}
 
 		@Override
@@ -449,12 +442,7 @@ public class WebInterface {
 		}
 	
 		public URI getURI(StatisticsType type) {
-			URI u = getURI();
-			try {
-				return u.resolve(new URI(null, null, u.getPath(), "type=" + type, null));
-			} catch (URISyntaxException e) {
-				throw new RuntimeException(e);
-			}
+			return getURIWithParams("type=" + type);
 		}
 	
 		@Override public void handleMethodGET(URI uri, HTTPRequest httpRequest,
