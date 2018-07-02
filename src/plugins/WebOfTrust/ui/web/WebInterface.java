@@ -447,9 +447,14 @@ public class WebInterface {
 			
 			super(highLevelSimpleClient, webInterface, nodeClientCore, pageTitle);
 		}
-
+	
 		public URI getURI(StatisticsType type) {
-			return super.getURI().resolve("?" + type.toString());
+			URI u = getURI();
+			try {
+				return u.resolve(new URI(null, null, u.getPath(), "type=" + type, null));
+			} catch (URISyntaxException e) {
+				throw new RuntimeException(e);
+			}
 		}
 	
 		@Override public void handleMethodGET(URI uri, HTTPRequest httpRequest,
