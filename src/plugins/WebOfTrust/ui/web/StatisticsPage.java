@@ -321,58 +321,60 @@ public class StatisticsPage extends WebPageImpl {
 	 * their image's URI. FIXME: Add URI getter to StatisticsPNGRenderer. */
 	public static enum StatisticsType implements StatisticsPNGRenderer {
 		TotalDownloadCount(new StatisticsPNGRenderer() {
-	/**
-	 * Renders a chart where the X-axis is the uptime of WoT, and the Y-axis is the total number of
-	 * downloaded {@link IdentityFile}s.
-	 * 
-	 * @see IdentityFileQueueStatistics#mTotalQueuedFiles
-	 * @see IdentityFileQueueStatistics#mTimesOfQueuing */
-	@Override public byte[] getPNG(WebOfTrust wot) {
-		IdentityFileQueueStatistics stats = wot.getIdentityFileQueue().getStatistics();
-		LimitedArrayDeque<Pair<Long, Integer>> timesOfQueuing
-			= stats.mTimesOfQueuing;
-		
-		// Add a dummy entry for the current time to the end of the plot so refreshing the image
-		// periodically shows that it is live even when there is no progress.
-		// Adding it to the obtained statistics is fine as they are a clone() of the original.
-		// Also peekLast() can never return null because mTimesOfQueuing by contract always contains
-		// at least one element.
-		timesOfQueuing.addLast(
-			new Pair<>(CurrentTimeUTC.getInMillis(), timesOfQueuing.peekLast().y));
-		
-		long x0 = stats.mStartupTimeMilliseconds;
-		double[] x = new double[timesOfQueuing.size()];
-		double[] y = new double[x.length];
-		int i = 0;
-		for(Pair<Long, Integer> p : timesOfQueuing) {
-			// FIXME: Switch to hours for large ranges of the plot
-			x[i] = ((double)(p.x - x0)) / (double)MINUTES.toMillis(1);
-			y[i] = p.y;
-			++i;
-		}
-		
-		BaseL10n l = wot.getBaseL10n();
-		String p = "StatisticsPage.PlotBox.TotalDownloadCountPlot.";
-		XYChart c = QuickChart.getChart(l.getString(p + "Title"), l.getString(p + "XAxis.Minutes"),
-			l.getString(p + "YAxis"), null, x, y);
-		
-		/* For debugging
-		for(XYSeries s: c.getSeriesMap().values())
-			s.setMarker(SeriesMarkers.CIRCLE);
-		*/
-		
-		byte[] png;
-		try {
-			png = BitmapEncoder.getBitmapBytes(c, BitmapFormat.PNG);
-		} catch (IOException e) {
-			// No idea why this would happen so don't require callers to handle it by converting
-			// to non-declared exception.
-			throw new RuntimeException(e);
-		}
-		
-		return png;
-	}
-	});
+			/**
+			 * Renders a chart where the X-axis is the uptime of WoT, and the Y-axis is the total
+			 * number of downloaded {@link IdentityFile}s.
+			 * 
+			 * @see IdentityFileQueueStatistics#mTotalQueuedFiles
+			 * @see IdentityFileQueueStatistics#mTimesOfQueuing */
+			@Override public byte[] getPNG(WebOfTrust wot) {
+				IdentityFileQueueStatistics stats = wot.getIdentityFileQueue().getStatistics();
+				LimitedArrayDeque<Pair<Long, Integer>> timesOfQueuing
+					= stats.mTimesOfQueuing;
+				
+				// Add a dummy entry for the current time to the end of the plot so refreshing the
+				// image periodically shows that it is live even when there is no progress.
+				// Adding it to the obtained statistics is fine as they are a clone() of the
+				// original.
+				// Also peekLast() can never return null because mTimesOfQueuing by contract always
+				// contains at least one element.
+				timesOfQueuing.addLast(
+					new Pair<>(CurrentTimeUTC.getInMillis(), timesOfQueuing.peekLast().y));
+				
+				long x0 = stats.mStartupTimeMilliseconds;
+				double[] x = new double[timesOfQueuing.size()];
+				double[] y = new double[x.length];
+				int i = 0;
+				for(Pair<Long, Integer> p : timesOfQueuing) {
+					// FIXME: Switch to hours for large ranges of the plot
+					x[i] = ((double)(p.x - x0)) / (double)MINUTES.toMillis(1);
+					y[i] = p.y;
+					++i;
+				}
+				
+				BaseL10n l = wot.getBaseL10n();
+				String p = "StatisticsPage.PlotBox.TotalDownloadCountPlot.";
+				XYChart c = QuickChart.getChart(l.getString(p + "Title"),
+					l.getString(p + "XAxis.Minutes"),
+					l.getString(p + "YAxis"), null, x, y);
+				
+				/* For debugging
+				for(XYSeries s: c.getSeriesMap().values())
+					s.setMarker(SeriesMarkers.CIRCLE);
+				*/
+				
+				byte[] png;
+				try {
+					png = BitmapEncoder.getBitmapBytes(c, BitmapFormat.PNG);
+				} catch (IOException e) {
+					// No idea why this would happen so don't require callers to handle it by
+					// converting to non-declared exception.
+					throw new RuntimeException(e);
+				}
+				
+				return png;
+			}
+		});
 	
 		private final StatisticsPNGRenderer mRenderer;
 	
