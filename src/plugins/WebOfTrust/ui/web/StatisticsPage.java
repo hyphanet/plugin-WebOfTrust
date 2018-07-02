@@ -11,6 +11,7 @@ import static plugins.WebOfTrust.Configuration.DEFAULT_VERIFY_SCORES_INTERVAL;
 import static plugins.WebOfTrust.ui.web.CommonWebUtils.formatTimeDelta;
 
 import java.io.IOException;
+import java.net.URI;
 import java.text.SimpleDateFormat;
 import java.util.Date;
 import java.util.concurrent.TimeUnit;
@@ -33,6 +34,8 @@ import plugins.WebOfTrust.network.input.IdentityDownloaderFast;
 import plugins.WebOfTrust.network.input.IdentityDownloaderFast.IdentityDownloaderFastStatistics;
 import plugins.WebOfTrust.network.input.IdentityDownloaderSlow;
 import plugins.WebOfTrust.network.input.IdentityDownloaderSlow.IdentityDownloaderSlowStatistics;
+import plugins.WebOfTrust.ui.web.WebInterface.StatisticsPNGWebInterfaceToadlet;
+import plugins.WebOfTrust.ui.web.WebInterface.StatisticsType;
 import plugins.WebOfTrust.util.LimitedArrayDeque;
 import plugins.WebOfTrust.util.Pair;
 import freenet.clients.http.ToadletContext;
@@ -63,6 +66,7 @@ public class StatisticsPage extends WebPageImpl {
 	@Override
 	public void make(final boolean mayWrite) {
 		makeSummary();
+		makePlotBox();
 		makeIdentityDownloaderFastBox();
 		makeIdentityDownloaderSlowBox();
 		makeIdentityDownloaderSlowQueueBox();
@@ -116,6 +120,16 @@ public class StatisticsPage extends WebPageImpl {
 		}
 		
 		box.addChild(list);
+	}
+
+	private void makePlotBox() {
+		HTMLNode box = addContentBox(l10n().getString("StatisticsPage.PlotBox.Header"));
+		box.addChild("img", "src", getTotalDownloadCountImageURI().toString());
+	}
+
+	private URI getTotalDownloadCountImageURI() {
+		return ((StatisticsPNGWebInterfaceToadlet)mWebInterface.getToadlet(StatisticsPNGWebInterfaceToadlet.class))
+		         .getURI(StatisticsType.TotalDownloadCount);
 	}
 
 	/**
