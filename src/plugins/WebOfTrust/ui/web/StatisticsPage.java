@@ -35,7 +35,6 @@ import plugins.WebOfTrust.network.input.IdentityDownloaderFast.IdentityDownloade
 import plugins.WebOfTrust.network.input.IdentityDownloaderSlow;
 import plugins.WebOfTrust.network.input.IdentityDownloaderSlow.IdentityDownloaderSlowStatistics;
 import plugins.WebOfTrust.ui.web.WebInterface.StatisticsPNGWebInterfaceToadlet;
-import plugins.WebOfTrust.ui.web.WebInterface.StatisticsType;
 import plugins.WebOfTrust.util.LimitedArrayDeque;
 import plugins.WebOfTrust.util.Pair;
 import freenet.clients.http.ToadletContext;
@@ -311,13 +310,24 @@ public class StatisticsPage extends WebPageImpl {
 		box.addChild(list);
 	}
 
+	public static interface StatisticsPNGRenderer {
+		public byte[] getPNG(WebOfTrust wot);
+	}
+
+	/**
+	 * Each value of this enum defines a {@link StatisticsPNGRenderer#getPNG(WebOfTrust)} to
+	 * render the associated statistics plot.
+	 * The values can be passed to {@link StatisticsPNGWebInterfaceToadlet#getURI()} to obtain
+	 * their image's URI. FIXME: Add URI getter to StatisticsPNGRenderer. */
+	public static enum StatisticsType implements StatisticsPNGRenderer {
+		TotalDownloadCount(new StatisticsPNGRenderer() {
 	/**
 	 * Renders a chart where the X-axis is the uptime of WoT, and the Y-axis is the total number of
 	 * downloaded {@link IdentityFile}s.
 	 * 
 	 * @see IdentityFileQueueStatistics#mTotalQueuedFiles
 	 * @see IdentityFileQueueStatistics#mTimesOfQueuing */
-	public static byte[] getTotalDownloadCountPlotPNG(WebOfTrust wot) {
+	@Override public byte[] getPNG(WebOfTrust wot) {
 		IdentityFileQueueStatistics stats = wot.getIdentityFileQueue().getStatistics();
 		LimitedArrayDeque<Pair<Long, Integer>> timesOfQueuing
 			= stats.mTimesOfQueuing;
@@ -361,6 +371,22 @@ public class StatisticsPage extends WebPageImpl {
 		}
 		
 		return png;
+	}
+	});
+	
+		private final StatisticsPNGRenderer mRenderer;
+	
+		private StatisticsType(StatisticsPNGRenderer r) {
+			mRenderer = r;
+		}
+	
+		/**
+		 * TODO: Code quality: Java 8: In Java 8 the values of the enum will be able to implement
+		 * this directly without the indirection of the mRenderer variable:
+		 * https://stackoverflow.com/a/50472201 */
+		@Override public byte[] getPNG(WebOfTrust wot) {
+			return mRenderer.getPNG(wot);
+		}
 	}
 
 	private void makeIdentityFileProcessorBox() {

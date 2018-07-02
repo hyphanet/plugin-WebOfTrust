@@ -25,6 +25,7 @@ import plugins.WebOfTrust.exceptions.UnknownIdentityException;
 import plugins.WebOfTrust.identicon.Identicon;
 import plugins.WebOfTrust.introduction.IntroductionPuzzle;
 import plugins.WebOfTrust.introduction.IntroductionPuzzleStore;
+import plugins.WebOfTrust.ui.web.StatisticsPage.StatisticsType;
 import freenet.client.HighLevelSimpleClient;
 import freenet.client.filter.ContentFilter;
 import freenet.clients.http.PageMaker;
@@ -419,21 +420,6 @@ public class WebInterface {
 
 	}
 
-	/** Used to choose the type of {@link StatisticsPage}'s statistics PNG to be returned by
-	 *  {@link StatisticsPNGWebInterfaceToadlet#getURI()}. */
-	public static enum StatisticsType {
-		TotalDownloadCount,
-		UNKNOWN;
-		
-		public static final StatisticsType switchableValueOf(String name) {
-			try {
-				return valueOf(name);
-			} catch(IllegalArgumentException e) {
-				return UNKNOWN;
-			}
-		}
-	};
-
 	public final class StatisticsPNGWebInterfaceToadlet extends WebInterfaceToadlet {
 		public StatisticsPNGWebInterfaceToadlet(HighLevelSimpleClient highLevelSimpleClient,
 				WebInterface webInterface, NodeClientCore nodeClientCore, String pageTitle) {
@@ -452,16 +438,17 @@ public class WebInterface {
 			if(!toadletContext.checkFullAccess(this))
 				return;
 			
-			switch(StatisticsType.switchableValueOf(httpRequest.getParam("type"))) {
-				case TotalDownloadCount:
-					returnPNG(toadletContext, StatisticsPage.getTotalDownloadCountPlotPNG(mWoT));
-					break;
-				default:
-					sendErrorPage(toadletContext, 404, "Not found",
-						"HTTP GET request parameter 'type' must be one these, except UNKNOWN: " +
-							Arrays.toString(StatisticsType.values()));
-					break;
+			StatisticsType stats;
+			try {
+				stats = StatisticsType.valueOf(httpRequest.getParam("type"));
+			} catch(IllegalArgumentException e) {
+				sendErrorPage(toadletContext, 404, "Not found",
+					"HTTP GET request parameter 'type' must be one these: " +
+						Arrays.toString(StatisticsType.values()));
+				return;
 			}
+			
+			returnPNG(toadletContext, stats.getPNG(mWoT));
 		}
 	
 		private void returnPNG(ToadletContext toadletContext, byte[] pngData)
