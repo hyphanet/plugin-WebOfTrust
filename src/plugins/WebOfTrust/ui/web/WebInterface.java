@@ -420,6 +420,9 @@ public class WebInterface {
 
 	}
 
+	/** Toadlet which serves the PNG images of all generated statistics PNG images of the enum
+	 *  {@link StatisticsPage.StatisticsType}.
+	 *  New types added to that enum will be served automatically, no changes are required here. */
 	public final class StatisticsPNGWebInterfaceToadlet extends WebInterfaceToadlet {
 		public StatisticsPNGWebInterfaceToadlet(HighLevelSimpleClient highLevelSimpleClient,
 				WebInterface webInterface, NodeClientCore nodeClientCore, String pageTitle) {

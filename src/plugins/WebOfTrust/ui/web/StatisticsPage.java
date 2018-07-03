@@ -123,12 +123,8 @@ public class StatisticsPage extends WebPageImpl {
 
 	private void makePlotBox() {
 		HTMLNode box = addContentBox(l10n().getString("StatisticsPage.PlotBox.Header"));
-		box.addChild("img", "src", getTotalDownloadCountImageURI().toString());
-	}
-
-	private URI getTotalDownloadCountImageURI() {
-		return ((StatisticsPNGWebInterfaceToadlet)mWebInterface.getToadlet(StatisticsPNGWebInterfaceToadlet.class))
-		         .getURI(StatisticsType.TotalDownloadCount);
+		for(StatisticsType type : StatisticsType.values())
+			box.addChild("img", "src", type.getURI(mWebInterface).toString());
 	}
 
 	/**
@@ -315,10 +311,17 @@ public class StatisticsPage extends WebPageImpl {
 	}
 
 	/**
-	 * Each value of this enum defines a {@link StatisticsPNGRenderer#getPNG(WebOfTrust)} to
-	 * render the associated statistics plot.
-	 * The values can be passed to {@link StatisticsPNGWebInterfaceToadlet#getURI()} to obtain
-	 * their image's URI. FIXME: Add URI getter to StatisticsPNGRenderer. */
+	 * Each value of this enum defines a {@link StatisticsPNGRenderer#getPNG(WebOfTrust)} to render
+	 * the associated statistics plot.
+	 * 
+	 * The PNG images of all values of this enum will automatically be served by
+	 * {@link StatisticsPNGWebInterfaceToadlet} at the URI as obtainable by
+	 * {@link #getURI(WebInterface)}.
+	 * All images are automatically added to the HTML of the StatisticsPage, using that URI, by
+	 * {@link StatisticsPage#makePlotBox()}.
+	 * 
+	 * Thus to add a new type of statistics all you have to do is add a new value to this enum with
+	 * the associated {@link StatisticsPNGRenderer} passed to its constructor. */
 	public static enum StatisticsType implements StatisticsPNGRenderer {
 		TotalDownloadCount(new StatisticsPNGRenderer() {
 			/**
@@ -388,6 +391,15 @@ public class StatisticsPage extends WebPageImpl {
 		 * https://stackoverflow.com/a/50472201 */
 		@Override public byte[] getPNG(WebOfTrust wot) {
 			return mRenderer.getPNG(wot);
+		}
+
+		/** Returns the URI of the PNG image of this StatisticsType as served by the
+		 *  {@link StatisticsPNGWebInterfaceToadlet}. */
+		public URI getURI(WebInterface wi) {
+			StatisticsPNGWebInterfaceToadlet myToadlet = (StatisticsPNGWebInterfaceToadlet)
+				wi.getToadlet(StatisticsPNGWebInterfaceToadlet.class);
+			
+			return myToadlet.getURI(this);
 		}
 	}
 
