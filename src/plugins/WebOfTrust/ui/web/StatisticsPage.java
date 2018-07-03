@@ -345,6 +345,7 @@ public class StatisticsPage extends WebPageImpl {
 				// timesOfQueuing is safe to be fed into this:
 				// - getStatistics() returns a clone() so it may be modified.
 				// - IdentityFileQueueStatistics specifies it to always contain at least one entry.
+				// FIXME: Move l.getString() to getTimeBasedPlotPNG()
 				return getTimeBasedPlotPNG(timesOfQueuing, x0,
 					l.getString(p + "Title"), l.getString(p + "XAxis.Hours"), 
 					l.getString(p + "XAxis.Minutes") , l.getString(p + "YAxis"));
