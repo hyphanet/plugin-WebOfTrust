@@ -182,6 +182,7 @@ StatisticsPage.MaintenanceBox.LastDefrag=Letzte Defragmentierung der Datenbank: 
 StatisticsPage.MaintenanceBox.LastScoreVerification=Letzte Überprüfung der inkrementell berechneten Vertrauenswerte: ${lastTime} (Zeitplan: alle ${interval})
 StatisticsPage.PlotBox.Header=Graphen
 StatisticsPage.PlotBox.TotalDownloadCountPlot.Title=Insgesamt heruntergeladene Identitäts-Dateien
+StatisticsPage.PlotBox.TotalDownloadCountPlot.XAxis.Hours=Stunden
 StatisticsPage.PlotBox.TotalDownloadCountPlot.XAxis.Minutes=Minuten
 StatisticsPage.PlotBox.TotalDownloadCountPlot.YAxis=Dateien
 StatisticsPage.SummaryBox.EventNotifications.Pending=Ereignismeldungen in der Versand-Warteschlange: ${amount}

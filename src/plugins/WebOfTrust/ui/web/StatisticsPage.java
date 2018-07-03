@@ -5,6 +5,8 @@ package plugins.WebOfTrust.ui.web;
 
 import static freenet.support.TimeUtil.formatTime;
 import static java.lang.Math.max;
+import static java.util.concurrent.TimeUnit.HOURS;
+import static java.util.concurrent.TimeUnit.MILLISECONDS;
 import static java.util.concurrent.TimeUnit.MINUTES;
 import static plugins.WebOfTrust.Configuration.DEFAULT_DEFRAG_INTERVAL;
 import static plugins.WebOfTrust.Configuration.DEFAULT_VERIFY_SCORES_INTERVAL;
@@ -344,13 +346,22 @@ public class StatisticsPage extends WebPageImpl {
 				timesOfQueuing.addLast(
 					new Pair<>(CurrentTimeUTC.getInMillis(), timesOfQueuing.peekLast().y));
 				
+				// If the amount of measurements we've gathered is at least 2 hours then we measure
+				// the X-axis in hours, otherwise we measure it in minutes.
+				// Using 2 hours instead of the more natural 1 hour because 1 hour measurements are
+				// a typical benchmark of bootstrapping and I don't want to annoy people who want
+				// to measure that with the X-axis not showing minutes.
+				boolean hours = MILLISECONDS.toHours(
+						(timesOfQueuing.peekLast().x - timesOfQueuing.peekFirst().x)
+					) >= 2;
+				
+				double timeUnit = (hours ? HOURS : MINUTES).toMillis(1);
 				long x0 = stats.mStartupTimeMilliseconds;
 				double[] x = new double[timesOfQueuing.size()];
 				double[] y = new double[x.length];
 				int i = 0;
 				for(Pair<Long, Integer> p : timesOfQueuing) {
-					// FIXME: Switch to hours for large ranges of the plot
-					x[i] = ((double)(p.x - x0)) / (double)MINUTES.toMillis(1);
+					x[i] = ((double)(p.x - x0)) / timeUnit;
 					y[i] = p.y;
 					++i;
 				}
@@ -358,7 +369,7 @@ public class StatisticsPage extends WebPageImpl {
 				BaseL10n l = wot.getBaseL10n();
 				String p = "StatisticsPage.PlotBox.TotalDownloadCountPlot.";
 				XYChart c = QuickChart.getChart(l.getString(p + "Title"),
-					l.getString(p + "XAxis.Minutes"),
+					l.getString(p + "XAxis." + (hours ? "Hours" : "Minutes")),
 					l.getString(p + "YAxis"), null, x, y);
 				
 				/* For debugging

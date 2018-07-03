@@ -182,6 +182,7 @@ StatisticsPage.MaintenanceBox.LastDefrag=Last defragmentation of database: ${las
 StatisticsPage.MaintenanceBox.LastScoreVerification=Last verification of incrementally computed trust values: ${lastTime} (schedule: every ${interval})
 StatisticsPage.PlotBox.Header=Graphs
 StatisticsPage.PlotBox.TotalDownloadCountPlot.Title=Total downloaded identity files
+StatisticsPage.PlotBox.TotalDownloadCountPlot.XAxis.Hours=Hours
 StatisticsPage.PlotBox.TotalDownloadCountPlot.XAxis.Minutes=Minutes
 StatisticsPage.PlotBox.TotalDownloadCountPlot.YAxis=Files
 StatisticsPage.SummaryBox.EventNotifications.Pending=Event notifications queued for sending: ${amount}
