@@ -372,50 +372,50 @@ public class StatisticsPage extends WebPageImpl {
 				LimitedArrayDeque<Pair<Long, Integer>> xyData, long x0,
 				String title, String xLabelHours, String xLabelMinutes, String yLabel) {
 			
-				// Add a dummy entry for the current time to the end of the plot so refreshing the
-				// image periodically shows that it is live even when there is no progress.
-				xyData.addLast(
-					new Pair<>(CurrentTimeUTC.getInMillis(), xyData.peekLast().y));
+			// Add a dummy entry for the current time to the end of the plot so refreshing the image
+			// periodically shows that it is live even when there is no progress.
+			xyData.addLast(
+				new Pair<>(CurrentTimeUTC.getInMillis(), xyData.peekLast().y));
 			
-				// If the amount of measurements we've gathered is at least 2 hours then we measure
-				// the X-axis in hours, otherwise we measure it in minutes.
-				// Using 2 hours instead of the more natural 1 hour because 1 hour measurements are
-				// a typical benchmark of bootstrapping and I don't want to annoy people who want
-				// to measure that with the X-axis not showing minutes.
-				boolean hours = MILLISECONDS.toHours(
-						(xyData.peekLast().x - xyData.peekFirst().x)
-					) >= 2;
-				
-				double timeUnit = (hours ? HOURS : MINUTES).toMillis(1);
-				double[] x = new double[xyData.size()];
-				double[] y = new double[x.length];
-				int i = 0;
-				for(Pair<Long, Integer> p : xyData) {
-					x[i] = ((double)(p.x - x0)) / timeUnit;
-					y[i] = p.y;
-					++i;
-				}
-				
-				XYChart c = QuickChart.getChart(title, (hours ? xLabelHours : xLabelMinutes),
-					yLabel, null, x, y);
-				
-				/* For debugging
+			// If the amount of measurements we've gathered is at least 2 hours then we measure the
+			// X-axis in hours, otherwise we measure it in minutes.
+			// Using 2 hours instead of the more natural 1 hour because 1 hour measurements are a
+			// typical benchmark of bootstrapping and I don't want to annoy people who want to
+			// measure that with the X-axis not showing minutes.
+			boolean hours = MILLISECONDS.toHours(
+					(xyData.peekLast().x - xyData.peekFirst().x)
+				) >= 2;
+			
+			double timeUnit = (hours ? HOURS : MINUTES).toMillis(1);
+			double[] x = new double[xyData.size()];
+			double[] y = new double[x.length];
+			int i = 0;
+			for(Pair<Long, Integer> p : xyData) {
+				x[i] = ((double)(p.x - x0)) / timeUnit;
+				y[i] = p.y;
+				++i;
+			}
+			
+			XYChart c = QuickChart.getChart(title, (hours ? xLabelHours : xLabelMinutes),
+				yLabel, null, x, y);
+			
+			/* For debugging
 				for(XYSeries s: c.getSeriesMap().values())
 					s.setMarker(SeriesMarkers.CIRCLE);
-				*/
-				
-				byte[] png;
-				try {
-					png = BitmapEncoder.getBitmapBytes(c, BitmapFormat.PNG);
-				} catch (IOException e) {
-					// No idea why this would happen so don't require callers to handle it by
-					// converting to non-declared exception.
-					throw new RuntimeException(e);
-				}
-				
-				return png;
+			 */
+			
+			byte[] png;
+			try {
+				png = BitmapEncoder.getBitmapBytes(c, BitmapFormat.PNG);
+			} catch (IOException e) {
+				// No idea why this would happen so don't require callers to handle it by converting
+				// to non-declared exception.
+				throw new RuntimeException(e);
 			}
-	
+			
+			return png;
+		}
+
 		private final StatisticsPNGRenderer mRenderer;
 	
 		private StatisticsType(StatisticsPNGRenderer r) {
