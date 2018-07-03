@@ -309,6 +309,7 @@ public class StatisticsPage extends WebPageImpl {
 	}
 
 	public static interface StatisticsPNGRenderer {
+		/** @return An image of the PNG format, serialized to a byte array. */
 		public byte[] getPNG(WebOfTrust wot);
 	}
 
@@ -334,43 +335,69 @@ public class StatisticsPage extends WebPageImpl {
 			 * @see IdentityFileQueueStatistics#mTimesOfQueuing */
 			@Override public byte[] getPNG(WebOfTrust wot) {
 				IdentityFileQueueStatistics stats = wot.getIdentityFileQueue().getStatistics();
+				Long x0 = stats.mStartupTimeMilliseconds;
 				LimitedArrayDeque<Pair<Long, Integer>> timesOfQueuing
 					= stats.mTimesOfQueuing;
 				
+				BaseL10n l = wot.getBaseL10n();
+				String p = "StatisticsPage.PlotBox.TotalDownloadCountPlot.";
+
+				// timesOfQueuing is safe to be fed into this:
+				// - getStatistics() returns a clone() so it may be modified.
+				// - IdentityFileQueueStatistics specifies it to always contain at least one entry.
+				return getTimeBasedPlotPNG(timesOfQueuing, x0,
+					l.getString(p + "Title"), l.getString(p + "XAxis.Hours"), 
+					l.getString(p + "XAxis.Minutes") , l.getString(p + "YAxis"));
+			}
+		});
+
+		/**
+		 * Generic implementation of creating an {@link XYChart} where the X-axis is the time.
+		 * Can be used by {@link StatisticsPNGRenderer} implementations for their purposes.
+		 * 
+		 * @param xyData The plot data. A {@link LimitedArrayDeque} of {@link Pair}s where
+		 *     {@link Pair#x} is a {@link CurrentTimeUTC#getInMillis()} timestamp and {@link Pair#y}
+		 *     is an arbitrary integer.
+		 *     ATTENTION: This object MUST be safe to modify by this function!
+		 *     It MUST always contain at least one entry.
+		 * @param x0 The {@link CurrentTimeUTC#getInMillis()} of the x=0 origin of the plot. The
+		 *     time labels on the X-axis will not be absolute time but a relative time offset, e.g.
+		 *     "3 minutes". The offset is built against this initial UTC time. 
+		 * @param title The label on top of the plot.
+		 * @param xLabelHours Label of the X-axis if it is automatically chosen to display hours.
+		 * @param xLabelMinutes Label of the X-axis if it automatically chosen to display minutes.
+		 * @param yLabel Label of the Y-axis
+		 * @return An image of the PNG format, serialized to a byte array. */
+		public static final byte[] getTimeBasedPlotPNG(
+				LimitedArrayDeque<Pair<Long, Integer>> xyData, long x0,
+				String title, String xLabelHours, String xLabelMinutes, String yLabel) {
+			
 				// Add a dummy entry for the current time to the end of the plot so refreshing the
 				// image periodically shows that it is live even when there is no progress.
-				// Adding it to the obtained statistics is fine as they are a clone() of the
-				// original.
-				// Also peekLast() can never return null because mTimesOfQueuing by contract always
-				// contains at least one element.
-				timesOfQueuing.addLast(
-					new Pair<>(CurrentTimeUTC.getInMillis(), timesOfQueuing.peekLast().y));
-				
+				xyData.addLast(
+					new Pair<>(CurrentTimeUTC.getInMillis(), xyData.peekLast().y));
+			
 				// If the amount of measurements we've gathered is at least 2 hours then we measure
 				// the X-axis in hours, otherwise we measure it in minutes.
 				// Using 2 hours instead of the more natural 1 hour because 1 hour measurements are
 				// a typical benchmark of bootstrapping and I don't want to annoy people who want
 				// to measure that with the X-axis not showing minutes.
 				boolean hours = MILLISECONDS.toHours(
-						(timesOfQueuing.peekLast().x - timesOfQueuing.peekFirst().x)
+						(xyData.peekLast().x - xyData.peekFirst().x)
 					) >= 2;
 				
 				double timeUnit = (hours ? HOURS : MINUTES).toMillis(1);
-				long x0 = stats.mStartupTimeMilliseconds;
-				double[] x = new double[timesOfQueuing.size()];
+				double[] x = new double[xyData.size()];
 				double[] y = new double[x.length];
 				int i = 0;
-				for(Pair<Long, Integer> p : timesOfQueuing) {
+				for(Pair<Long, Integer> p : xyData) {
 					x[i] = ((double)(p.x - x0)) / timeUnit;
 					y[i] = p.y;
 					++i;
 				}
 				
-				BaseL10n l = wot.getBaseL10n();
-				String p = "StatisticsPage.PlotBox.TotalDownloadCountPlot.";
-				XYChart c = QuickChart.getChart(l.getString(p + "Title"),
-					l.getString(p + "XAxis." + (hours ? "Hours" : "Minutes")),
-					l.getString(p + "YAxis"), null, x, y);
+				XYChart c = QuickChart.getChart(title, (hours ? xLabelHours : xLabelMinutes),
+					yLabel, null, x, y);
 				
 				/* For debugging
 				for(XYSeries s: c.getSeriesMap().values())
@@ -388,7 +415,6 @@ public class StatisticsPage extends WebPageImpl {
 				
 				return png;
 			}
-		});
 	
 		private final StatisticsPNGRenderer mRenderer;
 	
