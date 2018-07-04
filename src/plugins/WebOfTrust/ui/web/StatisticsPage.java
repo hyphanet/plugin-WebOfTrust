@@ -338,17 +338,13 @@ public class StatisticsPage extends WebPageImpl {
 				Long x0 = stats.mStartupTimeMilliseconds;
 				LimitedArrayDeque<Pair<Long, Integer>> timesOfQueuing
 					= stats.mTimesOfQueuing;
-				
-				BaseL10n l = wot.getBaseL10n();
-				String p = "StatisticsPage.PlotBox.TotalDownloadCountPlot.";
+				String l10n = "StatisticsPage.PlotBox.TotalDownloadCountPlot.";
 
 				// timesOfQueuing is safe to be fed into this:
 				// - getStatistics() returns a clone() so it may be modified.
 				// - IdentityFileQueueStatistics specifies it to always contain at least one entry.
-				// FIXME: Move l.getString() to getTimeBasedPlotPNG()
-				return getTimeBasedPlotPNG(timesOfQueuing, x0,
-					l.getString(p + "Title"), l.getString(p + "XAxis.Hours"), 
-					l.getString(p + "XAxis.Minutes") , l.getString(p + "YAxis"));
+				return getTimeBasedPlotPNG(timesOfQueuing, x0, wot.getBaseL10n(), l10n + "Title", 
+					l10n + "XAxis.Hours",  l10n + "XAxis.Minutes", l10n + "YAxis");
 			}
 		});
 
@@ -364,13 +360,16 @@ public class StatisticsPage extends WebPageImpl {
 		 * @param x0 The {@link CurrentTimeUTC#getInMillis()} of the x=0 origin of the plot. The
 		 *     time labels on the X-axis will not be absolute time but a relative time offset, e.g.
 		 *     "3 minutes". The offset is built against this initial UTC time. 
-		 * @param title The label on top of the plot.
-		 * @param xLabelHours Label of the X-axis if it is automatically chosen to display hours.
-		 * @param xLabelMinutes Label of the X-axis if it automatically chosen to display minutes.
-		 * @param yLabel Label of the Y-axis
+		 * @param l10n The {@link BaseL10n} used to translate the given string keys.
+		 * @param title L10n key of the label on top of the plot.
+		 * @param xLabelHours L10n key of the X-axis label if it is automatically chosen to
+		 *     display hours.
+		 * @param xLabelMinutes L10n key of the X-axis label if it automatically chosen to
+		 *     display minutes.
+		 * @param yLabel L10n key of the Y-axis label.
 		 * @return An image of the PNG format, serialized to a byte array. */
 		public static final byte[] getTimeBasedPlotPNG(
-				LimitedArrayDeque<Pair<Long, Integer>> xyData, long x0,
+				LimitedArrayDeque<Pair<Long, Integer>> xyData, long x0, BaseL10n l10n,
 				String title, String xLabelHours, String xLabelMinutes, String yLabel) {
 			
 			// Add a dummy entry for the current time to the end of the plot so refreshing the image
@@ -397,8 +396,9 @@ public class StatisticsPage extends WebPageImpl {
 				++i;
 			}
 			
-			XYChart c = QuickChart.getChart(title, (hours ? xLabelHours : xLabelMinutes),
-				yLabel, null, x, y);
+			XYChart c = QuickChart.getChart(l10n.getString(title),
+				l10n.getString(hours ? xLabelHours : xLabelMinutes),
+				l10n.getString(yLabel), null, x, y);
 			
 			/* For debugging
 				for(XYSeries s: c.getSeriesMap().values())
