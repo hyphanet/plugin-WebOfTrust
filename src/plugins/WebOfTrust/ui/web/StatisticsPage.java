@@ -354,7 +354,7 @@ public class StatisticsPage extends WebPageImpl {
 		 * 
 		 * @param xyData The plot data. A {@link LimitedArrayDeque} of {@link Pair}s where
 		 *     {@link Pair#x} is a {@link CurrentTimeUTC#getInMillis()} timestamp and {@link Pair#y}
-		 *     is an arbitrary integer.
+		 *     is an arbitrary {@link Number} which supports {@link Number#doubleValue()}.
 		 *     ATTENTION: This object MUST be safe to modify by this function!
 		 *     It MUST always contain at least one entry.
 		 * @param x0 The {@link CurrentTimeUTC#getInMillis()} of the x=0 origin of the plot. The
@@ -368,8 +368,8 @@ public class StatisticsPage extends WebPageImpl {
 		 *     display minutes.
 		 * @param yLabel L10n key of the Y-axis label.
 		 * @return An image of the PNG format, serialized to a byte array. */
-		public static final byte[] getTimeBasedPlotPNG(
-				LimitedArrayDeque<Pair<Long, Integer>> xyData, long x0, BaseL10n l10n,
+		public static final <T extends Number> byte[] getTimeBasedPlotPNG(
+				LimitedArrayDeque<Pair<Long, T>> xyData, long x0, BaseL10n l10n,
 				String title, String xLabelHours, String xLabelMinutes, String yLabel) {
 			
 			// Add a dummy entry for the current time to the end of the plot so refreshing the image
@@ -390,9 +390,9 @@ public class StatisticsPage extends WebPageImpl {
 			double[] x = new double[xyData.size()];
 			double[] y = new double[x.length];
 			int i = 0;
-			for(Pair<Long, Integer> p : xyData) {
+			for(Pair<Long, T> p : xyData) {
 				x[i] = ((double)(p.x - x0)) / timeUnit;
-				y[i] = p.y;
+				y[i] = p.y.doubleValue();
 				++i;
 			}
 			
