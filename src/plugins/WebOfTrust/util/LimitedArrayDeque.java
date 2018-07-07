@@ -54,6 +54,10 @@ public final class LimitedArrayDeque<T> implements Cloneable, Iterable<T> {
 		return mQueue.size();
 	}
 
+	public int sizeLimit() {
+		return mSizeLimit;
+	}
+
 	@Override public LimitedArrayDeque<T> clone() {
 		return new LimitedArrayDeque<>(this);
 	}
