@@ -180,6 +180,10 @@ StatisticsPage.IdentityFileQueueBox.TotalQueuedFiles=Insgesamt eingefügte (= he
 StatisticsPage.MaintenanceBox.Header=Wartung
 StatisticsPage.MaintenanceBox.LastDefrag=Letzte Defragmentierung der Datenbank: ${lastTime} (Zeitplan: alle ${interval})
 StatisticsPage.MaintenanceBox.LastScoreVerification=Letzte Überprüfung der inkrementell berechneten Vertrauenswerte: ${lastTime} (Zeitplan: alle ${interval})
+StatisticsPage.PlotBox.DownloadsPerHourPlot.Title=Pro Stunde heruntergeladene Identitäts-Dateien
+StatisticsPage.PlotBox.DownloadsPerHourPlot.XAxis.Hours=Stunden
+StatisticsPage.PlotBox.DownloadsPerHourPlot.XAxis.Minutes=Minuten
+StatisticsPage.PlotBox.DownloadsPerHourPlot.YAxis=Dateien pro Stunde
 StatisticsPage.PlotBox.Header=Graphen
 StatisticsPage.PlotBox.TotalDownloadCountPlot.Title=Insgesamt heruntergeladene Identitäts-Dateien
 StatisticsPage.PlotBox.TotalDownloadCountPlot.XAxis.Hours=Stunden

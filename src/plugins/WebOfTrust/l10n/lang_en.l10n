@@ -180,6 +180,10 @@ StatisticsPage.IdentityFileQueueBox.TotalQueuedFiles=Total ever enqueued (= down
 StatisticsPage.MaintenanceBox.Header=Maintenance
 StatisticsPage.MaintenanceBox.LastDefrag=Last defragmentation of database: ${lastTime} (schedule: every ${interval})
 StatisticsPage.MaintenanceBox.LastScoreVerification=Last verification of incrementally computed trust values: ${lastTime} (schedule: every ${interval})
+StatisticsPage.PlotBox.DownloadsPerHourPlot.Title=Identity files downloaded per hour
+StatisticsPage.PlotBox.DownloadsPerHourPlot.XAxis.Hours=Hours
+StatisticsPage.PlotBox.DownloadsPerHourPlot.XAxis.Minutes=Minutes
+StatisticsPage.PlotBox.DownloadsPerHourPlot.YAxis=Files per hour
 StatisticsPage.PlotBox.Header=Graphs
 StatisticsPage.PlotBox.TotalDownloadCountPlot.Title=Total downloaded identity files
 StatisticsPage.PlotBox.TotalDownloadCountPlot.XAxis.Hours=Hours

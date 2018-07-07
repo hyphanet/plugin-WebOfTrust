@@ -352,6 +352,40 @@ public class StatisticsPage extends WebPageImpl {
 				return getTimeBasedPlotPNG(timesOfQueuing, x0, wot.getBaseL10n(), l10n + "Title", 
 					l10n + "XAxis.Hours",  l10n + "XAxis.Minutes", l10n + "YAxis");
 			}
+		}),
+		DownloadsPerHour(new StatisticsPNGRenderer() {
+			/**
+			 * Renders a chart where the X-axis is the uptime of WoT, and the Y-axis is the number
+			 * of downloaded {@link IdentityFile}s per hour.
+			 * This is calculated by differentiating the total download count.
+			 * 
+			 * @see IdentityFileQueueStatistics#mTotalQueuedFiles
+			 * @see IdentityFileQueueStatistics#mTimesOfQueuing */
+			@Override public byte[] getPNG(WebOfTrust wot) {
+				IdentityFileQueueStatistics stats = wot.getIdentityFileQueue().getStatistics();
+				Long x0 = stats.mStartupTimeMilliseconds;
+				LimitedArrayDeque<Pair<Long, Integer>> timesOfQueuing
+					= stats.mTimesOfQueuing;
+				String l10n = "StatisticsPage.PlotBox.DownloadsPerHourPlot.";
+				
+				// FIXME: Add first/last value to input data which produces desirable results.
+				// Change getTimeBasedPlotPNG() to not add the trailing element which it added
+				// for purposes of TotalDownloadCount, that one should do it itself as it doesn't
+				// necessarily make sense for our plot here.
+				
+				// - Build the average before differentiating to prevent a jumpy graph due to
+				//   fred delivering batches of many files at once for internal reasons.
+				//   FIXME: Use a moving average to make the graph less coarse.
+				// - Convert to hours before differentiating to aid the "dy/dx" division in
+				//   preserving floating point accuracy.
+				//   FIXME: Convert the input dataset from milliseconds to seconds before to
+				//   preserve even more accuracy. We likely won't need milliseconds for any plot.
+				LimitedArrayDeque<Pair<Long, Double>> downloadsPerHour
+					= differentiate(multiplyY(average(timesOfQueuing, 10), HOURS.toMillis(1)));
+				
+				return getTimeBasedPlotPNG(downloadsPerHour, x0, wot.getBaseL10n(), l10n + "Title", 
+					l10n + "XAxis.Hours",  l10n + "XAxis.Minutes", l10n + "YAxis");
+			}
 		});
 
 		/**
