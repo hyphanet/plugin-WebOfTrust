@@ -17,6 +17,7 @@ import org.knowm.xchart.BitmapEncoder.BitmapFormat;
 import org.knowm.xchart.QuickChart;
 import org.knowm.xchart.XYChart;
 
+import plugins.WebOfTrust.ui.web.StatisticsPage;
 import plugins.WebOfTrust.ui.web.StatisticsPage.StatisticsPNGRenderer;
 import plugins.WebOfTrust.util.LimitedArrayDeque;
 import plugins.WebOfTrust.util.Pair;
@@ -25,7 +26,16 @@ import freenet.support.CurrentTimeUTC;
 
 /**
  * Utility classes to preprocess data to make it suitable for plotting, and to plot it using the
- * XChart library's {@link XYChart}. */
+ * XChart library's {@link XYChart}.
+ * Typically used by the web interface's {@link StatisticsPage} to render measurements.
+ * 
+ * The member functions usually consume a series of measurements where the X-value is the time, and
+ * the Y-value is a measurement at the given time.
+ * 
+ * FIXME: Change all functions to consume a double of seconds since startup for the time instead
+ * of the absolute time in milliseconds. This will both increase precision of the floating point
+ * calculations as we convert to minutes/hours when rendering anyway, as well as make the functions
+ * more readable. */
 public final class XYChartUtils {
 
 	/**
@@ -35,7 +45,8 @@ public final class XYChartUtils {
 	 * @param xyData The plot data. A {@link LimitedArrayDeque} of {@link Pair}s where
 	 *     {@link Pair#x} is a {@link CurrentTimeUTC#getInMillis()} timestamp and {@link Pair#y} is
 	 *     an arbitrary {@link Number} which supports {@link Number#doubleValue()}.
-	 *     ATTENTION: This object MUST be safe to modify by this function!
+	 *     ATTENTION: This object MUST be safe to modify by this function! FIXME: Don't require
+	 *     this, the other functions also don't.
 	 *     It MUST always contain at least one entry.
 	 * @param x0 The {@link CurrentTimeUTC#getInMillis()} of the x=0 origin of the plot. The time
 	 *     labels on the X-axis will not be absolute time but a relative time offset, e.g.
@@ -44,7 +55,7 @@ public final class XYChartUtils {
 	 * @param title L10n key of the label on top of the plot.
 	 * @param xLabelHours L10n key of the X-axis label if it is automatically chosen to display
 	 *     hours.
-	 * @param xLabelMinutes L10n key of the X-axis label if it automatically chosen to display
+	 * @param xLabelMinutes L10n key of the X-axis label if it is automatically chosen to display
 	 *     minutes.
 	 * @param yLabel L10n key of the Y-axis label.
 	 * @return An image of the PNG format, serialized to a byte array. */
@@ -102,8 +113,6 @@ public final class XYChartUtils {
 	 * - a {@link LimitedArrayDeque} of {@link Pair}s where {@link Pair#x} is a
 	 *   {@link CurrentTimeUTC#getInMillis()} timestamp and {@link Pair#y} is an arbitrary
 	 *   {@link Number} which supports {@link Number#doubleValue()}.
-	 *   This can be interpreted as a series of measurements which shall be preprocessed by this
-	 *   function in order to later on create an {@link XYChart}.
 	 * - an integer threshold of seconds.
 	 * 
 	 * Output:
@@ -178,8 +187,6 @@ public final class XYChartUtils {
 	 * Consumes a {@link LimitedArrayDeque} of {@link Pair}s where {@link Pair#x} is a
 	 * {@link CurrentTimeUTC#getInMillis()} timestamp and {@link Pair#y}
 	 * is an arbitrary {@link Number} which supports {@link Number#doubleValue()}.
-	 * This can be interpreted as a series of measurements which shall be preprocessed by this
-	 * function in order to later on create an {@link XYChart}.
 	 * 
 	 * Returns a new LimitedArrayDeque which contains the dy/dx of the given plot data.
 	 * 
@@ -222,7 +229,7 @@ public final class XYChartUtils {
 	/**
 	 * Returns a new {@link LimitedArrayDeque} with new {@link Pair} objects where each Pair's
 	 * {@link Number#doubleValue()} of the {@link Pair#y} is multiplied by the given
-	 * multiplier. r*/
+	 * multiplier. */
 	public static final <T extends Number> LimitedArrayDeque<Pair<Long, Double>> multiplyY(
 			LimitedArrayDeque<Pair<Long, T>> xyData, long multiplier) {
 		
