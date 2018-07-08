@@ -126,6 +126,7 @@ public class StatisticsPage extends WebPageImpl {
 			box.addChild("img", "src", type.getURI(mWebInterface).toString());
 	}
 
+	// FIXME: Rename to StatisticsPlotRenderer
 	/** A renderer for a {@link StatisticsType}. */
 	public static interface StatisticsPNGRenderer {
 		/** Returns an image of the PNG format, serialized to a byte array.
@@ -133,6 +134,7 @@ public class StatisticsPage extends WebPageImpl {
 		public byte[] getPNG(WebOfTrust wot);
 	}
 
+	// FIXME: Rename to StatisticsPlotType
 	/**
 	 * Each value of this enum defines a {@link StatisticsPNGRenderer#getPNG(WebOfTrust)} to render
 	 * the associated statistics plot.
