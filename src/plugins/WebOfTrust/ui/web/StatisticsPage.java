@@ -4,9 +4,6 @@
 package plugins.WebOfTrust.ui.web;
 
 import static freenet.support.TimeUtil.formatTime;
-import static java.lang.Double.isInfinite;
-import static java.lang.Double.isNaN;
-import static java.lang.Math.abs;
 import static java.lang.Math.max;
 import static java.util.concurrent.TimeUnit.HOURS;
 import static java.util.concurrent.TimeUnit.MILLISECONDS;
@@ -15,12 +12,12 @@ import static plugins.WebOfTrust.Configuration.DEFAULT_DEFRAG_INTERVAL;
 import static plugins.WebOfTrust.Configuration.DEFAULT_VERIFY_SCORES_INTERVAL;
 import static plugins.WebOfTrust.ui.web.CommonWebUtils.formatTimeDelta;
 import static plugins.WebOfTrust.util.plotting.XYChartUtils.average;
+import static plugins.WebOfTrust.util.plotting.XYChartUtils.differentiate;
 
 import java.io.IOException;
 import java.net.URI;
 import java.text.SimpleDateFormat;
 import java.util.Date;
-import java.util.Iterator;
 import java.util.concurrent.TimeUnit;
 
 import org.knowm.xchart.BitmapEncoder;
@@ -469,51 +466,6 @@ public class StatisticsPage extends WebPageImpl {
 		
 			for(Pair<Long, T> cur : xyData)
 				result.addLast(new Pair<>(cur.x, cur.y.doubleValue() * multiplier));
-			
-			return result;
-		}
-
-		/**
-		 * Consumes a {@link LimitedArrayDeque} of {@link Pair}s where {@link Pair#x} is a
-		 * {@link CurrentTimeUTC#getInMillis()} timestamp and {@link Pair#y}
-		 * is an arbitrary {@link Number} which supports {@link Number#doubleValue()}.
-		 * This can be interpreted as a series of measurements which shall be preprocessed by this
-		 * function in order to later on create an {@link XYChart}.
-		 * 
-		 * Returns a new LimitedArrayDeque which contains the dy/dx of the given plot data.
-		 * 
-		 * The resulting dataset will be smaller than the input. */
-		public static final <T extends Number> LimitedArrayDeque<Pair<Long, Double>> differentiate(
-				LimitedArrayDeque<Pair<Long, T>> xyData) {
-			
-			assert(xyData.size() >= 2);
-			
-			LimitedArrayDeque<Pair<Long, Double>> result =
-				new LimitedArrayDeque<>(xyData.sizeLimit());
-			
-			if(xyData.size() < 2)
-				return result;
-			
-			Iterator<Pair<Long, T>> i = xyData.iterator();
-			Pair<Long, T> prev = i.next();			
-			do {
-				Pair<Long, T> cur = i.next();
-				
-				long  dx = cur.x - prev.x;
-				// Avoid division by zero in dy/dx.
-				if(abs(dx) <= Double.MIN_VALUE)
-					continue;
-				
-				double dy = cur.y.doubleValue() - prev.y.doubleValue();
-				
-				Long   x = prev.x;
-				double y = dy / dx;
-				
-				assert(!isInfinite(y) && !isNaN(y)) : "Division by zero!";
-				
-				result.addLast(new Pair<>(x, y));
-				prev = cur;
-			} while(i.hasNext());
 			
 			return result;
 		}
