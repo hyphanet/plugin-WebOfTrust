@@ -126,9 +126,8 @@ public class StatisticsPage extends WebPageImpl {
 			box.addChild("img", "src", type.getURI(mWebInterface).toString());
 	}
 
-	// FIXME: Rename to StatisticsPlotRenderer
 	/** A renderer for a {@link StatisticsType}. */
-	public static interface StatisticsPNGRenderer {
+	public static interface StatisticsPlotRenderer {
 		/** Returns an image of the PNG format, serialized to a byte array.
 		 *  It is recommended to use {@link XYChartUtils} to implement this. */
 		public byte[] getPNG(WebOfTrust wot);
@@ -136,7 +135,7 @@ public class StatisticsPage extends WebPageImpl {
 
 	// FIXME: Rename to StatisticsPlotType
 	/**
-	 * Each value of this enum defines a {@link StatisticsPNGRenderer#getPNG(WebOfTrust)} to render
+	 * Each value of this enum defines a {@link StatisticsPlotRenderer#getPNG(WebOfTrust)} to render
 	 * the associated statistics plot.
 	 * 
 	 * The PNG images of all values of this enum will automatically be served by
@@ -146,9 +145,9 @@ public class StatisticsPage extends WebPageImpl {
 	 * {@link StatisticsPage#makePlotBox()}.
 	 * 
 	 * Thus to add a new type of statistics all you have to do is add a new value to this enum with
-	 * the associated {@link StatisticsPNGRenderer} passed to its constructor. */
-	public static enum StatisticsType implements StatisticsPNGRenderer {
-		TotalDownloadCount(new StatisticsPNGRenderer() {
+	 * the associated {@link StatisticsPlotRenderer} passed to its constructor. */
+	public static enum StatisticsType implements StatisticsPlotRenderer {
+		TotalDownloadCount(new StatisticsPlotRenderer() {
 			/**
 			 * Renders a chart where the X-axis is the uptime of WoT, and the Y-axis is the total
 			 * number of downloaded {@link IdentityFile}s.
@@ -169,7 +168,7 @@ public class StatisticsPage extends WebPageImpl {
 					l10n + "XAxis.Hours",  l10n + "XAxis.Minutes", l10n + "YAxis");
 			}
 		}),
-		DownloadsPerHour(new StatisticsPNGRenderer() {
+		DownloadsPerHour(new StatisticsPlotRenderer() {
 			/**
 			 * Renders a chart where the X-axis is the uptime of WoT, and the Y-axis is the number
 			 * of downloaded {@link IdentityFile}s per hour.
@@ -204,9 +203,9 @@ public class StatisticsPage extends WebPageImpl {
 			}
 		});
 
-		private final StatisticsPNGRenderer mRenderer;
+		private final StatisticsPlotRenderer mRenderer;
 	
-		private StatisticsType(StatisticsPNGRenderer r) {
+		private StatisticsType(StatisticsPlotRenderer r) {
 			mRenderer = r;
 		}
 	

@@ -18,7 +18,7 @@ import org.knowm.xchart.QuickChart;
 import org.knowm.xchart.XYChart;
 
 import plugins.WebOfTrust.ui.web.StatisticsPage;
-import plugins.WebOfTrust.ui.web.StatisticsPage.StatisticsPNGRenderer;
+import plugins.WebOfTrust.ui.web.StatisticsPage.StatisticsPlotRenderer;
 import plugins.WebOfTrust.util.LimitedArrayDeque;
 import plugins.WebOfTrust.util.Pair;
 import freenet.l10n.BaseL10n;
@@ -40,7 +40,7 @@ public final class XYChartUtils {
 
 	/**
 	 * Generic implementation of creating an {@link XYChart} where the X-axis is the time.
-	 * Can be used by {@link StatisticsPNGRenderer} implementations for their purposes.
+	 * Can be used by {@link StatisticsPlotRenderer} implementations for their purposes.
 	 * 
 	 * @param xyData The plot data. A {@link LimitedArrayDeque} of {@link Pair}s where
 	 *     {@link Pair#x} is a {@link CurrentTimeUTC#getInMillis()} timestamp and {@link Pair#y} is
