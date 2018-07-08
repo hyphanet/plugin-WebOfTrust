@@ -126,6 +126,106 @@ public class StatisticsPage extends WebPageImpl {
 			box.addChild("img", "src", type.getURI(mWebInterface).toString());
 	}
 
+	/** A renderer for a {@link StatisticsType}. */
+	public static interface StatisticsPNGRenderer {
+		/** Returns an image of the PNG format, serialized to a byte array.
+		 *  It is recommended to use {@link XYChartUtils} to implement this. */
+		public byte[] getPNG(WebOfTrust wot);
+	}
+
+	/**
+	 * Each value of this enum defines a {@link StatisticsPNGRenderer#getPNG(WebOfTrust)} to render
+	 * the associated statistics plot.
+	 * 
+	 * The PNG images of all values of this enum will automatically be served by
+	 * {@link StatisticsPNGWebInterfaceToadlet} at the URI as obtainable by
+	 * {@link #getURI(WebInterface)}.
+	 * All images are automatically added to the HTML of the StatisticsPage, using that URI, by
+	 * {@link StatisticsPage#makePlotBox()}.
+	 * 
+	 * Thus to add a new type of statistics all you have to do is add a new value to this enum with
+	 * the associated {@link StatisticsPNGRenderer} passed to its constructor. */
+	public static enum StatisticsType implements StatisticsPNGRenderer {
+		TotalDownloadCount(new StatisticsPNGRenderer() {
+			/**
+			 * Renders a chart where the X-axis is the uptime of WoT, and the Y-axis is the total
+			 * number of downloaded {@link IdentityFile}s.
+			 * 
+			 * @see IdentityFileQueueStatistics#mTotalQueuedFiles
+			 * @see IdentityFileQueueStatistics#mTimesOfQueuing */
+			@Override public byte[] getPNG(WebOfTrust wot) {
+				IdentityFileQueueStatistics stats = wot.getIdentityFileQueue().getStatistics();
+				Long x0 = stats.mStartupTimeMilliseconds;
+				LimitedArrayDeque<Pair<Long, Integer>> timesOfQueuing
+					= stats.mTimesOfQueuing;
+				String l10n = "StatisticsPage.PlotBox.TotalDownloadCountPlot.";
+
+				// timesOfQueuing is safe to be fed into this:
+				// - getStatistics() returns a clone() so it may be modified.
+				// - IdentityFileQueueStatistics specifies it to always contain at least one entry.
+				return getTimeBasedPlotPNG(timesOfQueuing, x0, wot.getBaseL10n(), l10n + "Title", 
+					l10n + "XAxis.Hours",  l10n + "XAxis.Minutes", l10n + "YAxis");
+			}
+		}),
+		DownloadsPerHour(new StatisticsPNGRenderer() {
+			/**
+			 * Renders a chart where the X-axis is the uptime of WoT, and the Y-axis is the number
+			 * of downloaded {@link IdentityFile}s per hour.
+			 * This is calculated by differentiating the total download count.
+			 * 
+			 * @see IdentityFileQueueStatistics#mTotalQueuedFiles
+			 * @see IdentityFileQueueStatistics#mTimesOfQueuing */
+			@Override public byte[] getPNG(WebOfTrust wot) {
+				IdentityFileQueueStatistics stats = wot.getIdentityFileQueue().getStatistics();
+				Long x0 = stats.mStartupTimeMilliseconds;
+				LimitedArrayDeque<Pair<Long, Integer>> timesOfQueuing
+					= stats.mTimesOfQueuing;
+				String l10n = "StatisticsPage.PlotBox.DownloadsPerHourPlot.";
+				
+				// FIXME: Add first/last value to input data which produces desirable results.
+				// Change getTimeBasedPlotPNG() to not add the trailing element which it added
+				// for purposes of TotalDownloadCount, that one should do it itself as it doesn't
+				// necessarily make sense for our plot here.
+				
+				// - Build the average before differentiating to prevent a jumpy graph due to
+				//   fred delivering batches of many files at once for internal reasons.
+				//   FIXME: Use a moving average to make the graph less coarse.
+				// - Convert to hours before differentiating to aid the "dy/dx" division in
+				//   preserving floating point accuracy.
+				//   FIXME: Convert the input dataset from milliseconds to seconds before to
+				//   preserve even more accuracy. We likely won't need milliseconds for any plot.
+				LimitedArrayDeque<Pair<Long, Double>> downloadsPerHour
+					= differentiate(multiplyY(average(timesOfQueuing, 10), HOURS.toMillis(1)));
+				
+				return getTimeBasedPlotPNG(downloadsPerHour, x0, wot.getBaseL10n(), l10n + "Title", 
+					l10n + "XAxis.Hours",  l10n + "XAxis.Minutes", l10n + "YAxis");
+			}
+		});
+
+		private final StatisticsPNGRenderer mRenderer;
+	
+		private StatisticsType(StatisticsPNGRenderer r) {
+			mRenderer = r;
+		}
+	
+		/**
+		 * TODO: Code quality: Java 8: In Java 8 the values of the enum will be able to implement
+		 * this directly without the indirection of the mRenderer variable:
+		 * https://stackoverflow.com/a/50472201 */
+		@Override public byte[] getPNG(WebOfTrust wot) {
+			return mRenderer.getPNG(wot);
+		}
+
+		/** Returns the URI of the PNG image of this StatisticsType as served by the
+		 *  {@link StatisticsPNGWebInterfaceToadlet}. */
+		public URI getURI(WebInterface wi) {
+			StatisticsPNGWebInterfaceToadlet myToadlet = (StatisticsPNGWebInterfaceToadlet)
+				wi.getToadlet(StatisticsPNGWebInterfaceToadlet.class);
+			
+			return myToadlet.getURI(this);
+		}
+	}
+
 	/**
 	 * TODO: Move to class {@link WebOfTrust}
 	 */
@@ -303,105 +403,6 @@ public class StatisticsPage extends WebPageImpl {
 			+ " " + stats.mFailedFiles));
 		
 		box.addChild(list);
-	}
-
-	public static interface StatisticsPNGRenderer {
-		/** Returns an image of the PNG format, serialized to a byte array.
-		 *  It is recommended to use {@link XYChartUtils} to implement this. */
-		public byte[] getPNG(WebOfTrust wot);
-	}
-
-	/**
-	 * Each value of this enum defines a {@link StatisticsPNGRenderer#getPNG(WebOfTrust)} to render
-	 * the associated statistics plot.
-	 * 
-	 * The PNG images of all values of this enum will automatically be served by
-	 * {@link StatisticsPNGWebInterfaceToadlet} at the URI as obtainable by
-	 * {@link #getURI(WebInterface)}.
-	 * All images are automatically added to the HTML of the StatisticsPage, using that URI, by
-	 * {@link StatisticsPage#makePlotBox()}.
-	 * 
-	 * Thus to add a new type of statistics all you have to do is add a new value to this enum with
-	 * the associated {@link StatisticsPNGRenderer} passed to its constructor. */
-	public static enum StatisticsType implements StatisticsPNGRenderer {
-		TotalDownloadCount(new StatisticsPNGRenderer() {
-			/**
-			 * Renders a chart where the X-axis is the uptime of WoT, and the Y-axis is the total
-			 * number of downloaded {@link IdentityFile}s.
-			 * 
-			 * @see IdentityFileQueueStatistics#mTotalQueuedFiles
-			 * @see IdentityFileQueueStatistics#mTimesOfQueuing */
-			@Override public byte[] getPNG(WebOfTrust wot) {
-				IdentityFileQueueStatistics stats = wot.getIdentityFileQueue().getStatistics();
-				Long x0 = stats.mStartupTimeMilliseconds;
-				LimitedArrayDeque<Pair<Long, Integer>> timesOfQueuing
-					= stats.mTimesOfQueuing;
-				String l10n = "StatisticsPage.PlotBox.TotalDownloadCountPlot.";
-
-				// timesOfQueuing is safe to be fed into this:
-				// - getStatistics() returns a clone() so it may be modified.
-				// - IdentityFileQueueStatistics specifies it to always contain at least one entry.
-				return getTimeBasedPlotPNG(timesOfQueuing, x0, wot.getBaseL10n(), l10n + "Title", 
-					l10n + "XAxis.Hours",  l10n + "XAxis.Minutes", l10n + "YAxis");
-			}
-		}),
-		DownloadsPerHour(new StatisticsPNGRenderer() {
-			/**
-			 * Renders a chart where the X-axis is the uptime of WoT, and the Y-axis is the number
-			 * of downloaded {@link IdentityFile}s per hour.
-			 * This is calculated by differentiating the total download count.
-			 * 
-			 * @see IdentityFileQueueStatistics#mTotalQueuedFiles
-			 * @see IdentityFileQueueStatistics#mTimesOfQueuing */
-			@Override public byte[] getPNG(WebOfTrust wot) {
-				IdentityFileQueueStatistics stats = wot.getIdentityFileQueue().getStatistics();
-				Long x0 = stats.mStartupTimeMilliseconds;
-				LimitedArrayDeque<Pair<Long, Integer>> timesOfQueuing
-					= stats.mTimesOfQueuing;
-				String l10n = "StatisticsPage.PlotBox.DownloadsPerHourPlot.";
-				
-				// FIXME: Add first/last value to input data which produces desirable results.
-				// Change getTimeBasedPlotPNG() to not add the trailing element which it added
-				// for purposes of TotalDownloadCount, that one should do it itself as it doesn't
-				// necessarily make sense for our plot here.
-				
-				// - Build the average before differentiating to prevent a jumpy graph due to
-				//   fred delivering batches of many files at once for internal reasons.
-				//   FIXME: Use a moving average to make the graph less coarse.
-				// - Convert to hours before differentiating to aid the "dy/dx" division in
-				//   preserving floating point accuracy.
-				//   FIXME: Convert the input dataset from milliseconds to seconds before to
-				//   preserve even more accuracy. We likely won't need milliseconds for any plot.
-				LimitedArrayDeque<Pair<Long, Double>> downloadsPerHour
-					= differentiate(multiplyY(average(timesOfQueuing, 10), HOURS.toMillis(1)));
-				
-				return getTimeBasedPlotPNG(downloadsPerHour, x0, wot.getBaseL10n(), l10n + "Title", 
-					l10n + "XAxis.Hours",  l10n + "XAxis.Minutes", l10n + "YAxis");
-			}
-		});
-
-		private final StatisticsPNGRenderer mRenderer;
-	
-		private StatisticsType(StatisticsPNGRenderer r) {
-			mRenderer = r;
-		}
-	
-		/**
-		 * TODO: Code quality: Java 8: In Java 8 the values of the enum will be able to implement
-		 * this directly without the indirection of the mRenderer variable:
-		 * https://stackoverflow.com/a/50472201 */
-		@Override public byte[] getPNG(WebOfTrust wot) {
-			return mRenderer.getPNG(wot);
-		}
-
-		/** Returns the URI of the PNG image of this StatisticsType as served by the
-		 *  {@link StatisticsPNGWebInterfaceToadlet}. */
-		public URI getURI(WebInterface wi) {
-			StatisticsPNGWebInterfaceToadlet myToadlet = (StatisticsPNGWebInterfaceToadlet)
-				wi.getToadlet(StatisticsPNGWebInterfaceToadlet.class);
-			
-			return myToadlet.getURI(this);
-		}
 	}
 
 	private void makeIdentityFileProcessorBox() {
