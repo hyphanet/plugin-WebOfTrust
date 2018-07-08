@@ -139,4 +139,20 @@ public final class XYChartUtils {
 		
 		return result;
 	}
+
+	/**
+	 * Returns a new {@link LimitedArrayDeque} with new {@link Pair} objects where each Pair's
+	 * {@link Number#doubleValue()} of the {@link Pair#y} is multiplied by the given
+	 * multiplier. r*/
+	public static final <T extends Number> LimitedArrayDeque<Pair<Long, Double>> multiplyY(
+			LimitedArrayDeque<Pair<Long, T>> xyData, long multiplier) {
+		
+		LimitedArrayDeque<Pair<Long, Double>> result
+			= new LimitedArrayDeque<>(xyData.sizeLimit());
+	
+		for(Pair<Long, T> cur : xyData)
+			result.addLast(new Pair<>(cur.x, cur.y.doubleValue() * multiplier));
+		
+		return result;
+	}
 }

@@ -13,6 +13,7 @@ import static plugins.WebOfTrust.Configuration.DEFAULT_VERIFY_SCORES_INTERVAL;
 import static plugins.WebOfTrust.ui.web.CommonWebUtils.formatTimeDelta;
 import static plugins.WebOfTrust.util.plotting.XYChartUtils.average;
 import static plugins.WebOfTrust.util.plotting.XYChartUtils.differentiate;
+import static plugins.WebOfTrust.util.plotting.XYChartUtils.multiplyY;
 
 import java.io.IOException;
 import java.net.URI;
@@ -452,22 +453,6 @@ public class StatisticsPage extends WebPageImpl {
 			}
 			
 			return png;
-		}
-
-		/**
-		 * Returns a new {@link LimitedArrayDeque} with new {@link Pair} objects where each Pair's
-		 * {@link Number#doubleValue()} of the {@link Pair#y} is multiplied by the given
-		 * multiplier. r*/
-		public static final <T extends Number> LimitedArrayDeque<Pair<Long, Double>> multiplyY(
-				LimitedArrayDeque<Pair<Long, T>> xyData, long multiplier) {
-			
-			LimitedArrayDeque<Pair<Long, Double>> result
-				= new LimitedArrayDeque<>(xyData.sizeLimit());
-		
-			for(Pair<Long, T> cur : xyData)
-				result.addLast(new Pair<>(cur.x, cur.y.doubleValue() * multiplier));
-			
-			return result;
 		}
 
 		private final StatisticsPNGRenderer mRenderer;
