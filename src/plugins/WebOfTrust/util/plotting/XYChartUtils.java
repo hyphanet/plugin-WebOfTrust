@@ -4,20 +4,99 @@ import static java.lang.Double.isInfinite;
 import static java.lang.Double.isNaN;
 import static java.lang.Math.abs;
 import static java.lang.Math.round;
+import static java.util.concurrent.TimeUnit.HOURS;
+import static java.util.concurrent.TimeUnit.MILLISECONDS;
+import static java.util.concurrent.TimeUnit.MINUTES;
 import static java.util.concurrent.TimeUnit.SECONDS;
 
+import java.io.IOException;
 import java.util.Iterator;
 
+import org.knowm.xchart.BitmapEncoder;
+import org.knowm.xchart.BitmapEncoder.BitmapFormat;
+import org.knowm.xchart.QuickChart;
 import org.knowm.xchart.XYChart;
 
+import plugins.WebOfTrust.ui.web.StatisticsPage.StatisticsPNGRenderer;
 import plugins.WebOfTrust.util.LimitedArrayDeque;
 import plugins.WebOfTrust.util.Pair;
+import freenet.l10n.BaseL10n;
 import freenet.support.CurrentTimeUTC;
 
 /**
  * Utility classes to preprocess data to make it suitable for plotting, and to plot it using the
  * XChart library's {@link XYChart}. */
 public final class XYChartUtils {
+
+	/**
+	 * Generic implementation of creating an {@link XYChart} where the X-axis is the time.
+	 * Can be used by {@link StatisticsPNGRenderer} implementations for their purposes.
+	 * 
+	 * @param xyData The plot data. A {@link LimitedArrayDeque} of {@link Pair}s where
+	 *     {@link Pair#x} is a {@link CurrentTimeUTC#getInMillis()} timestamp and {@link Pair#y}
+	 *     is an arbitrary {@link Number} which supports {@link Number#doubleValue()}.
+	 *     ATTENTION: This object MUST be safe to modify by this function!
+	 *     It MUST always contain at least one entry.
+	 * @param x0 The {@link CurrentTimeUTC#getInMillis()} of the x=0 origin of the plot. The
+	 *     time labels on the X-axis will not be absolute time but a relative time offset, e.g.
+	 *     "3 minutes". The offset is built against this initial UTC time. 
+	 * @param l10n The {@link BaseL10n} used to translate the given string keys.
+	 * @param title L10n key of the label on top of the plot.
+	 * @param xLabelHours L10n key of the X-axis label if it is automatically chosen to
+	 *     display hours.
+	 * @param xLabelMinutes L10n key of the X-axis label if it automatically chosen to
+	 *     display minutes.
+	 * @param yLabel L10n key of the Y-axis label.
+	 * @return An image of the PNG format, serialized to a byte array. */
+	public static final <T extends Number> byte[] getTimeBasedPlotPNG(
+			LimitedArrayDeque<Pair<Long, T>> xyData, long x0, BaseL10n l10n,
+			String title, String xLabelHours, String xLabelMinutes, String yLabel) {
+		
+		// Add a dummy entry for the current time to the end of the plot so refreshing the image
+		// periodically shows that it is live even when there is no progress.
+		xyData.addLast(
+			new Pair<>(CurrentTimeUTC.getInMillis(), xyData.peekLast().y));
+		
+		// If the amount of measurements we've gathered is at least 2 hours then we measure the
+		// X-axis in hours, otherwise we measure it in minutes.
+		// Using 2 hours instead of the more natural 1 hour because 1 hour measurements are a
+		// typical benchmark of bootstrapping and I don't want to annoy people who want to
+		// measure that with the X-axis not showing minutes.
+		boolean hours = MILLISECONDS.toHours(
+				(xyData.peekLast().x - xyData.peekFirst().x)
+			) >= 2;
+		
+		double timeUnit = (hours ? HOURS : MINUTES).toMillis(1);
+		double[] x = new double[xyData.size()];
+		double[] y = new double[x.length];
+		int i = 0;
+		for(Pair<Long, T> p : xyData) {
+			x[i] = ((double)(p.x - x0)) / timeUnit;
+			y[i] = p.y.doubleValue();
+			++i;
+		}
+		
+		XYChart c = QuickChart.getChart(l10n.getString(title),
+			l10n.getString(hours ? xLabelHours : xLabelMinutes),
+			l10n.getString(yLabel), null, x, y);
+		
+		/* For debugging
+			for(XYSeries s: c.getSeriesMap().values())
+				s.setMarker(SeriesMarkers.CIRCLE);
+		 */
+		
+		byte[] png;
+		try {
+			png = BitmapEncoder.getBitmapBytes(c, BitmapFormat.PNG);
+		} catch (IOException e) {
+			// No idea why this would happen so don't require callers to handle it by converting
+			// to non-declared exception.
+			throw new RuntimeException(e);
+		}
+		
+		return png;
+	}
+
 	/**
 	 * Input:
 	 * - a {@link LimitedArrayDeque} of {@link Pair}s where {@link Pair#x} is a
