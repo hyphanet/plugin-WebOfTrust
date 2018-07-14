@@ -159,10 +159,15 @@ public class StatisticsPage extends WebPageImpl {
 				LimitedArrayDeque<Pair<Long, Integer>> timesOfQueuing
 					= stats.mTimesOfQueuing;
 				String l10n = "StatisticsPage.PlotBox.TotalDownloadCountPlot.";
-
-				// timesOfQueuing is safe to be fed into this:
-				// - getStatistics() returns a clone() so it may be modified.
-				// - IdentityFileQueueStatistics specifies it to always contain at least one entry.
+				
+				// Add a dummy entry for the current time to the end of the plot so refreshing the
+				// image periodically shows that it is live even when there is no progress.
+				// timesOfQueuing is safe to be modified here: getStatistics() returns a clone().
+				// peekLast() will always work: IdentityFileQueueStatistics specifies it to always
+				// contain at least one entry.
+				timesOfQueuing.addLast(
+					new Pair<>(CurrentTimeUTC.getInMillis(), timesOfQueuing.peekLast().y));
+				
 				return getTimeBasedPlotPNG(timesOfQueuing, x0, wot.getBaseL10n(), l10n + "Title", 
 					l10n + "XAxis.Hours",  l10n + "XAxis.Minutes", l10n + "YAxis");
 			}

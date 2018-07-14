@@ -45,9 +45,7 @@ public final class XYChartUtils {
 	 * @param xyData The plot data. A {@link LimitedArrayDeque} of {@link Pair}s where
 	 *     {@link Pair#x} is a {@link CurrentTimeUTC#getInMillis()} timestamp and {@link Pair#y} is
 	 *     an arbitrary {@link Number} which supports {@link Number#doubleValue()}.
-	 *     ATTENTION: This object MUST be safe to modify by this function! FIXME: Don't require
-	 *     this, the other functions also don't.
-	 *     It MUST always contain at least one entry.
+	 *     ATTENTION: It MUST always contain at least one entry.
 	 * @param x0 The {@link CurrentTimeUTC#getInMillis()} of the x=0 origin of the plot. The time
 	 *     labels on the X-axis will not be absolute time but a relative time offset, e.g.
 	 *     "3 minutes". The offset is built against this initial UTC time. 
@@ -62,11 +60,6 @@ public final class XYChartUtils {
 	public static final <T extends Number> byte[] getTimeBasedPlotPNG(
 			LimitedArrayDeque<Pair<Long, T>> xyData, long x0, BaseL10n l10n,
 			String title, String xLabelHours, String xLabelMinutes, String yLabel) {
-		
-		// Add a dummy entry for the current time to the end of the plot so refreshing the image
-		// periodically shows that it is live even when there is no progress.
-		xyData.addLast(
-			new Pair<>(CurrentTimeUTC.getInMillis(), xyData.peekLast().y));
 		
 		// If the amount of measurements we've gathered is at least 2 hours then we measure the
 		// X-axis in hours, otherwise we measure it in minutes.
