@@ -25,7 +25,7 @@ import plugins.WebOfTrust.exceptions.UnknownIdentityException;
 import plugins.WebOfTrust.identicon.Identicon;
 import plugins.WebOfTrust.introduction.IntroductionPuzzle;
 import plugins.WebOfTrust.introduction.IntroductionPuzzleStore;
-import plugins.WebOfTrust.ui.web.StatisticsPage.StatisticsType;
+import plugins.WebOfTrust.ui.web.StatisticsPage.StatisticsPlotType;
 import freenet.client.HighLevelSimpleClient;
 import freenet.client.filter.ContentFilter;
 import freenet.clients.http.PageMaker;
@@ -421,7 +421,7 @@ public class WebInterface {
 	}
 
 	/** Toadlet which serves the PNG images of all generated statistics PNG images of the enum
-	 *  {@link StatisticsPage.StatisticsType}.
+	 *  {@link StatisticsPage.StatisticsPlotType}.
 	 *  New types added to that enum will be served automatically, no changes are required here. */
 	public final class StatisticsPNGWebInterfaceToadlet extends WebInterfaceToadlet {
 		public StatisticsPNGWebInterfaceToadlet(HighLevelSimpleClient highLevelSimpleClient,
@@ -430,7 +430,7 @@ public class WebInterface {
 			super(highLevelSimpleClient, webInterface, nodeClientCore, pageTitle);
 		}
 	
-		public URI getURI(StatisticsType type) {
+		public URI getURI(StatisticsPlotType type) {
 			return getURIWithParams("type=" + type);
 		}
 	
@@ -441,13 +441,13 @@ public class WebInterface {
 			if(!toadletContext.checkFullAccess(this))
 				return;
 			
-			StatisticsType stats;
+			StatisticsPlotType stats;
 			try {
-				stats = StatisticsType.valueOf(httpRequest.getParam("type"));
+				stats = StatisticsPlotType.valueOf(httpRequest.getParam("type"));
 			} catch(IllegalArgumentException e) {
 				sendErrorPage(toadletContext, 404, "Not found",
 					"HTTP GET request parameter 'type' must be one these: " +
-						Arrays.toString(StatisticsType.values()));
+						Arrays.toString(StatisticsPlotType.values()));
 				return;
 			}
 			

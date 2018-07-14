@@ -122,21 +122,20 @@ public class StatisticsPage extends WebPageImpl {
 
 	private void makePlotBox() {
 		HTMLNode box = addContentBox(l10n().getString("StatisticsPage.PlotBox.Header"));
-		for(StatisticsType type : StatisticsType.values())
+		for(StatisticsPlotType type : StatisticsPlotType.values())
 			box.addChild("img", "src", type.getURI(mWebInterface).toString());
 	}
 
-	/** A renderer for a {@link StatisticsType}. */
+	/** A renderer for a {@link StatisticsPlotType}. */
 	public static interface StatisticsPlotRenderer {
 		/** Returns an image of the PNG format, serialized to a byte array.
 		 *  It is recommended to use {@link XYChartUtils} to implement this. */
 		public byte[] getPNG(WebOfTrust wot);
 	}
 
-	// FIXME: Rename to StatisticsPlotType
 	/**
 	 * Each value of this enum defines a {@link StatisticsPlotRenderer#getPNG(WebOfTrust)} to render
-	 * the associated statistics plot.
+	 * the associated plot.
 	 * 
 	 * The PNG images of all values of this enum will automatically be served by
 	 * {@link StatisticsPNGWebInterfaceToadlet} at the URI as obtainable by
@@ -146,7 +145,7 @@ public class StatisticsPage extends WebPageImpl {
 	 * 
 	 * Thus to add a new type of statistics all you have to do is add a new value to this enum with
 	 * the associated {@link StatisticsPlotRenderer} passed to its constructor. */
-	public static enum StatisticsType implements StatisticsPlotRenderer {
+	public static enum StatisticsPlotType implements StatisticsPlotRenderer {
 		TotalDownloadCount(new StatisticsPlotRenderer() {
 			/**
 			 * Renders a chart where the X-axis is the uptime of WoT, and the Y-axis is the total
@@ -205,7 +204,7 @@ public class StatisticsPage extends WebPageImpl {
 
 		private final StatisticsPlotRenderer mRenderer;
 	
-		private StatisticsType(StatisticsPlotRenderer r) {
+		private StatisticsPlotType(StatisticsPlotRenderer r) {
 			mRenderer = r;
 		}
 	
@@ -217,7 +216,7 @@ public class StatisticsPage extends WebPageImpl {
 			return mRenderer.getPNG(wot);
 		}
 
-		/** Returns the URI of the PNG image of this StatisticsType as served by the
+		/** Returns the URI of the PNG image of this StatisticsPlotType as served by the
 		 *  {@link StatisticsPNGWebInterfaceToadlet}. */
 		public URI getURI(WebInterface wi) {
 			StatisticsPNGWebInterfaceToadlet myToadlet = (StatisticsPNGWebInterfaceToadlet)
