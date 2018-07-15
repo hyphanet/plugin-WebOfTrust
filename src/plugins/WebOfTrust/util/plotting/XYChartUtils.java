@@ -140,22 +140,22 @@ public final class XYChartUtils {
 		double yAverage = 0;
 		int amount = 0;
 		for(Pair<Long, T> cur : xyData) {
-			if((cur.x - startOfAverage.x) <= SECONDS.toMillis(seconds) || amount < 16) {
+			++amount;
+			if((cur.x - startOfAverage.x) <= SECONDS.toMillis(seconds) || amount <= 16) {
 				// Undo previous averaging
-				xAverage *= amount;
-				yAverage *= amount;
+				xAverage *= amount-1;
+				yAverage *= amount-1;
 				
 				// Compute new average. We must divide at every added item instead of only dividing
 				// after the last because the values may be so large that they cause overflow or
 				// imprecision if we keep adding them up until the end.
 				xAverage += cur.x.doubleValue();
 				yAverage += cur.y.doubleValue();
-				++amount;
 				xAverage /= amount;
 				yAverage /= amount;
 			} else {
 				assert(xAverage <= (startOfAverage.x + SECONDS.toMillis(seconds))
-					|| amount == 16);
+					|| amount == 17);
 				
 				result.addLast(new Pair<>(round(xAverage), yAverage));
 				
