@@ -160,9 +160,9 @@ public final class XYChartUtils {
 				result.addLast(new Pair<>(round(xAverage), yAverage));
 				
 				startOfAverage = cur;
-				xAverage = 0;
-				yAverage = 0;
-				amount = 0;
+				xAverage = cur.x.doubleValue();
+				yAverage = cur.y.doubleValue();
+				amount = 1;
 			}
 		}
 		
