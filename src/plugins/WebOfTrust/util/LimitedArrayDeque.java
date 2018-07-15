@@ -66,4 +66,7 @@ public final class LimitedArrayDeque<T> implements Cloneable, Iterable<T> {
 		return mQueue.iterator();
 	}
 
+	public T[] toArray(T[] output) {
+		return mQueue.toArray(output);
+	}
 }
