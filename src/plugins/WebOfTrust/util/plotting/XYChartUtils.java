@@ -176,6 +176,83 @@ public final class XYChartUtils {
 		return result;
 	}
 
+	/** FIXME: Document */
+	public static final <T extends Number> LimitedArrayDeque<Pair<Long, Double>> movingAverage(
+			LimitedArrayDeque<Pair<Long, T>> xyData, int seconds) {
+		
+		assert(xyData.size() > 1);
+		assert(seconds > 0);
+		
+		LimitedArrayDeque<Pair<Long, Double>> result
+			= new LimitedArrayDeque<>(xyData.sizeLimit());
+		
+		if(xyData.size() < 1)
+			return result;
+		
+		@SuppressWarnings("unchecked")
+		Pair<Long, T>[] xyArray
+			= (Pair<Long, T>[]) xyData.toArray(new Pair[xyData.size()]);
+		
+		int windowStart = 0;
+		int windowEnd = 0;
+		// Don't compute average by first summing up all entries and then dividing, but by
+		// continuously maintaining an already divided real average.
+		// We must divide at every added item instead of only dividing after the last because the
+		// values may be so large that they cause overflow or imprecision if we keep adding them up
+		// until the end.
+		double xAverage = 0;
+		double yAverage = 0;
+		do {
+			int amount = windowEnd - windowStart;
+			assert(amount >= 0);
+			
+			// Undo previous averaging
+			xAverage *= amount;
+			yAverage *= amount;
+			
+			// Put windowEnd into average
+			xAverage += xyArray[windowEnd].x.doubleValue();
+			yAverage += xyArray[windowEnd].y.doubleValue();
+			++amount;
+			xAverage /= amount;
+			yAverage /= amount;
+			
+			// If the average contains enough measurements now then yield it
+			if((xyArray[windowEnd].x - xyArray[windowStart].x) >= SECONDS.toMillis(seconds)
+					&& amount >= 16) {
+				
+				assert(xAverage <= (xyArray[windowStart].x + SECONDS.toMillis(seconds))
+					|| amount == 16);
+				
+				result.addLast(new Pair<>(round(xAverage), yAverage));
+				
+				// Remove windowStart from average in preparation of next iteration in order to
+				// actually make this a moving average with a window of the given amount of seconds.
+				// Do this here instead of at beginning of the loop so we don't need to check
+				// whether we're eligible to do it.
+				xAverage *= amount;
+				yAverage *= amount;
+				xAverage -= xyArray[windowStart].x.doubleValue();
+				yAverage -= xyArray[windowStart].y.doubleValue();
+				--amount;
+				xAverage /= amount;
+				yAverage /= amount;
+				
+				++windowStart;
+			}
+		} while(++windowEnd < xyArray.length);
+		
+		// If there is remaining data add it to the result if it contains at least the minimum
+		// amount of measurements.
+		// But if the result set is empty then ignore the minimum amount so we never return an
+		// empty result.
+		// FIXME: Does this still make sense with a moving average?
+		if((windowEnd - windowStart) >= 16 || result.size() == 0)
+			result.addLast(new Pair<>(round(xAverage), yAverage));
+		
+		return result;
+	}
+
 	/**
 	 * Consumes a {@link LimitedArrayDeque} of {@link Pair}s where {@link Pair#x} is a
 	 * {@link CurrentTimeUTC#getInMillis()} timestamp and {@link Pair#y}
