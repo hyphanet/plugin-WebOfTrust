@@ -61,8 +61,7 @@ before_script: |
 
 # Compile and test WoT
 script:
-  - echo SHA256 of dependencies:
-  - sha256sum ../fred/build/output/*
+  - echo 'Checksums of dependencies:' ; sha256sum ../fred/build/output/*
   - ant
 
 jdk:
