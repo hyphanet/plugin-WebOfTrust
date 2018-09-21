@@ -33,35 +33,31 @@ cache:
   - $HOME/.gradle/caches/
   - $HOME/.gradle/wrapper/
 
-env:
-  global:
-    - FRED_UPDATED=0
-
 # Get/update Freenet Git repository
 install:
   - cd "$TRAVIS_BUILD_DIR"/..
   - if [ ! -e fred ]; then FRED_UPDATED=1 ; git clone https://github.com/freenet/fred.git --branch next --single-branch --depth 1 fred ; fi
   - cd fred
-  - git fetch && if [ "$(git rev-parse @)" != "$(git rev-parse @{u})" ] ; then FRED_UPDATED=1 ; git pull ; else echo "No changes at fred, not recompiling." ; fi
+  - git fetch && if [ "$(git rev-parse @)" != "$(git rev-parse @{u})" ] ; then FRED_UPDATED=1 ; git pull ; fi
   - cd "$TRAVIS_BUILD_DIR"
-
-stages:
-  - name: before_script
-    if: env(FRED_UPDATED) = 1
 
 # Compile Freenet Git repository
-before_script:
-  - cd "$TRAVIS_BUILD_DIR"/../fred
-  - echo -e "org.gradle.parallel = true\norg.gradle.jvmargs=-Xms256m -Xmx1024m\norg.gradle.configureondemand=true\ntasks.withType(Test) {\n maxParallelForks = Runtime.runtime.availableProcessors()\n}" > gradle.properties
-  # The gradlew binary which fred ships doesn't work on OpenJDK 7, need to use Travis' gradle there.
-  - if [ "$TRAVIS_JDK_VERSION" = "openjdk7" ] ; then rm ./gradlew && ln -s "$(which gradle)" ./gradlew ; fi
-  # TODO: freenet.jar won't contain class Version if we don't run the
-  # clean task in a separate execution of Gradle. Why?
-  - ./gradlew clean
-  # "copyRuntimeLibs" copies the JAR *and* dependencies - which WoT also
-  # needs - to build/output/
-  - ./gradlew jar copyRuntimeLibs -x test
-  - cd "$TRAVIS_BUILD_DIR"
+before_script: |
+  if [ "$FRED_UPDATED" = 1 ] ; then
+    cd "$TRAVIS_BUILD_DIR"/../fred
+    echo -e "org.gradle.parallel = true\norg.gradle.jvmargs=-Xms256m -Xmx1024m\norg.gradle.configureondemand=true\ntasks.withType(Test) {\n maxParallelForks = Runtime.runtime.availableProcessors()\n}" > gradle.properties
+    # The gradlew binary which fred ships doesn't work on OpenJDK 7, need to use Travis' gradle there.
+    if [ "$TRAVIS_JDK_VERSION" = "openjdk7" ] ; then rm ./gradlew && ln -s "$(which gradle)" ./gradlew ; fi
+    # TODO: freenet.jar won't contain class Version if we don't run the
+    # clean task in a separate execution of Gradle. Why?
+    ./gradlew clean
+    # "copyRuntimeLibs" copies the JAR *and* dependencies - which WoT also
+    # needs - to build/output/
+    ./gradlew jar copyRuntimeLibs -x test
+    cd "$TRAVIS_BUILD_DIR"
+  else
+    echo "No changes at fred, not recompiling."
+  fi
 
 # Compile and test WoT
 script:
