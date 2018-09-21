@@ -50,7 +50,10 @@ before_script: |
   if [ "$FRED_UPDATED" = 1 ] ; then
     cd "$TRAVIS_BUILD_DIR"/../fred
     # The gradlew binary which fred ships doesn't work on OpenJDK 7, need to use Travis' gradle there.
-    && if [ "$TRAVIS_JDK_VERSION" = "openjdk7" ] ; then rm ./gradlew && ln -s "$(which gradle)" ./gradlew ; fi
+    && if [ "$TRAVIS_JDK_VERSION" = "openjdk7" ] ; then
+      rm ./gradlew
+      && ln -s "$(which gradle)" ./gradlew
+    fi
     # TODO: freenet.jar won't contain class Version if we don't run the
     # clean task in a separate execution of Gradle. Why?
     && ./gradlew clean
