@@ -33,7 +33,7 @@ cache:
   - $HOME/.gradle/caches/
   - $HOME/.gradle/wrapper/
 
-before_install:
+install:
   - cd "$TRAVIS_BUILD_DIR"/..
   - if [ ! -e fred ]; then git clone https://github.com/freenet/fred.git --branch next --single-branch --depth 1 fred ; else cd fred ; git pull ; cd .. ; fi
   - cd fred
