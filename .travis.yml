@@ -36,7 +36,11 @@ cache:
 # Get/update Freenet Git repository
 install:
   - cd "$TRAVIS_BUILD_DIR"/..
-  - if [ ! -e fred ]; then FRED_UPDATED=1 ; git clone https://github.com/freenet/fred.git --branch next --single-branch --depth 1 fred ; fi
+  - |
+    if [ ! -e fred/.git ] ; then # Must check subdir, main one will be created by Travis cache config.
+      FRED_UPDATED=1
+      git clone https://github.com/freenet/fred.git --branch next --single-branch --depth 1 fred
+    fi
   - cd fred
   - git fetch && if [ "$(git rev-parse @)" != "$(git rev-parse @{u})" ] ; then FRED_UPDATED=1 ; git pull ; fi
   - cd "$TRAVIS_BUILD_DIR"
