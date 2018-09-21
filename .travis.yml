@@ -33,6 +33,10 @@ cache:
   - $HOME/.gradle/caches/
   - $HOME/.gradle/wrapper/
 
+env:
+  global:
+    - FRED_UPDATED=0
+
 # Get/update Freenet Git repository
 install:
   - cd "$TRAVIS_BUILD_DIR"/..
