@@ -8,8 +8,13 @@ if [ ! -e "build.xml" ] && [ -e "../build.xml" ] ; then
 	cd ..
 fi
 
+TESTCASE=( "-Dtest.skip=false" )
+if [ $# = 1 ] ; then
+	TESTCASE+=( "-Dtest.class=$1" )
+fi
+
 ant clean &> /dev/null
-ant -Dtest.skip=false -Dtest.coverage=false |
+ant "${TESTCASE[@]}" -Dtest.coverage=false |
 	awk '
 		/\[junit\] Running (.*)/ { testsuite=$3 }
 		/\[junit\] Testcase: (.*) took (.*) sec/ { print $5,$6,testsuite "." $3 "()" }' |
