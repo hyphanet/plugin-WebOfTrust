@@ -1,0 +1,16 @@
+#!/bin/bash
+set -o pipefail
+set -o errexit
+set -o errtrace
+trap 'echo "Error at line $LINENO, exit code $?" >&2' ERR
+
+if [ ! -e "build.xml" ] && [ -e "../build.xml" ] ; then
+	cd ..
+fi
+
+ant clean &> /dev/null
+ant -Dtest.skip=false -Dtest.coverage=false |
+	awk '
+		/\[junit\] Running (.*)/ { testsuite=$3 }
+		/\[junit\] Testcase: (.*) took (.*) sec/ { print $5,$6,testsuite "." $3 "()" }' |
+	sort --numeric
