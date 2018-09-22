@@ -101,8 +101,12 @@ public class XMLTransformerTest extends AbstractJUnit3BaseTest {
 		
 		os = new ByteArrayOutputStream(XMLTransformer.MAX_IDENTITY_XML_BYTE_SIZE);
 		mTransformer.exportOwnIdentity(ownId, os);
+		byte[] result = os.toByteArray();
 		
-		assertTrue(os.toByteArray().length <= XMLTransformer.MAX_IDENTITY_XML_BYTE_SIZE);
+		assertTrue(result.length <= XMLTransformer.MAX_IDENTITY_XML_BYTE_SIZE);
+		// If this fails the total file size limit exceeds the need from the various limits for the
+		// contents and could be decreased.
+		assertTrue(result.length >= XMLTransformer.MAX_IDENTITY_XML_BYTE_SIZE * 0.8f);
 		
 		// Since we created the Trusts manually without computing Scores the Score database is now
 		// incorrect, which would result in failure of super.tearDown() because it tests the
