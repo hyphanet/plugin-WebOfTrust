@@ -35,7 +35,9 @@ import freenet.clients.fcp.FCPPluginMessage;
  * Command-line tool for maintenance and analysis of WOT databases.
  * 
  * Run and show syntax by:
- *     ./wotutil.sh
+ *     cd WoTRepository
+ *     ant
+ *     ./tools/wotutil
  */
 public final class WOTUtil {
 	
