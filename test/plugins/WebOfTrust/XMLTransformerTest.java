@@ -87,19 +87,31 @@ public class XMLTransformerTest extends AbstractJUnit3BaseTest {
 		//System.out.println("Number of identities which fit into trust list XML: " + (count-1));
 		
 		/* Remove the following when using the commented out lines above */
-		mWoT.beginTrustListImport();
 		for(int i=0; i < XMLTransformer.MAX_IDENTITY_XML_TRUSTEE_AMOUNT; ++i) {
+			// Create Identitys and especially Trusts manually instead of using mWoT's functions as
+			// the resulting Score computations would make this test very slow (minutes).
+			
 			final Identity trustee = new Identity(mWoT,getRandomRequestURI(), 
 											getRandomLatinString(Identity.MAX_NICKNAME_LENGTH), true); 
-			trustee.storeAndCommit();
-			mWoT.setTrust(ownId, trustee, (byte)100, getRandomLatinString(Trust.MAX_TRUST_COMMENT_LENGTH));
+			trustee.storeWithoutCommit();
+			new Trust(mWoT, ownId, trustee, (byte)100, getRandomLatinString(Trust.MAX_TRUST_COMMENT_LENGTH))
+				.storeWithoutCommit();
 		}
-		mWoT.finishTrustListImport();
+		Persistent.checkedCommit(mWoT.getDatabase(), this);
 		
 		os = new ByteArrayOutputStream(XMLTransformer.MAX_IDENTITY_XML_BYTE_SIZE);
 		mTransformer.exportOwnIdentity(ownId, os);
 		
 		assertTrue(os.toByteArray().length <= XMLTransformer.MAX_IDENTITY_XML_BYTE_SIZE);
+		
+		// Since we created the Trusts manually without computing Scores the Score database is now
+		// incorrect, which would result in failure of super.tearDown() because it tests the
+		// correctness.
+		// Thus delete the Trusts again.
+		for(Trust trust : mWoT.getAllTrusts())
+			trust.deleteWithoutCommit();
+		Persistent.checkedCommit(mWoT.getDatabase(), this);
+		
 		/* End of "remove-this" part */
 	}
 
