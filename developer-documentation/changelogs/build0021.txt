@@ -238,7 +238,11 @@ CHANGELOG about stuff only interesting for developers
 - [Code quality] Unit tests: Add scripts to benchmark the tests, speed
                  one up (xor)
 
-  Produces sorted output like this:
+  Scripts were added to the tools/ directory which support:
+  - benchmarking unit tests locally when compiling.
+  - processing log files from Travis CI to produce benchmark results.
+
+  They produce sorted output like this:
     1.234 sec package.ClassName1.testFunction1()
     1.235 sec package.ClassName2.testFunction2()
 
