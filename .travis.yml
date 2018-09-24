@@ -76,10 +76,10 @@ jdk:
   - oraclejdk10
   - oraclejdk9
   - oraclejdk8
-  - openjdk10
-  - openjdk9
   - openjdk8
   - openjdk7
+  # openjdk10:  Fails with SunCertPathBuilderException in fred's Gradle as of 2018-09-24
+  # openjdk9:   Fails with SunCertPathBuilderException in fred's Gradle as of 2018-09-24
   # oraclejdk7: Not supported anymore: https://github.com/travis-ci/travis-ci/issues/7884#issuecomment-308451879
 
 deploy:
