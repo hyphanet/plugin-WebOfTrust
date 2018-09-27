@@ -6,6 +6,7 @@ package plugins.WebOfTrust.introduction;
 import static java.util.concurrent.TimeUnit.HOURS;
 import static java.util.concurrent.TimeUnit.MINUTES;
 import static java.util.concurrent.TimeUnit.SECONDS;
+import static plugins.WebOfTrust.Configuration.IS_UNIT_TEST;
 import static plugins.WebOfTrust.util.MathUtil.toIntExact;
 
 import java.io.IOException;
@@ -77,7 +78,8 @@ public final class IntroductionClient extends TransferThread  {
 	/**
 	 * A call to getPuzzles() wakes up the puzzle downloader thread to download new puzzles. This constant specifies the minimal delay between two wake-ups.
 	 */
-	private static final long MINIMAL_SLEEP_TIME = MINUTES.toMillis(10);
+	private static final long MINIMAL_SLEEP_TIME
+		= IS_UNIT_TEST ? SECONDS.toMillis(1)  : MINUTES.toMillis(10);
 
 	/* TODO: Maybe implement backward-downloading of puzzles, currently we only download puzzles of today.
 	/* public static final byte PUZZLE_DOWNLOAD_BACKWARDS_DAYS = IntroductionServer.PUZZLE_INVALID_AFTER_DAYS - 1; */
