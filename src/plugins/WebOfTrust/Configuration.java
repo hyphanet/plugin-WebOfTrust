@@ -46,7 +46,10 @@ public final class Configuration extends Persistent {
 	 * not behave different to the real product if possible!
 	 * 
 	 * Please notice that this requires launching the JVM with "-Dis_WOT_unit_test=true".
-	 * This is currently done by the Ant builder, but your IDE might not do it without config. */
+	 * This is currently done by the Ant builder, but your IDE might not do it without config.
+	 * (We're intentionally not determining the value by having the tests set this variable directly
+	 * because that would imply that it cannot be final, which would prevent usage of it in other
+	 * static final variables and also disallow compiler optimizations.) */
 	public final static transient boolean IS_UNIT_TEST = Boolean.getBoolean("is_WOT_unit_test");
 
 	/**
