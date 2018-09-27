@@ -206,7 +206,11 @@ public final class IntroductionClient extends TransferThread  {
 			long timeSinceLastIteration = (time - mLastIterationTime);
 			
 			if(timeSinceLastIteration < MINIMAL_SLEEP_TIME) {
-			    nextIteration(MINIMAL_SLEEP_TIME - timeSinceLastIteration);
+				if(logMINOR) {
+					Logger.minor(this,
+						"iterate(): MINIMAL_SLEEP_TIME not expired, postponing unimportant tasks!");
+				}
+				nextIteration(MINIMAL_SLEEP_TIME - timeSinceLastIteration);
 				return;
 			}
 			
