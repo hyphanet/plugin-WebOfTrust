@@ -238,7 +238,11 @@ CHANGELOG about stuff only interesting for developers
 - [Code quality] Unit tests: Add scripts to benchmark the tests, speed
                  one up (xor)
 
-  Produces sorted output like this:
+  Scripts were added to the tools/ directory which support:
+  - benchmarking unit tests locally when compiling.
+  - processing log files from Travis CI to produce benchmark results.
+
+  They produce sorted output like this:
     1.234 sec package.ClassName1.testFunction1()
     1.235 sec package.ClassName2.testFunction2()
 
@@ -272,6 +276,22 @@ CHANGELOG about stuff only interesting for developers
 
   FYI you can use e.g. jVisualVM to watch the memory usage and GC
   activity of Freenet.
+
+- Code quality: Travis CI: Test against most recent Java versions (xor)
+
+  The cloud service now runs the unit tests periodically against:
+  - oraclejdk10 (new)
+  - oraclejdk9
+  - oraclejdk8
+  - openjdk10 (new)
+  - openjdk9 (new)
+  - openjdk8
+  - openjdk7
+
+  This is the maximal set of Java versions which are both supported by
+  Freenet and Travis CI as of 2018-09-26.
+  Notably the new Java 11 is not tested yet due to Freenet's Gradle not
+  working on it.
 
 - 0006934: [Code quality] Replace "WithoutCommit" function name suffixes
            with "@NeedsTransaction" annotation (xor)
