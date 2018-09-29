@@ -6,6 +6,10 @@
 
 package plugins.WebOfTrust;
 
+import static java.util.concurrent.TimeUnit.MINUTES;
+import static java.util.concurrent.TimeUnit.SECONDS;
+import static plugins.WebOfTrust.Configuration.IS_UNIT_TEST;
+
 import java.io.InputStream;
 import java.net.MalformedURLException;
 import java.util.HashMap;
@@ -64,7 +68,8 @@ public final class IdentityFetcher implements USKRetrieverCallback, PrioRunnable
     /**
      * Will be used as delay for the {@link DelayedBackgroundJob} which schedules processing of
      * {@link IdentityFetcherCommand}s. */
-	private static final long PROCESS_COMMANDS_DELAY = 60 * 1000;
+	private static final long PROCESS_COMMANDS_DELAY =
+		IS_UNIT_TEST ? SECONDS.toMillis(1) : MINUTES.toMillis(1);
 
 	/**
 	 * If true, the fetcher will not only fetch the latest editions of Identitys, but also old
