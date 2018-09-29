@@ -176,7 +176,7 @@ public final class IntroductionClientTest extends AbstractMultiNodeTest {
 			client.nextIteration();
 		*/
 		
-		System.out.println("IntroductionClientTest: Waiting for puzzle to downloaded...");
+		System.out.println("IntroductionClientTest: Waiting for puzzle to be downloaded...");
 		StopWatch downloadTime = new StopWatch();
 		do {
 			synchronized(clientWoT) {
