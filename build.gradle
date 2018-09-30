@@ -77,7 +77,9 @@ task("$jarType", type: Jar, overwrite: true, dependsOn: ['compileJava', 'compile
 }
 }
 
-test (dependsOn: 'testJar') {
+test {
+    dependsOn 'testJar'
+
     classpath = fileTree(dir: '../fred/build/output/', include: '*.jar')
     classpath+= project.files('WebOfTrust-with-unit-tests.jar')
     
