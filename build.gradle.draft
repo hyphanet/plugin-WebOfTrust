@@ -3,7 +3,7 @@ logger.warn('This notably is because I did NOT read any Gradle tutorial whatsoev
 
 buildscript {
     dependencies {
-        classpath 'com.android.tools.build:gradle:0.9.+'
+        classpath 'com.android.tools.build:gradle:1.4.+'
     }
 }
 
