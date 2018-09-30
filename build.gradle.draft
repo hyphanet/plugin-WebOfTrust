@@ -15,7 +15,6 @@ configurations {
 
 apply plugin: 'witness'
 apply plugin: 'java'
-apply plugin: 'maven-publish'
 
 repositories {
     mavenLocal() // TODO: use lib/ instead?
@@ -183,26 +182,6 @@ test {
 //	"test.verbose":
 //	"test.benchmark":
     ]
-}
-
-publishing {
-    publications {
-        mavenJava(MavenPublication) {
-            groupId 'org.freenetproject'
-            artifactId "fred"
-            version gitrev
-            from components.java
-        }
-    }
-    repositories {
-        maven {
-            url "s3://mvn.freenetproject.org/"
-            credentials(AwsCredentials) {
-                accessKey System.getenv('AWS_ACCESS_KEY_ID')
-                secretKey System.getenv('AWS_SECRET_ACCESS_KEY')
-            }
-        }
-    }
 }
 
 task copyRuntimeLibs(type: Copy) {
