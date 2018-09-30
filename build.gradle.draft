@@ -100,11 +100,8 @@ test {
     workingDir = sourceSets.test.output.classesDir
     scanForTestClasses = false
     systemProperties += [
-        "test.l10npath_test": "freenet/l10n/",
-        "test.l10npath_main": "../main/freenet/l10n/"
-//	"test.extensive":
-//	"test.verbose":
-//	"test.benchmark":
+        "is_WOT_unit_test": "true"
+        "WOT_test_jar": "FIXME"
     ]
 }
 
