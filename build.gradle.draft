@@ -59,7 +59,7 @@ task compileJava(dependsOn: 'compileVersion') << {
 }
 
 ["jar", "testJar"].each { jarType ->
-task("$jarType", type: Jar, overwrite: true, dependsOn: 'compileJava') {
+task("$jarType", type: Jar, overwrite: true, dependsOn: ['compileJava', 'compileTestJava']) {
     from ("${buildDir}/classes/java/main/") {
         preserveFileTimestamps = false
         reproducibleFileOrder = true
