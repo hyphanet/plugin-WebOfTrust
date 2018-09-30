@@ -41,6 +41,18 @@ public final class Configuration extends Persistent {
 	public final static transient long DEFAULT_VERIFY_SCORES_INTERVAL = TimeUnit.DAYS.toMillis(28);
 
 	/**
+	 * If this is true then batch processing delays of various subsystems will be set to low values.
+	 * ATTENTION: DO NOT use this for any significant program logic decisions! Unit tests should
+	 * not behave different to the real product if possible!
+	 * 
+	 * Please notice that this requires launching the JVM with "-Dis_WOT_unit_test=true".
+	 * This is currently done by the Ant builder, but your IDE might not do it without config.
+	 * (We're intentionally not determining the value by having the tests set this variable directly
+	 * because that would imply that it cannot be final, which would prevent usage of it in other
+	 * static final variables and also disallow compiler optimizations.) */
+	public final static transient boolean IS_UNIT_TEST = Boolean.getBoolean("is_WOT_unit_test");
+
+	/**
 	 * The database format version of this WoT-database.
 	 * Stored in a primitive integer field to ensure that db4o does not lose it - I've observed the HashMaps to be null suddenly sometimes :(
 	 */

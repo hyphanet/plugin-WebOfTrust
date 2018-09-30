@@ -3,7 +3,11 @@
  * any later version). See http://www.gnu.org/ for details of the GPL. */
 package plugins.WebOfTrust.introduction;
 
+import static java.util.concurrent.TimeUnit.HOURS;
+import static java.util.concurrent.TimeUnit.MINUTES;
 import static java.util.concurrent.TimeUnit.SECONDS;
+import static plugins.WebOfTrust.Configuration.IS_UNIT_TEST;
+import static plugins.WebOfTrust.util.MathUtil.toIntExact;
 
 import java.io.IOException;
 import java.io.InputStream;
@@ -67,15 +71,16 @@ import freenet.support.io.ResumeFailedException;
  * @author xor (xor@freenetproject.org)
  */
 public final class IntroductionClient extends TransferThread  {
-	
-	private static final int STARTUP_DELAY = 3 * 60 * 1000;
-	private static final int THREAD_PERIOD = 1 * 60 * 60 * 1000; 
-	
+
+	private static final int STARTUP_DELAY = toIntExact(MINUTES.toMillis(3));
+	private static final int THREAD_PERIOD = toIntExact(HOURS.toMillis(1));
+
 	/**
 	 * A call to getPuzzles() wakes up the puzzle downloader thread to download new puzzles. This constant specifies the minimal delay between two wake-ups.
 	 */
-	private static final int MINIMAL_SLEEP_TIME = 10 * 60 * 1000;
-	
+	private static final long MINIMAL_SLEEP_TIME
+		= IS_UNIT_TEST ? SECONDS.toMillis(1)  : MINUTES.toMillis(10);
+
 	/* TODO: Maybe implement backward-downloading of puzzles, currently we only download puzzles of today.
 	/* public static final byte PUZZLE_DOWNLOAD_BACKWARDS_DAYS = IntroductionServer.PUZZLE_INVALID_AFTER_DAYS - 1; */
 	
@@ -206,7 +211,11 @@ public final class IntroductionClient extends TransferThread  {
 			long timeSinceLastIteration = (time - mLastIterationTime);
 			
 			if(timeSinceLastIteration < MINIMAL_SLEEP_TIME) {
-			    nextIteration(MINIMAL_SLEEP_TIME - timeSinceLastIteration);
+				if(logMINOR) {
+					Logger.minor(this,
+						"iterate(): MINIMAL_SLEEP_TIME not expired, postponing unimportant tasks!");
+				}
+				nextIteration(MINIMAL_SLEEP_TIME - timeSinceLastIteration);
 				return;
 			}
 			

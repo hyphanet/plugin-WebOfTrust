@@ -4,9 +4,9 @@
 package plugins.WebOfTrust;
 
 import static freenet.support.TimeUtil.formatTime;
-
-import java.util.concurrent.TimeUnit;
-
+import static java.util.concurrent.TimeUnit.MINUTES;
+import static java.util.concurrent.TimeUnit.SECONDS;
+import static plugins.WebOfTrust.Configuration.IS_UNIT_TEST;
 import plugins.WebOfTrust.IdentityFileQueue.IdentityFileStream;
 import plugins.WebOfTrust.util.jobs.BackgroundJob;
 import plugins.WebOfTrust.util.jobs.DelayedBackgroundJob;
@@ -50,7 +50,8 @@ public final class IdentityFileProcessor implements DelayedBackgroundJob {
 	 * To find a reasonable default, use an infinite processing delay together with a fresh, empty
 	 * database to see how much deduplication is the maximal possible value. Also see
 	 * https://bugs.freenetproject.org/view.php?id=6555 */
-	public static final long PROCESSING_DELAY_MILLISECONDS = TimeUnit.MINUTES.toMillis(1);
+	public static final long PROCESSING_DELAY_MILLISECONDS
+		= IS_UNIT_TEST ? SECONDS.toMillis(1) : MINUTES.toMillis(1);
 
 	/** We consume the files of this queue when it calls our {@link #triggerExecution()}. */
 	private final IdentityFileQueue mQueue;

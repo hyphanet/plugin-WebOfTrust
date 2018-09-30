@@ -172,11 +172,11 @@ public final class IntroductionClientTest extends AbstractMultiNodeTest {
 		
 		// Not necessary: createOwnIdentity() does it.
 		/*
-			// Speed up generation / upload of the puzzle.
+			// Speed up download of the puzzle.
 			client.nextIteration();
 		*/
 		
-		System.out.println("IntroductionClientTest: Waiting for puzzle to downloaded...");
+		System.out.println("IntroductionClientTest: Waiting for puzzle to be downloaded...");
 		StopWatch downloadTime = new StopWatch();
 		do {
 			synchronized(clientWoT) {
