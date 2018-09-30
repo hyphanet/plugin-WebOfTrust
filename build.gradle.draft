@@ -74,9 +74,20 @@ compileTestJava.dependsOn copyResourcesToClasses2
 test {
     minHeapSize = "128m"
     maxHeapSize = "512m"
-    // no inner class
-    include 'freenet/**/*Test.class'
-    exclude 'freenet/**/*$*Test.class'
+    
+    include '**/*Test*.class'
+    // Exclude member classes:
+    // Java will auto-generate switchtable classes for switch() upon enums.
+    // JUnit would then complain that those classes do not contain a public
+    // constructor.
+    exclude '**/*$*.class'
+    exclude '**/*Benchmark*.class'
+    exclude 'com/db4o/**'
+    if(!hasProperty('test.unreliable')) {
+        exclude '**/SynchronousDelayedBackgroundJobTest.class'
+        exclude '**/TickerDelayedBackgroundJobTest.class'
+    }
+    
     workingDir = sourceSets.test.output.classesDir
     scanForTestClasses = false
     systemProperties += [
