@@ -15,7 +15,7 @@ def version_src = 'freenet/node/Version.java'
 sourceSets.main.java.srcDirs = ['src/']
 sourceSets.test.java.srcDirs = ['test/']
 
-task compileVersion (type: JavaCompile) {
+task compileVersion (type: JavaCompile, dependsOn: ['buildInfo', 'compileJava']) {
     copy {
         from sourceSets.main.java.srcDirs
         into "${version_buildir}"
@@ -32,11 +32,9 @@ task compileVersion (type: JavaCompile) {
     classpath = files(sourceSets.main.compileClasspath, sourceSets.main.output.classesDir)
     destinationDir = file("${buildDir}/java/version/")
 }
-compileVersion.dependsOn buildInfo
-compileVersion.dependsOn compileJava
 processResources.dependsOn compileVersion
 
-task jar (type: Jar, overwrite: true) {
+task jar (type: Jar, overwrite: true, dependsOn: 'processResources') {
     from (compileVersion) {
         include 'plugins/WebOfTrust/Version.class'
         preserveFileTimestamps = false
@@ -57,7 +55,6 @@ task jar (type: Jar, overwrite: true) {
         attributes("Plugin-Main-Class": "plugins.WebOfTrust.WebOfTrust")
     }
 }
-jar.dependsOn processResources
 
 task copyResourcesToClasses2 {
     inputs.dir sourceSets.main.java.srcDirs
