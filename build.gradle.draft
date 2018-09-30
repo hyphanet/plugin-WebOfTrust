@@ -1,5 +1,5 @@
-logger.warn('This script merely exists to speed up Travis CI builds! Use Ant for producing official JARs!')
-logger.warn('This notably is because I did NOT read any Gradle tutorial whatsoever yet and thus cannot guarantee its safety!)
+println 'This script merely exists to speed up Travis CI builds! Use Ant for producing official JARs!'
+println 'This notably is because I did NOT read any Gradle tutorial whatsoever yet and thus cannot guarantee its safety!'
 
 buildscript {
     dependencies {
