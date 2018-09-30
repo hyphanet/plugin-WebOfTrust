@@ -9,13 +9,13 @@ buildscript {
 
 apply plugin: 'java'
 
-def version_buildir = "$projectDir/build/tmp/compileVersion/"
-def version_src = 'freenet/node/Version.java'
-
 sourceSets.main.java.srcDirs = ['src/']
 sourceSets.test.java.srcDirs = ['test/']
 
+def version_file = 'plugins/WebOfTrust/Version'
 task compileVersion (type: JavaCompile, dependsOn: 'compileJava') {
+    def version_src = "${version_file}.java"
+    def version_buildir = "$projectDir/build/tmp/compileVersion/"
     copy {
         from sourceSets.main.java.srcDirs
         into "${version_buildir}"
@@ -36,12 +36,12 @@ processResources.dependsOn compileVersion
 
 task jar (type: Jar, overwrite: true, dependsOn: 'processResources') {
     from (compileVersion) {
-        include 'plugins/WebOfTrust/Version.class'
+        include "${version_file}.class"
         preserveFileTimestamps = false
         reproducibleFileOrder = true
     }
     from ("${buildDir}/classes/java/main/") {
-        exclude 'plugins/WebOfTrust/Version.class'
+        exclude "${version_file}.class"
         preserveFileTimestamps = false
         reproducibleFileOrder = true
     }
