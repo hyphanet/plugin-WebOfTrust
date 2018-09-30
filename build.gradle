@@ -44,7 +44,8 @@ task compileVersion (type: JavaCompile) {
     destinationDir = file("${buildDir}/java/version/")
 }
 
-task compileJava(dependsOn: 'compileVersion') << {
+compileJava << {
+	dependsOn 'compileVersion'
 	copy {
 		from "${buildDir}/java/version/${version_file}.class"
 		into "${buildDir}/classes/java/main/{$version_file}.class"
