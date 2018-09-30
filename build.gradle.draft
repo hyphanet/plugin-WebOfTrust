@@ -7,17 +7,7 @@ buildscript {
     }
 }
 
-configurations {
-    provided
-    compile
-}
-
 apply plugin: 'java'
-
-sourceSets {
-    main.compileClasspath += configurations.provided
-    test.compileClasspath += configurations.provided
-}
 
 def version_buildir = "$projectDir/build/tmp/compileVersion/"
 def version_src = 'freenet/node/Version.java'
