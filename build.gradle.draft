@@ -38,13 +38,12 @@ processResources.dependsOn compileVersion
 
 task jar (type: Jar, overwrite: true) {
     from (compileVersion) {
-        include 'freenet/node/Version**class'
-	preserveFileTimestamps = false
+        include 'plugins/WebOfTrust/Version.class'
+        preserveFileTimestamps = false
         reproducibleFileOrder = true
     }
     from ("${buildDir}/classes/java/main/") {
-        exclude 'freenet/node/Version.class'
-        exclude 'freenet/node/Version$1.class'
+        exclude 'plugins/WebOfTrust/Version.class'
         preserveFileTimestamps = false
         reproducibleFileOrder = true
     }
@@ -52,8 +51,8 @@ task jar (type: Jar, overwrite: true) {
        include 'plugins/WebOfTrust/gpl.txt'
        include 'plugins/WebOfTrust/l10n/*.l10n'
     }
-    duplicatesStrategy = "exclude"
-    archivesBaseName = "freenet"
+    duplicatesStrategy = "fail" // FIXME: Test if this can be omitted
+    archivesBaseName = "WebOfTrust"
     manifest {
         attributes("Plugin-Main-Class": "plugins.WebOfTrust.WebOfTrust")
     }
