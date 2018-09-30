@@ -12,18 +12,8 @@ apply plugin: 'java'
 def version_buildir = "$projectDir/build/tmp/compileVersion/"
 def version_src = 'freenet/node/Version.java'
 
-sourceSets {
-    main {
-        java {
-            srcDir 'src/'
-        }
-    }
-    test {
-        java {
-            srcDir 'test/'
-        }
-    }
-}
+sourceSets.main.java.srcDirs = ['src/']
+sourceSets.test.java.srcDirs = ['test/']
 
 task compileVersion (type: JavaCompile) {
     copy {
