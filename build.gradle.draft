@@ -48,6 +48,10 @@ task jar (type: Jar, overwrite: true) {
         preserveFileTimestamps = false
         reproducibleFileOrder = true
     }
+    from (sourceSets.main.java.srcDirs) {
+       include 'plugins/WebOfTrust/gpl.txt'
+       include 'plugins/WebOfTrust/l10n/*.l10n'
+    }
     duplicatesStrategy = "exclude"
     archivesBaseName = "freenet"
     manifest {
@@ -68,7 +72,6 @@ task copyResourcesToClasses2 {
         }
     }
 }
-processResources.dependsOn copyResourcesToClasses2
 compileTestJava.dependsOn copyResourcesToClasses2
 
 test {
