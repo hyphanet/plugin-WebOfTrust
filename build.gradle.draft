@@ -81,19 +81,7 @@ task jar (type: Jar, overwrite: true) {
     duplicatesStrategy = "exclude"
     archivesBaseName = "freenet"
     manifest {
-        attributes("Permissions": "all-permissions")
-        attributes("Application-Name": "Freenet REference Daemon")
-        attributes("Required-Ext-Version": 29)
-        attributes("Recommended-Ext-Version": 29)
-        attributes("Compiled-With": "${System.getProperty('java.version')} (${System.getProperty('java.vendor')})")
-        attributes([
-                       "Specification-Title": "Freenet",
-                       "Specification-Version": "0.7.5",
-                       "Specification-Vendor": "freenetproject.org",
-                       "Implementation-Title": "Freenet",
-                       "Implementation-Version": "0.7.5 ${gitrev}",
-                       "Implementation-Vendor": "freenetproject.org",
-                   ], "common")
+        attributes("Plugin-Main-Class": "plugins.WebOfTrust.WebOfTrust")
     }
 }
 jar.dependsOn processResources
