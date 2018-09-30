@@ -64,7 +64,10 @@ task("$jarType", type: Jar, overwrite: true, dependsOn: 'processResources') {
 }
 }
 
-test {
+test (dependsOn: 'testJar') {
+    classpath = fileTree(dir: '../fred/build/output/', include: '*.jar')
+    classpath+= project.files('WebOfTrust-with-unit-tests.jar')
+    
     minHeapSize = "128m"
     maxHeapSize = "512m"
     
