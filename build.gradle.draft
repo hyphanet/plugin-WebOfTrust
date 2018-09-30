@@ -30,7 +30,7 @@ dependencies {
 }
 
 def version_file = 'plugins/WebOfTrust/Version'
-task compileVersion (type: JavaCompile, dependsOn: 'compileJava') {
+task compileVersion (type: JavaCompile) {
     def version_src = "${version_file}.java"
     def version_buildir = "$projectDir/build/tmp/compileVersion/"
     copy {
@@ -49,17 +49,18 @@ task compileVersion (type: JavaCompile, dependsOn: 'compileJava') {
     classpath = files(sourceSets.main.compileClasspath, sourceSets.main.output.classesDir)
     destinationDir = file("${buildDir}/java/version/")
 }
-processResources.dependsOn compileVersion
+
+task compileJava(dependsOn: 'compileVersion') << {
+	copy {
+		from "${buildDir}/java/version/${version_file}.class"
+		into "${buildDir}/classes/java/main/{$version_file}.class"
+		duplicatesStrategy 'overwrite'
+	}
+}
 
 ["jar", "testJar"].each { jarType ->
-task("$jarType", type: Jar, overwrite: true, dependsOn: 'processResources') {
-    from (compileVersion) {
-        include "${version_file}.class"
-        preserveFileTimestamps = false
-        reproducibleFileOrder = true
-    }
+task("$jarType", type: Jar, overwrite: true, dependsOn: 'compileJava') {
     from ("${buildDir}/classes/java/main/") {
-        exclude "${version_file}.class"
         preserveFileTimestamps = false
         reproducibleFileOrder = true
     }
