@@ -176,13 +176,6 @@ test {
     ]
 }
 
-task copyRuntimeLibs(type: Copy) {
-    into "${buildDir}/output/"
-    from configurations.runtime
-    from jar
-}
-copyRuntimeLibs.dependsOn jar
-
 // In this section you declare the dependencies for your production and test code
 dependencies {
 	// Run fred's Gradle with "./gradlew jar copyRuntimeLibs" to produce this directory
