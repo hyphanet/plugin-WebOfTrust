@@ -35,22 +35,14 @@ sourceSets {
     }
 }
 
-def gitrev
-task buildInfo {
-    try {
-        def cmd = "git describe --always --abbrev=4 --dirty".execute().text.trim()
-    } catch (java.io.IOException e) {
-        gitrev = "@unknown@"
-    }
-}
-
 task compileVersion (type: JavaCompile) {
     copy {
         from sourceSets.main.java.srcDirs
         into "${version_buildir}"
         include "${version_src}"
         filter {
-            String line -> line.replaceAll("@custom@","${gitrev}")
+            String line -> line.replaceAll("@custom@",
+                 "git describe --always --abbrev=4 --dirty".execute().text.trim())
         }
     }
     sourceCompatibility = 1.7
