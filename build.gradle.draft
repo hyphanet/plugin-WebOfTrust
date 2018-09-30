@@ -38,9 +38,7 @@ sourceSets {
 def gitrev
 task buildInfo {
     try {
-        def cmd = "git describe --always --abbrev=4 --dirty"
-        def proc = cmd.execute()
-        gitrev = proc.text.trim()
+        def cmd = "git describe --always --abbrev=4 --dirty".execute().text.trim()
     } catch (java.io.IOException e) {
         gitrev = "@unknown@"
     }
