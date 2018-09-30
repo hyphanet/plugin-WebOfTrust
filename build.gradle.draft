@@ -34,7 +34,8 @@ task compileVersion (type: JavaCompile, dependsOn: 'compileJava') {
 }
 processResources.dependsOn compileVersion
 
-task jar (type: Jar, overwrite: true, dependsOn: 'processResources') {
+["jar", "testJar"].each { jarType ->
+task("$jarType", type: Jar, overwrite: true, dependsOn: 'processResources') {
     from (compileVersion) {
         include "${version_file}.class"
         preserveFileTimestamps = false
@@ -45,30 +46,23 @@ task jar (type: Jar, overwrite: true, dependsOn: 'processResources') {
         preserveFileTimestamps = false
         reproducibleFileOrder = true
     }
+    if(jarType == 'testJar') {
+        from ("${buildDir}/classes/java/test/") {
+            preserveFileTimestamps = false
+            reproducibleFileOrder = true
+        }
+    }
     from (sourceSets.main.java.srcDirs) {
        include 'plugins/WebOfTrust/gpl.txt'
        include 'plugins/WebOfTrust/l10n/*.l10n'
     }
     duplicatesStrategy = "fail" // FIXME: Test if this can be omitted
-    archivesBaseName = "WebOfTrust"
+    archivesBaseName = (jarType == 'testJar') ? 'WebOfTrust-with-unit-tests' : 'WebOfTrust'
     manifest {
         attributes("Plugin-Main-Class": "plugins.WebOfTrust.WebOfTrust")
     }
 }
-
-task copyResourcesToClasses2 {
-    inputs.dir sourceSets.main.java.srcDirs
-    outputs.dir sourceSets.main.output.classesDir
-    doLast {
-        copy {
-            from sourceSets.main.java.srcDirs
-            into sourceSets.main.output.classesDir
-            include 'plugins/WebOfTrust/gpl.txt'
-            include 'plugins/WebOfTrust/l10n/*.l10n'
-        }
-    }
 }
-compileTestJava.dependsOn copyResourcesToClasses2
 
 test {
     minHeapSize = "128m"
