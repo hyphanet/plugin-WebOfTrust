@@ -12,6 +12,15 @@ apply plugin: 'java'
 sourceSets.main.java.srcDirs = ['src/']
 sourceSets.test.java.srcDirs = ['test/']
 
+// In this section you declare the dependencies for your production and test code
+dependencies {
+	// Run fred's Gradle with "./gradlew jar copyRuntimeLibs" to produce this directory
+	compile fileTree(dir: '../fred/build/output/', include: '*.jar')
+	
+	testCompile files('/usr/share/java/junit4.jar')
+	testCompile files('/usr/share/java/hamcrest-core.jar'
+}
+
 def version_file = 'plugins/WebOfTrust/Version'
 task compileVersion (type: JavaCompile, dependsOn: 'compileJava') {
     def version_src = "${version_file}.java"
@@ -90,15 +99,6 @@ test (dependsOn: 'testJar') {
         "is_WOT_unit_test": "true"
         "WOT_test_jar": "FIXME"
     ]
-}
-
-// In this section you declare the dependencies for your production and test code
-dependencies {
-	// Run fred's Gradle with "./gradlew jar copyRuntimeLibs" to produce this directory
-	compile fileTree(dir: '../fred/build/output/', include: '*.jar')
-	
-	testCompile files('/usr/share/java/junit4.jar')
-	testCompile files('/usr/share/java/hamcrest-core.jar'
 }
 
 javadoc {
