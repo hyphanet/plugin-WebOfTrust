@@ -83,35 +83,13 @@ task copyResourcesToClasses2 {
         copy {
             from sourceSets.main.java.srcDirs
             into sourceSets.main.output.classesDir
-            include 'freenet/l10n/*properties'
-            include 'freenet/l10n/iso-*.tab'
-            include 'freenet/clients/http/staticfiles/**'
-            include '../dependencies.properties'
-        }
-        copy {
-            from "${projectDir}/"
-            into sourceSets.main.output.classesDir
-            include 'dependencies.properties'
+            include 'plugins/WebOfTrust/gpl.txt'
+            include 'plugins/WebOfTrust/l10n/*.l10n'
         }
     }
 }
 processResources.dependsOn copyResourcesToClasses2
-
-task copyTestResourcesToClasses2 {
-    inputs.dir sourceSets.test.java.srcDirs
-    outputs.dir sourceSets.test.output.classesDir
-    doLast {
-        copy {
-	    from sourceSets.test.java.srcDirs
-	    into sourceSets.test.output.classesDir
-            include 'freenet/client/filter/*/**'
-            include 'freenet/crypt/ciphers/rijndael-gladman-test-data/**'
-            include 'freenet/l10n/*properties'
-        }
-    }
-}
 compileTestJava.dependsOn copyResourcesToClasses2
-compileTestJava.dependsOn copyTestResourcesToClasses2
 
 test {
     minHeapSize = "128m"
