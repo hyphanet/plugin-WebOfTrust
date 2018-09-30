@@ -12,8 +12,16 @@ apply plugin: 'java'
 sourceSets.main.java.srcDirs = ['src/']
 sourceSets.test.java.srcDirs = ['test/']
 
-// In this section you declare the dependencies for your production and test code
 dependencies {
+	// WARNING: The way we declare dependencies here is NOT how Gradle is intended to be used!
+	// I made it use them from the local filesystem, but they should be downloaded by Gradle
+	// instead.
+	// I've done so because I currently do not have the time to maintain a gradle-witness list of
+	// hashes of trustworthy binaries. So for now I'm rather outsourcing determination of what
+	// binaries are safe to fred and OS maintainers as they're dealing with that already anyway.
+	// TODO: Code quality: Figure out whether it is possible to inherit their gradle-witness
+	// decisions automatically.
+	
 	// Run fred's Gradle with "./gradlew jar copyRuntimeLibs" to produce this directory
 	compile fileTree(dir: '../fred/build/output/', include: '*.jar')
 	
