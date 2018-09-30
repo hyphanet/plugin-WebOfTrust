@@ -14,10 +14,6 @@ configurations {
 
 apply plugin: 'java'
 
-repositories {
-    mavenLocal() // TODO: use lib/ instead?
-}
-
 sourceSets {
     main.compileClasspath += configurations.provided
     test.compileClasspath += configurations.provided
