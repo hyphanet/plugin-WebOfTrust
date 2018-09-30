@@ -94,6 +94,6 @@ dependencies {
 	testCompile files('/usr/share/java/hamcrest-core.jar'
 }
 
-javadoc << {
-    failOnError false
+javadoc {
+    enabled false
 }
