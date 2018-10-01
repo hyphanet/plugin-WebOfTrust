@@ -143,8 +143,6 @@ test {
         "is_WOT_unit_test": "true",
         "WOT_test_jar": testJarFile
     ]
-    // FIXME: Review WoT unit tests for whether each uses a separate db4o filename
-    // and thus is safe for concurrent execution!
     workingDir = "${buildDir}/tmp/testsWorkingDir"
     doFirst { delete workingDir ; mkdir workingDir }
     testLogging {
