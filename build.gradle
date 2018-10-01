@@ -59,7 +59,7 @@ compileJava << {
 	copy {
 		from "${buildDir}/java/version/${version_file}.class"
 		into "${buildDir}/classes/java/main/{$version_file}.class"
-		duplicatesStrategy 'overwrite'
+		duplicatesStrategy = 'overwrite'
 	}
 }
 
