@@ -81,6 +81,8 @@ task("$jarType", type: Jar, overwrite: true, dependsOn: ['compileJava', 'compile
     from (sourceSets.main.java.srcDirs) {
         include 'plugins/WebOfTrust/gpl.txt'
         include 'plugins/WebOfTrust/l10n/*.l10n'
+        preserveFileTimestamps = false
+        reproducibleFileOrder = true
     }
     from (zipTree('db4o-7.4/db4o.jar')){
         preserveFileTimestamps = false
