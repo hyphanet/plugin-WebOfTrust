@@ -94,7 +94,7 @@ test {
     dependsOn 'testJar'
 
     classpath = fileTree(dir: '../fred/build/output/', include: '*.jar')
-    classpath+= project.files('WebOfTrust-with-unit-tests.jar')
+    classpath+= project.files("${project.libsDir}/WebOfTrust-with-unit-tests.jar")
     
     minHeapSize = "128m"
     maxHeapSize = "512m"
