@@ -50,7 +50,7 @@ task compileVersion(type: JavaCompile, dependsOn: 'prepareVersion') {
     source = "${version_buildir}"
     include "${version_src}"
     classpath = files(sourceSets.main.compileClasspath, sourceSets.main.output.classesDir)
-    destinationDir = file("${buildDir}/java/version/")
+    destinationDir = file("${buildDir}/version/")
 }
 
 compileJava {
@@ -59,7 +59,7 @@ compileJava {
 
 compileJava << {
 	copy {
-		from "${buildDir}/java/version/"
+		from "${buildDir}/version/"
 		include "${version_file}.class"
 		into sourceSets.main.output.classesDir
 		duplicatesStrategy = 'overwrite'
