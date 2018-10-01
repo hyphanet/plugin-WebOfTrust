@@ -104,6 +104,7 @@ test {
     classpath+= project.files(testJarFile)
     
     
+    scanForTestClasses = false
     include '**/*Test*.class'
     // Exclude member classes:
     // Java will auto-generate switchtable classes for switch() upon enums.
@@ -118,7 +119,6 @@ test {
     }
     
     workingDir = sourceSets.test.output.classesDir
-    scanForTestClasses = false
     failFast = true
     maxHeapSize = "512m"
     maxParallelForks = Runtime.runtime.availableProcessors()
