@@ -61,19 +61,19 @@ compileJava << {
 	copy {
 		from "${buildDir}/java/version/"
 		include "${version_file}.class"
-		into "${buildDir}/classes/java/main/"
+		into sourceSets.main.output.classesDir
 		duplicatesStrategy = 'overwrite'
 	}
 }
 
 ["jar", "testJar"].each { jarType ->
 task("$jarType", type: Jar, overwrite: true, dependsOn: ['compileJava', 'compileTestJava']) {
-    from ("${buildDir}/classes/java/main/") {
+    from (sourceSets.main.output.classesDir) {
         preserveFileTimestamps = false
         reproducibleFileOrder = true
     }
     if(jarType == 'testJar') {
-        from ("${buildDir}/classes/java/test/") {
+        from (sourceSets.test.output.classesDir) {
             preserveFileTimestamps = false
             reproducibleFileOrder = true
         }
