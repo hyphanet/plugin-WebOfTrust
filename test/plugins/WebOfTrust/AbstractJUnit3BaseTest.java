@@ -82,7 +82,7 @@ public class AbstractJUnit3BaseTest extends TestCase {
 		//
 		// Do not obey the seed by not using mRandom when generating the filename to ensure
 		// re-running with the same seed will not cause re-use of a possibly still existing
-		// database.
+		// database (which would be deleted below, but let's still not mess with it.).
 		mDatabaseFilename = getName() + abs(random.nextLong()) + ".db4o";
 		
 		File databaseFile = new File(getDatabaseFilename());
