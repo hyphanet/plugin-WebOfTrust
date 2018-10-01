@@ -119,6 +119,7 @@ test {
     
     workingDir = sourceSets.test.output.classesDir
     scanForTestClasses = false
+    failFast = true
     maxHeapSize = "512m"
     maxParallelForks = Runtime.runtime.availableProcessors()
     systemProperties += [
