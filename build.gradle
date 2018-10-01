@@ -70,7 +70,6 @@ compileJava << {
 		from "${buildDir}/version/"
 		include "${version_file}.class"
 		into sourceSets.main.output.classesDir
-		duplicatesStrategy = 'overwrite'
 	}
 }
 
