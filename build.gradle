@@ -82,6 +82,10 @@ task("$jarType", type: Jar, overwrite: true, dependsOn: ['compileJava', 'compile
        include 'plugins/WebOfTrust/gpl.txt'
        include 'plugins/WebOfTrust/l10n/*.l10n'
     }
+    from (zipTree('db4o-7.4/db4o.jar')){
+        preserveFileTimestamps = false
+        reproducibleFileOrder = true
+    }
     duplicatesStrategy = "fail" // FIXME: Test if this can be omitted
     baseName = (jarType == 'testJar') ? 'WebOfTrust-with-unit-tests' : 'WebOfTrust'
     manifest {
