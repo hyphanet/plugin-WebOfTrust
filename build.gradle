@@ -31,18 +31,20 @@ task compileDb4o(type: Exec) {
 }
 
 def version_file = 'plugins/WebOfTrust/Version'
-task compileVersion (type: JavaCompile) {
-    def version_src = "${version_file}.java"
-    def version_buildir = "$projectDir/build/tmp/compileVersion/"
-    copy {
-        from sourceSets.main.java.srcDirs
-        into "${version_buildir}"
-        include "${version_src}"
-        filter {
-            String line -> line.replaceAll("@custom@",
-                 "git describe --always --abbrev=4 --dirty".execute().text.trim())
-        }
+def version_src = "${version_file}.java"
+def version_buildir = "$projectDir/build/tmp/compileVersion/"
+
+task prepareVersion(type: Copy) {
+    from sourceSets.main.java.srcDirs
+    into "${version_buildir}"
+    include "${version_src}"
+    filter {
+        String line -> line.replaceAll("@custom@",
+            "git describe --always --abbrev=4 --dirty".execute().text.trim())
     }
+}
+
+task compileVersion(type: JavaCompile, dependsOn: 'prepareVersion') {
     sourceCompatibility = 1.7
     targetCompatibility = 1.7
     source = "${version_buildir}"
