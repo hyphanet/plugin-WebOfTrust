@@ -135,7 +135,10 @@ test {
         exclude '**/TickerDelayedBackgroundJobTest.class'
     }
     
-    failFast = true
+    // TODO: Performance: Why doesn't this work on Travis CI?
+    // Says: Could not set unknown property 'failFast' ...
+    // failFast = true
+
     maxHeapSize = "512m"
     maxParallelForks = Runtime.runtime.availableProcessors()
     systemProperties += [
