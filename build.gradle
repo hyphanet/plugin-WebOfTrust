@@ -98,9 +98,10 @@ task("$jarType", type: Jar, overwrite: true, dependsOn: ['compileJava', 'compile
 
 test {
     dependsOn 'testJar'
+    def testJarFile = "${project.libsDir}/WebOfTrust-with-unit-tests.jar"
 
     classpath = fileTree(dir: '../fred/build/output/', include: '*.jar')
-    classpath+= project.files("${project.libsDir}/WebOfTrust-with-unit-tests.jar")
+    classpath+= project.files(testJarFile)
     
     minHeapSize = "128m"
     maxHeapSize = "512m"
@@ -122,7 +123,7 @@ test {
     scanForTestClasses = false
     systemProperties += [
         "is_WOT_unit_test": "true",
-        "WOT_test_jar": "FIXME"
+        "WOT_test_jar": testJarFile
     ]
 }
 
