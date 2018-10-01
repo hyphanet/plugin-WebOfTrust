@@ -57,8 +57,9 @@ compileJava {
 
 compileJava << {
 	copy {
-		from "${buildDir}/java/version/${version_file}.class"
-		into "${buildDir}/classes/java/main/${version_file}.class"
+		from "${buildDir}/java/version/"
+		include "${version_file}.class"
+		into "${buildDir}/classes/java/main/"
 		duplicatesStrategy = 'overwrite'
 	}
 }
