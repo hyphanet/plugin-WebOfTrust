@@ -4,7 +4,7 @@ set -o errexit
 set -o errtrace
 trap 'echo "Error at line $LINENO, exit code $?" >&2' ERR
 
-FILENAME="WebOfTrust-$(git describe)-built-on-$TRAVIS_JDK_VERSION.jar"
+FILENAME="WebOfTrust-$(git describe --always)-built-on-$TRAVIS_JDK_VERSION.jar"
 URI="CHK@/$FILENAME"
 
 echo "Installing pyFreenet3..."
