@@ -106,7 +106,7 @@ test {
     dependsOn 'testJar'
     def testJarFile = "${project.libsDir}/WebOfTrust-with-unit-tests.jar"
     classpath = fileTree(dir: '../fred/build/output/', include: '*.jar')
-    classpath+= project.files(testJarFile)
+    classpath+= files(testJarFile)
     classpath+= configurations.junit
     println 'Classpath for test runner:'
     classpath.each { file -> println ' ' + file }
