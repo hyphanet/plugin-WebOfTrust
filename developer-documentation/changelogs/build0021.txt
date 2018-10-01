@@ -236,7 +236,7 @@ CHANGELOG about stuff only interesting for developers
   are typically may be "twice as much as the tested code itself."
 
 - [Code quality] Unit tests: Add scripts to benchmark the tests, speed
-                 one up (xor)
+                 three up (xor)
 
   The following scripts were added to the tools/ directory:
   - benchmark-unit-tests: to benchmark all unit tests locally when
@@ -259,8 +259,13 @@ CHANGELOG about stuff only interesting for developers
   time from those.
 
   I will use this to speed up the tests.
-  A first improvement was done for testMaximalOwnIdentityXMLSize(), it
-  used to take 186 seconds on my machine, now takes 9.
+  First improvements are done already:
+  - for testMaximalOwnIdentityXMLSize(), it used to take 186 seconds on
+    my machine, now takes 9.
+  - for the networked tests which were added by this release, they were
+    improved right away to take up to 14 minutes less of time to
+    execute. E.g. IdentityFetcherTest now takes less than 2 minutes to
+    run under optimal conditions.
 
 - 0006967: [Code quality] Unit tests: Introduce finite memory limit of
            512 MB (xor)
