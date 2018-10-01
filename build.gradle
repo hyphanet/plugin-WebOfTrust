@@ -6,6 +6,8 @@ defaultTasks 'jar', 'test'
 
 sourceSets.main.java.srcDirs = ['src/']
 sourceSets.test.java.srcDirs = ['test/']
+sourceCompatibility = 1.7
+targetCompatibility = 1.7
 
 configurations {
 	junit
@@ -51,8 +53,6 @@ task prepareVersion(type: Copy) {
 }
 
 task compileVersion(type: JavaCompile, dependsOn: 'prepareVersion') {
-    sourceCompatibility = 1.7
-    targetCompatibility = 1.7
     source = "${version_buildir}"
     include "${version_src}"
     classpath = files(sourceSets.main.compileClasspath, sourceSets.main.output.classesDir)
@@ -61,9 +61,6 @@ task compileVersion(type: JavaCompile, dependsOn: 'prepareVersion') {
 
 compileJava {
 	dependsOn 'compileDb4o', 'compileVersion'
-	sourceCompatibility = 1.7
-	targetCompatibility = 1.7
-
 	doLast { copy {
 		from "${buildDir}/version/"
 		include "${version_file}.class"
