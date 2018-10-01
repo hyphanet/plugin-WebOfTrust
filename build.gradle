@@ -138,6 +138,9 @@ test {
 
     maxHeapSize = "512m"
     maxParallelForks = Runtime.runtime.availableProcessors()
+    // Don't run multiple tests in the same VM: WoT, db4o and Freenet are to complex to be able to
+    // tell whether this is safe. Also this is likely needed for maxParallelForks to actually work.
+    forkEvery = 1
     systemProperties += [
         "is_WOT_unit_test": "true",
         "WOT_test_jar": testJarFile
