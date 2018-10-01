@@ -103,8 +103,6 @@ test {
     classpath = fileTree(dir: '../fred/build/output/', include: '*.jar')
     classpath+= project.files(testJarFile)
     
-    minHeapSize = "128m"
-    maxHeapSize = "512m"
     
     include '**/*Test*.class'
     // Exclude member classes:
@@ -121,6 +119,8 @@ test {
     
     workingDir = sourceSets.test.output.classesDir
     scanForTestClasses = false
+    maxHeapSize = "512m"
+    maxParallelForks = Runtime.runtime.availableProcessors()
     systemProperties += [
         "is_WOT_unit_test": "true",
         "WOT_test_jar": testJarFile
