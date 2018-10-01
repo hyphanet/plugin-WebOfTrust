@@ -146,6 +146,10 @@ test {
     // and thus is safe for concurrent execution!
     workingDir = "${buildDir}/tmp/testsWorkingDir"
     doFirst { delete workingDir ; mkdir workingDir }
+    testLogging {
+        events "passed", "skipped", "failed"
+        exceptionFormat "full"
+    }
 }
 
 javadoc {
