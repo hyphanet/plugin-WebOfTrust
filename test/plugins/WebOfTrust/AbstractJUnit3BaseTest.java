@@ -3,6 +3,8 @@
  * any later version). See http://www.gnu.org/ for details of the GPL. */
 package plugins.WebOfTrust;
 
+import static java.lang.Math.abs;
+
 import java.io.File;
 import java.lang.reflect.Array;
 import java.lang.reflect.Field;
@@ -47,19 +49,17 @@ public class AbstractJUnit3BaseTest extends TestCase {
 			Configuration.IS_UNIT_TEST);
 	}
 
+	private String mDatabaseFilename;
+	
 	protected WebOfTrust mWoT;
 	
 	protected RandomSource mRandom;
 
 	/**
-	 * TODO: Code quality: When migrating this code to {@link AbstractJUnit4BaseTest}, use
-	 * JUnit's {@link TemporaryFolder} instead. It will both ensure that the file does not exist
-	 * and that it is deleted at shutdown.
-	 *  
-	 * @return Returns the filename of the database. This is the name of the current test function plus ".db4o".
+	 * @return Returns the filename of the database. This is the name of the current test plus a random number plus ".db4o".
 	 */
 	public String getDatabaseFilename() {
-		return getName() + ".db4o";
+		return mDatabaseFilename;
 	}
 
 	/**
@@ -69,6 +69,22 @@ public class AbstractJUnit3BaseTest extends TestCase {
 	protected void setUp() throws Exception {
 		super.setUp();
 		
+		Random random = new Random();
+		long seed = random.nextLong();
+		mRandom = new DummyRandomSource(seed);
+		System.out.println(this + " Random seed: " + seed);
+		
+		// TODO: Code quality: When migrating this code to {@link AbstractJUnit4BaseTest}, use
+		// JUnit's {@link TemporaryFolder} instead. It will both ensure that the file does not exist
+		// and that it is deleted at shutdown.
+		// EDIT: AbstractJUnit4BaseTest already contains a way how to use it, probably no need to
+		// migrate this?
+		//
+		// Do not obey the seed by not using mRandom when generating the filename to ensure
+		// re-running with the same seed will not cause re-use of a possibly still existing
+		// database.
+		mDatabaseFilename = getName() + abs(random.nextLong()) + ".db4o";
+		
 		File databaseFile = new File(getDatabaseFilename());
 		if(databaseFile.exists())
 			databaseFile.delete();
@@ -76,11 +92,6 @@ public class AbstractJUnit3BaseTest extends TestCase {
 		databaseFile.deleteOnExit();
 		
 		mWoT = new WebOfTrust(getDatabaseFilename());
-		
-		Random random = new Random();
-		long seed = random.nextLong();
-		mRandom = new DummyRandomSource(seed);
-		System.out.println(this + " Random seed: " + seed);
 	}
 
 	/**
