@@ -61,6 +61,8 @@ task compileVersion(type: JavaCompile, dependsOn: 'prepareVersion') {
 
 compileJava {
 	dependsOn 'compileDb4o', 'compileVersion'
+	sourceCompatibility = 1.7
+	targetCompatibility = 1.7
 }
 
 compileJava << {
