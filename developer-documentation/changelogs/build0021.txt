@@ -238,9 +238,12 @@ CHANGELOG about stuff only interesting for developers
 - [Code quality] Unit tests: Add scripts to benchmark the tests, speed
                  one up (xor)
 
-  Scripts were added to the tools/ directory which support:
-  - benchmarking unit tests locally when compiling.
-  - processing log files from Travis CI to produce benchmark results.
+  The following scripts were added to the tools/ directory:
+  - benchmark-unit-tests: to benchmark all unit tests locally when
+    compiling.
+  - benchmark-unit-tests-from-travis: to process a log file from
+    Travis CI to produce the same output as the above local benchmark
+    script.
 
   They produce sorted output like this:
     1.234 sec package.ClassName1.testFunction1()
@@ -248,6 +251,12 @@ CHANGELOG about stuff only interesting for developers
 
   Actual results (FIXME: Update once this build is finished):
     https://gist.github.com/xor-freenet/28925cee6e44ad899060f91659250cd2
+
+  Additionally, in order to be able to tweak a single test after using
+  the above scripts to determine slow tests, the script
+  "benchmark-unit-test" was added. It allows running a single test for
+  an arbitrary amount of iterations and computes the average execution
+  time from those.
 
   I will use this to speed up the tests.
   A first improvement was done for testMaximalOwnIdentityXMLSize(), it
