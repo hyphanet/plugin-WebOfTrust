@@ -107,6 +107,12 @@ task("$jarType", type: Jar, overwrite: true, dependsOn: ['compileJava', 'compile
 test {
     dependsOn 'testJar'
     def testJarFile = "${project.libsDir}/WebOfTrust-with-unit-tests.jar"
+    
+    // Reset classpath to ensure only the JAR is used, not the class files. We want to only use the
+    // JAR because:
+    // - some WoT tests need a JAR to load into a Freenet node
+    // - and given that a JAR is needed anyway we shouldn't duplicate the classes by using the
+    //   class files as well.
     classpath = fileTree(dir: '../fred/build/output/', include: '*.jar')
     classpath+= files(testJarFile)
     classpath+= configurations.junit
