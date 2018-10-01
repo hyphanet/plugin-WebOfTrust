@@ -118,7 +118,6 @@ test {
         exclude '**/TickerDelayedBackgroundJobTest.class'
     }
     
-    workingDir = sourceSets.test.output.classesDir
     failFast = true
     maxHeapSize = "512m"
     maxParallelForks = Runtime.runtime.availableProcessors()
