@@ -56,8 +56,8 @@ public class AbstractJUnit3BaseTest extends TestCase {
 	protected RandomSource mRandom;
 
 	/**
-	 * @return Returns the filename of the database. This is the name of the current test plus a random number plus ".db4o".
-	 */
+	 * Returns the filename of the database. This is the name of the current test plus a random
+	 * number plus ".db4o". */
 	public String getDatabaseFilename() {
 		return mDatabaseFilename;
 	}
