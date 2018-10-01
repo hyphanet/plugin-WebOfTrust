@@ -108,8 +108,10 @@ test {
     classpath = fileTree(dir: '../fred/build/output/', include: '*.jar')
     classpath+= files(testJarFile)
     classpath+= configurations.junit
-    println 'Classpath for test runner:'
-    classpath.each { file -> println ' ' + file }
+    doFirst {
+        println 'Classpath for test runner:'
+        classpath.each { file -> println ' ' + file }
+    }
     
     scanForTestClasses = false
     include '**/*Test*.class'
