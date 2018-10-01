@@ -86,10 +86,11 @@ script:
   # Don't allow Travis to override the low memory limit which our builder sets with a higher one.
   - unset _JAVA_OPTIONS
   # Use Gradle to run the unit tests as it supports using multiple CPU cores...
-  - gradle clean test
+  - ln -sf ../fred/gradlew
+  - ./gradlew clean test
   # ... and Ant to produce the actual JAR as my Gradle script is still experimental.
   # FIXME: Test whether Gradle's JAR is binary identical so we can consider it as stable.
-  - gradle clean
+  - ./gradlew clean
   - ant -Dtest.skip=true
 
 jdk:
