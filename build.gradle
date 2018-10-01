@@ -83,7 +83,7 @@ task("$jarType", type: Jar, overwrite: true, dependsOn: ['compileJava', 'compile
        include 'plugins/WebOfTrust/l10n/*.l10n'
     }
     duplicatesStrategy = "fail" // FIXME: Test if this can be omitted
-    archivesBaseName = (jarType == 'testJar') ? 'WebOfTrust-with-unit-tests' : 'WebOfTrust'
+    baseName = (jarType == 'testJar') ? 'WebOfTrust-with-unit-tests' : 'WebOfTrust'
     manifest {
         attributes("Plugin-Main-Class": "plugins.WebOfTrust.WebOfTrust")
     }
