@@ -19,9 +19,15 @@ dependencies {
 	
 	// Run fred's Gradle with "./gradlew jar copyRuntimeLibs" to produce this directory
 	compile fileTree(dir: '../fred/build/output/', include: '*.jar')
+	compile files('db4o-7.4/db4o.jar')
 	
 	testCompile files('/usr/share/java/junit4.jar')
 	testCompile files('/usr/share/java/hamcrest-core.jar')
+}
+
+task compileDb4o(type: Exec) {
+	workingDir 'db4o-7.4'
+	commandLine 'ant'
 }
 
 def version_file = 'plugins/WebOfTrust/Version'
@@ -46,7 +52,7 @@ task compileVersion (type: JavaCompile) {
 }
 
 compileJava << {
-	dependsOn 'compileVersion'
+	dependsOn 'compileDb4o', 'compileVersion'
 	copy {
 		from "${buildDir}/java/version/${version_file}.class"
 		into "${buildDir}/classes/java/main/{$version_file}.class"
