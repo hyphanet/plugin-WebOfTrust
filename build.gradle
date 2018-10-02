@@ -3,16 +3,12 @@ println 'This notably is because I did NOT read any Gradle tutorial whatsoever y
 
 apply plugin: 'java'
 defaultTasks 'jar', 'test'
-
 sourceSets.main.java.srcDirs = ['src/']
 sourceSets.test.java.srcDirs = ['test/']
 sourceCompatibility = 1.7
 targetCompatibility = 1.7
 
-configurations {
-	junit
-}
-
+configurations { junit }
 dependencies {
 	// TODO: Code quality: Use Gradle's native dependency management + gradle-witness instead of flat files
 	// Postponing this until I know how to import fred's dependency list to avoid duplicating it.
@@ -28,8 +24,7 @@ dependencies {
 }
 
 task compileDb4o(type: Exec) {
-	workingDir 'db4o-7.4'
-	commandLine 'ant'
+	workingDir 'db4o-7.4' ; commandLine 'ant'
 }
 
 def version_file = 'plugins/WebOfTrust/Version'
@@ -149,8 +144,5 @@ clean {
 	delete "${projectDir}/build-test"
 	delete "${projectDir}/test-coverage" // From Ant
 	delete "${projectDir}/dist"
-	exec {
-		workingDir 'db4o-7.4'
-		commandLine 'ant','clean'
-	}
+	exec { workingDir 'db4o-7.4' ; commandLine 'ant','clean' }
 }
