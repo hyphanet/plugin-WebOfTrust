@@ -155,4 +155,8 @@ clean {
 	delete "${projectDir}/build-test"
 	delete "${projectDir}/test-coverage" // From Ant
 	delete "${projectDir}/dist"
+	exec {
+		workingDir 'db4o-7.4'
+		commandLine 'ant','clean'
+	}
 }
