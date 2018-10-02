@@ -74,7 +74,8 @@ task("$jarType", type: Jar, overwrite: true, dependsOn: ['compileJava', 'compile
     reproducibleFileOrder = true
     duplicatesStrategy = "fail" // FIXME: Test if this can be omitted
     baseName = (jarType == 'testJar') ? 'WebOfTrust-with-unit-tests' : 'WebOfTrust'
-
+    destinationDir = new File(projectDir, (jarType == 'testJar') ? "build-test" : "dist")
+    
     from sourceSets.main.output.classesDir
     
     if(jarType == 'testJar')
@@ -95,7 +96,7 @@ task("$jarType", type: Jar, overwrite: true, dependsOn: ['compileJava', 'compile
 
 test {
     dependsOn 'testJar'
-    def testJarFile = "${project.libsDir}/WebOfTrust-with-unit-tests.jar"
+    def testJarFile = "${projectDir}/build-test/WebOfTrust-with-unit-tests.jar"
     
     // Reset classpath to ensure only the JAR is used, not the class files. We want to only use the
     // JAR because:
@@ -148,4 +149,10 @@ test {
 
 javadoc {
     enabled false
+}
+
+clean {
+	delete "${projectDir}/build-test"
+	delete "${projectDir}/test-coverage" // From Ant
+	delete "${projectDir}/dist"
 }
