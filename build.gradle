@@ -72,6 +72,8 @@ compileJava {
 task("$jarType", type: Jar, overwrite: true, dependsOn: ['compileJava', 'compileTestJava']) {
     preserveFileTimestamps = false
     reproducibleFileOrder = true
+    duplicatesStrategy = "fail" // FIXME: Test if this can be omitted
+    baseName = (jarType == 'testJar') ? 'WebOfTrust-with-unit-tests' : 'WebOfTrust'
 
     from sourceSets.main.output.classesDir
     
@@ -85,8 +87,6 @@ task("$jarType", type: Jar, overwrite: true, dependsOn: ['compileJava', 'compile
     
     from zipTree('db4o-7.4/db4o.jar')
     
-    duplicatesStrategy = "fail" // FIXME: Test if this can be omitted
-    baseName = (jarType == 'testJar') ? 'WebOfTrust-with-unit-tests' : 'WebOfTrust'
     manifest {
         attributes("Plugin-Main-Class": "plugins.WebOfTrust.WebOfTrust")
     }
