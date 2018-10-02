@@ -70,26 +70,21 @@ compileJava {
 
 ["jar", "testJar"].each { jarType ->
 task("$jarType", type: Jar, overwrite: true, dependsOn: ['compileJava', 'compileTestJava']) {
-    from (sourceSets.main.output.classesDir) {
-        preserveFileTimestamps = false
-        reproducibleFileOrder = true
-    }
-    if(jarType == 'testJar') {
-        from (sourceSets.test.output.classesDir) {
-            preserveFileTimestamps = false
-            reproducibleFileOrder = true
-        }
-    }
-    from (sourceSets.main.java.srcDirs) {
+    preserveFileTimestamps = false
+    reproducibleFileOrder = true
+
+    from sourceSets.main.output.classesDir
+    
+    if(jarType == 'testJar')
+        from sourceSets.test.output.classesDir
+        
+    from(sourceSets.main.java.srcDirs) {
         include 'plugins/WebOfTrust/gpl.txt'
         include 'plugins/WebOfTrust/l10n/*.l10n'
-        preserveFileTimestamps = false
-        reproducibleFileOrder = true
     }
-    from (zipTree('db4o-7.4/db4o.jar')){
-        preserveFileTimestamps = false
-        reproducibleFileOrder = true
-    }
+    
+    from zipTree('db4o-7.4/db4o.jar')
+    
     duplicatesStrategy = "fail" // FIXME: Test if this can be omitted
     baseName = (jarType == 'testJar') ? 'WebOfTrust-with-unit-tests' : 'WebOfTrust'
     manifest {
