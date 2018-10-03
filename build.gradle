@@ -7,7 +7,7 @@ sourceSets.test.java.srcDirs = ['test/']
 sourceCompatibility = 7
 targetCompatibility = 7
 
-configurations { junit }
+configurations { junit } // Needed when we manually specify the tests' classpath
 dependencies {
 	// TODO: Code quality: Use Gradle's native dependency management + gradle-witness instead of flat files
 	// Postponing this until I know how to import fred's dependency list to avoid duplicating it.
