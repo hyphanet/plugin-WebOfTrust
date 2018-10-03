@@ -29,7 +29,7 @@ task compileDb4o(type: Exec) {
 
 def version_buildir = "$projectDir/build/tmp/compileVersion/"
 
-task prepareVersion(type: Copy) {
+task prepareVersionFile(type: Copy) {
     from sourceSets.main.java.srcDirs ; into "${version_buildir}"
     include 'plugins/WebOfTrust/Version.java' ; filter {
         String line -> line.replaceAll("@custom@",
@@ -37,7 +37,7 @@ task prepareVersion(type: Copy) {
     }
 }
 
-task compileVersion(type: JavaCompile, dependsOn: 'prepareVersion') {
+task compileVersion(type: JavaCompile, dependsOn: 'prepareVersionFile') {
     classpath = sourceSets.main.compileClasspath
     source = "${version_buildir}"
     destinationDir = file("${buildDir}/version/")
