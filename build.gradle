@@ -27,14 +27,12 @@ task compileDb4o(type: Exec) {
 	                   "-Djavac.target.version=" + targetCompatibility
 }
 
-def version_file = 'plugins/WebOfTrust/Version'
-def version_src = "${version_file}.java"
 def version_buildir = "$projectDir/build/tmp/compileVersion/"
 
 task prepareVersion(type: Copy) {
     from sourceSets.main.java.srcDirs
     into "${version_buildir}"
-    include "${version_src}"
+    include 'plugins/WebOfTrust/Version.java'
     filter {
         String line -> line.replaceAll("@custom@",
             "git describe --always --abbrev=4 --dirty".execute().text.trim())
@@ -51,7 +49,6 @@ compileJava {
 	dependsOn 'compileDb4o', 'compileVersion'
 	doLast { copy {
 		from "${buildDir}/version/"
-		include "${version_file}.class"
 		into sourceSets.main.output.classesDir
 	}}
 }
