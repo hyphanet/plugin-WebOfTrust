@@ -15,10 +15,8 @@ dependencies {
 	// Run fred's Gradle with "./gradlew jar copyRuntimeLibs" to produce this directory
 	compile fileTree(dir: '../fred/build/output/', include: '*.jar')
 	compile files('db4o-7.4/db4o.jar')
-	
 	junit files('/usr/share/java/junit4.jar')
 	junit files('/usr/share/java/hamcrest-core.jar')
-	
 	testCompile configurations.junit
 }
 
