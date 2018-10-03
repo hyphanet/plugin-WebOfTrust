@@ -35,22 +35,19 @@ task prepareVersionFile(type: Copy) {
     }
 }
 
-task compileVersionFile(type: JavaCompile, dependsOn: 'prepareVersionFile') {
+task compileVersionFile(type: JavaCompile, dependsOn: ['compileJava', 'prepareVersionFile']) {
     classpath = sourceSets.main.compileClasspath
     source = "${buildDir}/custom/versionFileJava/"
-    destinationDir = file("${buildDir}/custom/versionFileClass/")
+    destinationDir = sourceSets.main.output.classesDir
 }
 
 compileJava {
-	dependsOn 'compileDb4o', 'compileVersionFile'
-	doLast { copy {
-		from "${buildDir}/custom/versionFileClass/"
-		into sourceSets.main.output.classesDir
-	}}
+	dependsOn 'compileDb4o'
+	exclude 'plugins/WebOfTrust/Version.java'
 }
 
 ["jar", "testJar"].each { jarType ->
-task("$jarType", type: Jar, overwrite: true, dependsOn: ['compileJava', 'compileTestJava']) {
+task("$jarType", type: Jar, overwrite: true, dependsOn: ['compileJava', 'compileVersionFile', 'compileTestJava']) {
     preserveFileTimestamps = false
     reproducibleFileOrder = true
     duplicatesStrategy = "fail" // FIXME: Test if this can be omitted
