@@ -1,5 +1,4 @@
-println 'WARNING: This script merely exists to speed up Travis CI builds! Use Ant for producing official JARs!'
-println 'This notably is because I did NOT read any Gradle tutorial whatsoever yet and thus cannot guarantee its safety!'
+// FIXME: Mention this script in README. Say that it is experimental.
 
 apply plugin: 'java'
 defaultTasks 'jar', 'test'
