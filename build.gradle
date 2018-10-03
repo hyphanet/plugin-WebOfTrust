@@ -27,7 +27,7 @@ task compileDb4o(type: Exec) {
 	                   "-Djavac.target.version=" + targetCompatibility
 }
 
-def version_buildir = "$projectDir/build/tmp/compileVersionFile/"
+def version_buildir = "${buildDir}/tmp/compileVersionFile/"
 
 task prepareVersionFile(type: Copy) {
     from sourceSets.main.java.srcDirs ; into "${version_buildir}"
