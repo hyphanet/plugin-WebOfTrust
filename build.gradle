@@ -4,8 +4,7 @@ apply plugin: 'java'
 defaultTasks 'jar', 'test'
 sourceSets.main.java.srcDirs = ['src/']
 sourceSets.test.java.srcDirs = ['test/']
-sourceCompatibility = 7
-targetCompatibility = 7
+sourceCompatibility = targetCompatibility = 7
 javadoc.enabled = false
 
 configurations { junit } // Needed when we manually specify the tests' classpath
