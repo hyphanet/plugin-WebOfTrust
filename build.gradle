@@ -27,6 +27,11 @@ task compileDb4o(type: Exec) {
 	                   "-Djavac.target.version=" + targetCompatibility
 }
 
+compileJava {
+	dependsOn 'compileDb4o'
+	exclude 'plugins/WebOfTrust/Version.java'
+}
+
 task prepareVersionFile(type: Copy) {
     from sourceSets.main.java.srcDirs ; into "${buildDir}/custom/versionFileJava/"
     include 'plugins/WebOfTrust/Version.java' ; filter {
@@ -39,11 +44,6 @@ task compileVersionFile(type: JavaCompile, dependsOn: ['compileJava', 'prepareVe
     classpath = sourceSets.main.compileClasspath
     source = "${buildDir}/custom/versionFileJava/"
     destinationDir = sourceSets.main.output.classesDir
-}
-
-compileJava {
-	dependsOn 'compileDb4o'
-	exclude 'plugins/WebOfTrust/Version.java'
 }
 
 ["jar", "testJar"].each { jarType ->
