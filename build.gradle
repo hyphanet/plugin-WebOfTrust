@@ -75,11 +75,8 @@ task("$jarType", type: Jar, overwrite: true, dependsOn: ['compileJava', 'compile
     from zipTree('db4o-7.4/db4o.jar')
     if(jarType == 'testJar') from sourceSets.test.output.classesDir
     
-    manifest {
-        attributes("Plugin-Main-Class": "plugins.WebOfTrust.WebOfTrust")
-    }
-}
-}
+    manifest { attributes("Plugin-Main-Class": "plugins.WebOfTrust.WebOfTrust") }
+}}
 
 test {
     dependsOn 'testJar'
