@@ -43,7 +43,6 @@ task prepareVersion(type: Copy) {
 
 task compileVersion(type: JavaCompile, dependsOn: 'prepareVersion') {
     source = "${version_buildir}"
-    include "${version_src}"
     classpath = files(sourceSets.main.compileClasspath, sourceSets.main.output.classesDir)
     destinationDir = file("${buildDir}/version/")
 }
