@@ -67,16 +67,13 @@ task("$jarType", type: Jar, overwrite: true, dependsOn: ['compileJava', 'compile
     destinationDir = new File(projectDir, (jarType == 'testJar') ? "build-test" : "dist")
     
     from sourceSets.main.output.classesDir
-    
-    if(jarType == 'testJar')
-        from sourceSets.test.output.classesDir
-        
     from(sourceSets.main.java.srcDirs) {
         include 'plugins/WebOfTrust/gpl.txt'
         include 'plugins/WebOfTrust/l10n/*.l10n'
     }
     
     from zipTree('db4o-7.4/db4o.jar')
+    if(jarType == 'testJar') from sourceSets.test.output.classesDir
     
     manifest {
         attributes("Plugin-Main-Class": "plugins.WebOfTrust.WebOfTrust")
