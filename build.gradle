@@ -27,7 +27,7 @@ task compileDb4o(type: Exec) {
 	                   "-Djavac.target.version=" + targetCompatibility
 }
 
-def version_src_dir = "${buildDir}/tmp/compileVersionFile/"
+def version_src_dir = "${buildDir}/custom/versionFileJava/"
 
 task prepareVersionFile(type: Copy) {
     from sourceSets.main.java.srcDirs ; into "${version_src_dir}"
@@ -40,13 +40,13 @@ task prepareVersionFile(type: Copy) {
 task compileVersionFile(type: JavaCompile, dependsOn: 'prepareVersionFile') {
     classpath = sourceSets.main.compileClasspath
     source = "${version_src_dir}"
-    destinationDir = file("${buildDir}/version/")
+    destinationDir = file("${buildDir}/custom/versionFileClass/")
 }
 
 compileJava {
 	dependsOn 'compileDb4o', 'compileVersionFile'
 	doLast { copy {
-		from "${buildDir}/version/"
+		from "${buildDir}/custom/versionFileClass/"
 		into sourceSets.main.output.classesDir
 	}}
 }
