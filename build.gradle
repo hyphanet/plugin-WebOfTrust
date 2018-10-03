@@ -6,6 +6,7 @@ sourceSets.main.java.srcDirs = ['src/']
 sourceSets.test.java.srcDirs = ['test/']
 sourceCompatibility = 7
 targetCompatibility = 7
+javadoc.enabled = false
 
 configurations { junit } // Needed when we manually specify the tests' classpath
 dependencies {
@@ -123,10 +124,6 @@ test {
         events "passed", "skipped", "failed"
         exceptionFormat "full"
     }
-}
-
-javadoc {
-    enabled false
 }
 
 clean {
