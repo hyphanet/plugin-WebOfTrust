@@ -30,10 +30,8 @@ task compileDb4o(type: Exec) {
 def version_buildir = "$projectDir/build/tmp/compileVersion/"
 
 task prepareVersion(type: Copy) {
-    from sourceSets.main.java.srcDirs
-    into "${version_buildir}"
-    include 'plugins/WebOfTrust/Version.java'
-    filter {
+    from sourceSets.main.java.srcDirs ; into "${version_buildir}"
+    include 'plugins/WebOfTrust/Version.java' ; filter {
         String line -> line.replaceAll("@custom@",
             "git describe --always --abbrev=4 --dirty".execute().text.trim())
     }
