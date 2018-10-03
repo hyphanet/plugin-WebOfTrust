@@ -91,10 +91,7 @@ test {
     
     scanForTestClasses = false
     include '**/*Test*.class'
-    // Exclude member classes:
-    // Java will auto-generate switchtable classes for switch() upon enums.
-    // JUnit would then complain that those classes do not contain a public
-    // constructor.
+    // Must exclude member classes: Java creates them for switch() upon enums, JUnit would complain
     exclude '**/*$*.class'
     exclude '**/*Benchmark*.class'
     exclude 'com/db4o/**'
