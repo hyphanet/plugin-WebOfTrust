@@ -76,11 +76,9 @@ test {
     dependsOn 'testJar'
     def testJarFile = "${projectDir}/build-test/WebOfTrust-with-unit-tests.jar"
     
-    // Reset classpath to ensure only the JAR is used, not the class files. We want to only use the
-    // JAR because:
+    // Reset classpath to ensure only the JAR is used, not the class files because:
     // - some WoT tests need a JAR to load into a Freenet node
-    // - and given that a JAR is needed anyway we shouldn't duplicate the classes by using the
-    //   class files as well.
+    // - and given that a JAR is needed anyway its better to use it to ensure 100% matching classes
     classpath = fileTree(dir: '../fred/build/output/', include: '*.jar')
     classpath+= files(testJarFile)
     classpath+= configurations.junit
