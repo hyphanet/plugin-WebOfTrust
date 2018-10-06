@@ -31,6 +31,7 @@ compileJava {
 }
 
 task prepareVersionFile(type: Copy) {
+	// FIXME: Do we need to delete .java as well to ensure compiling without clean will update it?
 	doFirst { delete new File(sourceSets.main.output.classesDir,
 		'/plugins/WebOfTrust/Version.class') }
 
