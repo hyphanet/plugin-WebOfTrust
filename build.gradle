@@ -31,10 +31,7 @@ compileJava {
 }
 
 task prepareVersionFile(type: Copy) {
-	// FIXME: Do we need to delete .java as well to ensure compiling without clean will update it?
-	doFirst { delete new File(sourceSets.main.output.classesDir,
-		'/plugins/WebOfTrust/Version.class') }
-
+	outputs.upToDateWhen { false }
     from sourceSets.main.java.srcDirs ; into "${buildDir}/custom/versionFileJava/"
     include 'plugins/WebOfTrust/Version.java' ; filter {
         String line -> line.replaceAll("@custom@",
@@ -43,6 +40,7 @@ task prepareVersionFile(type: Copy) {
 }
 
 task compileVersionFile(type: JavaCompile, dependsOn: ['compileJava', 'prepareVersionFile']) {
+	outputs.upToDateWhen { false }
     classpath = sourceSets.main.compileClasspath
     source = "${buildDir}/custom/versionFileJava/"
     destinationDir = sourceSets.main.output.classesDir
