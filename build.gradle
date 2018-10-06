@@ -34,8 +34,7 @@ task prepareVersionFile(type: Copy) {
 	outputs.upToDateWhen { false }
     from sourceSets.main.java.srcDirs ; into "${buildDir}/custom/versionFileJava/"
     include 'plugins/WebOfTrust/Version.java' ; filter {
-        String line -> line.replaceAll("@custom@",
-            "git describe --always --abbrev=4 --dirty".execute().text.trim())
+        it.replaceAll("@custom@", "git describe --always --abbrev=4 --dirty".execute().text.trim())
     }
 }
 
