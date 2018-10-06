@@ -28,10 +28,12 @@ task compileDb4o(type: Exec) {
 
 compileJava {
 	dependsOn 'compileDb4o'
-	exclude 'plugins/WebOfTrust/Version.java'
 }
 
 task prepareVersionFile(type: Copy) {
+	doFirst { delete new File(sourceSets.main.output.classesDir,
+		'/plugins/WebOfTrust/Version.class') }
+
     from sourceSets.main.java.srcDirs ; into "${buildDir}/custom/versionFileJava/"
     include 'plugins/WebOfTrust/Version.java' ; filter {
         String line -> line.replaceAll("@custom@",
