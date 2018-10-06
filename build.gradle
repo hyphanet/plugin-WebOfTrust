@@ -88,7 +88,6 @@ test {
     // failFast = true // TODO: Performance: As of 2018-10-03 doesn't work on Travis CI yet
     maxHeapSize = "512m"
     maxParallelForks = Runtime.runtime.availableProcessors()
-    doFirst { println 'Max test threads (can be limited by worker count): ' + maxParallelForks }
     // Don't run multiple tests in the same VM: WoT, db4o and Freenet are to complex to be able to
     // tell whether this is safe. Also this is likely needed for maxParallelForks to actually work.
     forkEvery = 1
