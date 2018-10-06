@@ -66,13 +66,12 @@ task("$jarType", type: Jar, overwrite: true, dependsOn: ['compileJava', 'compile
 
 test {
     dependsOn 'testJar'
-    def testJarFile = "${projectDir}/build-test/WebOfTrust-with-unit-tests.jar"
     
     // Reset classpath to ensure only the JAR is used, not the class files because:
     // - some WoT tests need a JAR to load into a Freenet node
     // - and given that a JAR is needed anyway its better to use it to ensure 100% matching classes
     classpath = fileTree(dir: '../fred/build/output/', include: '*.jar')
-    classpath+= files(testJarFile)
+    classpath+= files(testJar.archivePath)
     classpath+= configurations.junit
     
     scanForTestClasses = false
@@ -92,7 +91,7 @@ test {
     forkEvery = 1 // One VM per test, for safety and probably needed for maxParallelForks to work
     systemProperties += [
         "is_WOT_unit_test": "true",
-        "WOT_test_jar": testJarFile
+        "WOT_test_jar": testJar.archivePath
     ]
     workingDir = "${buildDir}/tmp/testsWorkingDir"
     doFirst { delete workingDir ; mkdir workingDir }
