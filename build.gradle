@@ -96,10 +96,7 @@ test {
     ]
     workingDir = "${buildDir}/tmp/testsWorkingDir"
     doFirst { delete workingDir ; mkdir workingDir }
-    testLogging {
-        events "passed", "skipped", "failed"
-        exceptionFormat "full"
-    }
+    testLogging { events "passed", "skipped", "failed" ; exceptionFormat "full" }
 }
 
 clean {
