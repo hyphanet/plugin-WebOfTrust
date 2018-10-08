@@ -1,0 +1,99 @@
+// FIXME: Mention this script in README. Say that it is experimental.
+// TODO: Code quality: Use Gradle's dependency management + gradle-witness instead of flat files
+// Postponing this until I know how to import fred's dependency list to avoid duplicating it.
+
+apply plugin: 'java'
+defaultTasks 'jar', 'test'
+sourceSets.main.java.srcDirs = ['src/']
+sourceSets.test.java.srcDirs = ['test/']
+sourceCompatibility = targetCompatibility = 7
+javadoc.enabled = false
+
+configurations { junit } // Needed when we manually specify the tests' classpath
+dependencies {
+	// Run fred's Gradle with "./gradlew jar copyRuntimeLibs" to produce this directory
+	compile fileTree(dir: '../fred/build/output/', include: '*.jar')
+	compile files('db4o-7.4/db4o.jar')
+	junit files('/usr/share/java/junit4.jar', '/usr/share/java/hamcrest-core.jar')
+	testCompile configurations.junit
+}
+
+task compileDb4o(type: Exec) {
+	outputs.upToDateWhen { file('db4o-7.4/db4o.jar').exists() } // FIXME: Replace w/ incremental Ant
+	workingDir 'db4o-7.4'
+	commandLine 'ant', "-Djavac.source.version=" + sourceCompatibility,
+	                   "-Djavac.target.version=" + targetCompatibility
+}
+
+compileJava {
+	dependsOn 'compileDb4o'
+}
+
+task prepareVersionFile(type: Copy) {
+	outputs.upToDateWhen { false }
+	from sourceSets.main.java.srcDirs ; into "${buildDir}/custom/versionFileJava/"
+	include 'plugins/WebOfTrust/Version.java' ; filter {
+		it.replaceAll("@custom@", "git describe --always --abbrev=4 --dirty".execute().text.trim())
+	}
+}
+
+task compileVersionFile(type: JavaCompile, dependsOn: ['compileJava', 'prepareVersionFile']) {
+	classpath = sourceSets.main.compileClasspath
+	source = prepareVersionFile.destinationDir
+	destinationDir = file("${buildDir}/custom/versionFileClass/")
+}
+
+["jar", "testJar"].each { jarType ->
+task("$jarType", type: Jar, overwrite: true, dependsOn: tasks.withType(AbstractCompile)) {
+	preserveFileTimestamps = false
+	reproducibleFileOrder = true
+	duplicatesStrategy = "fail"
+	baseName = (jarType == 'testJar') ? 'WebOfTrust-with-unit-tests' : 'WebOfTrust'
+	destinationDir = new File(projectDir, (jarType == 'testJar') ? "build-test" : "dist")
+	manifest { attributes("Plugin-Main-Class": "plugins.WebOfTrust.WebOfTrust") }
+	
+	from(sourceSets.main.output.classesDir) { exclude 'plugins/WebOfTrust/Version.class' }
+	from(compileVersionFile.destinationDir) { include 'plugins/WebOfTrust/Version.class' }
+	from(sourceSets.main.java.srcDirs) { include 'plugins/WebOfTrust/l10n/*.l10n' }
+	from zipTree('db4o-7.4/db4o.jar')
+	if(jarType == 'testJar') from sourceSets.test.output.classesDir
+}}
+
+test {
+	dependsOn 'testJar'
+	
+	// Reset classpath to only use the JAR, not the class files, because some WoT test need a JAR to
+	// load into a Freenet node, and given the JAR is needed we shouldn't duplicate its classes.
+	classpath = fileTree(dir: '../fred/build/output/', include: '*.jar')
+	classpath+= files(testJar.archivePath)
+	classpath+= configurations.junit
+	
+	scanForTestClasses = false
+	include '**/*Test*.class'
+	// Must exclude member classes: Java creates them for switch() upon enums, JUnit would complain
+	exclude '**/*$*.class'
+	exclude '**/*Benchmark*.class'
+	exclude 'com/db4o/**'
+	if(!hasProperty('test.unreliable')) {
+		exclude '**/SynchronousDelayedBackgroundJobTest.class'
+		exclude '**/TickerDelayedBackgroundJobTest.class'
+	}
+	
+	// failFast = true // TODO: Performance: As of 2018-10-03 doesn't work on Travis CI yet
+	maxHeapSize = "512m"
+	maxParallelForks = Runtime.runtime.availableProcessors()
+	forkEvery = 1 // One VM per test, for safety and probably needed for maxParallelForks to work
+	systemProperties += [
+		"is_WOT_unit_test": "true",
+		"WOT_test_jar": testJar.archivePath
+	]
+	workingDir = "${buildDir}/tmp/testsWorkingDir"
+	doFirst { delete workingDir ; mkdir workingDir }
+	testLogging { events "passed", "skipped", "failed" ; exceptionFormat "full" }
+}
+
+clean {
+	[ 'build-test', 'test-coverage', 'dist' ].each { // Beyond defaults also delete Ant's output
+		delete "${projectDir}/" + it }
+	doLast { exec { workingDir 'db4o-7.4' ; commandLine 'ant','clean' } }
+}
