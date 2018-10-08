@@ -51,13 +51,12 @@ task("$jarType", type: Jar, overwrite: true, dependsOn: tasks.withType(AbstractC
 	duplicatesStrategy = "fail" // FIXME: Test if this can be omitted
 	baseName = (jarType == 'testJar') ? 'WebOfTrust-with-unit-tests' : 'WebOfTrust'
 	destinationDir = new File(projectDir, (jarType == 'testJar') ? "build-test" : "dist")
+	manifest { attributes("Plugin-Main-Class": "plugins.WebOfTrust.WebOfTrust") }
 	
 	from sourceSets.main.output.classesDir
 	from(sourceSets.main.java.srcDirs) { include 'plugins/WebOfTrust/l10n/*.l10n' }
 	from zipTree('db4o-7.4/db4o.jar')
 	if(jarType == 'testJar') from sourceSets.test.output.classesDir
-	
-	manifest { attributes("Plugin-Main-Class": "plugins.WebOfTrust.WebOfTrust") }
 }}
 
 test {
