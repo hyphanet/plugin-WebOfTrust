@@ -38,7 +38,6 @@ task prepareVersionFile(type: Copy) {
 }
 
 task compileVersionFile(type: JavaCompile, dependsOn: ['compileJava', 'prepareVersionFile']) {
-	outputs.upToDateWhen { false }
 	classpath = sourceSets.main.compileClasspath
 	source = prepareVersionFile.destinationDir
 	destinationDir = file("${buildDir}/custom/versionFileClass/")
