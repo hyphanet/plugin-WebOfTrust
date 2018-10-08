@@ -47,7 +47,7 @@ task compileVersionFile(type: JavaCompile, dependsOn: ['compileJava', 'prepareVe
 task("$jarType", type: Jar, overwrite: true, dependsOn: tasks.withType(AbstractCompile)) {
 	preserveFileTimestamps = false
 	reproducibleFileOrder = true
-	duplicatesStrategy = "fail" // FIXME: Test if this can be omitted
+	duplicatesStrategy = "fail"
 	baseName = (jarType == 'testJar') ? 'WebOfTrust-with-unit-tests' : 'WebOfTrust'
 	destinationDir = new File(projectDir, (jarType == 'testJar') ? "build-test" : "dist")
 	manifest { attributes("Plugin-Main-Class": "plugins.WebOfTrust.WebOfTrust") }
