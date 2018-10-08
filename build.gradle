@@ -8,7 +8,6 @@ sourceSets.main.java.srcDirs = ['src/']
 sourceSets.test.java.srcDirs = ['test/']
 sourceCompatibility = targetCompatibility = 7
 javadoc.enabled = false
-gradle.parallel = true
 
 configurations { junit } // Needed when we manually specify the tests' classpath
 dependencies {
