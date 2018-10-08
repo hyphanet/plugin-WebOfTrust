@@ -63,9 +63,8 @@ task("$jarType", type: Jar, overwrite: true, dependsOn: ['compileJava', 'compile
 test {
     dependsOn 'testJar'
     
-    // Reset classpath to ensure only the JAR is used, not the class files because:
-    // - some WoT tests need a JAR to load into a Freenet node
-    // - and given that a JAR is needed anyway its better to use it to ensure 100% matching classes
+    // Reset classpath to only use the JAR, not the class files, because some WoT test need a JAR to
+    // load into a Freenet node, and given the JAR is needed we shouldn't duplicate its classes.
     classpath = fileTree(dir: '../fred/build/output/', include: '*.jar')
     classpath+= files(testJar.archivePath)
     classpath+= configurations.junit
