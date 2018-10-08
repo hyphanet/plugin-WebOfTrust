@@ -93,7 +93,7 @@ test {
 }
 
 clean {
-	[ 'build-test', 'test-coverage', 'dist' ].each { // Same dirs as Ant to delete its output too
+	[ 'build-test', 'test-coverage', 'dist' ].each { // Beyond defaults also delete Ant's output
 		delete "${projectDir}/" + it }
 	doLast { exec { workingDir 'db4o-7.4' ; commandLine 'ant','clean' } }
 }
