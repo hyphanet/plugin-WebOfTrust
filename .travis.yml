@@ -84,14 +84,9 @@ before_script: |
 script:
   - set -o errexit
   - echo 'Checksums of dependencies:' ; sha256sum ../fred/build/output/*
-  # Don't allow Travis to override the low memory limit which our builder sets with a higher one.
+  # Don't allow Travis to override the low memory limit we set in Ant with a higher one.
   - unset _JAVA_OPTIONS
-  # Use Gradle to run the unit tests as it supports using multiple CPU cores...
-  - gradle clean test
-  # ... and Ant to produce the actual JAR as my Gradle script is still experimental.
-  # FIXME: Test whether Gradle's JAR is binary identical so we can consider it as stable.
-  - gradle clean
-  - ant -Dtest.skip=true
+  - ant
 
 jdk:
   - oraclejdk10
