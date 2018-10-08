@@ -41,7 +41,7 @@ task compileVersionFile(type: JavaCompile, dependsOn: ['compileJava', 'prepareVe
 	outputs.upToDateWhen { false }
 	classpath = sourceSets.main.compileClasspath
 	source = prepareVersionFile.destinationDir
-	destinationDir = sourceSets.main.output.classesDir
+	destinationDir = file("${buildDir}/custom/versionFileClass/")
 }
 
 ["jar", "testJar"].each { jarType ->
@@ -53,7 +53,8 @@ task("$jarType", type: Jar, overwrite: true, dependsOn: tasks.withType(AbstractC
 	destinationDir = new File(projectDir, (jarType == 'testJar') ? "build-test" : "dist")
 	manifest { attributes("Plugin-Main-Class": "plugins.WebOfTrust.WebOfTrust") }
 	
-	from sourceSets.main.output.classesDir
+	from(sourceSets.main.output.classesDir) { exclude 'plugins/WebOfTrust/Version.class' }
+	from(compileVersionFile.destinationDir) { include 'plugins/WebOfTrust/Version.class' }
 	from(sourceSets.main.java.srcDirs) { include 'plugins/WebOfTrust/l10n/*.l10n' }
 	from zipTree('db4o-7.4/db4o.jar')
 	if(jarType == 'testJar') from sourceSets.test.output.classesDir
