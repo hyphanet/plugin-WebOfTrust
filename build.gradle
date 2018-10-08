@@ -1,4 +1,6 @@
 // FIXME: Mention this script in README. Say that it is experimental.
+// TODO: Code quality: Use Gradle's dependency management + gradle-witness instead of flat files
+// Postponing this until I know how to import fred's dependency list to avoid duplicating it.
 
 apply plugin: 'java'
 defaultTasks 'jar', 'test'
@@ -9,9 +11,6 @@ javadoc.enabled = false
 
 configurations { junit } // Needed when we manually specify the tests' classpath
 dependencies {
-	// TODO: Code quality: Use Gradle's dependency management + gradle-witness instead of flat files
-	// Postponing this until I know how to import fred's dependency list to avoid duplicating it.
-	
 	// Run fred's Gradle with "./gradlew jar copyRuntimeLibs" to produce this directory
 	compile fileTree(dir: '../fred/build/output/', include: '*.jar')
 	compile files('db4o-7.4/db4o.jar')
