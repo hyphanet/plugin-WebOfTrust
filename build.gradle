@@ -45,7 +45,7 @@ task compileVersionFile(type: JavaCompile, dependsOn: ['compileJava', 'prepareVe
 }
 
 ["jar", "testJar"].each { jarType ->
-task("$jarType", type: Jar, overwrite: true, dependsOn: ['compileJava', 'compileVersionFile', 'compileTestJava']) {
+task("$jarType", type: Jar, overwrite: true, dependsOn: tasks.withType(AbstractCompile)) {
 	preserveFileTimestamps = false
 	reproducibleFileOrder = true
 	duplicatesStrategy = "fail" // FIXME: Test if this can be omitted
