@@ -19,6 +19,7 @@ dependencies {
 }
 
 task compileDb4o(type: Exec) {
+	outputs.upToDateWhen { file('db4o-7.4/db4o.jar').exists() } // FIXME: Replace w/ incremental Ant
 	workingDir 'db4o-7.4'
 	commandLine 'ant', "-Djavac.source.version=" + sourceCompatibility,
 	                   "-Djavac.target.version=" + targetCompatibility
