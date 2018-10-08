@@ -63,10 +63,7 @@ before_script: |
       ln -s '/etc/ssl/certs/java/cacerts' "${JAVA_HOME}/lib/security/cacerts"
     fi &&
     # TODO: freenet.jar won't contain class Version if we don't run the
-    # clean task in a separate execution of Gradle. I.e. this wouldn't work:
-    #   $ gradle clean jar
-    # This is due to a bug in fred's Gradle script which could be fixed
-    # like this WoT commit did: 06c007204f40c712a398f0b58671f77fd9aeffd1
+    # clean task in a separate execution of Gradle. Why?
     ./gradlew clean &&
     # "copyRuntimeLibs" copies the JAR *and* dependencies - which WoT also
     # needs - to build/output/
