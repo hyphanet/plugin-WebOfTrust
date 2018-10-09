@@ -195,6 +195,7 @@ public class StatisticsPage extends WebPageImpl {
 				//   preserving floating point accuracy.
 				//   FIXME: Convert the input dataset from milliseconds to seconds before to
 				//   preserve even more accuracy. We likely won't need milliseconds for any plot.
+				// - FIXME: Test differentiate() by integrating it again
 				LimitedArrayDeque<Pair<Long, Double>> downloadsPerHour
 					= differentiate(
 						multiplyY(movingAverage(timesOfQueuing, 10), HOURS.toMillis(1))
