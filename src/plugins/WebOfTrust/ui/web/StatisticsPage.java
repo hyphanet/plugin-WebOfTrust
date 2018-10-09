@@ -9,7 +9,7 @@ import static java.util.concurrent.TimeUnit.HOURS;
 import static plugins.WebOfTrust.Configuration.DEFAULT_DEFRAG_INTERVAL;
 import static plugins.WebOfTrust.Configuration.DEFAULT_VERIFY_SCORES_INTERVAL;
 import static plugins.WebOfTrust.ui.web.CommonWebUtils.formatTimeDelta;
-import static plugins.WebOfTrust.util.plotting.XYChartUtils.average;
+import static plugins.WebOfTrust.util.plotting.XYChartUtils.movingAverage;
 import static plugins.WebOfTrust.util.plotting.XYChartUtils.differentiate;
 import static plugins.WebOfTrust.util.plotting.XYChartUtils.getTimeBasedPlotPNG;
 import static plugins.WebOfTrust.util.plotting.XYChartUtils.multiplyY;
@@ -191,13 +191,14 @@ public class StatisticsPage extends WebPageImpl {
 				
 				// - Build the average before differentiating to prevent a jumpy graph due to
 				//   fred delivering batches of many files at once for internal reasons.
-				//   FIXME: Use a moving average to make the graph less coarse.
 				// - Convert to hours before differentiating to aid the "dy/dx" division in
 				//   preserving floating point accuracy.
 				//   FIXME: Convert the input dataset from milliseconds to seconds before to
 				//   preserve even more accuracy. We likely won't need milliseconds for any plot.
 				LimitedArrayDeque<Pair<Long, Double>> downloadsPerHour
-					= differentiate(multiplyY(average(timesOfQueuing, 10), HOURS.toMillis(1)));
+					= differentiate(
+						multiplyY(movingAverage(timesOfQueuing, 10), HOURS.toMillis(1))
+					);
 				
 				return getTimeBasedPlotPNG(downloadsPerHour, x0, wot.getBaseL10n(), l10n + "Title", 
 					l10n + "XAxis.Hours",  l10n + "XAxis.Minutes", l10n + "YAxis");
