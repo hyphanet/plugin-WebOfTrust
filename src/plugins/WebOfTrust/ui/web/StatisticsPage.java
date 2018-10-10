@@ -9,9 +9,9 @@ import static java.util.concurrent.TimeUnit.HOURS;
 import static plugins.WebOfTrust.Configuration.DEFAULT_DEFRAG_INTERVAL;
 import static plugins.WebOfTrust.Configuration.DEFAULT_VERIFY_SCORES_INTERVAL;
 import static plugins.WebOfTrust.ui.web.CommonWebUtils.formatTimeDelta;
-import static plugins.WebOfTrust.util.plotting.XYChartUtils.movingAverage;
 import static plugins.WebOfTrust.util.plotting.XYChartUtils.differentiate;
 import static plugins.WebOfTrust.util.plotting.XYChartUtils.getTimeBasedPlotPNG;
+import static plugins.WebOfTrust.util.plotting.XYChartUtils.movingAverage;
 import static plugins.WebOfTrust.util.plotting.XYChartUtils.multiplyY;
 
 import java.net.URI;
@@ -187,8 +187,6 @@ public class StatisticsPage extends WebPageImpl {
 					= stats.mTimesOfQueuing;
 				String l10n = "StatisticsPage.PlotBox.DownloadsPerHourPlot.";
 				
-				// FIXME: Add first/last value to input data which produces desirable results.
-				
 				// - Build the average before differentiating to prevent a jumpy graph due to
 				//   fred delivering batches of many files at once for internal reasons.
 				// - Convert to hours before differentiating to aid the "dy/dx" division in
@@ -200,6 +198,14 @@ public class StatisticsPage extends WebPageImpl {
 					= differentiate(
 						multiplyY(movingAverage(timesOfQueuing, 10), HOURS.toMillis(1))
 					);
+				
+				// Ensure the resulting dataset is no empty, and that it contains an entry for the
+				// current time so refreshing the image periodically shows that it is live even when
+				// there is no progress.
+				downloadsPerHour.addFirst(
+					new Pair<>(stats.mStartupTimeMilliseconds, 0d));
+				downloadsPerHour.addLast(
+					new Pair<>(CurrentTimeUTC.getInMillis(), downloadsPerHour.peekLast().y));
 				
 				return getTimeBasedPlotPNG(downloadsPerHour, x0, wot.getBaseL10n(), l10n + "Title", 
 					l10n + "XAxis.Hours",  l10n + "XAxis.Minutes", l10n + "YAxis");

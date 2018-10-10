@@ -180,7 +180,6 @@ public final class XYChartUtils {
 	public static final <T extends Number> LimitedArrayDeque<Pair<Long, Double>> movingAverage(
 			LimitedArrayDeque<Pair<Long, T>> xyData, int seconds) {
 		
-		assert(xyData.size() > 1);
 		assert(seconds > 0);
 		
 		LimitedArrayDeque<Pair<Long, Double>> result
@@ -263,8 +262,6 @@ public final class XYChartUtils {
 	 * The resulting dataset will be smaller than the input. */
 	public static final <T extends Number> LimitedArrayDeque<Pair<Long, Double>> differentiate(
 			LimitedArrayDeque<Pair<Long, T>> xyData) {
-		
-		assert(xyData.size() >= 2);
 		
 		LimitedArrayDeque<Pair<Long, Double>> result =
 			new LimitedArrayDeque<>(xyData.sizeLimit());

@@ -5,7 +5,8 @@ import java.util.Iterator;
 
 /***
  * A wrapper around class {@link ArrayDeque} which automatically obeys a size limit.
- * Once the limit is reached adding an element to the tail will remove the head element. */
+ * Once the limit is reached adding an element to the tail will remove the head element and vice
+ * versa. */
 public final class LimitedArrayDeque<T> implements Cloneable, Iterable<T> {
 
 	private final ArrayDeque<T> mQueue;
@@ -25,6 +26,17 @@ public final class LimitedArrayDeque<T> implements Cloneable, Iterable<T> {
 	private LimitedArrayDeque(LimitedArrayDeque<T> original) {
 		mQueue = original.mQueue.clone();
 		mSizeLimit = original.mSizeLimit;
+	}
+
+	public T addFirst(T element) {
+		T result = null;
+		
+		if(mQueue.size() >= mSizeLimit)
+			result = mQueue.removeLast();
+		
+		mQueue.addFirst(element);
+		
+		return result;
 	}
 
 	public T addLast(T element) {
