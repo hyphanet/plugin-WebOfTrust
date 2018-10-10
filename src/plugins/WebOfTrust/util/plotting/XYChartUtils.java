@@ -259,7 +259,7 @@ public final class XYChartUtils {
 	 * 
 	 * Returns a new LimitedArrayDeque which contains the dy/dx of the given plot data.
 	 * 
-	 * The resulting dataset will be smaller than the input. */
+	 * The resulting dataset's size() will be at most the size() of the input dataset minus 1. */
 	public static final <T extends Number> LimitedArrayDeque<Pair<Long, Double>> differentiate(
 			LimitedArrayDeque<Pair<Long, T>> xyData) {
 		
@@ -290,6 +290,8 @@ public final class XYChartUtils {
 			prev = cur;
 		} while(i.hasNext());
 		
+		assert(result.size() <= (xyData.size() - 1))
+			: "The first input element is consumed without yielding an output.";
 		return result;
 	}
 

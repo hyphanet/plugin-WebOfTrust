@@ -202,6 +202,8 @@ public class StatisticsPage extends WebPageImpl {
 				// Ensure the resulting dataset is no empty, and that it contains an entry for the
 				// current time so refreshing the image periodically shows that it is live even when
 				// there is no progress.
+				// differentiate() will return at most size() - 1 elements, so addFirst() won't
+				// discard the tail element even if our input LimitedArrayDeque was full.
 				downloadsPerHour.addFirst(
 					new Pair<>(stats.mStartupTimeMilliseconds, 0d));
 				downloadsPerHour.addLast(
