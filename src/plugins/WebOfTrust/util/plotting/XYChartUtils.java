@@ -3,6 +3,7 @@ package plugins.WebOfTrust.util.plotting;
 import static java.lang.Double.isInfinite;
 import static java.lang.Double.isNaN;
 import static java.lang.Math.abs;
+import static java.lang.Math.max;
 import static java.lang.Math.round;
 import static java.util.concurrent.TimeUnit.HOURS;
 import static java.util.concurrent.TimeUnit.MILLISECONDS;
@@ -256,7 +257,8 @@ public final class XYChartUtils {
 		if((windowEnd - windowStart) >= 16 || result.size() == 0)
 			result.addLast(new Pair<>(round(xAverage), yAverage));
 		
-		assert(result.size() <= (xyData.size() - 16 /* Due to loop */ + 1 /* Due to above if */));
+		assert(result.size() <=
+			max(1, (xyData.size() - 16 /* Due to loop */ + 1 /* Due to above if */)));
 		return result;
 	}
 
