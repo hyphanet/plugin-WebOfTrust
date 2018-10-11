@@ -224,7 +224,7 @@ public final class XYChartUtils {
 					&& amount >= 16) {
 				
 				assert(xAverage <= (xyArray[windowStart].x + SECONDS.toMillis(seconds))
-					|| amount == 16);
+					|| amount >= 16);
 				
 				result.addLast(new Pair<>(round(xAverage), yAverage));
 				
