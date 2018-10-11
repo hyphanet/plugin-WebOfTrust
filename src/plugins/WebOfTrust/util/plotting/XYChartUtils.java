@@ -176,7 +176,10 @@ public final class XYChartUtils {
 		return result;
 	}
 
-	/** FIXME: Document */
+	/**
+	 * FIXME: Fully document
+	 * 
+	 * The resulting dataset will be smaller than the input. */
 	public static final <T extends Number> LimitedArrayDeque<Pair<Long, Double>> movingAverage(
 			LimitedArrayDeque<Pair<Long, T>> xyData, int seconds) {
 		
@@ -249,6 +252,7 @@ public final class XYChartUtils {
 		if((windowEnd - windowStart) >= 16 || result.size() == 0)
 			result.addLast(new Pair<>(round(xAverage), yAverage));
 		
+		assert(result.size() <= (xyData.size() - 16 /* Due to loop */ + 1 /* Due to above if */));
 		return result;
 	}
 
