@@ -189,6 +189,12 @@ public class StatisticsPage extends WebPageImpl {
 				
 				// - Build the average before differentiating to prevent a jumpy graph due to
 				//   fred delivering batches of many files at once for internal reasons.
+				// - FIXME: Consider applying movingAverage() again after differentiation to make
+				//   the graph even less jumpy. Though this can wait until the
+				//   IdentityDownloaderSlow has received a mechanism for auto-adjusting its number
+				//   of concurrent downloads to ensure the set of running downloads doesn't
+				//   run very empty about every minute, which probably is a major reason for the
+				//   jumpiness.
 				// - Convert to hours before differentiating to aid the "dy/dx" division in
 				//   preserving floating point accuracy.
 				//   FIXME: Convert the input dataset from milliseconds to seconds before to
