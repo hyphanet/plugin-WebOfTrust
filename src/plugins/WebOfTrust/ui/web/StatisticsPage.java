@@ -196,7 +196,7 @@ public class StatisticsPage extends WebPageImpl {
 				// - FIXME: Test differentiate() by integrating it again
 				LimitedArrayDeque<Pair<Long, Double>> downloadsPerHour
 					= differentiate(
-						multiplyY(movingAverage(timesOfQueuing, 10), HOURS.toMillis(1))
+						multiplyY(movingAverage(timesOfQueuing, 60), HOURS.toMillis(1))
 					);
 				
 				// Ensure the resulting dataset is no empty, and that it contains an entry for the
