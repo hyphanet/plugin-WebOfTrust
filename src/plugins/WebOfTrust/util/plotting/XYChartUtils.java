@@ -155,12 +155,8 @@ public final class XYChartUtils {
 				xAverage /= amount;
 				yAverage /= amount;
 			} else {
-				// FIXME: This is probably wrong, and also misleading to check xAverage and amount
-				// in one assert() as they're not very closely related from the point of view of
-				// looking at the raw data.
-				// See the commit which added this FIXME and the one before.
-				assert(xAverage <= (startOfAverage.x + SECONDS.toMillis(seconds))
-					|| amount == 17);
+				assert(xAverage >= startOfAverage.x);
+				assert(xAverage <= cur.x);
 				
 				result.addLast(new Pair<>(round(xAverage), yAverage));
 				
