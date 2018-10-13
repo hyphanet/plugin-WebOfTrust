@@ -7,7 +7,7 @@ import java.util.Iterator;
  * A wrapper around class {@link ArrayDeque} which automatically obeys a size limit.
  * Once the limit is reached adding an element to the tail will remove the head element and vice
  * versa. */
-public final class LimitedArrayDeque<T> implements Cloneable, Iterable<T> {
+public class LimitedArrayDeque<T> implements Cloneable, Iterable<T> {
 
 	private final ArrayDeque<T> mQueue;
 
@@ -28,7 +28,7 @@ public final class LimitedArrayDeque<T> implements Cloneable, Iterable<T> {
 		mSizeLimit = original.mSizeLimit;
 	}
 
-	public T addFirst(T element) {
+	public final T addFirst(T element) {
 		T result = null;
 		
 		if(mQueue.size() >= mSizeLimit)
@@ -39,7 +39,7 @@ public final class LimitedArrayDeque<T> implements Cloneable, Iterable<T> {
 		return result;
 	}
 
-	public T addLast(T element) {
+	public final T addLast(T element) {
 		T result = null;
 		
 		if(mQueue.size() >= mSizeLimit)
@@ -50,35 +50,35 @@ public final class LimitedArrayDeque<T> implements Cloneable, Iterable<T> {
 		return result;
 	}
 
-	public void clear() {
+	public final void clear() {
 		mQueue.clear();
 	}
 
-	public T peekFirst() {
+	public final T peekFirst() {
 		return mQueue.peekFirst();
 	}
 
-	public T peekLast() {
+	public final T peekLast() {
 		return mQueue.peekLast();
 	}
 
-	public int size() {
+	public final int size() {
 		return mQueue.size();
 	}
 
-	public int sizeLimit() {
+	public final int sizeLimit() {
 		return mSizeLimit;
 	}
 
-	@Override public LimitedArrayDeque<T> clone() {
+	@Override public final LimitedArrayDeque<T> clone() {
 		return new LimitedArrayDeque<>(this);
 	}
 
-	@Override public Iterator<T> iterator() {
+	@Override public final Iterator<T> iterator() {
 		return mQueue.iterator();
 	}
 
-	public T[] toArray(T[] output) {
+	public final T[] toArray(T[] output) {
 		return mQueue.toArray(output);
 	}
 }

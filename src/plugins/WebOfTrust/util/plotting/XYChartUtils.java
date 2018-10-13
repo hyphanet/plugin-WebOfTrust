@@ -40,6 +40,34 @@ import freenet.support.CurrentTimeUTC;
 public final class XYChartUtils {
 
 	/**
+	 * FIXME: Wire in
+	 * Stores X/Y-values suitable for preprocessing by {@link XYChartUtils}' functions and plotting
+	 * by its {@link XYChartUtils#getTimeBasedPlotPNG(LimitedArrayDeque, long, BaseL10n, String,
+	 * String, String, String)}.
+	 * 
+	 * Is a {@link LimitedArrayDeque} of {@link Pair}s where the Pair's x-value is a
+	 * {@link System#currentTimeMillis()}, converted to a double value of seconds; and the y-value
+	 * is an arbitrary number which is the subject of the chart to be plotted.
+	 * 
+	 * The conversion from milliseconds to seconds increases floating point precision of
+	 * {@link XYChartUtils}'s preprocessing functions.
+	 * This conversion is a valid thing to do here as the charts are typically intended to cover
+	 * areas of minutes to hours and hence millisecond values are not interesting to the user. */
+	public static final class TimeChart<T> extends LimitedArrayDeque<Pair<Double, T>> {
+		/** @param data A queue where the x-value of the containing Pairs is a
+		 *      {@link CurrentTimeUTC#getInMillis()} timestamp.*/
+		public TimeChart(LimitedArrayDeque<Pair<Long, T>> data) {
+			super(data.sizeLimit());
+			
+			double oneSecondInMillis = SECONDS.toMillis(1);
+			for(Pair<Long, T> p : data) {
+				double xInSeconds = (double)p.x / oneSecondInMillis;
+				addLast(new Pair<Double, T>(xInSeconds, p.y));
+			}
+		}
+	}
+
+	/**
 	 * Generic implementation of creating an {@link XYChart} where the X-axis is the time.
 	 * Can be used by {@link StatisticsPlotRenderer} implementations for their purposes.
 	 * 
