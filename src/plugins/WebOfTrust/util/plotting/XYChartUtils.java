@@ -206,9 +206,30 @@ public final class XYChartUtils {
 	}
 
 	/**
-	 * FIXME: Fully document
+	 * Input:
+	 * - a {@link LimitedArrayDeque} of {@link Pair}s where {@link Pair#x} is a
+	 *   {@link CurrentTimeUTC#getInMillis()} timestamp and {@link Pair#y} is an arbitrary
+	 *   {@link Number} which supports {@link Number#doubleValue()}.
+	 * - an integer threshold of seconds.
 	 * 
-	 * The resulting dataset will be smaller than the input. */
+	 * Output:
+	 * A new LimitedArrayDeque is returned where each contained Pair contains the moving average
+	 * X- and Y-values of the Pairs in the source dataset across the given amount of seconds.
+	 *
+	 * This is computed by sliding a moving window across the dataset and yielding an output Pair
+	 * for every input pair as long as:
+	 * - the current window contains measurements which span at least the given amount of seconds.
+	 * - the window contains at least 16 Pairs of measurements. This additional requirement prevents
+	 *   the plot from being jumpy in time areas where there have been few measurements.
+	 * 
+	 * If there aren't even 16 measurements in the input dataset the result is not empty, a single
+	 * Pair is returned to contain the average of the given data.
+	 * This ensures code which processes the result does not have to contain code for handling
+	 * emptiness if the input data is never empty.
+	 * FIXME: Perhaps we can drop this exception given that probably all functions here are safe
+	 * for empty input now, and make StatisticsPage add dummy elements if necessary.
+	 * 
+	 * The resulting dataset will always be smaller than the input. */
 	public static final <T extends Number> LimitedArrayDeque<Pair<Long, Double>> movingAverage(
 			LimitedArrayDeque<Pair<Long, T>> xyData, int seconds) {
 		
