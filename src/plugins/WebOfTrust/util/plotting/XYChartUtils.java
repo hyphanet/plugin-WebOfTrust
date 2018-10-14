@@ -158,7 +158,9 @@ public final class XYChartUtils {
 	 * FIXME: Perhaps we can drop this exception given that probably all functions here are safe
 	 * for empty input now, and make StatisticsPage add dummy elements if necessary.
 	 * 
-	 * The resulting dataset will always be smaller than the input. */
+	 * The resulting dataset's {@link TimeChart#size()} will always be smaller than the input's
+	 * size.
+	 * Its {@link TimeChart#sizeLimit()} will be the same. */
 	public static final <T extends Number> TimeChart<Double> movingAverage(
 			TimeChart<T> xyData, int seconds) {
 		
@@ -243,7 +245,9 @@ public final class XYChartUtils {
 	/**
 	 * Returns a new TimeChart which contains the dy/dx of the given plot data.
 	 * 
-	 * The resulting dataset's size() will be at most the size() of the input dataset minus 1. */
+	 * The resulting dataset's {@link TimeChart#size()} will be at most the size() of the input
+	 * dataset minus 1.
+	 * Its {@link TimeChart#sizeLimit()} will be the same. */
 	public static final <T extends Number> TimeChart<Double> differentiate(TimeChart<T> xyData) {
 		TimeChart<Double> result = new TimeChart<>(xyData.sizeLimit());
 		
