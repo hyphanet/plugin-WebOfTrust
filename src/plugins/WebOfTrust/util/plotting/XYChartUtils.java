@@ -210,6 +210,11 @@ public final class XYChartUtils {
 				// actually make this a moving average with a window of the given amount of seconds.
 				// Do this here instead of at beginning of the loop so we don't need to check
 				// whether we're eligible to do it.
+				// FIXME: It'd be better to do it at the beginning to avoid one useless division
+				// and multiplication by amount, that may be a waste of floating point accuracy.
+				// Avoiding having the same if() at the loop beginning can also be achieved by
+				// setting a "boolean shiftWindowStart" to true here and checking it at the
+				// beginning.
 				xAverage *= amount;
 				yAverage *= amount;
 				xAverage -= xyArray[windowStart].x;
