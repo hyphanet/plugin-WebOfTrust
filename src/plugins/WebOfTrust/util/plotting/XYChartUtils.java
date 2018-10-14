@@ -241,35 +241,28 @@ public final class XYChartUtils {
 	}
 
 	/**
-	 * Consumes a {@link LimitedArrayDeque} of {@link Pair}s where {@link Pair#x} is a
-	 * {@link CurrentTimeUTC#getInMillis()} timestamp and {@link Pair#y}
-	 * is an arbitrary {@link Number} which supports {@link Number#doubleValue()}.
-	 * 
-	 * Returns a new LimitedArrayDeque which contains the dy/dx of the given plot data.
+	 * Returns a new TimeChart which contains the dy/dx of the given plot data.
 	 * 
 	 * The resulting dataset's size() will be at most the size() of the input dataset minus 1. */
-	public static final <T extends Number> LimitedArrayDeque<Pair<Long, Double>> differentiate(
-			LimitedArrayDeque<Pair<Long, T>> xyData) {
-		
-		LimitedArrayDeque<Pair<Long, Double>> result =
-			new LimitedArrayDeque<>(xyData.sizeLimit());
+	public static final <T extends Number> TimeChart<Double> differentiate(TimeChart<T> xyData) {
+		TimeChart<Double> result = new TimeChart<>(xyData.sizeLimit());
 		
 		if(xyData.size() < 2)
 			return result;
 		
-		Iterator<Pair<Long, T>> i = xyData.iterator();
-		Pair<Long, T> prev = i.next();			
+		Iterator<Pair<Double, T>> i = xyData.iterator();
+		Pair<Double, T> prev = i.next();
 		do {
-			Pair<Long, T> cur = i.next();
+			Pair<Double, T> cur = i.next();
 			
-			long  dx = cur.x - prev.x;
+			double dx = cur.x - prev.x;
 			// Avoid division by zero in dy/dx.
 			if(abs(dx) <= Double.MIN_VALUE)
 				continue;
 			
 			double dy = cur.y.doubleValue() - prev.y.doubleValue();
 			
-			Long   x = prev.x;
+			double x = prev.x;
 			double y = dy / dx;
 			
 			assert(!isInfinite(y) && !isNaN(y)) : "Division by zero!";
