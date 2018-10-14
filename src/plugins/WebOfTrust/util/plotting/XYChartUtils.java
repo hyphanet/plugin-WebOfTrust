@@ -148,6 +148,9 @@ public final class XYChartUtils {
 	 * - the window contains at least 16 Pairs of measurements. This additional requirement prevents
 	 *   the plot from being jumpy in time areas where there have been few measurements.
 	 * 
+	 * FIXME: The below is wrong, if the input is fully empty, the output also is. Either make the
+	 * output non-empty by putting an average of 0 at timestamp 0 into it, or drop the below
+	 * statement. 
 	 * If there aren't even 16 measurements in the input dataset the result is not empty, a single
 	 * Pair is returned to contain the average of the given data.
 	 * This ensures code which processes the result does not have to contain code for handling
