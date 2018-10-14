@@ -104,12 +104,13 @@ public final class XYChartUtils {
 				(long)(xyData.peekLast().x - xyData.peekFirst().x)
 			) >= 2;
 		
+		double x0_seconds = (double)x0 / SECONDS.toMillis(1);
 		double timeUnit = (hours ? HOURS : MINUTES).toSeconds(1);
 		double[] x = new double[xyData.size()];
 		double[] y = new double[x.length];
 		int i = 0;
 		for(Pair<Double, T> p : xyData) {
-			x[i] = (p.x - (double)x0) / timeUnit;
+			x[i] = (p.x - x0_seconds) / timeUnit;
 			y[i] = p.y.doubleValue();
 			++i;
 		}
