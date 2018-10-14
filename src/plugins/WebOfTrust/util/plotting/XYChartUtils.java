@@ -53,7 +53,9 @@ public final class XYChartUtils {
 	 * {@link XYChartUtils}'s preprocessing functions.
 	 * This conversion is a valid thing to do here as the charts are typically intended to cover
 	 * areas of minutes to hours and hence millisecond values are not interesting to the user. */
-	public static final class TimeChart<T> extends LimitedArrayDeque<Pair<Double, T>> {
+	public static final class TimeChart<T extends Number>
+			extends LimitedArrayDeque<Pair<Double, T>> {
+		
 		/** @param data A queue where the x-value of the containing Pairs is a
 		 *      {@link CurrentTimeUTC#getInMillis()} timestamp.*/
 		public TimeChart(LimitedArrayDeque<Pair<Long, T>> data) {
