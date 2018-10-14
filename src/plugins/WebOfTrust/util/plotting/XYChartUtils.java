@@ -39,7 +39,9 @@ import freenet.support.CurrentTimeUTC;
 public final class XYChartUtils {
 
 	/**
-	 * FIXME: Wire in
+	 * FIXME: This was wired in to all of class XYChartUtils, but the callers of our functions
+	 * outside of the class yet need to be adapted to use it.
+	 * 
 	 * Stores X/Y-values suitable for preprocessing by {@link XYChartUtils}' functions and plotting
 	 * by its {@link XYChartUtils#getTimeBasedPlotPNG(TimeChart, long, BaseL10n, String, String,
 	 * String, String)}.
@@ -283,16 +285,14 @@ public final class XYChartUtils {
 	}
 
 	/**
-	 * Returns a new {@link LimitedArrayDeque} with new {@link Pair} objects where each Pair's
-	 * {@link Number#doubleValue()} of the {@link Pair#y} is multiplied by the given
-	 * multiplier. */
-	public static final <T extends Number> LimitedArrayDeque<Pair<Long, Double>> multiplyY(
-			LimitedArrayDeque<Pair<Long, T>> xyData, long multiplier) {
+	 * Returns a new {@link TimeChart} where each Pair's {@link Number#doubleValue()} of the
+	 * {@link Pair#y} is multiplied by the given multiplier. */
+	public static final <T extends Number> TimeChart<Double> multiplyY(
+			TimeChart<T> xyData, long multiplier) {
 		
-		LimitedArrayDeque<Pair<Long, Double>> result
-			= new LimitedArrayDeque<>(xyData.sizeLimit());
-	
-		for(Pair<Long, T> cur : xyData)
+		TimeChart<Double> result = new TimeChart<>(xyData.sizeLimit());
+		
+		for(Pair<Double, T> cur : xyData)
 			result.addLast(new Pair<>(cur.x, cur.y.doubleValue() * multiplier));
 		
 		return result;
