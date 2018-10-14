@@ -55,7 +55,11 @@ public final class XYChartUtils {
 	 * areas of minutes to hours and hence millisecond values are not interesting to the user. */
 	public static final class TimeChart<T extends Number>
 			extends LimitedArrayDeque<Pair<Double, T>> {
-		
+
+		public TimeChart(int sizeLimit) {
+			super(sizeLimit);
+		}
+
 		/** @param data A queue where the x-value of the containing Pairs is a
 		 *      {@link CurrentTimeUTC#getInMillis()} timestamp.*/
 		public TimeChart(LimitedArrayDeque<Pair<Long, T>> data) {
@@ -131,13 +135,11 @@ public final class XYChartUtils {
 
 	/**
 	 * Input:
-	 * - a {@link LimitedArrayDeque} of {@link Pair}s where {@link Pair#x} is a
-	 *   {@link CurrentTimeUTC#getInMillis()} timestamp and {@link Pair#y} is an arbitrary
-	 *   {@link Number} which supports {@link Number#doubleValue()}.
+	 * - a {@link TimeChart} to be processed.
 	 * - an integer threshold of seconds.
 	 * 
 	 * Output:
-	 * A new LimitedArrayDeque is returned where each contained Pair contains the moving average
+	 * A new TimeChart is returned where each contained Pair contains the moving average
 	 * X- and Y-values of the Pairs in the source dataset across the given amount of seconds.
 	 *
 	 * This is computed by sliding a moving window across the dataset and yielding an output Pair
@@ -154,20 +156,19 @@ public final class XYChartUtils {
 	 * for empty input now, and make StatisticsPage add dummy elements if necessary.
 	 * 
 	 * The resulting dataset will always be smaller than the input. */
-	public static final <T extends Number> LimitedArrayDeque<Pair<Long, Double>> movingAverage(
-			LimitedArrayDeque<Pair<Long, T>> xyData, int seconds) {
+	public static final <T extends Number> TimeChart<Double> movingAverage(
+			TimeChart<T> xyData, int seconds) {
 		
 		assert(seconds > 0);
 		
-		LimitedArrayDeque<Pair<Long, Double>> result
-			= new LimitedArrayDeque<>(xyData.sizeLimit());
+		TimeChart<Double> result = new TimeChart<>(xyData.sizeLimit());
 		
 		if(xyData.size() < 1)
 			return result;
 		
 		@SuppressWarnings("unchecked")
-		Pair<Long, T>[] xyArray
-			= (Pair<Long, T>[]) xyData.toArray(new Pair[xyData.size()]);
+		Pair<Double, T>[] xyArray
+			= (Pair<Double, T>[]) xyData.toArray(new Pair[xyData.size()]);
 		
 		int windowStart = 0;
 		int windowEnd = 0;
@@ -187,20 +188,20 @@ public final class XYChartUtils {
 			yAverage *= amount;
 			
 			// Put windowEnd into average
-			xAverage += xyArray[windowEnd].x.doubleValue();
+			xAverage += xyArray[windowEnd].x;
 			yAverage += xyArray[windowEnd].y.doubleValue();
 			++amount;
 			xAverage /= amount;
 			yAverage /= amount;
 			
 			// If the average contains enough measurements now then yield it
-			if((xyArray[windowEnd].x - xyArray[windowStart].x) >= SECONDS.toMillis(seconds)
+			if((xyArray[windowEnd].x - xyArray[windowStart].x) >= seconds
 					&& amount >= 16) {
 				
 				assert(xAverage >= xyArray[windowStart].x);
 				assert(xAverage <= xyArray[windowEnd].x);
 				
-				result.addLast(new Pair<>(round(xAverage), yAverage));
+				result.addLast(new Pair<>(xAverage, yAverage));
 				
 				// Remove windowStart from average in preparation of next iteration in order to
 				// actually make this a moving average with a window of the given amount of seconds.
@@ -208,7 +209,7 @@ public final class XYChartUtils {
 				// whether we're eligible to do it.
 				xAverage *= amount;
 				yAverage *= amount;
-				xAverage -= xyArray[windowStart].x.doubleValue();
+				xAverage -= xyArray[windowStart].x;
 				yAverage -= xyArray[windowStart].y.doubleValue();
 				--amount;
 				xAverage /= amount;
@@ -224,7 +225,7 @@ public final class XYChartUtils {
 		// empty result.
 		// FIXME: Does this still make sense with a moving average?
 		if((windowEnd - windowStart) >= 16 || result.size() == 0)
-			result.addLast(new Pair<>(round(xAverage), yAverage));
+			result.addLast(new Pair<>(xAverage, yAverage));
 		
 		assert(result.size() <=
 			max(1, (xyData.size() - 16 /* Due to loop */ + 1 /* Due to above if */)));
