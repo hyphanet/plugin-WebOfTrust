@@ -183,7 +183,7 @@ public class StatisticsPage extends WebPageImpl {
 			@Override public byte[] getPNG(WebOfTrust wot) {
 				IdentityFileQueueStatistics stats = wot.getIdentityFileQueue().getStatistics();
 				Long x0 = stats.mStartupTimeMilliseconds;
-				TimeChart<Integer> timesOfQueuing = new TimeChart<Integer>(stats.mTimesOfQueuing);
+				TimeChart<Integer> timesOfQueuing = new TimeChart<>(stats.mTimesOfQueuing);
 				String l10n = "StatisticsPage.PlotBox.DownloadsPerHourPlot.";
 				
 				// - Build the average before differentiating to prevent a jumpy graph due to
