@@ -6,6 +6,7 @@ package plugins.WebOfTrust.ui.web;
 import static freenet.support.TimeUtil.formatTime;
 import static java.lang.Math.max;
 import static java.util.concurrent.TimeUnit.HOURS;
+import static java.util.concurrent.TimeUnit.SECONDS;
 import static plugins.WebOfTrust.Configuration.DEFAULT_DEFRAG_INTERVAL;
 import static plugins.WebOfTrust.Configuration.DEFAULT_VERIFY_SCORES_INTERVAL;
 import static plugins.WebOfTrust.ui.web.CommonWebUtils.formatTimeDelta;
@@ -33,9 +34,9 @@ import plugins.WebOfTrust.network.input.IdentityDownloaderFast.IdentityDownloade
 import plugins.WebOfTrust.network.input.IdentityDownloaderSlow;
 import plugins.WebOfTrust.network.input.IdentityDownloaderSlow.IdentityDownloaderSlowStatistics;
 import plugins.WebOfTrust.ui.web.WebInterface.StatisticsPNGWebInterfaceToadlet;
-import plugins.WebOfTrust.util.LimitedArrayDeque;
 import plugins.WebOfTrust.util.Pair;
 import plugins.WebOfTrust.util.plotting.XYChartUtils;
+import plugins.WebOfTrust.util.plotting.XYChartUtils.TimeChart;
 import freenet.clients.http.ToadletContext;
 import freenet.l10n.BaseL10n;
 import freenet.support.CurrentTimeUTC;
@@ -156,8 +157,7 @@ public class StatisticsPage extends WebPageImpl {
 			@Override public byte[] getPNG(WebOfTrust wot) {
 				IdentityFileQueueStatistics stats = wot.getIdentityFileQueue().getStatistics();
 				Long x0 = stats.mStartupTimeMilliseconds;
-				LimitedArrayDeque<Pair<Long, Integer>> timesOfQueuing
-					= stats.mTimesOfQueuing;
+				TimeChart<Integer> timesOfQueuing = new TimeChart<>(stats.mTimesOfQueuing);
 				String l10n = "StatisticsPage.PlotBox.TotalDownloadCountPlot.";
 				
 				// Add a dummy entry for the current time to the end of the plot so refreshing the
@@ -165,8 +165,8 @@ public class StatisticsPage extends WebPageImpl {
 				// timesOfQueuing is safe to be modified here: getStatistics() returns a clone().
 				// peekLast() will always work: IdentityFileQueueStatistics specifies it to always
 				// contain at least one entry.
-				timesOfQueuing.addLast(
-					new Pair<>(CurrentTimeUTC.getInMillis(), timesOfQueuing.peekLast().y));
+				double currentTime = (double)CurrentTimeUTC.getInMillis() / SECONDS.toMillis(1);
+				timesOfQueuing.addLast(new Pair<>(currentTime, timesOfQueuing.peekLast().y));
 				
 				return getTimeBasedPlotPNG(timesOfQueuing, x0, wot.getBaseL10n(), l10n + "Title", 
 					l10n + "XAxis.Hours",  l10n + "XAxis.Minutes", l10n + "YAxis");
@@ -183,8 +183,7 @@ public class StatisticsPage extends WebPageImpl {
 			@Override public byte[] getPNG(WebOfTrust wot) {
 				IdentityFileQueueStatistics stats = wot.getIdentityFileQueue().getStatistics();
 				Long x0 = stats.mStartupTimeMilliseconds;
-				LimitedArrayDeque<Pair<Long, Integer>> timesOfQueuing
-					= stats.mTimesOfQueuing;
+				TimeChart<Integer> timesOfQueuing = new TimeChart<Integer>(stats.mTimesOfQueuing);
 				String l10n = "StatisticsPage.PlotBox.DownloadsPerHourPlot.";
 				
 				// - Build the average before differentiating to prevent a jumpy graph due to
@@ -200,9 +199,9 @@ public class StatisticsPage extends WebPageImpl {
 				//   FIXME: Convert the input dataset from milliseconds to seconds before to
 				//   preserve even more accuracy. We likely won't need milliseconds for any plot.
 				// - FIXME: Test differentiate() by integrating it again
-				LimitedArrayDeque<Pair<Long, Double>> downloadsPerHour
+				TimeChart<Double> downloadsPerHour
 					= differentiate(
-						multiplyY(movingAverage(timesOfQueuing, 60), HOURS.toMillis(1))
+						multiplyY(movingAverage(timesOfQueuing, 60), HOURS.toSeconds(1))
 					);
 				
 				// Ensure the resulting dataset is no empty, and that it contains an entry for the
@@ -210,10 +209,10 @@ public class StatisticsPage extends WebPageImpl {
 				// there is no progress.
 				// differentiate() will return at most size() - 1 elements, so addFirst() won't
 				// discard the tail element even if our input LimitedArrayDeque was full.
-				downloadsPerHour.addFirst(
-					new Pair<>(stats.mStartupTimeMilliseconds, 0d));
-				downloadsPerHour.addLast(
-					new Pair<>(CurrentTimeUTC.getInMillis(), downloadsPerHour.peekLast().y));
+				double startupTime = stats.mStartupTimeMilliseconds / SECONDS.toMillis(1);
+				double currentTime = (double)CurrentTimeUTC.getInMillis() / SECONDS.toMillis(1);
+				downloadsPerHour.addFirst(new Pair<>(startupTime, 0d));
+				downloadsPerHour.addLast(new Pair<>(currentTime, downloadsPerHour.peekLast().y));
 				
 				return getTimeBasedPlotPNG(downloadsPerHour, x0, wot.getBaseL10n(), l10n + "Title", 
 					l10n + "XAxis.Hours",  l10n + "XAxis.Minutes", l10n + "YAxis");
