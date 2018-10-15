@@ -156,8 +156,8 @@ public class StatisticsPage extends WebPageImpl {
 			 * @see IdentityFileQueueStatistics#mTimesOfQueuing */
 			@Override public byte[] getPNG(WebOfTrust wot) {
 				IdentityFileQueueStatistics stats = wot.getIdentityFileQueue().getStatistics();
-				Long x0 = stats.mStartupTimeMilliseconds;
-				TimeChart<Integer> timesOfQueuing = new TimeChart<>(stats.mTimesOfQueuing);
+				long t0 = stats.mStartupTimeMilliseconds;
+				TimeChart<Integer> timesOfQueuing = new TimeChart<>(stats.mTimesOfQueuing, t0);
 				String l10n = "StatisticsPage.PlotBox.TotalDownloadCountPlot.";
 				
 				// Add a dummy entry for the current time to the end of the plot so refreshing the
@@ -165,11 +165,12 @@ public class StatisticsPage extends WebPageImpl {
 				// timesOfQueuing is safe to be modified here: getStatistics() returns a clone().
 				// peekLast() will always work: IdentityFileQueueStatistics specifies it to always
 				// contain at least one entry.
-				double currentTime = (double)CurrentTimeUTC.getInMillis() / SECONDS.toMillis(1);
+				double currentTime
+					= (double)(CurrentTimeUTC.getInMillis() - t0) / SECONDS.toMillis(1);
 				timesOfQueuing.addLast(new Pair<>(currentTime, timesOfQueuing.peekLast().y));
 				
-				return getTimeBasedPlotPNG(timesOfQueuing, x0, wot.getBaseL10n(), l10n + "Title", 
-					l10n + "XAxis.Hours",  l10n + "XAxis.Minutes", l10n + "YAxis");
+				return getTimeBasedPlotPNG(timesOfQueuing, wot.getBaseL10n(), l10n + "Title",
+					l10n + "XAxis.Hours", l10n + "XAxis.Minutes",  l10n + "YAxis");
 			}
 		}),
 		DownloadsPerHour(new StatisticsPlotRenderer() {
@@ -182,8 +183,8 @@ public class StatisticsPage extends WebPageImpl {
 			 * @see IdentityFileQueueStatistics#mTimesOfQueuing */
 			@Override public byte[] getPNG(WebOfTrust wot) {
 				IdentityFileQueueStatistics stats = wot.getIdentityFileQueue().getStatistics();
-				Long x0 = stats.mStartupTimeMilliseconds;
-				TimeChart<Integer> timesOfQueuing = new TimeChart<>(stats.mTimesOfQueuing);
+				long t0 = stats.mStartupTimeMilliseconds;
+				TimeChart<Integer> timesOfQueuing = new TimeChart<>(stats.mTimesOfQueuing, t0);
 				String l10n = "StatisticsPage.PlotBox.DownloadsPerHourPlot.";
 				
 				// - Build the average before differentiating to prevent a jumpy graph due to
@@ -209,13 +210,15 @@ public class StatisticsPage extends WebPageImpl {
 				// there is no progress.
 				// differentiate() will return at most size() - 1 elements, so addFirst() won't
 				// discard the tail element even if our input LimitedArrayDeque was full.
-				double startupTime = stats.mStartupTimeMilliseconds / SECONDS.toMillis(1);
-				double currentTime = (double)CurrentTimeUTC.getInMillis() / SECONDS.toMillis(1);
+				double startupTime
+					= (double)(stats.mStartupTimeMilliseconds - t0) / SECONDS.toMillis(1);
+				double currentTime
+					= (double)(CurrentTimeUTC.getInMillis() - t0) / SECONDS.toMillis(1);
 				downloadsPerHour.addFirst(new Pair<>(startupTime, 0d));
 				downloadsPerHour.addLast(new Pair<>(currentTime, downloadsPerHour.peekLast().y));
 				
-				return getTimeBasedPlotPNG(downloadsPerHour, x0, wot.getBaseL10n(), l10n + "Title", 
-					l10n + "XAxis.Hours",  l10n + "XAxis.Minutes", l10n + "YAxis");
+				return getTimeBasedPlotPNG(downloadsPerHour, wot.getBaseL10n(), l10n + "Title",
+					l10n + "XAxis.Hours", l10n + "XAxis.Minutes",  l10n + "YAxis");
 			}
 		});
 

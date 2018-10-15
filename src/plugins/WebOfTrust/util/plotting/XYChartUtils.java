@@ -4,7 +4,6 @@ import static java.lang.Double.isInfinite;
 import static java.lang.Double.isNaN;
 import static java.lang.Math.abs;
 import static java.lang.Math.max;
-import static java.lang.Math.round;
 import static java.util.concurrent.TimeUnit.HOURS;
 import static java.util.concurrent.TimeUnit.MINUTES;
 import static java.util.concurrent.TimeUnit.SECONDS;
@@ -30,16 +29,13 @@ import freenet.support.CurrentTimeUTC;
  * Typically used by the web interface's {@link StatisticsPage} to render measurements.
  * 
  * The member functions usually consume a series of measurements where the X-value is the time, and
- * the Y-value is a measurement at the given time.
- * 
- * FIXME: Change all functions to consume the time since startup instead of the absolute time to
- * improve floating point accuracy and make the functions more readable. */
+ * the Y-value is a measurement at the given time. */
 public final class XYChartUtils {
 
 	/**
 	 * Stores X/Y-values suitable for preprocessing by {@link XYChartUtils}' functions and plotting
-	 * by its {@link XYChartUtils#getTimeBasedPlotPNG(TimeChart, long, BaseL10n, String, String,
-	 * String, String)}.
+	 * by its {@link XYChartUtils#getTimeBasedPlotPNG(TimeChart, BaseL10n, String, String, String,
+	 * String)}.
 	 * 
 	 * Is a {@link LimitedArrayDeque} of {@link Pair}s where the Pair's x-value is a
 	 * {@link CurrentTimeUTC#getInMillis()} timestamp, converted to a double value of seconds; and
@@ -60,9 +56,10 @@ public final class XYChartUtils {
 		/**
 		 * @param data A queue where the x-value of the containing Pairs is a
 		 *     {@link CurrentTimeUTC#getInMillis()} timestamp.
-		 * @param t0 The {@link CurrentTimeUTC#getInMillis()} at the start of the measurements which
-		 *     produced the given data.
-		 *     This value is substracted from each x value of the data to move the origin of the
+		 * @param t0 The {@link CurrentTimeUTC#getInMillis()} at the t=0 origin of the resulting
+		 *     plot. By using this the time labels on the X-axis will not be absolute time but a
+		 *     relative time offset, e.g. "3 minutes".
+		 *     This value is subtracted from each x value of the data to move the origin of the
 		 *     resulting chart to this point in time.
 		 *     Typically you would set this to the startup time of WoT. */
 		public TimeChart(LimitedArrayDeque<Pair<Long, T>> data, long t0) {
@@ -76,11 +73,6 @@ public final class XYChartUtils {
 				addLast(new Pair<Double, T>(xInSeconds, p.y));
 			}
 		}
-		
-		// FIXME: Remove once everything has been refactored to use the above constructor
-		public TimeChart(LimitedArrayDeque<Pair<Long, T>> data) {
-			this(data, 0);
-		}
 	}
 
 	/**
@@ -88,9 +80,6 @@ public final class XYChartUtils {
 	 * Can be used by {@link StatisticsPlotRenderer} implementations for their purposes.
 	 * 
 	 * @param xyData The plot data. ATTENTION: It MUST always contain at least one entry.
-	 * @param x0 The {@link CurrentTimeUTC#getInMillis()} of the x=0 origin of the plot. The time
-	 *     labels on the X-axis will not be absolute time but a relative time offset, e.g.
-	 *     "3 minutes". The offset is built against this initial UTC time. 
 	 * @param l10n The {@link BaseL10n} used to translate the given string keys.
 	 * @param title L10n key of the label on top of the plot.
 	 * @param xLabelHours L10n key of the X-axis label if it is automatically chosen to display
@@ -100,8 +89,8 @@ public final class XYChartUtils {
 	 * @param yLabel L10n key of the Y-axis label.
 	 * @return An image of the PNG format, serialized to a byte array. */
 	public static final <T extends Number> byte[] getTimeBasedPlotPNG(
-			TimeChart<T> xyData, long x0, BaseL10n l10n,
-			String title, String xLabelHours, String xLabelMinutes, String yLabel) {
+			TimeChart<T> xyData, BaseL10n l10n, String title, String xLabelHours,
+			String xLabelMinutes, String yLabel) {
 		
 		// If the amount of measurements we've gathered is at least 2 hours then we measure the
 		// X-axis in hours, otherwise we measure it in minutes.
@@ -112,13 +101,12 @@ public final class XYChartUtils {
 				(long)(xyData.peekLast().x - xyData.peekFirst().x)
 			) >= 2;
 		
-		double x0_seconds = (double)x0 / SECONDS.toMillis(1);
 		double timeUnit = (hours ? HOURS : MINUTES).toSeconds(1);
 		double[] x = new double[xyData.size()];
 		double[] y = new double[x.length];
 		int i = 0;
 		for(Pair<Double, T> p : xyData) {
-			x[i] = (p.x - x0_seconds) / timeUnit;
+			x[i] = p.x / timeUnit;
 			y[i] = p.y.doubleValue();
 			++i;
 		}
