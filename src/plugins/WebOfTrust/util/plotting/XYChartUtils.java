@@ -57,16 +57,29 @@ public final class XYChartUtils {
 			super(sizeLimit);
 		}
 
-		/** @param data A queue where the x-value of the containing Pairs is a
-		 *      {@link CurrentTimeUTC#getInMillis()} timestamp.*/
-		public TimeChart(LimitedArrayDeque<Pair<Long, T>> data) {
+		/**
+		 * @param data A queue where the x-value of the containing Pairs is a
+		 *     {@link CurrentTimeUTC#getInMillis()} timestamp.
+		 * @param t0 The {@link CurrentTimeUTC#getInMillis()} at the start of the measurements which
+		 *     produced the given data.
+		 *     This value is substracted from each x value of the data to move the origin of the
+		 *     resulting chart to this point in time.
+		 *     Typically you would set this to the startup time of WoT. */
+		public TimeChart(LimitedArrayDeque<Pair<Long, T>> data, long t0) {
 			super(data.sizeLimit());
 			
 			double oneSecondInMillis = SECONDS.toMillis(1);
 			for(Pair<Long, T> p : data) {
-				double xInSeconds = (double)p.x / oneSecondInMillis;
+				// Subtract t0 as long before converting to double for more floating point precision
+				long x = p.x - t0;
+				double xInSeconds = (double)x / oneSecondInMillis;
 				addLast(new Pair<Double, T>(xInSeconds, p.y));
 			}
+		}
+		
+		// FIXME: Remove once everything has been refactored to use the above constructor
+		public TimeChart(LimitedArrayDeque<Pair<Long, T>> data) {
+			this(data, 0);
 		}
 	}
 
