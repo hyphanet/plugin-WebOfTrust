@@ -32,16 +32,11 @@ import freenet.support.CurrentTimeUTC;
  * The member functions usually consume a series of measurements where the X-value is the time, and
  * the Y-value is a measurement at the given time.
  * 
- * FIXME: Change all functions to consume a double of seconds since startup for the time instead
- * of the absolute time in milliseconds. This will both increase precision of the floating point
- * calculations as we convert to minutes/hours when rendering anyway, as well as make the functions
- * more readable. */
+ * FIXME: Change all functions to consume the time since startup instead of the absolute time to
+ * improve floating point accuracy and make the functions more readable. */
 public final class XYChartUtils {
 
 	/**
-	 * FIXME: This was wired in to all of class XYChartUtils, but the callers of our functions
-	 * outside of the class yet need to be adapted to use it.
-	 * 
 	 * Stores X/Y-values suitable for preprocessing by {@link XYChartUtils}' functions and plotting
 	 * by its {@link XYChartUtils#getTimeBasedPlotPNG(TimeChart, long, BaseL10n, String, String,
 	 * String, String)}.
