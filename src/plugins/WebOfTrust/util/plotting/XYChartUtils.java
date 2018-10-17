@@ -265,9 +265,7 @@ public final class XYChartUtils {
 			
 			double dy = cur.y.doubleValue() - prev.y.doubleValue();
 			
-			// TODO: Is it strictly mathematically correct to use the left border for the x-value?
-			// Or should we use the middle between cur.x and prev.x?
-			double x = prev.x;
+			double x = prev.x + dx/2;
 			double y = dy / dx;
 			
 			assert(!isInfinite(y) && !isNaN(y)) : "Division by zero!";
