@@ -9,4 +9,8 @@ public final class Pair<X, Y> {
 		this.x = x;
 		this.y = y;
 	}
+
+	public static <X, Y> Pair<X, Y> pair(X x, Y y) {
+		return new Pair<>(x, y);
+	}
 }
