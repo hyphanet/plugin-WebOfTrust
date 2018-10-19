@@ -1,6 +1,7 @@
 package plugins.WebOfTrust.util;
 
 import java.util.ArrayDeque;
+import java.util.Collection;
 import java.util.Iterator;
 
 /***
@@ -46,6 +47,15 @@ public class LimitedArrayDeque<T> implements Cloneable, Iterable<T> {
 			result = mQueue.removeFirst();
 		
 		mQueue.addLast(element);
+		
+		return result;
+	}
+
+	public final boolean addAll(Collection<? extends T> elements) {
+		boolean result = mQueue.addAll(elements);
+		
+		while(mQueue.size() > mSizeLimit)
+			mQueue.removeFirst();
 		
 		return result;
 	}
