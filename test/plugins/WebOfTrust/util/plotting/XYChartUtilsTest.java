@@ -62,7 +62,7 @@ public final class XYChartUtilsTest extends AbstractJUnit4BaseTest {
 		for(int i = 0; i < 1024; ++i) {
 			double x = (2*PI / 1024) * i;
 			double y = sin(x);
-			sinus.addLast(new Pair<>(x, y));
+			sinus.addLast(pair(x, y));
 			assertEquals(i+1, sinus.size());
 		}
 		
