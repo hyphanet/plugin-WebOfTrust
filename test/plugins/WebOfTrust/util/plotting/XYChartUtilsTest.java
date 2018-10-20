@@ -83,19 +83,19 @@ public final class XYChartUtilsTest extends AbstractJUnit4BaseTest {
 		// patterns to learn.
 		TimeChart<Double> input = new TimeChart<>(5);
 		input.addAll(asList(array(
-			pair(1d, -2d),
-			pair(2d, -1d),
-			pair(3d,  0d),
-			pair(4d,  1d),
-			pair(5d,  2d)
+			pair(1d, -2.1d),
+			pair(2d, -1.1d),
+			pair(3d,  0.0d),
+			pair(4d,  1.1d),
+			pair(5d,  2.1d)
 		)));
 		TimeChart<Double> actual = multiplyY(input, -10);
 		List<Pair<Double, Double>> expected = asList(array(
-			pair(1d,  20d),
-			pair(2d,  10d),
+			pair(1d,  21d),
+			pair(2d,  11d),
 			pair(3d,   0d),
-			pair(4d, -10d),
-			pair(5d, -20d)
+			pair(4d, -11d),
+			pair(5d, -21d)
 		));
 		
 		assertEquals(5, input.size());
