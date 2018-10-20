@@ -4,6 +4,7 @@
 package plugins.WebOfTrust;
 
 import static org.junit.Assert.*;
+import static plugins.WebOfTrust.util.MathUtil.equalsApprox;
 
 import java.io.File;
 import java.io.IOException;
@@ -32,6 +33,7 @@ import plugins.WebOfTrust.exceptions.InvalidParameterException;
 import plugins.WebOfTrust.exceptions.NotTrustedException;
 import plugins.WebOfTrust.exceptions.UnknownIdentityException;
 import plugins.WebOfTrust.util.IdentifierHashSet;
+import plugins.WebOfTrust.util.MathUtil;
 import plugins.WebOfTrust.util.RandomGrabHashSet;
 import plugins.WebOfTrust.util.ReallyCloneable;
 import freenet.crypt.DummyRandomSource;
@@ -644,5 +646,11 @@ public abstract class AbstractJUnit4BaseTest {
 		// Bonus check:
 		// We did check all fields manually already but we've got equals() so let's use it
 		assertEquals(original, clone);
+	}
+
+	/** @see MathUtil#equalsApprox(double, double, double) */
+	public static final void assertEqualsApprox(double expected, double actual, double percentage) {
+		assertTrue("expected approximately " + expected + "; was: " + actual,
+			equalsApprox(expected, actual, percentage));
 	}
 }

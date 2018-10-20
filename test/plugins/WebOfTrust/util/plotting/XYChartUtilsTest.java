@@ -50,8 +50,8 @@ public final class XYChartUtilsTest extends AbstractJUnit4BaseTest {
 		// is not only the given amount of seconds but also 16 elements.
 		assertEquals(1, average.size());
 		Pair<Double, Double> a1 = average.peekFirst();
-		assertTrue(equalsApprox( 8.5d, a1.x, 99.999d));
-		assertTrue(equalsApprox(18.5d, a1.y, 99.999d));
+		assertEqualsApprox( 8.5d, a1.x, 99.999d);
+		assertEqualsApprox(18.5d, a1.y, 99.999d);
 		
 		fail("Implement rest of this: Test what happens with more than 16 elements.");
 	}
@@ -77,8 +77,8 @@ public final class XYChartUtilsTest extends AbstractJUnit4BaseTest {
 			double y = cos(x); // d/dx sin(x) = cos(x)
 			
 			Pair<Double, Double> p = iter.next();
-			assertTrue("expected ~ " + x + "; was: " + p.x, equalsApprox(x, p.x, 99.999d));
-			assertTrue("expected ~ " + y + "; was: " + p.y, equalsApprox(y, p.y, 99.999d));
+			assertEqualsApprox(x, p.x, 99.999d);
+			assertEqualsApprox(y, p.y, 99.999d);
 		}
 	}
 
