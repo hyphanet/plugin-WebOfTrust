@@ -41,7 +41,35 @@ public final class XYChartUtilsTest extends AbstractJUnit4BaseTest {
 		Pair<Double, Double> a1 = average.peekFirst();
 		assertEqualsApprox( sumOfNumbers(16) / 16, a1.x, 99.999d);
 		assertEqualsApprox(-sumOfNumbers(16) / 16, a1.y, 99.999d);
-		fail("Implement rest of this: Test what happens with more than 16 elements.");
+		
+		TimeChart<Double> prevAverage;
+		for(int n = 17; n < 32; ++n) {
+			data.addLast(pair((double) n, (double) -n));
+			prevAverage = average;
+			average = movingAverage(data, 1);
+			assertEquals(prevAverage.size() + 1, average.size());
+			
+			// Check if the previous average values are all at the beginning of the new one.
+			// TODO: Code quality: Java 8: See testMultiplyY().
+			Iterator<Pair<Double, Double>> iExp = prevAverage.iterator();
+			Iterator<Pair<Double, Double>> iAct = average.iterator();
+			for(int i=0; i < prevAverage.size(); ++i) {
+				Pair<Double, Double> exp = iExp.next();
+				Pair<Double, Double> act = iAct.next();
+				assertEqualsApprox(exp.x, act.x, 99.999d);
+				assertEqualsApprox(exp.y, act.y, 99.999d);
+			}
+			
+			// Check the actual new average value
+			Pair<Double, Double> a = average.peekLast();
+			// The window size of movingAverage() is at least 1 second, which we fulfill by spacing
+			// elements by 1, and at least 16 elements. So every iteration of our loop the element
+			// n-16 falls out.
+			assertEqualsApprox( sumOfNumbers(n-16, n) / 16, a.x, 99.999d);
+			assertEqualsApprox(-sumOfNumbers(n-16, n) / 16, a.y, 99.999d);
+		}
+		
+		fail("Test what happens if we add elements whose spacing is less than the window size");
 	}
 
 	private static double sumOfNumbers(int n) {
@@ -49,6 +77,11 @@ public final class XYChartUtilsTest extends AbstractJUnit4BaseTest {
 		int enumerator = n*(n+1);
 		assert(enumerator % 2 == 0) : "Integer division before casting is OK";
 		return enumerator / 2;
+	}
+
+	private static double sumOfNumbers(int a, int b) {
+		assert(b > a);
+		return sumOfNumbers(b) - sumOfNumbers(a);
 	}
 
 	@Test public void testDifferentiate() {
