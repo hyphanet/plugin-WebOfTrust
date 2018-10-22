@@ -43,7 +43,7 @@ public final class XYChartUtilsTest extends AbstractJUnit4BaseTest {
 		assertEqualsApprox(-sumOfNumbers(16) / 16, a1.y, 99.999d);
 		
 		TimeChart<Double> prevAverage;
-		for(int n = 17; n < 32; ++n) {
+		for(int n = 17; n <= 32; ++n) {
 			data.addLast(pair((double) n, (double) -n));
 			prevAverage = average;
 			average = movingAverage(data, 1);
@@ -69,7 +69,19 @@ public final class XYChartUtilsTest extends AbstractJUnit4BaseTest {
 			assertEqualsApprox(-sumOfNumbers(n-16, n) / 16, a.y, 99.999d);
 		}
 		
-		fail("Test what happens if we add elements whose spacing is less than the window size");
+		// Now that we sufficiently tested the minimum window size of 16 elements we yet have to
+		// test the minimum window size in seconds as passed to movingAverage().
+		// By now specifying a minimum window size of 32 seconds, all our 32 elements with 1 second
+		// spacing should be consumed into 1 output value.
+		assert(data.size() == 32);
+		average = movingAverage(data, 32);
+		assertEquals(1, average.size());
+		Pair<Double, Double> a = average.peekLast();
+		assertEqualsApprox( sumOfNumbers(32) / 32, a.x, 99.999d);
+		assertEqualsApprox(-sumOfNumbers(32) / 32, a.y, 99.999d);
+		
+		// See the uncovered branch at the end of movingAverage() in the test coverage analysis
+		fail("FIXME: Test behavior for trailing elements which don't meet the second  quota");
 	}
 
 	private static double sumOfNumbers(int n) {
