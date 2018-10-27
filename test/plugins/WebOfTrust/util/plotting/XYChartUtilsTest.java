@@ -74,6 +74,7 @@ public final class XYChartUtilsTest extends AbstractJUnit4BaseTest {
 		// By now specifying a minimum window size of 32 seconds, all our 32 elements with 1 second
 		// spacing should be consumed into 1 output value.
 		assert(data.size() == 32);
+		assert(data.peekLast().x - data.peekFirst().x >= 32);
 		average = movingAverage(data, 32);
 		assertEquals(1, average.size());
 		Pair<Double, Double> a = average.peekLast();
