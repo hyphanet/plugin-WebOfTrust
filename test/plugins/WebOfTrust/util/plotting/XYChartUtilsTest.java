@@ -7,6 +7,7 @@ import static java.util.Arrays.asList;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.fail;
 import static plugins.WebOfTrust.util.CollectionUtil.array;
+import static plugins.WebOfTrust.util.MathUtil.equalsApprox;
 import static plugins.WebOfTrust.util.Pair.pair;
 import static plugins.WebOfTrust.util.plotting.XYChartUtils.differentiate;
 import static plugins.WebOfTrust.util.plotting.XYChartUtils.movingAverage;
@@ -71,11 +72,14 @@ public final class XYChartUtilsTest extends AbstractJUnit4BaseTest {
 		
 		// Now that we sufficiently tested the minimum window size of 16 elements we yet have to
 		// test the minimum window size in seconds as passed to movingAverage().
-		// By now specifying a minimum window size of 32 seconds, all our 32 elements with 1 second
-		// spacing should be consumed into 1 output value.
+		// To do so we raise the window size enough to ensure it covers precisely the timespan
+		// of all elements so they ought to all be put into one output average value to ensure the
+		// output value meets the window size constraint.
+		// Our 32 elements start at time value x=1 second and end at x=32 seconds, so they span
+		// 31 seconds and hence the window needs to be 31 seconds.
 		assert(data.size() == 32);
-		assert(data.peekLast().x - data.peekFirst().x >= 32);
-		average = movingAverage(data, 32);
+		assert(equalsApprox(31, data.peekLast().x - data.peekFirst().x, 99.999d));
+		average = movingAverage(data, 31);
 		assertEquals(1, average.size());
 		Pair<Double, Double> a = average.peekLast();
 		assertEqualsApprox( sumOfNumbers(32) / 32, a.x, 99.999d);
@@ -90,7 +94,8 @@ public final class XYChartUtilsTest extends AbstractJUnit4BaseTest {
 		for(int i=0; i < 15; ++i)
 			data.addLast(pair((double) 32, (double) -32));
 		assert(data.size() == 32+15);
-		average = movingAverage(data, 32);
+		assert(equalsApprox(31, data.peekLast().x - data.peekFirst().x, 99.999d));
+		average = movingAverage(data, 31);
 		assertEquals(1, average.size());
 		a = average.peekLast();
 		assertEqualsApprox( sumOfNumbers(32) / 32, a.x, 99.999d);
@@ -98,7 +103,8 @@ public final class XYChartUtilsTest extends AbstractJUnit4BaseTest {
 		// ... and then with 16, which should yield a tail element.		
 		data.addLast(pair((double) 32, (double) -32));
 		assert(data.size() == 32+16);
-		average = movingAverage(data, 32);
+		assert(equalsApprox(31, data.peekLast().x - data.peekFirst().x, 99.999d));
+		average = movingAverage(data, 31);
 		assertEquals(2, average.size());
 		fail("FIXME: Test the values of the averages");
 	}
