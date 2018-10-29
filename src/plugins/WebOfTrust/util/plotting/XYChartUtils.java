@@ -234,7 +234,7 @@ public final class XYChartUtils {
 				++windowStart;
 				
 			} else {
-				System.out.println("Not yielding element "
+				System.out.println("Not yielding element"
 					+ " from: xyArray[" + windowStart + "] to xyArray[" + windowEnd + "]."
 					+ " seconds = " + (xyArray[windowEnd].x - xyArray[windowStart].x)
 					+ "; amount = " + amount);
