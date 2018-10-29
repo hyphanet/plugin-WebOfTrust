@@ -163,6 +163,9 @@ public final class XYChartUtils {
 	public static final <T extends Number> TimeChart<Double> movingAverage(
 			TimeChart<T> xyData, int seconds) {
 		
+		// FIXME: Comment all logging in this function out once the bugs are fixed
+		System.out.println("movingAverage(data, " + seconds + ")...");
+		
 		assert(seconds > 0);
 		
 		TimeChart<Double> result = new TimeChart<>(xyData.sizeLimit());
@@ -206,6 +209,10 @@ public final class XYChartUtils {
 				assert(xAverage <= xyArray[windowEnd].x);
 				
 				result.addLast(new Pair<>(xAverage, yAverage));
+				System.out.println("Yielded element " + result.size()
+					+ " from: xyArray[" + windowStart + "] to xyArray[" + windowEnd + "]."
+					+ " seconds = " + (xyArray[windowEnd].x - xyArray[windowStart].x)
+					+ "; amount = " + amount);
 				
 				// Remove windowStart from average in preparation of next iteration in order to
 				// actually make this a moving average with a window of the given amount of seconds.
@@ -225,6 +232,12 @@ public final class XYChartUtils {
 				yAverage /= amount;
 				
 				++windowStart;
+				
+			} else {
+				System.out.println("Not yielding element "
+					+ " from: xyArray[" + windowStart + "] to xyArray[" + windowEnd + "]."
+					+ " seconds = " + (xyArray[windowEnd].x - xyArray[windowStart].x)
+					+ "; amount = " + amount);
 			}
 		} while(++windowEnd < xyArray.length);
 		
@@ -233,8 +246,13 @@ public final class XYChartUtils {
 		// But if the result set is empty then ignore the minimum amount so we never return an
 		// empty result.
 		// FIXME: Does this still make sense with a moving average?
-		if((windowEnd - windowStart) >= 16 || result.size() == 0)
+		if((windowEnd - windowStart) >= 16 || result.size() == 0) {
 			result.addLast(new Pair<>(xAverage, yAverage));
+			System.out.println("Yielded tail element " + result.size()
+				+ " from: xyArray[" + windowStart + "] to xyArray[" + (windowEnd-1) + "]."
+				+ " seconds = " + (xyArray[windowEnd-1].x - xyArray[windowStart].x)
+				+ "; amount = " + amount);
+		}
 		
 		assert(result.size() <=
 			max(1, (xyData.size() - 16 /* Due to loop */ + 1 /* Due to above if */)));
