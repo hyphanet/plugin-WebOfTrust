@@ -186,6 +186,7 @@ public final class XYChartUtils {
 		// until the end.
 		double xAverage = 0;
 		double yAverage = 0;
+		int unyieldedAmount = 0; // Included in average but not yielded as output yet
 		do {
 			int amount = windowEnd - windowStart;
 			assert(amount >= 0);
@@ -232,12 +233,14 @@ public final class XYChartUtils {
 				yAverage /= amount;
 				
 				++windowStart;
-				
+				unyieldedAmount = 0;
 			} else {
 				System.out.println("Not yielding element"
 					+ " from: xyArray[" + windowStart + "] to xyArray[" + windowEnd + "]."
 					+ " seconds = " + (xyArray[windowEnd].x - xyArray[windowStart].x)
 					+ "; amount = " + amount);
+				
+				++unyieldedAmount;
 			}
 		} while(++windowEnd < xyArray.length);
 		
@@ -246,7 +249,7 @@ public final class XYChartUtils {
 		// But if the result set is empty then ignore the minimum amount so we never return an
 		// empty result.
 		// FIXME: Does this still make sense with a moving average?
-		if((windowEnd - windowStart) >= 16 || result.size() == 0) {
+		if(((windowEnd - windowStart) >= 16 && unyieldedAmount > 0) || result.size() == 0) {
 			result.addLast(new Pair<>(xAverage, yAverage));
 			System.out.println("Yielded tail element " + result.size()
 				+ " from: xyArray[" + windowStart + "] to xyArray[" + (windowEnd-1) + "]."
