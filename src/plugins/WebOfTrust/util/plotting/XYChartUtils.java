@@ -251,7 +251,7 @@ public final class XYChartUtils {
 			System.out.println("Yielded tail element " + result.size()
 				+ " from: xyArray[" + windowStart + "] to xyArray[" + (windowEnd-1) + "]."
 				+ " seconds = " + (xyArray[windowEnd-1].x - xyArray[windowStart].x)
-				+ "; amount = " + amount);
+				+ "; amount = " + (windowEnd-1 - windowStart + 1));
 		}
 		
 		assert(result.size() <=
