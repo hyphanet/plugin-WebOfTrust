@@ -294,7 +294,6 @@ CHANGELOG about stuff only interesting for developers
 - Code quality: Travis CI: Test against most recent Java versions (xor)
 
   The cloud service now runs the unit tests periodically against:
-  - oraclejdk10 (new)
   - oraclejdk9
   - oraclejdk8
   - openjdk10 (new)
@@ -303,7 +302,7 @@ CHANGELOG about stuff only interesting for developers
   - openjdk7
 
   This is the maximal set of Java versions which are both supported by
-  Freenet and Travis CI as of 2018-09-26.
+  Freenet and Travis CI as of 2018-10-31.
   Notably the new Java 11 is not tested yet due to Freenet's Gradle not
   working on it.
 
