@@ -7,7 +7,6 @@ trap 'echo "Error at line $LINENO, exit code $?" >&2' ERR
 tmpdir="$(mktemp --directory)"
 trap 'rm -rf "$tmpdir"' EXIT
 
-# FIXME: Also validate the unit test JAR
 check_jar() {
 local jar="$1"
 local from_ant="$(mktemp --tmpdir="$tmpdir" --directory --suffix=.from-ant)"
@@ -23,7 +22,7 @@ unzip -qq "$jar" -d "$from_ant"
 echo "Building with Gradle..."
 ant clean &> /dev/null
 ! [ -e "$jar" ]
-gradle clean jar &> /dev/null
+gradle clean jar testJar &> /dev/null
 unzip -qq "$jar" -d "$from_gradle"
 
 echo "Deleting files which only Ant bundles: package-info.class, Version.java (not .class)..."
@@ -56,3 +55,4 @@ fi
 }
 
 check_jar 'dist/WebOfTrust.jar'
+check_jar 'build-test/WebOfTrust-with-unit-tests.jar'
