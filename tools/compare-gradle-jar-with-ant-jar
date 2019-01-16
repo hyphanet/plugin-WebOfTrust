@@ -40,7 +40,9 @@ sed --regexp-extended --expression='/^Ant(.*)$/d' \
 # To test whether the diff fails if it should:
 #echo a >> "$from_gradle/plugins/WebOfTrust/WebOfTrust.class"
 
-echo "Diffing..."
+echo "Diffing:"
+echo "Ant output:    $from_ant"
+echo "Gradle output: $from_gradle"
 if diff --recursive "$from_ant" "$from_gradle" ; then
 	echo "JARs are identical!"
 	exit 0
