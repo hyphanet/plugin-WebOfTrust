@@ -5,7 +5,7 @@ set -o errtrace
 trap 'echo "Error at line $LINENO, exit code $?" >&2' ERR
 
 tmpdir="$(mktemp --directory)"
-trap 'rm -rf "$tmpdir"' EXIT
+trap 'rm -rf -- "$tmpdir"' EXIT
 
 check_jar() {
 local jar="$1"
