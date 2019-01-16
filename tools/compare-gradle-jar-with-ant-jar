@@ -4,13 +4,16 @@ set -o errexit
 set -o errtrace
 trap 'echo "Error at line $LINENO, exit code $?" >&2' ERR
 
-from_ant="$(mktemp --directory --suffix=.from-ant)"
-from_gradle="$(mktemp --directory --suffix=.from-gradle)"
-trap 'rm -rf "$from_ant" "$from_gradle"' EXIT
+tmpdir="$(mktemp --directory)"
+trap 'rm -rf "$tmpdir"' EXIT
 
 # FIXME: Also validate the unit test JAR
-jar='dist/WebOfTrust.jar'
+check_jar() {
+local jar="$1"
+local from_ant="$(mktemp --tmpdir="$tmpdir" --directory --suffix=.from-ant)"
+local from_gradle="$(mktemp --tmpdir="$tmpdir" --directory --suffix=.from-gradle)"
 
+echo "Testing jar: $jar"
 echo "Building with Ant..."
 gradle clean &> /dev/null
 ! [ -e "$jar" ]
@@ -45,8 +48,11 @@ echo "Ant output:    $from_ant"
 echo "Gradle output: $from_gradle"
 if diff --recursive "$from_ant" "$from_gradle" ; then
 	echo "JARs are identical!"
-	exit 0
+	return 0
 else
 	echo "JARs do not match!" >&2
-	exit 1
+	return 1
 fi
+}
+
+check_jar 'dist/WebOfTrust.jar'
