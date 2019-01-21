@@ -1,5 +1,6 @@
 #!/bin/bash
 set -o nounset
+set -o pipefail
 set -o errexit
 set -o errtrace
 trap 'echo "Error at line $LINENO, exit code $?" >&2' ERR
@@ -12,7 +13,11 @@ from_gradle="$(mktemp --tmpdir="$tmpdir" --suffix=.from-gradle)"
 
 echo "Testing with Ant..."
 gradle clean &> /dev/null
-ant -Dtest.skip=false clean dist &> "$from_ant"
+ant -Dtest.skip=false clean dist 2>&1 |
+	awk '
+		/\[junit\] Running (.*)/ { testsuite=$3 }
+		/\[junit\] Testcase: (.*) took (.*) sec/ { print testsuite "." $3 "()" }' |
+	sort > "$from_ant"
 
 echo "Testing with Gradle..."
 ant clean &> /dev/null
