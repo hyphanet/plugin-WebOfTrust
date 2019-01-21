@@ -7,28 +7,28 @@ trap 'echo "Error at line $LINENO, exit code $?" >&2' ERR
 tmpdir="$(mktemp --directory)"
 trap 'rm -rf -- "$tmpdir"' EXIT
 
-from_ant="$(mktemp --tmpdir="$tmpdir" --directory --suffix=.from-ant)"
-from_gradle="$(mktemp --tmpdir="$tmpdir" --directory --suffix=.from-gradle)"
+from_ant="$(mktemp --tmpdir="$tmpdir" --suffix=.from-ant)"
+from_gradle="$(mktemp --tmpdir="$tmpdir" --suffix=.from-gradle)"
 
-echo "Building with Ant..."
+echo "Testing with Ant..."
 gradle clean &> /dev/null
-ant -Dtest.skip=true clean dist &> /dev/null
+ant -Dtest.skip=false clean junit &> "$from_ant"
 
-echo "Building with Gradle..."
+echo "Testing with Gradle..."
 ant clean &> /dev/null
-gradle clean jar testJar &> /dev/null
+gradle clean test &> "$from_gradle"
 
 # To test whether the diff fails if it should:
-#echo a >> "$from_gradle/plugins/WebOfTrust/WebOfTrust.class"
+#echo a >> "$from_gradle"
 
 echo "Diffing:"
 echo "Ant output:    $from_ant"
 echo "Gradle output: $from_gradle"
-if diff --recursive "$from_ant" "$from_gradle" ; then
-	echo "JARs are identical!"
+if diff "$from_ant" "$from_gradle" ; then
+	echo "Executed tests are identical!"
 	exit 0
 else
-	echo "JARs do not match! Not deleting output so you can inspect it." >&2
+	echo "Executed tests do not match! Not deleting output so you can inspect it." >&2
 	trap - EXIT
 	exit 1
 fi
