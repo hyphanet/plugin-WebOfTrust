@@ -21,7 +21,9 @@ ant -Dtest.skip=false clean dist 2>&1 |
 
 echo "Testing with Gradle..."
 ant clean &> /dev/null
-gradle clean test &> "$from_gradle"
+gradle clean test 2>&1 |
+	awk '/^(.+) > (.+) PASSED$/ { print $1 "." $3 "()" }' |
+	sort > "$from_gradle"
 
 # To test whether the diff fails if it should:
 #echo a >> "$from_gradle"
