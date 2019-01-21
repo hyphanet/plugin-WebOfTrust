@@ -7,37 +7,16 @@ trap 'echo "Error at line $LINENO, exit code $?" >&2' ERR
 tmpdir="$(mktemp --directory)"
 trap 'rm -rf -- "$tmpdir"' EXIT
 
-check_jar() {
-local jar="$1"
-local from_ant="$(mktemp --tmpdir="$tmpdir" --directory --suffix=.from-ant)"
-local from_gradle="$(mktemp --tmpdir="$tmpdir" --directory --suffix=.from-gradle)"
+from_ant="$(mktemp --tmpdir="$tmpdir" --directory --suffix=.from-ant)"
+from_gradle="$(mktemp --tmpdir="$tmpdir" --directory --suffix=.from-gradle)"
 
-echo "Testing jar: $jar"
 echo "Building with Ant..."
 gradle clean &> /dev/null
-[ ! -e "$jar" ] # WARNING: ! must be inside for errexit to work here
 ant -Dtest.skip=true clean dist &> /dev/null
-unzip -qq "$jar" -d "$from_ant"
 
 echo "Building with Gradle..."
 ant clean &> /dev/null
-[ ! -e "$jar" ] # WARNING: ! must be inside for errexit to work here
 gradle clean jar testJar &> /dev/null
-unzip -qq "$jar" -d "$from_gradle"
-
-echo "Deleting files which only Ant bundles: package-info.class, Version.java (not .class)..."
-shopt -s globstar
-shopt -s nullglob
-# These are non-executable classes which only exist as a place to hold JavaDoc, Gradle correctly
-# excludes them, so ignore them.
-rm --force -- "$from_ant"/**/package-info.class
-# Ant for some reason not only includes Version.class but also .java, it shouldn't, so ignore it.
-rm --force -- "$from_ant"/**/Version.java
-
-echo "Removing Ant-only stuff from MANIFEST.MF..."
-sed --regexp-extended --expression='/^Ant(.*)$/d' \
-	--expression='/^Created-By(.*)/d' \
-	--in-place "$from_ant/META-INF/MANIFEST.MF"
 
 # To test whether the diff fails if it should:
 #echo a >> "$from_gradle/plugins/WebOfTrust/WebOfTrust.class"
@@ -47,13 +26,9 @@ echo "Ant output:    $from_ant"
 echo "Gradle output: $from_gradle"
 if diff --recursive "$from_ant" "$from_gradle" ; then
 	echo "JARs are identical!"
-	return 0
+	exit 0
 else
 	echo "JARs do not match! Not deleting output so you can inspect it." >&2
 	trap - EXIT
-	return 1
+	exit 1
 fi
-}
-
-check_jar 'dist/WebOfTrust.jar'
-check_jar 'build-test/WebOfTrust-with-unit-tests.jar'
