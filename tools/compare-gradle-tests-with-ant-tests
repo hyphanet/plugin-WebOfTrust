@@ -13,7 +13,7 @@ from_gradle="$(mktemp --tmpdir="$tmpdir" --suffix=.from-gradle)"
 
 echo "Testing with Ant..."
 gradle clean &> /dev/null
-ant -Dtest.skip=false clean dist 2>&1 |
+ant -Dtest.skip=false clean dist |&
 	awk '
 		/\[junit\] Running (.*)/ { testsuite=$3 }
 		/\[junit\] Testcase: (.*) took (.*) sec/ { print testsuite "." $3 "()" }' |
@@ -21,7 +21,7 @@ ant -Dtest.skip=false clean dist 2>&1 |
 
 echo "Testing with Gradle..."
 ant clean &> /dev/null
-gradle clean test 2>&1 |
+gradle clean test |&
 	awk '/^(.+) > (.+) PASSED$/ { print $1 "." $3 "()" }' |
 	sort > "$from_gradle"
 
