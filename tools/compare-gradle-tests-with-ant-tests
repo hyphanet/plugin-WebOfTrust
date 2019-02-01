@@ -17,7 +17,8 @@ ant -Dtest.skip=false clean dist |&
 	awk '
 		length(outbuf) > 0 { if($0 !~ /SKIPPED/) { print outbuf } ; outbuf="" }
 		/\[junit\] Running (.*)/ { testsuite=$3 }
-		/\[junit\] Testcase: (.*) took (.*) sec/ { outbuf = testsuite "." $3 "()" }' |
+		/\[junit\] Testcase: (.*) took (.*) sec/ { outbuf = testsuite "." $3 "()" }
+		END { if(length(outbuf) > 0) { print outbuf } }' |
 	sort > "$from_ant"
 
 echo "Testing with Gradle..."
