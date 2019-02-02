@@ -12,6 +12,7 @@ from_ant="$(mktemp --tmpdir="$tmpdir" --suffix=.from-ant)"
 from_gradle="$(mktemp --tmpdir="$tmpdir" --suffix=.from-gradle)"
 
 if [ -e "./gradlew" ] ; then
+	echo "Found ./gradlew, using it instead of system's Gradle."
 	alias gradle=./gradlew
 fi
 
