@@ -11,6 +11,10 @@ trap 'rm -rf -- "$tmpdir"' EXIT
 from_ant="$(mktemp --tmpdir="$tmpdir" --suffix=.from-ant)"
 from_gradle="$(mktemp --tmpdir="$tmpdir" --suffix=.from-gradle)"
 
+if [ -e "./gradlew" ] ; then
+	alias gradle=./gradlew
+fi
+
 echo "Cleaning Gradle output and testing with Ant..."
 gradle clean
 ant -Dtest.skip=false clean dist |& tee "${from_ant}.raw"

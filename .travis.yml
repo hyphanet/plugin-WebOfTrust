@@ -83,10 +83,14 @@ script:
   - echo 'Checksums of dependencies:' ; sha256sum ../fred/build/output/*
   # Don't allow Travis to override the low memory limit we set in Ant with a higher one.
   - unset _JAVA_OPTIONS
+
   # FIXME: ant was replaced with compare-* for testing this branch only,
   # undo for production.
   #
   # - ant
+
+  # Use the same Gradle as fred to re-use the fixes we applied to it above
+  - ln -s "$TRAVIS_BUILD_DIR/../fred/gradlew"
   - tools/compare-gradle-tests-with-ant-tests
 
 jdk:
