@@ -33,8 +33,14 @@ gradle clean test |&
 echo "Diffing:"
 echo "Ant output:    $from_ant"
 echo "Gradle output: $from_gradle"
-echo "Ant tests:     $(wc -l "$from_ant")"
-echo "Gradle tests:  $(wc -l "$from_gradle")"
+
+ant_tests=$(wc -l "$from_ant")
+gradle_tests=$(wc -l "$from_gradle")
+[ "$ant_tests" -gt 0 ]
+[ "$gradle_tests" -gt 0 ]
+echo "Ant tests:     $ant_tests"
+echo "Gradle tests:  $gradle_test"
+
 if diff "$from_ant" "$from_gradle" ; then
 	echo "Executed tests are identical!"
 	exit 0
