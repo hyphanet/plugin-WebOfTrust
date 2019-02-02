@@ -91,7 +91,8 @@ script:
 
   # Use the same Gradle as fred to re-use the fixes we applied to it above
   - ln -s "$TRAVIS_BUILD_DIR/../fred/gradlew"
-  - tools/compare-gradle-tests-with-ant-tests
+  - tools/compare-gradle-jars-with-ant-jars
+  ## - tools/compare-gradle-tests-with-ant-tests
 
 jdk:
   - oraclejdk9
