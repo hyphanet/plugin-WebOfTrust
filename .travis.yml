@@ -1,9 +1,7 @@
 language: java
 
-# Need Ubuntu 16.04 because the Gradle of 14.04 is too old for Java >= 9
-# FIXME: If this indeed makes WoT's gradle work then remove the below
-# workarounds for fred's Gradle.
-dist: xenial
+# We need Ubuntu 14.04 due to very new JUnit API which WoT needs
+dist: trusty
 # Disabling sudo routes the build to a Docker container instead of a VM
 # which speeds up the build.
 sudo: false
