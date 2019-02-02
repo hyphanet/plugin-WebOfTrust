@@ -46,7 +46,7 @@ gradle_tests=$(wc -l "$from_gradle" | cut -d' ' -f1)
 [ "$ant_tests" -gt 0 ]
 [ "$gradle_tests" -gt 0 ]
 echo "Ant tests:     $ant_tests"
-echo "Gradle tests:  $gradle_test"
+echo "Gradle tests:  $gradle_tests"
 
 echo "Diffing:"
 if diff "$from_ant" "$from_gradle" ; then
