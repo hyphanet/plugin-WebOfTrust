@@ -25,13 +25,13 @@ awk '
 	length(outbuf) > 0 { if($0 !~ /SKIPPED/) { print outbuf } ; outbuf="" }
 	/\[junit\] Running (.*)/ { testsuite=$3 }
 	/\[junit\] Testcase: (.*) took (.*) sec/ { outbuf = testsuite "." $3 "()" }
-	END { if(length(outbuf) > 0) { print outbuf } }'
+	END { if(length(outbuf) > 0) { print outbuf } }' \
 	"${from_ant}.raw" | sort > "$from_ant"
 
 echo "Cleaning Ant output and testing with Gradle..."
 ant clean
 gradle clean test |& tee "${from_gradle}.raw"
-awk '/^(.+) > (.+) PASSED$/ { print $1 "." $3 "()" }'
+awk '/^(.+) > (.+) PASSED$/ { print $1 "." $3 "()" }' \
 	"${from_gradle}.raw" | sort > "$from_gradle"
 
 # To test whether the diff fails if it should:
