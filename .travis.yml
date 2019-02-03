@@ -83,15 +83,11 @@ script:
   - echo 'Checksums of dependencies:' ; sha256sum ../fred/build/output/*
   # Don't allow Travis to override the low memory limit we set in Ant with a higher one.
   - unset _JAVA_OPTIONS
-
-  # FIXME: ant was replaced with compare-* for testing this branch only,
-  # undo for production.
-  #
-  # - ant
-
-  # Use the same Gradle as fred to re-use the fixes we applied to it above
-  - ln -s "$TRAVIS_BUILD_DIR/../fred/gradlew"
-  - tools/compare-gradle-jars-with-ant-jars
+  - ant
+  # To test the Ant and Gradle builders against each other uncomment the following.
+  ## Use the same Gradle as fred to re-use the fixes we applied to it above
+  ## - ln -s "$TRAVIS_BUILD_DIR/../fred/gradlew"
+  ## - tools/compare-gradle-jars-with-ant-jars
   ## - tools/compare-gradle-tests-with-ant-tests
 
 jdk:
@@ -112,5 +108,4 @@ deploy:
   skip_cleanup: true
   script: ./.travis.upload-jar-to-freenet.sh
   on:
-    # FIXME: Set to true, is false only for testing this branch
-    all_branches: false
+    all_branches: true
