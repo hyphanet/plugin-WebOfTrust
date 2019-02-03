@@ -84,6 +84,11 @@ script:
   # Don't allow Travis to override the low memory limit we set in Ant with a higher one.
   - unset _JAVA_OPTIONS
   - ant
+  # To test the Ant and Gradle builders against each other uncomment the following.
+  ## Use the same Gradle as fred to re-use the fixes we applied to it above
+  ## - ln -s "$TRAVIS_BUILD_DIR/../fred/gradlew"
+  ## - tools/compare-gradle-jars-with-ant-jars
+  ## - tools/compare-gradle-tests-with-ant-tests
 
 jdk:
   - oraclejdk9

@@ -11,26 +11,44 @@ trap 'rm -rf -- "$tmpdir"' EXIT
 from_ant="$(mktemp --tmpdir="$tmpdir" --suffix=.from-ant)"
 from_gradle="$(mktemp --tmpdir="$tmpdir" --suffix=.from-gradle)"
 
-echo "Testing with Ant..."
-gradle clean &> /dev/null
-ant -Dtest.skip=false clean dist |&
-	awk '
-		/\[junit\] Running (.*)/ { testsuite=$3 }
-		/\[junit\] Testcase: (.*) took (.*) sec/ { print testsuite "." $3 "()" }' |
-	sort > "$from_ant"
+if [ -e "./gradlew" ] ; then
+	echo "Found ./gradlew, using it instead of system's Gradle."
+	shopt -s expand_aliases
+	unalias -a
+	alias gradle=./gradlew
+fi
 
-echo "Testing with Gradle..."
-ant clean &> /dev/null
-gradle clean test |&
-	awk '/^(.+) > (.+) PASSED$/ { print $1 "." $3 "()" }' |
-	sort > "$from_gradle"
+echo "Cleaning Gradle output and testing with Ant..."
+gradle clean
+ant -Dtest.skip=false clean dist |& tee "${from_ant}.raw"
+awk '
+	length(outbuf) > 0 { if($0 !~ /SKIPPED/) { print outbuf } ; outbuf="" }
+	/\[junit\] Running (.*)/ { testsuite=$3 }
+	/\[junit\] Testcase: (.*) took (.*) sec/ { outbuf = testsuite "." $3 "()" }
+	END { if(length(outbuf) > 0) { print outbuf } }' \
+	"${from_ant}.raw" | sort > "$from_ant"
+
+echo "Cleaning Ant output and testing with Gradle..."
+ant clean
+gradle clean test |& tee "${from_gradle}.raw"
+awk '/^(.+) > (.+) PASSED$/ { print $1 "." $3 "()" }' \
+	"${from_gradle}.raw" | sort > "$from_gradle"
 
 # To test whether the diff fails if it should:
 #echo a >> "$from_gradle"
 
-echo "Diffing:"
+echo ""
 echo "Ant output:    $from_ant"
 echo "Gradle output: $from_gradle"
+
+ant_tests=$(wc -l "$from_ant" | cut -d' ' -f1)
+gradle_tests=$(wc -l "$from_gradle" | cut -d' ' -f1)
+[ "$ant_tests" -gt 0 ]
+[ "$gradle_tests" -gt 0 ]
+echo "Ant tests:     $ant_tests"
+echo "Gradle tests:  $gradle_tests"
+
+echo "Diffing:"
 if diff "$from_ant" "$from_gradle" ; then
 	echo "Executed tests are identical!"
 	exit 0
