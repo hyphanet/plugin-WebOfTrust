@@ -14,6 +14,6 @@ tr -d '\r' |
 awk '
 	length(outbuf) > 0 { if($0 !~ /SKIPPED/) { print outbuf } ; outbuf="" }
 	/\[junit\] Running (.*)/ { testsuite=$3 }
-	/\[junit\] Testcase: (.*) took (.*) sec/ { outbuf = $5 $6 testsuite "." $3 "()" }
+	/\[junit\] Testcase: (.*) took (.*) sec/ { outbuf = $5 " " $6 " " testsuite "." $3 "()" }
 	END { if(length(outbuf) > 0) { print outbuf } }' |
 sort --numeric --key=1
