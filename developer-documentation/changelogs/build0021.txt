@@ -291,7 +291,46 @@ CHANGELOG about stuff only interesting for developers
   FYI you can use e.g. jVisualVM to watch the memory usage and GC
   activity of Freenet.
 
-- Code quality: Travis CI: Test against most recent Java versions (xor)
+- 0006751: [Code quality] Provide a Gradle build script once fred does
+           (xor)
+
+  The most notable benefit is that the Gradle script executes unit tests
+  in parallel on all available CPU cores to greatly reduce their
+  runtime.
+  To reap immediate benefit of this, Travis CI has been changed to use
+  Gradle instead of Ant.
+  That may speed up the builds by up to 50% as Travis provides 2 CPU
+  cores.
+  It will ensure builds exceed the 50 minute timeout less frequently
+  - if at all anymore.
+
+  The new Gradle script has been based on fred's Gradle script as of
+  fred build 1481.
+  It has been trimmed from fred's 271 lines to 100 lines. This makes it
+  easy to understand and may allow it to serve as a template for other
+  Freenet plugins.
+
+  To ensure the script guarantees identical results as compared to the
+  original Ant build script, two further scripts were added:
+  - tools/compare-gradle-jars-with-ant-jars
+      Builds the WoT main and test JARs with both Ant and Gradle, unzips
+      them, and checks if the containing files match.
+  - tools/compare-gradle-tests-with-ant-tests
+      Checks if Ant and Gradle run the same set of unit tests.
+
+  These scripts have been executed once on Travis CI and they were
+  successful against all supported Java versions (see below).
+
+  The Ant build script has *not* been removed as it has more features
+  (most notably test coverage analysis).
+  I will continue maintaining both scripts until the Gradle one has the
+  same capabilities, and possibly beyond to provide developers with
+  freedom of choice.
+  Also having two different implementations of the same thing available
+  *and* tools to compare their results is a very sophisticated test,
+  which is a benefit of its own.
+
+- [Code quality] Travis CI: Test against most recent Java versions (xor)
 
   The cloud service now runs the unit tests periodically against:
   - oraclejdk9
