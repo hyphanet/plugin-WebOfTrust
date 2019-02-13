@@ -16,6 +16,8 @@ pip3 install -U --user --egg pyFreenet3
 cd "$TRAVIS_BUILD_DIR"/../fred
 echo "Configuring node..."
 
+# Ignore Travis cache since seednodes may change.
+rm -f seednodes.fref
 # FIXME: Use fred's official URL once there is one
 wget https://github.com/ArneBab/lib-pyFreenet-staging/releases/download/spawn-ext-data/seednodes.fref
 
