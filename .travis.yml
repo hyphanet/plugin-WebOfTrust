@@ -7,7 +7,7 @@ dist: trusty
 sudo: false
 
 env:
-  - FREENET_MINIMUM_JAVA_VERSION=openjdk7
+  - FREENET_MINIMUM_JAVA_VERSION=7
 
 addons:
   apt:
@@ -82,7 +82,7 @@ before_script: |
   else
     echo "No changes at fred, not recompiling."
   fi
-  if [ "$TRAVIS_JDK_VERSION" = "$FREENET_MINIMUM_JAVA_VERSION" ] ; then
+  if [ "$TRAVIS_JDK_VERSION" = "openjdk$FREENET_MINIMUM_JAVA_VERSION" ] ; then
     echo "Starting a Freenet node already to establish connectivity far before deploy stage..."
     "$TRAVIS_BUILD_DIR"/.travis.start-freenet.sh
   fi
@@ -121,4 +121,4 @@ deploy:
   script: ./.travis.upload-jar-to-freenet.sh
   on:
     all_branches: true
-    jdk: $FREENET_MINIMUM_JAVA_VERSION
+    jdk: openjdk$FREENET_MINIMUM_JAVA_VERSION
