@@ -56,9 +56,8 @@ echo "Uploading WoT JAR to $URI..."
 	done
 ) &
 
-# TODO: As of 2018-05-30 fcpupload's "--timeout" doesn't work, using coreutils' timeout, try again later
 # TODO: As of 2018-05-30 fcpupload's "--compress" also doesn't work.
-if ! time timeout 30m fcpupload --wait "$URI" "$TRAVIS_BUILD_DIR/dist/WebOfTrust.jar" ; then
+if ! time fcpupload --wait "$URI" "$TRAVIS_BUILD_DIR/dist/WebOfTrust.jar" ; then
 	echo "Uploading WebOfTrust.jar to Freenet failed!" >&2
 	
 	# The commented out lines are for debugging fcpupload's "--spawn".
