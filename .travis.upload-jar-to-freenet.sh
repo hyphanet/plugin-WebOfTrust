@@ -4,9 +4,6 @@ set -o errexit
 set -o errtrace
 trap 'echo "Error at line $LINENO, exit code $?" >&2' ERR
 
-"$TRAVIS_BUILD_DIR"/.travis.start-freenet.sh
-sleep 60s
-
 FILENAME="WebOfTrust-$(git describe --always)-built-on-$TRAVIS_JDK_VERSION.jar"
 URI="CHK@/$FILENAME"
 FCP_PORT=23874

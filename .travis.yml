@@ -45,7 +45,7 @@ install:
   - git fetch && if [ "$(git rev-parse @)" != "$(git rev-parse @{u})" ] ; then FRED_UPDATED=1 ; git pull ; fi
   - cd "$TRAVIS_BUILD_DIR"
 
-# Compile Freenet Git repository
+# Compile Freenet Git repository, start a node
 before_script: |
   if [ "$FRED_UPDATED" = 1 ] ; then
     cd "$TRAVIS_BUILD_DIR"/../fred &&
@@ -79,6 +79,8 @@ before_script: |
   else
     echo "No changes at fred, not recompiling."
   fi
+  echo "Starting a Freenet node already to establish connectivity far before deploy stage..."
+  "$TRAVIS_BUILD_DIR"/.travis.start-freenet.sh
 
 # Compile and test WoT
 script:
