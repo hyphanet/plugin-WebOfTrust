@@ -69,7 +69,9 @@ if ! time fcpupload --fcpPort=$FCP_PORT --wait --realtime \
 	
 	# The commented out lines are for debugging fcpupload's "--spawn".
 	#
-	# echo "Uploading WebOfTrust.jar to Freenet failed! Dumping wrapper.log, wrapper.conf and listing node dir..." >&2
+	# echo "Uploading WebOfTrust.jar to Freenet failed! Dumping diagnostic data..." >&2
+	# echo "Node stdout/stderr: " >&2
+	# cat "$TRAVIS_BUILD_DIR"/../fred/freenet.WoT-JAR-upload-node.log >&2
 	# echo "wrapper.log:" >&2
 	# cat "$HOME/.local/share/babcom-spawn-9486/wrapper.log" >&2
 	# echo "wrapper.conf:" >&2
