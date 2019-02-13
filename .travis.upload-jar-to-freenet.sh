@@ -22,7 +22,12 @@ echo "Configuring node..."
 # FIXME: Use fred's official URL once there is one
 wget https://github.com/ArneBab/lib-pyFreenet-staging/releases/download/spawn-ext-data/seednodes.fref
 
+# Use a non-standard port to not interfere with WoT unit tests.
+# (They should not be connecting to FCP by network, but let's be paranoid anyway.)
+FCP_PORT=23874
+
 cat << EOF > freenet.ini
+fcp.port=$FCP_PORT
 node.updater.enabled=false
 node.clientCacheType=ram
 node.storeType=ram
@@ -58,7 +63,9 @@ echo "Uploading WoT JAR to $URI..."
 
 # TODO: As of 2018-05-30 fcpupload's "--timeout" doesn't work, using coreutils' timeout, try again later
 # TODO: As of 2018-05-30 fcpupload's "--compress" also doesn't work.
-if ! time timeout 30m fcpupload --wait --realtime "$URI" "$TRAVIS_BUILD_DIR/dist/WebOfTrust.jar" ; then
+if ! time timeout 30m fcpupload --fcpPort=$FCP_PORT --wait --realtime \
+		"$URI" "$TRAVIS_BUILD_DIR/dist/WebOfTrust.jar" ; then
+
 	echo "Uploading WebOfTrust.jar to Freenet failed!" >&2
 	
 	# The commented out lines are for debugging fcpupload's "--spawn".
