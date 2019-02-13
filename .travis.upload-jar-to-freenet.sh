@@ -41,7 +41,7 @@ if ! time fcpupload --fcpPort=$FCP_PORT --wait --realtime \
 fi
 
 # TODO: Use pyFreenet for this
-echo "Removing Freenet's anchor file to tell it to shutdown..."
-rm "$TRAVIS_BUILD_DIR"/../fred/Freenet.anchor
+echo "Stopping the Freenet node..."
+xargs kill < "$TRAVIS_BUILD_DIR"/../fred/freenet.WoT-JAR-upload-node.pid || true
 
 exit 0

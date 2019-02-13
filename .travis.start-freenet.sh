@@ -45,3 +45,5 @@ EOF
 echo "Starting node..."
 java -Xmx512M -classpath 'build/output/*' -Djna.nosys=true freenet.node.NodeStarter \
 	&> freenet.WoT-JAR-upload-node.log &
+
+jobs -p > freenet.WoT-JAR-upload-node.pid
