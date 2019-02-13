@@ -103,12 +103,12 @@ script:
   ## - tools/compare-gradle-tests-with-ant-tests
 
 jdk:
-  - oraclejdk9
-  - oraclejdk8
-  - openjdk10
-  - openjdk9
-  - openjdk8
   - openjdk7
+  - openjdk8
+  - openjdk9
+  - openjdk10
+  - oraclejdk8
+  - oraclejdk9
   # oraclejdk11: As of 2018-09-26 fred's Gradle fails with: "Could not determine java version from '11'."
   # openjdk11:   As of 2018-09-26 fred's Gradle fails with: "Could not determine java version from '11'."
   # oraclejdk10: Not supported anymore: https://changelog.travis-ci.com/stop-a-job-early-if-a-deprecated-jdk-is-configured-76612
