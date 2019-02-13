@@ -121,4 +121,4 @@ deploy:
   script: ./.travis.upload-jar-to-freenet.sh
   on:
     all_branches: true
-    jdk: openjdk$FREENET_MINIMUM_JAVA_VERSION
+    condition: $TRAVIS_JDK_VERSION = "openjdk$FREENET_MINIMUM_JAVA_VERSION"
