@@ -6,6 +6,9 @@ dist: trusty
 # which speeds up the build.
 sudo: false
 
+env:
+  - FREENET_MINIMUM_JAVA_VERSION=7
+
 addons:
   apt:
     packages:
@@ -79,8 +82,10 @@ before_script: |
   else
     echo "No changes at fred, not recompiling."
   fi
-  echo "Starting a Freenet node already to establish connectivity far before deploy stage..."
-  "$TRAVIS_BUILD_DIR"/.travis.start-freenet.sh
+  if [ "$TRAVIS_JDK_VERSION" = "openjdk$FREENET_MINIMUM_JAVA_VERSION" ] ; then
+    echo "Starting a Freenet node already to establish connectivity far before deploy stage..."
+    "$TRAVIS_BUILD_DIR"/.travis.start-freenet.sh
+  fi
 
 # Compile and test WoT
 script:
@@ -116,3 +121,4 @@ deploy:
   script: ./.travis.upload-jar-to-freenet.sh
   on:
     all_branches: true
+    jdk: openjdk$FREENET_MINIMUM_JAVA_VERSION
