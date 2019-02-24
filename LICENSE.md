@@ -1,13 +1,15 @@
-COPYRIGHT
-=========
+### Copyright
 
-WOT copyright is held by Freenet Project Incorporated.  WOT is
+WoT copyright is held by Freenet Project Incorporated.  WoT is
 distributed under the GPL license. You can find it in the file called
 "gpl.txt".
-----------------
 
-WOT
-Copyright (C) 2008-2014 Freenet Project Incorporated
+---
+
+### Legalese
+
+WoT
+Copyright (C) 2008-2019 Freenet Project Incorporated
 
 This program is free software: you can redistribute it and/or modify
 it under the terms of the GNU General Public License as published by
