@@ -1,5 +1,4 @@
-COMPILATION
-===========
+### Compilation
 
 In order to compile WOT, you need to obtain the source code of Freenet ("fred") and WOT:
 https://github.com/freenet/fred-staging
@@ -38,9 +37,7 @@ If you don't want to use Eclipse but instead want to compile manually from the s
   $ cd WebOfTrust
   $ ant
 
-
-RUNNING
-=======
+### Running
 
 Visit the plugins page ("http://127.0.0.1:8888/plugins/ by default) with your Web browser.
 
@@ -48,14 +45,12 @@ In the Load Plugin box, enter: /your-eclipse-workspace-path/WebOfTrust/dist/WebO
 
 After the plugin is loaded, WOT will be accessible at the "Community" menu of your Freenet web interface.
 
-UNDERSTANDING
-=============
+### Understanding
 
 See https://wiki.freenetproject.org/Web_of_Trust
 
 
-DEVELOPMENT
-===========
+### Development
 
 See the files in the "developer-documentation" folder.
 
