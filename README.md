@@ -18,6 +18,14 @@ These constitute a democratic vote among users, the result decides if a particul
 considered as legitimate or as a spammer. The content of spammers is completely ignored then, it
 won't cause any network traffic.
 
+While WoT does have a user interface of its own which can be used to manage identites and trusts,
+it is intended to be used as a general-purpose library to allow actual Freenet applications to
+be built upon it. As of 2019 these are:
+- [Sone](https://github.com/Bombe/Sone) - social networking
+- [FlogHelper](https://github.com/freenet/plugin-FlogHelper) - blogging
+- [Freemail](https://github.com/freenet/plugin-Freemail) - email
+- [Freetalk](https://github.com/freenet/plugin-Freetalk) - forum systems
+
 ### Compilation
 
 In order to compile WOT, you need to obtain the source code of Freenet ("fred") and WOT:
