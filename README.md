@@ -25,6 +25,7 @@ We recommend disabling "Build automatically" in the menu because compiling Fred 
 a long time and therefore it's better to do it manually only when you need it.
 
 If you don't want to use Eclipse but instead want to compile manually from the shell, it can be done like this:
+```bash
   $ git clone https://github.com/freenet/fred-staging.git fred
   $ cd fred
   $ echo 'lib.contrib.get = true' >> override.properties
@@ -36,6 +37,7 @@ If you don't want to use Eclipse but instead want to compile manually from the s
   $ git clone https://github.com/freenet/plugin-WoT-staging.git WebOfTrust
   $ cd WebOfTrust
   $ ant
+```
 
 ### Running
 
