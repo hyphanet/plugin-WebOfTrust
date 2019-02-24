@@ -26,14 +26,26 @@ be built upon it. As of 2019 these are:
 - [Freemail](https://github.com/freenet/plugin-Freemail) - email
 - [Freetalk](https://github.com/freenet/plugin-Freetalk) - forum systems
 
-### Compilation
+### Compiling
 
-In order to compile WOT, you need to obtain the source code of Freenet ("fred") and WOT:
-https://github.com/freenet/fred-staging
-https://github.com/freenet/plugin-WoT-staging
+#### Dependencies
 
-The "staging" repositories are the latest development versions. Replace staging with "official" to get only
-the latest official release versions.
+Clone the [fred](https://github.com/freenet/fred) and plugin-WebOfTrust repositories into the same
+parent directory.  
+Compile fred using its instructions.
+
+#### Compiling by command line
+
+```bash
+ant clean
+ant
+# If you get errors about missing classes check build.xml for whether the JAR locations are correct.
+```
+
+The output `WebOfTrust.jar` will be in the `dist` directory.  
+You can load it on the `Plugins` page of the Freenet web interface.  
+
+#### Compiling with Eclipse
 
 We recommend using Eclipse: The repositories ship with an Eclipse project configuration.
 To use Eclipse:
