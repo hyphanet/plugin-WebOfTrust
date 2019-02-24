@@ -1,3 +1,23 @@
+## Web of Trust - a collaborative spam filter for Freenet
+
+The [Freenet](https://freenetproject.org) plugin Web of Trust (WoT) tries to solve the problem of
+spam being an important threat to address in an anonymous, censorship-resistant network:  
+Where an attacker cannot take down content they will attempt to get rid of it by drowning it in
+spam.
+
+Conventional spam filters cannot work in such an environment:
+- An attacker is anonymous like everyone else so they cannot be blocked by e.g. an IP address.
+- Because Freenet is a peer-to-peer network its available bandwidth is scarce and thus spam must
+  not even be downloaded before filtering it out to avoid
+  [denial of service](https://en.wikipedia.org/wiki/Denial-of-service_attack) - filtering spam by
+  e.g. lists of bad words won't work.
+
+WoT deals with these issues by allowing each user to create so-called _identities_ which can assign
+_trust values_ to the identities of other users.  
+These constitute a democratic vote among users, the result decides if a particular identity is
+considered as legitimate or as a spammer. The content of spammers is completely ignored then, it
+won't cause any network traffic.
+
 ### Compilation
 
 In order to compile WOT, you need to obtain the source code of Freenet ("fred") and WOT:
