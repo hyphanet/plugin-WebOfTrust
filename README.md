@@ -72,9 +72,8 @@ Read [the debugging instructions](developer-documentation/Debugging.txt) for fur
 
 ### Development
 
-See the files in the "developer-documentation" folder.
-
-Also, see the following pages in the Freenet wiki:
-https://wiki.freenetproject.org/Web_of_Trust
-https://wiki.freenetproject.org/Web_Of_Trust_development
-https://wiki.freenetproject.org/Plugin_development_tutorial
+See:
+- the files in the [developer-documentation](developer-documentation) directory.
+- https://wiki.freenetproject.org/Web_of_Trust
+- https://wiki.freenetproject.org/Web_Of_Trust_development
+- https://wiki.freenetproject.org/Plugin_development_tutorial
