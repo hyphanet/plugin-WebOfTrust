@@ -70,11 +70,6 @@ Use the `Load Plugin` box to load `PARENT_DIRECTORY/WebOfTrust/dist/WebOfTrust.j
 After the plugin is loaded, WoT will be accessible at the `Community` menu.  
 Read [the debugging instructions](developer-documentation/Debugging.txt) for further details.
 
-### Understanding
-
-See https://wiki.freenetproject.org/Web_of_Trust
-
-
 ### Development
 
 See the files in the "developer-documentation" folder.
