@@ -1,29 +1,24 @@
-COPYRIGHT
-=========
+## Web of Trust - a collaborative spam filter for Freenet
 
-WOT copyright is held by Freenet Project Incorporated.  WOT is
-distributed under the GPL license. You can find it in the file called
-"gpl.txt".
-----------------
+The [Freenet](https://freenetproject.org) plugin Web of Trust (WoT) tries to solve the problem of
+spam being an important threat to address in an anonymous, censorship-resistant network:  
+Where an attacker cannot take down content they will attempt to get rid of it by drowning it in
+spam.
 
-WOT
-Copyright (C) 2008-2014 Freenet Project Incorporated
+Conventional spam filters cannot work in such an environment:
+- An attacker is anonymous like everyone else so they cannot be blocked by e.g. an IP address.
+- Because Freenet is a peer-to-peer network its available bandwidth is scarce and thus spam must
+  not even be downloaded before filtering it out to avoid
+  [denial of service](https://en.wikipedia.org/wiki/Denial-of-service_attack) - filtering spam by
+  e.g. lists of bad words won't work.
 
-This program is free software: you can redistribute it and/or modify
-it under the terms of the GNU General Public License as published by
-the Free Software Foundation, either version 2 of the License, or
-(at your option) any later version.
+WoT deals with these issues by allowing each user to create so-called _identities_ which can assign
+_trust values_ to the identities of other users.  
+These constitute a democratic vote among users, the result decides if a particular identity is
+considered as legitimate or as a spammer. The content of spammers is completely ignored then, it
+won't cause any network traffic.
 
-This program is distributed in the hope that it will be useful,
-but WITHOUT ANY WARRANTY; without even the implied warranty of
-MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-GNU General Public License for more details.
-
-You should have received a copy of the GNU General Public License
-along with this program.  If not, see <http://www.gnu.org/licenses/>.
-
-COMPILATION
-===========
+### Compilation
 
 In order to compile WOT, you need to obtain the source code of Freenet ("fred") and WOT:
 https://github.com/freenet/fred-staging
@@ -35,21 +30,22 @@ the latest official release versions.
 We recommend using Eclipse: The repositories ship with an Eclipse project configuration.
 To use Eclipse:
 - Add the EGit plugin to Eclipse so you don't have to use command-line Git. Newer Eclipse versions 
-(4.2 aka Kepler at least) ship with it by default.
--  When having EGit installed, use "File" / "Import" in Eclipse to import the Git projects.
+  (4.2 aka Kepler at least) ship with it by default.
+- When having EGit installed, use "File" / "Import" in Eclipse to import the Git projects.
 - Rename the "fred-staging" project in Eclipse to "fred" and the "plugin-WoT-staging"
-project to "WebOfTrust". Renaming can be done by right-clicking a project, selecting "Refactor", then "Rename".
+  project to "WebOfTrust". Renaming can be done by right-clicking a project, selecting "Refactor", then "Rename".
 - Create a file called "override.properties" in the fred project. Write 'lib.contrib.get = true' into it.
-This will make the builder download the latest official freenet-ext.jar so you don't have to compile it yourself.
+  This will make the builder download the latest official freenet-ext.jar so you don't have to compile it yourself.
 - Download the Bouncycastle crypto library from www.bouncycastle.org and store it as "fred/lib/bcprov.jar"
-If you have a working Freenet installation, you can also just copy it from your Freenet directory.
-It might be called something similar to "bcprov-jdk15on-149.jar".
+  If you have a working Freenet installation, you can also just copy it from your Freenet directory.
+  It might be called something similar to "bcprov-jdk15on-149.jar".
 
 Now building should work using Eclipse's "Project" menu. 
 We recommend disabling "Build automatically" in the menu because compiling Fred and WOT can take 
 a long time and therefore it's better to do it manually only when you need it.
 
 If you don't want to use Eclipse but instead want to compile manually from the shell, it can be done like this:
+```bash
   $ git clone https://github.com/freenet/fred-staging.git fred
   $ cd fred
   $ echo 'lib.contrib.get = true' >> override.properties
@@ -61,10 +57,9 @@ If you don't want to use Eclipse but instead want to compile manually from the s
   $ git clone https://github.com/freenet/plugin-WoT-staging.git WebOfTrust
   $ cd WebOfTrust
   $ ant
+```
 
-
-RUNNING
-=======
+### Running
 
 Visit the plugins page ("http://127.0.0.1:8888/plugins/ by default) with your Web browser.
 
@@ -72,14 +67,12 @@ In the Load Plugin box, enter: /your-eclipse-workspace-path/WebOfTrust/dist/WebO
 
 After the plugin is loaded, WOT will be accessible at the "Community" menu of your Freenet web interface.
 
-UNDERSTANDING
-=============
+### Understanding
 
 See https://wiki.freenetproject.org/Web_of_Trust
 
 
-DEVELOPMENT
-===========
+### Development
 
 See the files in the "developer-documentation" folder.
 
