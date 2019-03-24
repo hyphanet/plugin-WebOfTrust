@@ -18,65 +18,62 @@ These constitute a democratic vote among users, the result decides if a particul
 considered as legitimate or as a spammer. The content of spammers is completely ignored then, it
 won't cause any network traffic.
 
-### Compilation
+While WoT does have a user interface of its own which can be used to manage identites and trusts,
+it is intended to be used as a general-purpose library to allow actual Freenet applications to
+be built upon it. As of 2019 these are:
+- [Sone](https://github.com/Bombe/Sone) - social networking
+- [FlogHelper](https://github.com/freenet/plugin-FlogHelper) - blogging
+- [Freemail](https://github.com/freenet/plugin-Freemail) - email
+- [Freetalk](https://github.com/freenet/plugin-Freetalk) - forum systems
 
-In order to compile WOT, you need to obtain the source code of Freenet ("fred") and WOT:
-https://github.com/freenet/fred-staging
-https://github.com/freenet/plugin-WoT-staging
+### Compiling
 
-The "staging" repositories are the latest development versions. Replace staging with "official" to get only
-the latest official release versions.
+#### Dependencies
 
-We recommend using Eclipse: The repositories ship with an Eclipse project configuration.
-To use Eclipse:
-- Add the EGit plugin to Eclipse so you don't have to use command-line Git. Newer Eclipse versions 
-  (4.2 aka Kepler at least) ship with it by default.
-- When having EGit installed, use "File" / "Import" in Eclipse to import the Git projects.
-- Rename the "fred-staging" project in Eclipse to "fred" and the "plugin-WoT-staging"
-  project to "WebOfTrust". Renaming can be done by right-clicking a project, selecting "Refactor", then "Rename".
-- Create a file called "override.properties" in the fred project. Write 'lib.contrib.get = true' into it.
-  This will make the builder download the latest official freenet-ext.jar so you don't have to compile it yourself.
-- Download the Bouncycastle crypto library from www.bouncycastle.org and store it as "fred/lib/bcprov.jar"
-  If you have a working Freenet installation, you can also just copy it from your Freenet directory.
-  It might be called something similar to "bcprov-jdk15on-149.jar".
+Clone the [fred](https://github.com/freenet/fred) and plugin-WebOfTrust repositories into the same
+parent directory.  
+Compile fred using its instructions.
 
-Now building should work using Eclipse's "Project" menu. 
-We recommend disabling "Build automatically" in the menu because compiling Fred and WOT can take 
-a long time and therefore it's better to do it manually only when you need it.
+#### Compiling by command line
 
-If you don't want to use Eclipse but instead want to compile manually from the shell, it can be done like this:
 ```bash
-  $ git clone https://github.com/freenet/fred-staging.git fred
-  $ cd fred
-  $ echo 'lib.contrib.get = true' >> override.properties
-  # Download the Bouncycastle crypto library from www.bouncycastle.org and put it in lib/bcprov.jar
-  # If you have a working Freenet installation, you can also just copy it from your Freenet directory.
-  # It might be called something similar to "bcprov-jdk15on-149.jar".
-  $ ant
-  $ cd ..
-  $ git clone https://github.com/freenet/plugin-WoT-staging.git WebOfTrust
-  $ cd WebOfTrust
-  $ ant
+ant clean
+ant
+# If you get errors about missing classes check build.xml for whether the JAR locations are correct.
 ```
 
-### Running
+The output `WebOfTrust.jar` will be in the `dist` directory.  
+You can load it on the `Plugins` page of the Freenet web interface.  
 
-Visit the plugins page ("http://127.0.0.1:8888/plugins/ by default) with your Web browser.
+#### Compiling with Eclipse
 
-In the Load Plugin box, enter: /your-eclipse-workspace-path/WebOfTrust/dist/WebOfTrust.jar and click the Load button.
+* Import the project configurations which fred and WoT ship in Eclipse.  
+  **NOTICE:** As of 2018-07 fred currently does not ship one, you can use an old release for now.
+  The newest which still includes the project can be obtained with:  
+  	`git checkout build01480`  
+  Be aware that its build instructions will be different compared to newer releases, so check the
+  `README.md` after the above command.
+* Since build01480 does not automatically download its dependencies, get them from an existing
+  Freenet installation:
+  * Put `freenet-ext.jar` in `fred/lib/freenet`
+  * Put `bcprov.jar` (from e.g. `bcprov-jdk15on-149.jar`, name may vary) in `fred/lib`.
+* If necessary fix the build paths for your Eclipse projects so they refer to the correct JAR paths.
+* Disable automatic building in Eclipse's `Project` menu as the Ant builders take quite a bit of time to execute.
 
-After the plugin is loaded, WOT will be accessible at the "Community" menu of your Freenet web interface.
+Now building should work using the `Project` menu or toolbar buttons.
 
-### Understanding
+### Debugging
 
-See https://wiki.freenetproject.org/Web_of_Trust
-
+Run fred's class `freenet.node.NodeStarter` using the Eclipse debugger.  
+Browse to Freenet's [Plugins page](http://127.0.0.1:8888/plugins/).  
+Use the `Load Plugin` box to load `PARENT_DIRECTORY/WebOfTrust/dist/WebOfTrust.jar`.  
+After the plugin is loaded, WoT will be accessible at the `Community` menu.  
+Read [the debugging instructions](developer-documentation/Debugging.txt) for further details.
 
 ### Development
 
-See the files in the "developer-documentation" folder.
-
-Also, see the following pages in the Freenet wiki:
-https://wiki.freenetproject.org/Web_of_Trust
-https://wiki.freenetproject.org/Web_Of_Trust_development
-https://wiki.freenetproject.org/Plugin_development_tutorial
+See:
+- the files in the [developer-documentation](developer-documentation) directory.
+- https://github.com/freenet/wiki/wiki/Web-of-Trust
+- https://github.com/freenet/wiki/wiki/Web-Of-Trust-Development
+- https://github.com/freenet/wiki/wiki/Plugin-Development-Tutorial
