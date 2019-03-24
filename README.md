@@ -71,7 +71,7 @@ Now building should work using the `Project` menu or toolbar buttons.
 
 Run fred's class `freenet.node.NodeStarter` using the Eclipse debugger.  
 Browse to Freenet's [Plugins page](http://127.0.0.1:8888/plugins/).  
-Use the `Load Plugin` box to load `PARENT_DIRECTORY/WebOfTrust/dist/WebOfTrust.jar`.  
+Use the `Load Plugin` box to load `PARENT_DIRECTORY/plugin-WebOfTrust/dist/WebOfTrust.jar`.  
 After the plugin is loaded, WoT will be accessible at the `Community` menu.  
 Read [the debugging instructions](developer-documentation/Debugging.txt) for further details.
 
