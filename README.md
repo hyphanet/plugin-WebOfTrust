@@ -8,7 +8,7 @@ spam.
 Conventional spam filters cannot work in such an environment:
 - An attacker is anonymous like everyone else so they cannot be blocked by e.g. an IP address.
 - Because Freenet is a peer-to-peer network its available bandwidth is scarce and thus spam must
-  not even be downloaded before filtering it out to avoid
+  not even be downloaded before filtering it out in order to avoid
   [denial of service](https://en.wikipedia.org/wiki/Denial-of-service_attack) - filtering spam by
   e.g. lists of bad words won't work.
 
