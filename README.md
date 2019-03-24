@@ -1,7 +1,7 @@
-[![Build status of branch master on freenet's repository](https://travis-ci.org/freenet/plugin-WebOfTrust.svg?branch=master)](https://travis-ci.org/freenet/plugin-WebOfTrust/builds)
-[![Build status of branch master on xor-freenet's repository](https://travis-ci.org/xor-freenet/plugin-WebOfTrust.svg?branch=master)](https://travis-ci.org/xor-freenet/plugin-WebOfTrust/builds)
-[![Build status of branch next on freenet's repository](https://travis-ci.org/freenet/plugin-WebOfTrust.svg?branch=next)](https://travis-ci.org/freenet/plugin-WebOfTrust/builds)
-[![Build status of branch next on xor-freenet's repository](https://travis-ci.org/xor-freenet/plugin-WebOfTrust.svg?branch=next)](https://travis-ci.org/xor-freenet/plugin-WebOfTrust/builds)
+[![Build status of branch master on freenet's repository](https://travis-ci.org/freenet/plugin-WebOfTrust.svg?branch=master "Build status of branch master on freenet's repository")](https://travis-ci.org/freenet/plugin-WebOfTrust/builds)
+[![Build status of branch master on xor-freenet's repository](https://travis-ci.org/xor-freenet/plugin-WebOfTrust.svg?branch=master "Build status of branch master on xor-freenet's repository")](https://travis-ci.org/xor-freenet/plugin-WebOfTrust/builds)
+[![Build status of branch next on freenet's repository](https://travis-ci.org/freenet/plugin-WebOfTrust.svg?branch=next "Build status of branch next on freenet's repository")](https://travis-ci.org/freenet/plugin-WebOfTrust/builds)
+[![Build status of branch next on xor-freenet's repository](https://travis-ci.org/xor-freenet/plugin-WebOfTrust.svg?branch=next "Build status of branch next on xor-freenet's repository")](https://travis-ci.org/xor-freenet/plugin-WebOfTrust/builds)
 
 ## Web of Trust - a collaborative spam filter for Freenet
 
