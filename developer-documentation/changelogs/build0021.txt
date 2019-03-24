@@ -428,6 +428,14 @@ CHANGELOG about stuff only interesting for developers
   - if it in fact was and someone knows how to use it please let me
   know.
 
+- 0006972: [Code quality] Revamp README file (xor)
+
+  The README in the Git repository was converted to GitHub markdown to
+  display with proper formatting on GitHub.
+  All information in it was reviewed and fixed to match how things work
+  currently.
+  A concise yet complete description of the purpose of WoT was added.
+
 THANKS TO
 
   - ArneBab
