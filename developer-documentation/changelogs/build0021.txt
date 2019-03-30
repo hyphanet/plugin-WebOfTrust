@@ -428,7 +428,7 @@ CHANGELOG about stuff only interesting for developers
   - if it in fact was and someone knows how to use it please let me
   know.
 
-- 0006972: [Code quality] Revamp README file (xor)
+- 0006972: [Code quality] Rewrite README.md file for developers (xor)
 
   The README in the Git repository was converted to GitHub markdown to
   display with proper formatting on GitHub.
