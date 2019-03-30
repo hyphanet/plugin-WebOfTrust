@@ -50,6 +50,18 @@ ant
 The output `WebOfTrust.jar` will be in the `dist` directory.  
 You can load it on the `Plugins` page of the Freenet web interface.  
 
+##### Additional compilation options
+
+```bash
+# Compile and produce test coverage and code complexity statistics as HTML to test-coverage/
+sudo apt install cobertura
+ant -Dtest.coverage=true
+# Skip unit tests.
+ant -Dtest.skip=true
+# Run a single unit test.
+ant -Dtest.class=plugins.WebOfTrust.CLASSNAME
+```
+
 #### Compiling with Eclipse
 
 * Import the project configurations which fred and WoT ship in Eclipse.  
