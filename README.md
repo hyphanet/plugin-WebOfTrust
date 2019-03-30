@@ -91,6 +91,22 @@ Use the `Load Plugin` box to load `PARENT_DIRECTORY/plugin-WebOfTrust/dist/WebOf
 After the plugin is loaded, WoT will be accessible at the `Community` menu.  
 Read [the debugging instructions](developer-documentation/Debugging.txt) for further details.
 
+#### Database analysis
+
+Do **not** use the following tool upon your database while Freenet is running!  
+**Backup your database** before using it!
+
+```bash
+# Validate semantic integrity of the database and recompute all score values (= "computed trust" in the UI).
+# This currently is mostly of diagnostic character for development purposes, it is unlikely to fix your
+# database if WoT does not start, sorry.
+tools/wotutil -testAndRepair DATABASE_FILE
+# Execute a "Freenet Client Protocol" call upon the database.
+# FCP is the protocol which applications built upon WoT use to access its API.
+# For available functions see src/plugins/WebOfTrust/ui/fcp/FCPInterface.java
+tools/wotutil -fcp DATABASE_FILE Message=WOT_FCP_CALL key1=value1 key2=value2 ...
+```
+
 ### Development
 
 See:
