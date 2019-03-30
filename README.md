@@ -60,6 +60,10 @@ ant -Dtest.coverage=true
 ant -Dtest.skip=true
 # Run a single unit test.
 ant -Dtest.class=plugins.WebOfTrust.CLASSNAME
+# Benchmark all unit tests and produce sorted output to figure out the slowest ones
+tools/benchmark-unit-tests
+# Benchmark a single unit test and produce average runtime to improve it
+tools/benchmark-unit-test TEST_CLASS TEST_FUNCTION NUMBER_OF_ITERATIONS
 ```
 
 #### Compiling with Eclipse
