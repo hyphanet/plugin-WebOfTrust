@@ -434,6 +434,10 @@ CHANGELOG about stuff only interesting for developers
   display with proper formatting on GitHub.
   All information in it was reviewed and fixed to match how things work
   currently.
+
+  The compilation, testing and debugging instructions have been amended
+  to e.g. explain special features such as benchmark scripts, test
+  scripts and test coverage analysis.
   A concise yet complete description of the purpose of WoT was added.
 
 THANKS TO
