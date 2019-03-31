@@ -51,9 +51,8 @@ ant
 # With the new Gradle builder - it is fully tested against Ant (see tools/) but lacks some features.
 # Its advantages are:
 # - parallel unit test execution on all available CPU cores.
-# - incremental builds are supported (if you don't run "gradle clean" before).
-gradle clean
-gradle
+# - incremental builds are supported (leave out "clean jar").
+gradle clean jar
 # Wrong JAR locations can be fixed in the file build.gradle
 ```
 
