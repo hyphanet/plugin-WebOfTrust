@@ -44,8 +44,16 @@ Compile fred using its instructions.
 #### Compiling by command line
 
 ```bash
+# With the Ant build script reference implementation:
 ant
 # If you get errors about missing classes check build.xml for whether the JAR locations are correct.
+
+# With the new Gradle builder - it is fully tested against Ant (see tools/) but lacks some features.
+# Its advantages are:
+# - parallel unit test execution on all available CPU cores.
+# - incremental builds are supported (if you don't run "gradle clean" before).
+gradle clean
+gradle
 ```
 
 The output `WebOfTrust.jar` will be in the `dist` directory.  
@@ -58,7 +66,8 @@ You can load it on the `Plugins` page of the Freenet web interface.
 sudo apt install cobertura
 ant -Dtest.coverage=true
 # Skip unit tests.
-ant -Dtest.skip=true
+ant -Dtest.skip=true # With Ant
+gradle -x test       # With Gradle
 # Run a single unit test.
 ant -Dtest.class=plugins.WebOfTrust.CLASSNAME
 # Benchmark all unit tests and produce sorted output to figure out the slowest ones
