@@ -44,7 +44,6 @@ Compile fred using its instructions.
 #### Compiling by command line
 
 ```bash
-ant clean
 ant
 # If you get errors about missing classes check build.xml for whether the JAR locations are correct.
 ```
