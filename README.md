@@ -62,9 +62,10 @@ You can load it on the `Plugins` page of the Freenet web interface.
 ##### Additional compilation options
 
 ```bash
-# Compile and produce test coverage and code complexity statistics as HTML to test-coverage/
+# Compile and produce test coverage and code complexity statistics as HTML.
 sudo apt install cobertura
 ant -Dtest.coverage=true
+firefox test-coverage/html/index.html
 # Skip unit tests.
 ant -Dtest.skip=true # With Ant
 gradle -x test       # With Gradle
