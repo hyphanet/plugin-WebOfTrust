@@ -31,6 +31,8 @@ be built upon it. As of 2019 these are:
 - [Freemail](https://github.com/freenet/plugin-Freemail) - email
 - [Freetalk](https://github.com/freenet/plugin-Freetalk) - forum systems
 
+For an in-depth explanation of how WoT works see the [whitepaper / core developer's manual](developer-documentation/core-developers-manual/OadSFfF-version1.2-non-print-edition.pdf).
+
 ### Compiling
 
 #### Dependencies
@@ -110,6 +112,7 @@ tools/wotutil -fcp DATABASE_FILE Message=WOT_FCP_CALL key1=value1 key2=value2 ..
 ### Development
 
 See:
+- the [whitepaper / core developer's manual](developer-documentation/core-developers-manual/OadSFfF-version1.2-non-print-edition.pdf).
 - the files in the [developer-documentation](developer-documentation) directory.
 - https://github.com/freenet/wiki/wiki/Web-of-Trust
 - https://github.com/freenet/wiki/wiki/Web-Of-Trust-Development
