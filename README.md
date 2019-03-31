@@ -54,6 +54,7 @@ ant
 # - incremental builds are supported (if you don't run "gradle clean" before).
 gradle clean
 gradle
+# Wrong JAR locations can be fixed in the file build.gradle
 ```
 
 The output `WebOfTrust.jar` will be in the `dist` directory.  
