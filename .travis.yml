@@ -1,7 +1,6 @@
 language: java
 
-# We need Ubuntu 14.04 due to very new JUnit API which WoT needs
-dist: trusty
+dist: xenial
 # Disabling sudo routes the build to a Docker container instead of a VM
 # which speeds up the build.
 sudo: false
