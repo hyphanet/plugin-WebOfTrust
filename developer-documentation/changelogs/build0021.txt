@@ -243,7 +243,8 @@ CHANGELOG about stuff only interesting for developers
     compiling.
   - benchmark-unit-tests-from-travis: to process a log file from
     Travis CI to produce the same output as the above local benchmark
-    script.
+    script. To use this change .travis.yml to use the Ant builder
+    instead of Gradle as Gradle does not measure test runtime.
 
   They produce sorted output like this:
     1.234 sec package.ClassName1.testFunction1()

@@ -45,6 +45,7 @@ install:
       git clone https://github.com/freenet/fred.git --branch next --single-branch --depth 1 fred
     fi
   - cd fred
+  - git reset --hard # Undo our manual changes to ./gradlew to prevent merge conflicts
   - git fetch && if [ "$(git rev-parse @)" != "$(git rev-parse @{u})" ] ; then FRED_UPDATED=1 ; git pull ; fi
   - cd "$TRAVIS_BUILD_DIR"
 
