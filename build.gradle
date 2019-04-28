@@ -79,7 +79,7 @@ test {
 		exclude '**/TickerDelayedBackgroundJobTest.class'
 	}
 	
-	// failFast = true // TODO: Performance: As of 2018-10-03 doesn't work on Travis CI yet
+	failFast = true
 	maxHeapSize = "512m"
 	maxParallelForks = Runtime.runtime.availableProcessors()
 	forkEvery = 1 // One VM per test, for safety and probably needed for maxParallelForks to work
