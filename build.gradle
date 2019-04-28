@@ -1,6 +1,3 @@
-// TODO: Code quality: Use Gradle's dependency management + gradle-witness instead of flat files
-// Postponing this until I know how to import fred's dependency list to avoid duplicating it.
-
 apply plugin: 'java'
 defaultTasks 'jar', 'test'
 sourceSets.main.java.srcDirs = ['src/']
@@ -11,6 +8,9 @@ javadoc.enabled = false
 configurations { junit } // Needed when we manually specify the tests' classpath
 dependencies {
 	// Run fred's Gradle with "./gradlew jar copyRuntimeLibs" to produce this directory
+	// TODO: mvn.freenetproject.org is not browseable so I don't know the proper URI for fred and
+	// its dependencies and hence am including the dependencies as flat files.
+	// Use Gradle's dependency management + gradle-witness once this has been resolved.
 	compile fileTree(dir: '../fred/build/output/', include: '*.jar')
 	compile files('db4o-7.4/db4o.jar')
 	junit files('/usr/share/java/junit4.jar', '/usr/share/java/hamcrest-core.jar')
