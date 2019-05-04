@@ -110,12 +110,12 @@ jdk:
   - openjdk10
   - openjdk11
   - openjdk12
+  # oraclejdk7: Not supported anymore: https://github.com/travis-ci/travis-ci/issues/7884#issuecomment-308451879
   - oraclejdk8
   - oraclejdk9
+  # oraclejdk10: Not supported anymore: https://changelog.travis-ci.com/stop-a-job-early-if-a-deprecated-jdk-is-configured-76612
   - oraclejdk11
   # oraclejdk12: Not available on Travis CI as of 2019-05-04, was released 2019-03.
-  # oraclejdk10: Not supported anymore: https://changelog.travis-ci.com/stop-a-job-early-if-a-deprecated-jdk-is-configured-76612
-  # oraclejdk7: Not supported anymore: https://github.com/travis-ci/travis-ci/issues/7884#issuecomment-308451879
 
 deploy:
   provider: script
