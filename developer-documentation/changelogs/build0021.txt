@@ -412,6 +412,8 @@ CHANGELOG about stuff only interesting for developers
 
 - 0007033: [Code quality] Speed up Travis CI builds: Don't recompile
            fred if "git pull" changed nothing (xor)
+  0007068: [Code quality] Travis CI: Print the Version.java info of the
+           fred we compiled (xor)
 
   The Travis CI build script of WoT usually obtains the most recent
   development version of the Freenet core from GitHub and compiles it
@@ -429,6 +431,10 @@ CHANGELOG about stuff only interesting for developers
   the HTML of mvn.freenetproject.org sounds like it wasn't
   - if it in fact was and someone knows how to use it please let me
   know.
+
+  To ensure bugs in the decision whether to recompile can be spotted the
+  Travis script was also amended to print the version of the freenet.jar
+  the build is using (issue 7068).
 
 - 0006972: [Code quality] Rewrite README.md file for developers (xor)
 
