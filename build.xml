@@ -149,7 +149,6 @@
 			useNativeBasedir="true"/>
 	</target>
 
-
 	<target name="print-libs">
 		<echo>External dependencies on classpath follow, but ONLY those which did exist.</echo>
 		<echo>(This cannot tell which JARs are missing because that would require ant-contrib</echo>
