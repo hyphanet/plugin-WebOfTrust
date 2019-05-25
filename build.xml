@@ -315,7 +315,7 @@
 			<assertions><enable/></assertions>
 			<formatter type="plain" usefile="false"/>
 			<test if="test.class" name="${test.class}"/>
-			<batchtest unless="test.class" fork="yes">
+			<batchtest unless="test.class">
 				<zipfileset src="${build-test-jar}">
 					<include name="**/*Test*.class"/>
 					<!-- Exclude member classes:
@@ -361,7 +361,7 @@
 			<assertions><disable/></assertions>
 			<formatter type="plain" usefile="false"/>
 			<test if="test.class" name="${test.class}"/>
-			<batchtest unless="test.class" fork="yes">
+			<batchtest unless="test.class">
 				<zipfileset src="${build-test-jar}">
 					<include name="**/*Benchmark*.class"/>
 					<!-- Exclude member classes:
