@@ -3,8 +3,7 @@ defaultTasks 'jar', 'test'
 sourceSets.main.java.srcDirs = ['src/']
 sourceSets.test.java.srcDirs = ['test/']
 sourceCompatibility = targetCompatibility = 7
-compileJava.options.encoding = "UTF-8"
-compileTestJava.options.encoding = "UTF-8"
+tasks.withType(JavaCompile) { options.encoding = "UTF-8" }
 javadoc.enabled = false
 
 configurations { junit } // Needed when we manually specify the tests' classpath
@@ -43,7 +42,6 @@ task compileVersionFile(type: JavaCompile, dependsOn: ['compileJava', 'prepareVe
 	classpath = sourceSets.main.compileClasspath
 	source = prepareVersionFile.destinationDir
 	destinationDir = file("${buildDir}/custom/versionFileClass/")
-	options.encoding = compileJava.options.encoding
 }
 
 ["jar", "testJar"].each { jarType ->
