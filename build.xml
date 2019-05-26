@@ -284,6 +284,7 @@
 		<fail unless="${unit.dependencies}" message="One of the unit test dependencies not found:&#10;
 			${junit.location}&#10;
 			${hamcrest.location}&#10;
+			You can adjust these paths in file 'override.properties', see 'build.xml'.&#10;
 			Use parameter -Dtest.skip=true to compile without running the self-tests.&#10;
 			WARNING: Web of Trust uses lots of comprehensive tests, changing the code without&#10;
 			running them is a very bad idea!"/>
