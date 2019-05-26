@@ -167,7 +167,7 @@
 	<target name="mkdir">
 		<mkdir dir="${build}"/>
 		<mkdir dir="${build-test}"/>
-		<mkdir dir="${build-test}/test"/>
+		<mkdir dir="${build-test}/classes"/>
 		<mkdir dir="${build-test-coverage}"/>
 		<mkdir dir="${dist}"/>
 	</target>
@@ -219,7 +219,7 @@
 	</condition>
 
 	<target name="junit-compile" depends="compile" if="unit.dependencies">
-		<javac srcdir="test/" destdir="${build-test}/test" debug="on" optimize="on"
+		<javac srcdir="test/" destdir="${build-test}/classes" debug="on" optimize="on"
 				source="${source-version}" target="${target-version}">
 			
 			<classpath>
@@ -234,7 +234,7 @@
 		</javac>
 		
 		<!-- Copy main non-test classes to tests so we can produce a full working WoT JAR -->
-		<copy todir="${build-test}/test" overwrite="false">
+		<copy todir="${build-test}/classes" overwrite="false">
 			<fileset dir="${build}/"/>
 		</copy>
 	</target>
@@ -247,7 +247,7 @@
 		<taskdef classpathref="cobertura.path" resource="tasks.properties"/>
 		
 		<cobertura-instrument datafile="${build-test-coverage}/cobertura.ser">
-			<fileset dir="${build-test}/test">
+			<fileset dir="${build-test}/classes">
 				<include name="**/*.class" />
 				<!-- kaptcha is a third-party library -->
 				<exclude name="plugins/WebOfTrust/introduction/captcha/kaptcha/**/*"/>
@@ -266,7 +266,7 @@
 				<include name="*.txt"/> <!-- Include the GPL -->
 			</fileset>
 			
-			<fileset dir="${build-test}/test/"/> <!-- Separate directory to exclude the JAR -->
+			<fileset dir="${build-test}/classes/"/> <!-- Separate directory to exclude the JAR -->
 			<zipfileset>
 				<path refid="submodules.path"/>
 			</zipfileset>
