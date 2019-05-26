@@ -220,7 +220,7 @@
 
 	<target name="junit-compile" depends="compile" if="unit.dependencies">
 		<javac srcdir="test/" destdir="${build-test}/test" debug="on" optimize="on"
-				source="${source-version}" target="${target-version}" >
+				source="${source-version}" target="${target-version}">
 			
 			<classpath>
 				<path refid="submodules.path"/>
