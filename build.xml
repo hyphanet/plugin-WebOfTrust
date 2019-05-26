@@ -247,6 +247,11 @@
 		<taskdef classpathref="cobertura.path" resource="tasks.properties"/>
 		
 		<cobertura-instrument datafile="${build-test-coverage}/cobertura.ser">
+			<auxClasspath>
+				<path refid="submodules.path"/>
+				<path refid="lib.path"/>
+			</auxClasspath>
+			
 			<fileset dir="${build-test}/classes">
 				<include name="**/*.class" />
 				<!-- kaptcha is a third-party library -->
