@@ -99,7 +99,15 @@ script:
   # Use the same Gradle as fred to re-use the fixes we applied to it above and because Travis'
   # Gradle version is too old for Java >= 9.
   - ln -sf "$TRAVIS_BUILD_DIR/../fred/gradlew"
-  - ./gradlew clean test jar
+  # ... but still use Ant on one Java version to ensure it keeps working.
+  # And don't use it on the minimum Java version as there we will run the deployment - which takes
+  # long enough already, and Ant is slower than Gradle, so we would risk exhausting the time limit.
+  - |
+    if [ "$TRAVIS_JDK_VERSION" = "openjdk$((FREENET_MINIMUM_JAVA_VERSION + 1))" ] ; then
+        ant clean && ant
+    else
+        ./gradlew clean test jar
+    fi
   # To test the Ant and Gradle builders against each other uncomment the following.
   ## - tools/compare-gradle-jars-with-ant-jars
   ## - tools/compare-gradle-tests-with-ant-tests
