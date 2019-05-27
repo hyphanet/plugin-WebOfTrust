@@ -58,14 +58,6 @@ before_script: |
       rm ./gradlew &&
       ln -s "$(which gradle)" ./gradlew
     fi &&
-    if [[ "$TRAVIS_JDK_VERSION" = "openjdk9" || "$TRAVIS_JDK_VERSION" = "openjdk10" ]] ; then
-      # Workaround for Gradle failing on openjdk9 and above with:
-      #   sun.security.validator.ValidatorException: PKIX path building failed: [...]
-      # TODO: Code quality: Added 2018-09-26, remove after some time and see if it works without this.
-      USE_SYSTEM_CERTS=1 &&
-      mv "${JAVA_HOME}/lib/security/cacerts" "${JAVA_HOME}/lib/security/cacerts.jdk" &&
-      ln -s '/etc/ssl/certs/java/cacerts' "${JAVA_HOME}/lib/security/cacerts"
-    fi &&
     # TODO: freenet.jar won't contain class Version if we don't run the
     # clean task in a separate execution of Gradle. I.e. this wouldn't work:
     #   $ gradle clean jar
@@ -75,10 +67,6 @@ before_script: |
     # "copyRuntimeLibs" copies the JAR *and* dependencies - which WoT also
     # needs - to build/output/
     ./gradlew jar copyRuntimeLibs -x test &&
-    if [ "$USE_SYSTEM_CERTS" = 1 ] ; then
-        rm "${JAVA_HOME}/lib/security/cacerts" &&
-        mv "${JAVA_HOME}/lib/security/cacerts.jdk" "${JAVA_HOME}/lib/security/cacerts"
-    fi &&
     cd "$TRAVIS_BUILD_DIR"
   else
     echo "No changes at fred, not recompiling."
