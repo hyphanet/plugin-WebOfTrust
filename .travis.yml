@@ -7,7 +7,9 @@ dist: trusty
 sudo: false
 
 env:
-  - FREENET_MINIMUM_JAVA_VERSION=7
+  global:
+    # NOTICE: A hardcoded copy of this value exists at "matrix:", when updating also change that!
+    - FREENET_MINIMUM_JAVA_VERSION=7
 
 addons:
   apt:
@@ -42,7 +44,7 @@ install:
   - |
     if [ ! -e fred/.git ] ; then # Must check subdir, main one will be created by Travis cache config.
       FRED_UPDATED=1
-      git clone https://github.com/freenet/fred.git --branch next --single-branch --depth 1 fred
+      git clone https://github.com/freenet/fred.git --branch "$FRED_BRANCH" --single-branch --depth 1 fred
     fi
   - cd fred
   - git reset --hard # Undo our manual changes to ./gradlew to prevent merge conflicts
@@ -113,6 +115,17 @@ jdk:
   # oraclejdk10: Not supported anymore: https://changelog.travis-ci.com/stop-a-job-early-if-a-deprecated-jdk-is-configured-76612
   - oraclejdk11
   # oraclejdk12: Not available on Travis CI as of 2019-05-04, was released 2019-03.
+
+env:
+  - FRED_BRANCH=next
+
+matrix:
+  include:
+    # Also test against branch master, but only on a single Java version to keep the matrix small.
+    - env: FRED_BRANCH=master
+      # Travis doesn't support this yet so we will hardcode it:
+      ## jdk: openjdk$FREENET_MINIMUM_JAVA_VERSION
+      jdk: openjdk7
 
 deploy:
   provider: script
