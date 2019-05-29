@@ -7,8 +7,9 @@ trap 'echo "Error at line $LINENO, exit code $?" >&2' ERR
 if [ $# != 1 ] ; then
 	echo "Syntax: $0 TRAVIS_CI_LOGFILE" >&2
 	echo "" >&2
-	echo "NOTICE: This script only works if you configure Travis CI to use Ant!" >&2
-	echo "The default Gradle builder does not measure test runtime." >&2
+	echo "NOTICE: This script only works upon log files of the Travis job which uses Ant!" >&2
+	echo "The Gradle builder which is used by the other jobs does not measure test runtime." >&2
+	echo "See the 'script:' section in .travis.yml for which job uses Ant." >&2
 	exit 1
 fi
 
