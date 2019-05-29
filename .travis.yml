@@ -142,4 +142,4 @@ deploy:
   script: ./.travis.upload-jar-to-freenet.sh
   on:
     all_branches: true
-    condition: "$DEPLOY" = 1
+    condition: $DEPLOY = 1
