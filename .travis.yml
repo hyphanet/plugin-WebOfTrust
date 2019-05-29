@@ -121,7 +121,7 @@ matrix:
       # And don't use it on the minimum Java version as there we will run the deployment - which
       # takes long enough already, and Ant is slower than Gradle, so we would risk exhausting the
       # time limit.
-      env: BUILDER=ant FRED_BRANCH=next
+      env: FRED_BRANCH=next BUILDER=ant
     - jdk: openjdk9
     - jdk: openjdk10
     - jdk: openjdk11
