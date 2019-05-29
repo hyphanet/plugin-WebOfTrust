@@ -114,8 +114,7 @@ matrix:
       # Travis doesn't support this yet so we will hardcode it:
       ## jdk: openjdk$FREENET_MINIMUM_JAVA_VERSION
       jdk: openjdk7
-
-  include:
+    
     - env: FRED_BRANCH=next
       jdk:
         - openjdk7
