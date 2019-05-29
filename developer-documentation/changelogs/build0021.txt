@@ -300,7 +300,7 @@ CHANGELOG about stuff only interesting for developers
   in parallel on all available CPU cores to greatly reduce their
   runtime.
   To reap immediate benefit of this, Travis CI has been changed to use
-  Gradle instead of Ant.
+  Gradle instead of Ant (except on one Java version to keep Ant tested).
   That may speed up the builds by up to 50% as Travis provides 2 CPU
   cores.
   It will ensure builds exceed the 50 minute timeout less frequently
