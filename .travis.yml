@@ -112,25 +112,24 @@ matrix:
     # But first we will hereby also test on branch master to ensure WoT works against the latest
     # stable release as well because plugins can be updated without a new Freenet release.
     # We only test against master on a single Java version to keep the matrix small, all the others
-    # will be tested against next by the second "jdk:" below.
+    # will be tested against next by the second and following "jdk:" below.
     - env: FRED_BRANCH=master
       # Travis doesn't support this yet so we will hardcode it:
       ## jdk: openjdk$FREENET_MINIMUM_JAVA_VERSION
       jdk: openjdk7
 
-jdk:
-  - openjdk7
-  - openjdk8
-  - openjdk9
-  - openjdk10
-  - openjdk11
-  - openjdk12
-  # oraclejdk7: Not supported anymore: https://github.com/travis-ci/travis-ci/issues/7884#issuecomment-308451879
-  - oraclejdk8
-  # oraclejdk9: No more updates by Oracle: https://www.oracle.com/technetwork/java/java-se-support-roadmap.html
-  # oraclejdk10: Not supported anymore: https://changelog.travis-ci.com/stop-a-job-early-if-a-deprecated-jdk-is-configured-76612
-  - oraclejdk11
-  # oraclejdk12: Not available on Travis CI as of 2019-05-04, was released 2019-03.
+    - jdk: openjdk7
+    - jdk: openjdk8
+    - jdk: openjdk9
+    - jdk: openjdk10
+    - jdk: openjdk11
+    - jdk: openjdk12
+    # oraclejdk7: Not supported anymore: https://github.com/travis-ci/travis-ci/issues/7884#issuecomment-308451879
+    - jdk: oraclejdk8
+    # oraclejdk9: No more updates by Oracle: https://www.oracle.com/technetwork/java/java-se-support-roadmap.html
+    # oraclejdk10: Not supported anymore: https://changelog.travis-ci.com/stop-a-job-early-if-a-deprecated-jdk-is-configured-76612
+    - jdk: oraclejdk11
+    # oraclejdk12: Not available on Travis CI as of 2019-05-04, was released 2019-03.
 
 deploy:
   provider: script
