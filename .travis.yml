@@ -110,7 +110,7 @@ matrix:
     # stable release as well because plugins can be updated without a new Freenet release.
     # We only test against master on a single Java version to keep the matrix small, all the others
     # will be tested against next by the second and following "jdk:" below.
-    - env: FRED_BRANCH=master
+    - env: FRED_BRANCH=master BUILDER=gradle
       # Travis doesn't support this yet so we will hardcode it:
       ## jdk: openjdk$FREENET_MINIMUM_JAVA_VERSION
       jdk: openjdk7
@@ -121,7 +121,7 @@ matrix:
       # And don't use it on the minimum Java version as there we will run the deployment - which
       # takes long enough already, and Ant is slower than Gradle, so we would risk exhausting the
       # time limit.
-      env: BUILDER=ant
+      env: BUILDER=ant FRED_BRANCH=next
     - jdk: openjdk9
     - jdk: openjdk10
     - jdk: openjdk11
