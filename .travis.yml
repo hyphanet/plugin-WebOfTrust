@@ -102,6 +102,19 @@ script:
   ## - tools/compare-gradle-jars-with-ant-jars
   ## - tools/compare-gradle-tests-with-ant-tests
 
+matrix:
+  include:
+    # We will run most of our tests against fred branch next (= the development branch) to fulfill
+    # our purpose of integration testing.
+    # First we will hereby also test on branch master to ensure WoT works against the latest stable
+    # release as well because plugins can be updated without a new Freenet release.
+    # We only test against master on a single Java version to keep the matrix small, all the others
+    # will be tested against next by "jdk:" below.
+    - env: FRED_BRANCH=master
+      # Travis doesn't support this yet so we will hardcode it:
+      ## jdk: openjdk$FREENET_MINIMUM_JAVA_VERSION
+      jdk: openjdk7
+
 jdk:
   - openjdk7
   - openjdk8
@@ -119,13 +132,6 @@ jdk:
 env:
   - FRED_BRANCH=next
 
-matrix:
-  include:
-    # Also test against branch master, but only on a single Java version to keep the matrix small.
-    - env: FRED_BRANCH=master
-      # Travis doesn't support this yet so we will hardcode it:
-      ## jdk: openjdk$FREENET_MINIMUM_JAVA_VERSION
-      jdk: openjdk7
 
 deploy:
   provider: script
