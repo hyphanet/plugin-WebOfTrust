@@ -73,7 +73,7 @@ before_script: |
   else
     echo "No changes at fred, not recompiling."
   fi
-  if [ "$TRAVIS_JDK_VERSION" = "openjdk$FREENET_MINIMUM_JAVA_VERSION" ] ; then
+  if [ "$DEPLOY" = 1 ] ; then
     echo "Starting a Freenet node already to establish connectivity far before deploy stage..."
     "$TRAVIS_BUILD_DIR"/.travis.start-freenet.sh
   fi
