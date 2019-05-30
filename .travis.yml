@@ -118,12 +118,11 @@ matrix:
       jdk: openjdk7
 
     - jdk: openjdk7
-    - jdk: openjdk8
-      # ... but still use Ant on one Java version to ensure it keeps working.
-      # And don't use it on the minimum Java version as there we will run the deployment - which
-      # takes long enough already, and Ant is slower than Gradle, so we would risk exhausting the
-      # time limit.
+      # Still use Ant on one Java version to ensure it keeps working.
+      # Don't use it on the above job because deployment happens there which is slow, just like Ant
+      # - we would risk exhausting the time limit.
       env: FRED_BRANCH=next BUILDER=ant
+    - jdk: openjdk8
     - jdk: openjdk9
     - jdk: openjdk10
     - jdk: openjdk11
