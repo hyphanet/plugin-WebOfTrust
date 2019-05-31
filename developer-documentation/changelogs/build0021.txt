@@ -454,6 +454,28 @@ CHANGELOG about stuff only interesting for developers
 
   Can be used to reproduce randomized test runs.
 
+- 0007019: [Code quality] Travis CI: Build against both fred branch next
+           and master (xor)
+
+  This ensures WoT works both with the current Freenet release and the one
+  which is in development.
+  Previously only the development one was tested.
+  While new plugin versions are usually released with a new Freenet
+  release, it is also possible to release them without one, so it's a good
+  idea to ensure WoT is stable against any fred branch.
+
+  An additional benefit of this is that the existing Travis code to upload
+  the resulting WoT JAR to a CHK now uses fred branch master instead of
+  next as well.
+  This means that the upload will now be downloadable for users of the
+  stable release in case the way data is stored on the network is changed
+  on the development codebase.
+  So fred developers won't have to build WoT on their own for releases if
+  they don't like to, they can just use the CHK from Travis CI.
+
+  To ensure the number of Travis CI builds doesn't grow excessively the
+  test against branch master only happens on a single Java version.
+
 THANKS TO
 
   - ArneBab

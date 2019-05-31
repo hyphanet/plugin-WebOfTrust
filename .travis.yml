@@ -7,7 +7,9 @@ dist: trusty
 sudo: false
 
 env:
-  - FREENET_MINIMUM_JAVA_VERSION=7
+  global:
+    # NOTICE: A hardcoded copy of this value exists at "matrix:", when updating also change that!
+    - FREENET_MINIMUM_JAVA_VERSION=7
 
 addons:
   apt:
@@ -42,7 +44,7 @@ install:
   - |
     if [ ! -e fred/.git ] ; then # Must check subdir, main one will be created by Travis cache config.
       FRED_UPDATED=1
-      git clone https://github.com/freenet/fred.git --branch next --single-branch --depth 1 fred
+      git clone https://github.com/freenet/fred.git --branch "$FRED" --single-branch --depth 1 fred
     fi
   - cd fred
   - git reset --hard # Undo our manual changes to ./gradlew to prevent merge conflicts
@@ -71,7 +73,7 @@ before_script: |
   else
     echo "No changes at fred, not recompiling."
   fi
-  if [ "$TRAVIS_JDK_VERSION" = "openjdk$FREENET_MINIMUM_JAVA_VERSION" ] ; then
+  if [ "$DEPLOY" = 1 ] ; then
     echo "Starting a Freenet node already to establish connectivity far before deploy stage..."
     "$TRAVIS_BUILD_DIR"/.travis.start-freenet.sh
   fi
@@ -83,36 +85,53 @@ script:
   # Don't allow Travis to override the low memory limit which our builder sets with a higher one.
   - unset _JAVA_OPTIONS
   - echo 'fred version:' ; java -classpath '../fred/build/output/freenet.jar' 'freenet.node.Version'
-  # Use Gradle instead of Ant as it supports using multiple CPU cores on the unit tests.
   # Use the same Gradle as fred to re-use the fixes we applied to it above and because Travis'
   # Gradle version is too old for Java >= 9.
   - ln -sf "$TRAVIS_BUILD_DIR/../fred/gradlew"
-  # ... but still use Ant on one Java version to ensure it keeps working.
-  # And don't use it on the minimum Java version as there we will run the deployment - which takes
-  # long enough already, and Ant is slower than Gradle, so we would risk exhausting the time limit.
   - |
-    if [ "$TRAVIS_JDK_VERSION" = "openjdk$((FREENET_MINIMUM_JAVA_VERSION + 1))" ] ; then
+    if [ "$BUILDER" = "ant" ] ; then
         ant clean && ant
-    else
+    elif [ "$BUILDER" = "gradle" ] ; then
         ./gradlew clean test jar
-    fi
+    else false ; fi
   # To test the Ant and Gradle builders against each other uncomment the following.
   ## - tools/compare-gradle-jars-with-ant-jars
   ## - tools/compare-gradle-tests-with-ant-tests
 
-jdk:
-  - openjdk7
-  - openjdk8
-  - openjdk9
-  - openjdk10
-  - openjdk11
-  - openjdk12
-  # oraclejdk7: Not supported anymore: https://github.com/travis-ci/travis-ci/issues/7884#issuecomment-308451879
-  - oraclejdk8
-  # oraclejdk9: No more updates by Oracle: https://www.oracle.com/technetwork/java/java-se-support-roadmap.html
-  # oraclejdk10: Not supported anymore: https://changelog.travis-ci.com/stop-a-job-early-if-a-deprecated-jdk-is-configured-76612
-  - oraclejdk11
-  # oraclejdk12: Not available on Travis CI as of 2019-05-04, was released 2019-03.
+
+# Use Gradle instead of Ant as it supports using multiple CPU cores on the unit tests.
+env: FRED=next BUILDER=gradle
+matrix:
+  include:
+    # We will run most of our tests against fred branch next (= the development branch) to fulfill
+    # our purpose of integration testing.
+    # But first we will hereby also test on branch master to ensure WoT works against the latest
+    # stable release as well because plugins can be updated without a new Freenet release.
+    # We only test against master on a single Java version to keep the matrix small, all the others
+    # will be tested against next by the second and following "jdk:" below.
+    # We will also deploy from this Java version and fred version because they are the minimum
+    # so the resulting JAR and fred upload will work everywhere.
+    - env: FRED=master BUILDER=gradle DEPLOY=1
+      # Travis doesn't support this yet so we will hardcode it:
+      ## jdk: openjdk$FREENET_MINIMUM_JAVA_VERSION
+      jdk: openjdk7
+
+    - jdk: openjdk7
+      # Still use Ant on one Java version to ensure it keeps working.
+      # Don't use it on the above job because deployment happens there which is slow, just like Ant
+      # - we would risk exhausting the time limit.
+      env: FRED=next BUILDER=ant
+    - jdk: openjdk8
+    - jdk: openjdk9
+    - jdk: openjdk10
+    - jdk: openjdk11
+    - jdk: openjdk12
+    # oraclejdk7: Not supported anymore: https://github.com/travis-ci/travis-ci/issues/7884#issuecomment-308451879
+    - jdk: oraclejdk8
+    # oraclejdk9: No more updates by Oracle: https://www.oracle.com/technetwork/java/java-se-support-roadmap.html
+    # oraclejdk10: Not supported anymore: https://changelog.travis-ci.com/stop-a-job-early-if-a-deprecated-jdk-is-configured-76612
+    - jdk: oraclejdk11
+    # oraclejdk12: Not available on Travis CI as of 2019-05-04, was released 2019-03.
 
 deploy:
   provider: script
@@ -121,4 +140,4 @@ deploy:
   script: ./.travis.upload-jar-to-freenet.sh
   on:
     all_branches: true
-    condition: $TRAVIS_JDK_VERSION = "openjdk$FREENET_MINIMUM_JAVA_VERSION"
+    condition: $DEPLOY = 1
