@@ -44,7 +44,7 @@ install:
   - |
     if [ ! -e fred/.git ] ; then # Must check subdir, main one will be created by Travis cache config.
       FRED_UPDATED=1
-      git clone https://github.com/freenet/fred.git --branch "$FRED_BRANCH" --single-branch --depth 1 fred
+      git clone https://github.com/freenet/fred.git --branch "$FRED" --single-branch --depth 1 fred
     fi
   - cd fred
   - git reset --hard # Undo our manual changes to ./gradlew to prevent merge conflicts
@@ -100,8 +100,7 @@ script:
 
 
 # Use Gradle instead of Ant as it supports using multiple CPU cores on the unit tests.
-env: FRED_BRANCH=next BUILDER=gradle
-    
+env: FRED=next BUILDER=gradle
 matrix:
   include:
     # We will run most of our tests against fred branch next (= the development branch) to fulfill
@@ -112,7 +111,7 @@ matrix:
     # will be tested against next by the second and following "jdk:" below.
     # We will also deploy from this Java version and fred version because they are the minimum
     # so the resulting JAR and fred upload will work everywhere.
-    - env: FRED_BRANCH=master BUILDER=gradle DEPLOY=1
+    - env: FRED=master BUILDER=gradle DEPLOY=1
       # Travis doesn't support this yet so we will hardcode it:
       ## jdk: openjdk$FREENET_MINIMUM_JAVA_VERSION
       jdk: openjdk7
@@ -121,7 +120,7 @@ matrix:
       # Still use Ant on one Java version to ensure it keeps working.
       # Don't use it on the above job because deployment happens there which is slow, just like Ant
       # - we would risk exhausting the time limit.
-      env: FRED_BRANCH=next BUILDER=ant
+      env: FRED=next BUILDER=ant
     - jdk: openjdk8
     - jdk: openjdk9
     - jdk: openjdk10
