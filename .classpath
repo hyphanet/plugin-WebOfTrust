@@ -1,11 +1,11 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <classpath>
-	<classpathentry kind="src" path="src"/>
-	<classpathentry kind="src" path="test"/>
+	<classpathentry kind="src" output="bin/main" path="src"/>
+	<classpathentry kind="src" output="bin/test" path="test"/>
 	<classpathentry kind="con" path="org.eclipse.jdt.launching.JRE_CONTAINER"/>
 	<classpathentry kind="lib" path="db4o-7.4/db4o.jar"/>
 	<classpathentry combineaccessrules="false" kind="src" path="/fred"/>
 	<classpathentry kind="lib" path="/fred/lib/freenet/freenet-ext.jar"/>
 	<classpathentry kind="lib" path="/usr/share/java/junit4.jar"/>
-	<classpathentry kind="output" path="build"/>
+	<classpathentry kind="output" path="bin/default"/>
 </classpath>
