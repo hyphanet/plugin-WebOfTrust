@@ -2,8 +2,8 @@
 <classpath>
 	<classpathentry kind="src" output="bin/main" path="src"/>
 	<classpathentry kind="src" output="bin/test" path="test"/>
-	<classpathentry kind="con" path="org.eclipse.jdt.launching.JRE_CONTAINER"/>
 	<classpathentry kind="lib" path="db4o-7.4/db4o.jar"/>
+	<classpathentry kind="con" path="org.eclipse.jdt.launching.JRE_CONTAINER/org.eclipse.jdt.internal.debug.ui.launcher.StandardVMType/JavaSE-1.7/"/>
 	<classpathentry combineaccessrules="false" kind="src" path="/fred"/>
 	<classpathentry kind="lib" path="/fred/lib/freenet/freenet-ext.jar"/>
 	<classpathentry kind="lib" path="/usr/share/java/junit4.jar"/>
