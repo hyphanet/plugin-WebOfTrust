@@ -83,10 +83,10 @@ These instructions have been written for the Eclipse package `Eclipse IDE for Ja
 version `2018-12` for `Linux 64-bit`, which you can get
 [here](https://www.eclipse.org/downloads/packages/release/2018-12/r).
 
-1. Configure Eclipse to use Gradle version `4.10.3` at
-  `Preferences / Gradle / Gradle distribution`.  
+1. Import the fred project into Eclipse: `File / Import... / Gradle / Existing Gradle Project`.
+2. Configure the project to use Gradle version `4.10.3` at
+   `Right click the project / Properties / Gradle`.  
    Enable `Automatic project Synchronization` there as well.
-2. Import the fred project into Eclipse: `File / Import... / Gradle / Existing Gradle Project`.
 3. Enable Eclipse's `Gradle executions` and `Gradle tasks` views at `Window / Show view / Other...`.
 4. In the `Gradle Tasks` view, right click `fred` and select `Run Default Gradle Tasks`.
    Wait for Gradle to finish. You can see its output and error messages in the `Console` view.
