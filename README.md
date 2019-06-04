@@ -87,20 +87,24 @@ version `2018-12` for `Linux 64-bit`, which you can get
   `Preferences / Gradle / Gradle distribution`.  
    Enable `Automatic project Synchronization` there as well.
 2. Import the fred project into Eclipse: `File / Import... / Gradle / Existing Gradle Project`.
-3. Enable Eclipse's Gradle UI: `Window / Show view / Other... / Gradle Executions/Tasks`.
+3. Enable Eclipse's Gradle `Gradle executions` and `Gradle tasks` views at
+   `Window / Show view / Other...`.
 4. In the `Gradle Tasks` view, right click `fred` and select `Run Default Gradle Tasks`.
+   Wait for Gradle to finish. You can see its output and error messages in the `Console` view.
 5. Once the above step is finished, the green `Run` button in the main toolbar will show a run
    configuration for fred in its dropdown menu.  
    Open the UI to edit it at `Run / Run Configurations...` and there set:  
    * `Gradle Tasks / Gradle tasks: jar copyRuntimeLibs`.  
       The latter ensures Gradle copies all dependency JARs of Freenet to a single directory which
-      WoT will use.
+      WoT will use.  
      **TODO**: Prefix with `clean` task once it doesn't break `Version.class` anymore.
    * `Arguments / Program Arguments: -x test` optionally to skip running the fred unit tests at
       every build.
-6. Import the WoT project. It already contains a project configuration for Gradle so it can be
+6. Re-run fred's Gradle with the above run configuration via `Run / <configuration name>`.
+7. Import the WoT project. It already contains an Eclipse project configuration so it can be
    imported as type `General / Existing Projects into Workspace`.
-7. Ensure a Gradle run configuration for WoT is created like you did for fred.
+8. Ensure a Gradle run configuration for WoT is created by running the default tasks like you did
+   for fred.  
    Set its Gradle tasks to `jar`, or `clean jar` if you want to ensure the JAR is always fully
    rebuilt. Not fully rebuilding may cause e.g. deleted classes to persist in the JAR, though
    I have not tested if this still applies to a build system as modern as Gradle.
@@ -111,10 +115,10 @@ is used to empower Eclipse's own features.
 As a consequence, manually run Gradle using the aforementioned `Run` button in case you need the
 WoT JAR as output, e.g. for the following `Debugging` section.
 
-**Notice**: Should Eclipse show errors about missing JARs such as `db4o.jar` which prevent it from
-building, and the JARs have in fact been created by the fred/WoT Gradle builders, you can fix these
-problems by:
-1. `Right click the project / Gradle / Refresh Gradle Project`
+**Notice**: Should Eclipse show errors about missing JARs such as `db4o.jar` and say they prevent it
+from building: Notice that the JARs likely have in fact been created by the fred/WoT Gradle
+builders on the filesystem alreaddy, so you can fix Eclipse to notice them by:
+1. `Right click the project / Gradle / Refresh Gradle Project`.
 2. `Project / Build Project` to manually start a build.
 
 ### Debugging
