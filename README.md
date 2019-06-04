@@ -117,7 +117,7 @@ WoT JAR as output, e.g. for the following `Debugging` section.
 
 **Notice**: Should Eclipse show errors about missing JARs such as `db4o.jar` and say they prevent it
 from building: Notice that the JARs likely have in fact been created by the fred/WoT Gradle
-builders on the filesystem alreaddy, so you can fix Eclipse to notice them by:
+builders on the filesystem already, so you can fix Eclipse to notice them by:
 1. `Right click the project / Gradle / Refresh Gradle Project`.
 2. `Project / Build Project` to manually start a build.
 
