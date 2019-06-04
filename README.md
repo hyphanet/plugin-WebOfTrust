@@ -87,8 +87,7 @@ version `2018-12` for `Linux 64-bit`, which you can get
   `Preferences / Gradle / Gradle distribution`.  
    Enable `Automatic project Synchronization` there as well.
 2. Import the fred project into Eclipse: `File / Import... / Gradle / Existing Gradle Project`.
-3. Enable Eclipse's Gradle `Gradle executions` and `Gradle tasks` views at
-   `Window / Show view / Other...`.
+3. Enable Eclipse's `Gradle executions` and `Gradle tasks` views at `Window / Show view / Other...`.
 4. In the `Gradle Tasks` view, right click `fred` and select `Run Default Gradle Tasks`.
    Wait for Gradle to finish. You can see its output and error messages in the `Console` view.
 5. Once the above step is finished, the green `Run` button in the main toolbar will show a run
