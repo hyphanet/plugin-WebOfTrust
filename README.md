@@ -108,9 +108,10 @@ version `2018-12` for `Linux 64-bit`, which you can get
    rebuilt. Not fully rebuilding may cause e.g. deleted classes to persist in the JAR, though
    I have not tested if this still applies to a build system as modern as Gradle.
 
-**Notice**: Building using `Project / Build project` or the toolbar buttons does not seem to trigger
-Gradle with the said Eclipse version. It seems that only triggers its internal Java builder which
-is used to empower Eclipse's own features.  
+**Notice**: Building using `Project / Build project` or `Project / Build Automatically` or the
+toolbar buttons does not seem to trigger Gradle with the said Eclipse version!  
+It seems that only triggers Eclipse's internal Java builder which is used to empower Eclipse's own
+features.  
 As a consequence, manually run Gradle using the aforementioned `Run` button in case you need the
 WoT JAR as output, e.g. for the following `Debugging` section.
 
