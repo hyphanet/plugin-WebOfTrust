@@ -116,7 +116,7 @@ As a consequence, manually run Gradle using the aforementioned `Run` button in c
 WoT JAR as output, e.g. for the following `Debugging` section.  
 Running the unit tests is also done by that, or by Eclipse's own UI for running tests. The Eclipse
 UI however does not exclude certain slow tests which WoT's Gradle would only run optionally.  
-Ideally you would use Gradle to run all tests, and the Eclipse UI to selectively run only single
+Ideally you would use Gradle to run all tests, and the Eclipse UI to selectively repeat only single
 failing ones in order to debug them with the Eclipse debugger.
 
 **Notice**: Should Eclipse show errors about missing JARs such as `db4o.jar` and say they prevent it
