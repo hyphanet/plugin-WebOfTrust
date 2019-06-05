@@ -123,7 +123,8 @@ failing ones in order to debug them with the Eclipse debugger.
 from building: Notice that the JARs likely have in fact been created by the fred/WoT Gradle
 builders on the filesystem already, so you can fix Eclipse to notice them by:
 1. `Right click the project / Gradle / Refresh Gradle Project`.
-2. `Project / Build Project` to manually start a build.
+2. `Project / Build Project` to manually start a build. Automatic building might have to be disabled
+   in the same menu.
 
 ### Debugging
 
