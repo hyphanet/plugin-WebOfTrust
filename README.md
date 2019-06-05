@@ -93,7 +93,7 @@ version `2018-12` for `Linux 64-bit`, which you can get
 5. Once the above step is finished, the green `Run` button in the main toolbar will show a run
    configuration for fred in its dropdown menu.  
    Open the UI to edit it at `Run / Run Configurations...` and there set:  
-   * `Gradle Tasks / Gradle tasks: jar copyRuntimeLibs`.  
+   * `Gradle Tasks / Gradle tasks: jar copyRuntimeLibs`  
       The latter ensures Gradle copies all dependency JARs of Freenet to a single directory which
       WoT will use.  
      **TODO**: Prefix with `clean` task once it doesn't break `Version.class` anymore.
