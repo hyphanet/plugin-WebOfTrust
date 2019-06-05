@@ -110,8 +110,8 @@ version `2018-12` for `Linux 64-bit`, which you can get
 
 **Notice**: Building using `Project / Build project` or `Project / Build Automatically` or the
 toolbar buttons does not seem to trigger Gradle with the said Eclipse version!  
-It seems that only triggers Eclipse's internal Java builder which is used to empower Eclipse's own
-features.  
+It seems that this only triggers Eclipse's internal Java builder which is used to empower Eclipse's
+own features.  
 As a consequence, manually run Gradle using the aforementioned `Run` button in case you need the
 WoT JAR as output, e.g. for the following `Debugging` section.  
 Running the unit tests is also done by that, or by Eclipse's own UI for running tests. The Eclipse
