@@ -2,3 +2,4 @@ build
 build-test
 dist
 override.properties
+/.gradle/
