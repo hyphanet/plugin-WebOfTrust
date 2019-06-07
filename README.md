@@ -100,8 +100,8 @@ version `2018-12` for `Linux 64-bit`, which you can get
    * `Arguments / Program Arguments: -x test` optionally to skip running the fred unit tests at
       every build.
 6. Re-run fred's Gradle with the above run configuration via `Run / <configuration name>`.
-7. Import the WoT project. It already contains an Eclipse project configuration so it can be
-   imported as type `General / Existing Projects into Workspace`.
+7. Import the WoT project as type `General / Existing Projects into Workspace` - that type is what
+   to use here because the WoT repository already contains an Eclipse project configuration.
 8. Ensure a Gradle run configuration for WoT is created by running the default tasks like you did
    for fred.  
    Set its Gradle tasks to `jar`, or `clean jar` if you want to ensure the JAR is always fully
