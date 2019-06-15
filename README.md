@@ -2,8 +2,7 @@
 [![Build status of branch master on xor-freenet's repository](https://travis-ci.org/xor-freenet/plugin-WebOfTrust.svg?branch=master "Build status of branch master on xor-freenet's repository")](https://travis-ci.org/xor-freenet/plugin-WebOfTrust/builds)
 [![Build status of branch next on freenet's repository](https://travis-ci.org/freenet/plugin-WebOfTrust.svg?branch=next "Build status of branch next on freenet's repository")](https://travis-ci.org/freenet/plugin-WebOfTrust/builds)
 [![Build status of branch next on xor-freenet's repository](https://travis-ci.org/xor-freenet/plugin-WebOfTrust.svg?branch=next "Build status of branch next on xor-freenet's repository")](https://travis-ci.org/xor-freenet/plugin-WebOfTrust/builds)
-
-## Web of Trust - a collaborative spam filter for Freenet
+# Web of Trust - a collaborative spam filter for Freenet
 
 The [Freenet](https://freenetproject.org) plugin Web of Trust (WoT) tries to solve the problem of
 spam being an important threat to address in an anonymous, censorship-resistant network:  
@@ -33,15 +32,15 @@ be built upon it. As of 2019 these are:
 
 For an in-depth explanation of how WoT works see the [whitepaper / core developer's manual](developer-documentation/core-developers-manual/OadSFfF-version1.2-non-print-edition.pdf).
 
-### Compiling
+## Compiling
 
-#### Dependencies
+### Dependencies
 
 Clone the [fred](https://github.com/freenet/fred) and plugin-WebOfTrust repositories into the same
 parent directory.  
 Compile fred using its instructions.
 
-#### Compiling by command line
+### Compiling by command line
 
 ```bash
 # With the Ant build script reference implementation:
@@ -59,7 +58,7 @@ gradle clean jar
 The output `WebOfTrust.jar` will be in the `dist` directory.  
 You can load it on the `Plugins` page of the Freenet web interface.  
 
-##### Additional compilation options
+#### Additional compilation options
 
 ```bash
 # Compile and produce test coverage and code complexity statistics as HTML.
@@ -77,7 +76,7 @@ tools/benchmark-unit-tests
 tools/benchmark-unit-test TEST_CLASS TEST_FUNCTION NUMBER_OF_ITERATIONS
 ```
 
-#### Compiling with Eclipse
+### Compiling with Eclipse
 
 These instructions have been written for the Eclipse package `Eclipse IDE for Java Developers` of
 version `2018-12` for `Linux 64-bit`, which you can get
@@ -126,7 +125,7 @@ builders on the filesystem already, so you can fix Eclipse to notice them by:
 2. `Project / Build Project` to manually start a build. Automatic building might have to be disabled
    in the same menu.
 
-### Debugging
+## Debugging
 
 Run fred's class `freenet.node.NodeStarter` using the Eclipse debugger.  
 Browse to Freenet's [Plugins page](http://127.0.0.1:8888/plugins/).  
@@ -134,7 +133,7 @@ Use the `Load Plugin` box to load `PARENT_DIRECTORY/plugin-WebOfTrust/dist/WebOf
 After the plugin is loaded, WoT will be accessible at the `Community` menu.  
 Read [the debugging instructions](developer-documentation/Debugging.txt) for further details.
 
-#### Database analysis
+### Database analysis
 
 Do **not** use the following tool upon your database while Freenet is running!  
 **Backup your database** before using it!
@@ -150,7 +149,7 @@ tools/wotutil -testAndRepair DATABASE_FILE
 tools/wotutil -fcp DATABASE_FILE Message=WOT_FCP_CALL key1=value1 key2=value2 ...
 ```
 
-### Development
+## Development
 
 See:
 - the [whitepaper / core developer's manual](developer-documentation/core-developers-manual/OadSFfF-version1.2-non-print-edition.pdf).
