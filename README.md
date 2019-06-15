@@ -128,11 +128,11 @@ builders on the filesystem already, so you can fix Eclipse to notice them by:
 
 ## Debugging
 
-Run fred's class `freenet.node.NodeStarter` using the Eclipse debugger.  
-Browse to Freenet's [Plugins page](http://127.0.0.1:8888/plugins/).  
-Use the `Load Plugin` box to load `PARENT_DIRECTORY/plugin-WebOfTrust/dist/WebOfTrust.jar`.  
-After the plugin is loaded, WoT will be accessible at the `Community` menu.  
-Read [the debugging instructions](developer-documentation/Debugging.txt) for further details.
+1. Run fred's class `freenet.node.NodeStarter` using the Eclipse debugger.
+2. Browse to Freenet's [Plugins page](http://127.0.0.1:8888/plugins/).
+3. Use the `Load Plugin` box to load `PARENT_DIRECTORY/plugin-WebOfTrust/dist/WebOfTrust.jar`.
+4. After the plugin is loaded, WoT will be accessible at the `Community` menu.
+5. Read [the debugging instructions](developer-documentation/Debugging.txt) for further details.
 
 ### Database analysis
 
