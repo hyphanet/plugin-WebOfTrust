@@ -332,6 +332,24 @@ CHANGELOG about stuff only interesting for developers
   *and* tools to compare their results is a very sophisticated test,
   which is a benefit of its own.
 
+- 0007057: [Code quality] Make Eclipse project configuration use the new
+           Gradle builder (xor)
+
+  Bonus changes:
+
+  - This also ships a full rewrite of the Eclipse instructions
+    in the README.md - they explain step-by-step how Eclipse needs to be
+    configured to build, test and debug WoT with it.
+
+  - This notably includes instructions on how to generate an Eclipse
+    project configuration for fred and thereby be compatible with fred
+    versions above build01480: That is now necessary because during
+    replacement of Ant with Gradle the fred developers also removed the
+    Eclipse project from the repository.
+
+  - The Eclipse project configuration was updated to support a much more
+    recent Eclipse version (2018-12).
+
 - [Code quality] Travis CI: Test against most recent Java versions (xor)
 
   The cloud service now runs the unit tests periodically against:

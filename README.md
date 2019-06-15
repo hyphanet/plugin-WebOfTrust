@@ -79,20 +79,52 @@ tools/benchmark-unit-test TEST_CLASS TEST_FUNCTION NUMBER_OF_ITERATIONS
 
 #### Compiling with Eclipse
 
-* Import the project configurations which fred and WoT ship in Eclipse.  
-  **NOTICE:** As of 2018-07 fred currently does not ship one, you can use an old release for now.
-  The newest which still includes the project can be obtained with:  
-  	`git checkout build01480`  
-  Be aware that its build instructions will be different compared to newer releases, so check the
-  `README.md` after the above command.
-* Since build01480 does not automatically download its dependencies, get them from an existing
-  Freenet installation:
-  * Put `freenet-ext.jar` in `fred/lib/freenet`
-  * Put `bcprov.jar` (from e.g. `bcprov-jdk15on-149.jar`, name may vary) in `fred/lib`.
-* If necessary fix the build paths for your Eclipse projects so they refer to the correct JAR paths.
-* Disable automatic building in Eclipse's `Project` menu as the Ant builders take quite a bit of time to execute.
+These instructions have been written for the Eclipse package `Eclipse IDE for Java Developers` of
+version `2018-12` for `Linux 64-bit`, which you can get
+[here](https://www.eclipse.org/downloads/packages/release/2018-12/r).
 
-Now building should work using the `Project` menu or toolbar buttons.
+1. Import the fred project into Eclipse: `File / Import... / Gradle / Existing Gradle Project`.
+2. Configure the project to use Gradle version `4.10.3` at
+   `Right click the project / Properties / Gradle`.  
+   Enable `Automatic project Synchronization` there as well.
+3. Enable Eclipse's `Gradle executions` and `Gradle tasks` views at `Window / Show view / Other...`.
+4. In the `Gradle Tasks` view, right click `fred` and select `Run Default Gradle Tasks`.  
+   Wait for Gradle to finish. You can see its output and error messages in the `Console` view.
+5. Once the above step is finished, the green `Run` button in the main toolbar will show a run
+   configuration for fred in its dropdown menu.  
+   Open the UI to edit it at `Run / Run Configurations...` and there set:  
+   * `Gradle Tasks / Gradle tasks: jar copyRuntimeLibs`  
+      The latter ensures Gradle copies all dependency JARs of Freenet to a single directory which
+      WoT will use.  
+     **TODO**: Prefix with `clean` task once it doesn't break `Version.class` anymore.
+   * `Arguments / Program Arguments: -x test` optionally to skip running the fred unit tests at
+      every build.
+6. Re-run fred's Gradle with the above run configuration via `Run / <configuration name>`.
+7. Import the WoT project as type `General / Existing Projects into Workspace` - that type is what
+   to use here because the WoT repository already contains an Eclipse project configuration.
+8. Ensure a Gradle run configuration for WoT is created by running the default tasks like you did
+   for fred.  
+   Set its Gradle tasks to `jar`, or `clean jar` if you want to ensure the JAR is always fully
+   rebuilt. Not fully rebuilding may cause e.g. deleted classes to persist in the JAR, though
+   I have not tested if this still applies to a build system as modern as Gradle.
+
+**Notice**: Building using `Project / Build project` or `Project / Build Automatically` or the
+toolbar buttons does not seem to trigger Gradle with the said Eclipse version!  
+It seems that this only triggers Eclipse's internal Java builder which is used to empower Eclipse's
+own features.  
+As a consequence, manually run Gradle using the aforementioned `Run` button in case you need the
+WoT JAR as output, e.g. for the following `Debugging` section.  
+Running the unit tests is also done by that, or by Eclipse's own UI for running tests. The Eclipse
+UI however does not exclude certain slow tests which WoT's Gradle would only run optionally.  
+Ideally you would use Gradle to run all tests, and the Eclipse UI to selectively repeat only single
+failing ones in order to debug them with the Eclipse debugger.
+
+**Notice**: Should Eclipse show errors about missing JARs such as `db4o.jar` and say they prevent it
+from building: Notice that the JARs likely have in fact been created by the fred/WoT Gradle
+builders on the filesystem already, so you can fix Eclipse to notice them by:
+1. `Right click the project / Gradle / Refresh Gradle Project`.
+2. `Project / Build Project` to manually start a build. Automatic building might have to be disabled
+   in the same menu.
 
 ### Debugging
 
