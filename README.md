@@ -39,7 +39,7 @@ For an in-depth explanation of how WoT works see the [whitepaper / core develope
 Clone the [fred](https://github.com/freenet/fred) and plugin-WebOfTrust repositories into the same
 parent directory.  
 Compile fred by command line using its README.md instructions, or use the
-[below instructions](#Compiling with Eclipse) for compiling it with Eclipse.
+[below instructions](#compiling-with-eclipse) for compiling it with Eclipse.
 
 ### Compiling by command line
 
