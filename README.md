@@ -54,7 +54,7 @@ You can:
 - or, to remain anonymous by using Freenet, post on the
    [FMS](https://github.com/freenet/wiki/wiki/FMS) board `freenet`.  
 
-By the way: News about the current development are posted to that board about every week.
+By the way: News about the current WoT development are posted to that board about every week.
 
 ## Compiling
 
