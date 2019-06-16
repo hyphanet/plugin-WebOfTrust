@@ -2,8 +2,7 @@
 [![Build status of branch master on xor-freenet's repository](https://travis-ci.org/xor-freenet/plugin-WebOfTrust.svg?branch=master "Build status of branch master on xor-freenet's repository")](https://travis-ci.org/xor-freenet/plugin-WebOfTrust/builds)
 [![Build status of branch next on freenet's repository](https://travis-ci.org/freenet/plugin-WebOfTrust.svg?branch=next "Build status of branch next on freenet's repository")](https://travis-ci.org/freenet/plugin-WebOfTrust/builds)
 [![Build status of branch next on xor-freenet's repository](https://travis-ci.org/xor-freenet/plugin-WebOfTrust.svg?branch=next "Build status of branch next on xor-freenet's repository")](https://travis-ci.org/xor-freenet/plugin-WebOfTrust/builds)
-
-## Web of Trust - a collaborative spam filter for Freenet
+# Web of Trust - a collaborative spam filter for Freenet
 
 The [Freenet](https://freenetproject.org) plugin Web of Trust (WoT) tries to solve the problem of
 spam being an important threat to address in an anonymous, censorship-resistant network:  
@@ -18,10 +17,14 @@ Conventional spam filters cannot work in such an environment:
   e.g. lists of bad words won't work.
 
 WoT deals with these issues by allowing each user to create so-called _identities_ which can assign
-_trust values_ to the identities of other users.  
-These constitute a democratic vote among users, the result decides if a particular identity is
-considered as legitimate or as a spammer. The content of spammers is completely ignored then, it
-won't cause any network traffic.
+_trust values_ to the identities of other users and optionally publish these.  
+These constitute a democratic vote among users, where the distance of other users' identities in the
+social graph is used to weigh their votes in your local WoT. This is similar to the concept of
+[subsidiarity](https://en.wikipedia.org/wiki/Subsidiarity) in democracy.  
+The result of this poll decides if a particular identity is considered as legitimate or as a
+spammer. The content of spammers is completely ignored then, it won't cause any network traffic.  
+Thus each user has their own view and final decision on what they consider as spam, depending on
+who they voted for or against.
 
 While WoT does have a user interface of its own which can be used to manage identites and trusts,
 it is intended to be used as a general-purpose library to allow actual Freenet applications to
@@ -29,19 +32,40 @@ be built upon it. As of 2019 these are:
 - [Sone](https://github.com/Bombe/Sone) - social networking
 - [FlogHelper](https://github.com/freenet/plugin-FlogHelper) - blogging
 - [Freemail](https://github.com/freenet/plugin-Freemail) - email
-- [Freetalk](https://github.com/freenet/plugin-Freetalk) - forum systems
+- [Freetalk](https://github.com/freenet/plugin-Freetalk) - forum systems (in development)
 
 For an in-depth explanation of how WoT works see the [whitepaper / core developer's manual](developer-documentation/core-developers-manual/OadSFfF-version1.2-non-print-edition.pdf).
 
-### Compiling
+## Contributing
 
-#### Dependencies
+While the repository for the officially shipped WoT binary is hosted on
+[Freenet's GitHub](https://github.com/freenet), you may consider to instead create your pull
+requests at [xor-freenet's WoT repository](https://github.com/xor-freenet/plugin-WebOfTrust)
+to receive extended and accelerated review:  
+He wrote most of WoT's code and works on it every week.  
+After his review xor will submit your code to the official Freenet developers for inclusion in the
+main repository.
+
+## Support
+
+You can:
+- mail `xor@freenetproject.org`
+- file a bug in the Web of Trust project on the [Freenet bugtracker](https://freenet.mantishub.io)
+- or, to remain anonymous by using Freenet, post on the
+   [FMS](https://github.com/freenet/wiki/wiki/FMS) board `freenet`.  
+
+By the way: News about the current WoT development are posted to that board about every week.
+
+## Compiling
+
+### Dependencies
 
 Clone the [fred](https://github.com/freenet/fred) and plugin-WebOfTrust repositories into the same
 parent directory.  
-Compile fred using its instructions.
+Compile fred by command line using `( cd fred && ./gradlew jar copyRuntimeLibs )`, or for
+compiling it with Eclipse use the [below instructions](#compiling-with-eclipse).
 
-#### Compiling by command line
+### Compiling by command line
 
 ```bash
 # With the Ant build script reference implementation:
@@ -59,7 +83,7 @@ gradle clean jar
 The output `WebOfTrust.jar` will be in the `dist` directory.  
 You can load it on the `Plugins` page of the Freenet web interface.  
 
-##### Additional compilation options
+#### Additional compilation options
 
 ```bash
 # Compile and produce test coverage and code complexity statistics as HTML.
@@ -77,7 +101,7 @@ tools/benchmark-unit-tests
 tools/benchmark-unit-test TEST_CLASS TEST_FUNCTION NUMBER_OF_ITERATIONS
 ```
 
-#### Compiling with Eclipse
+### Compiling with Eclipse
 
 These instructions have been written for the Eclipse package `Eclipse IDE for Java Developers` of
 version `2018-12` for `Linux 64-bit`, which you can get
@@ -126,15 +150,15 @@ builders on the filesystem already, so you can fix Eclipse to notice them by:
 2. `Project / Build Project` to manually start a build. Automatic building might have to be disabled
    in the same menu.
 
-### Debugging
+## Debugging
 
-Run fred's class `freenet.node.NodeStarter` using the Eclipse debugger.  
-Browse to Freenet's [Plugins page](http://127.0.0.1:8888/plugins/).  
-Use the `Load Plugin` box to load `PARENT_DIRECTORY/plugin-WebOfTrust/dist/WebOfTrust.jar`.  
-After the plugin is loaded, WoT will be accessible at the `Community` menu.  
-Read [the debugging instructions](developer-documentation/Debugging.txt) for further details.
+1. Run fred's class `freenet.node.NodeStarter` using the Eclipse debugger.
+2. Browse to Freenet's [Plugins page](http://127.0.0.1:8888/plugins/).
+3. Use the `Load Plugin` box to load `PARENT_DIRECTORY/plugin-WebOfTrust/dist/WebOfTrust.jar`.
+4. After the plugin is loaded, WoT will be accessible at the `Community` menu.
+5. Read [the debugging instructions](developer-documentation/Debugging.txt) for further details.
 
-#### Database analysis
+### Database analysis
 
 Do **not** use the following tool upon your database while Freenet is running!  
 **Backup your database** before using it!
@@ -150,7 +174,7 @@ tools/wotutil -testAndRepair DATABASE_FILE
 tools/wotutil -fcp DATABASE_FILE Message=WOT_FCP_CALL key1=value1 key2=value2 ...
 ```
 
-### Development
+## Development
 
 See:
 - the [whitepaper / core developer's manual](developer-documentation/core-developers-manual/OadSFfF-version1.2-non-print-edition.pdf).
