@@ -51,7 +51,7 @@ main repository, filing pull requests to his repository first would just be for 
 You can:
 - mail `xor@freenetproject.org`
 - file a bug in the Web of Trust project on the [Freenet bugtracker](https://freenet.mantishub.io)
-- or to remain anonymous by using Freenet post on the
+- or, to remain anonymous by using Freenet, post on the
    [FMS](https://github.com/freenet/wiki/wiki/FMS) board `freenet`.  
 
 By the way: News about the current development are posted to that board about every week.
