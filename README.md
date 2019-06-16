@@ -42,6 +42,12 @@ He works on WoT about every second day, and wrote most of its code.
 Your code will still be shipped to the official Freenet repository by xor, submitting pull requests
 to his repository first would just be for review purposes, the codebase is the same.
 
+## Support
+
+You can mail `xor@freenetproject.org`, or to remain anonymous by using Freenet post on the FMS board
+`freenet`.  
+By the way: News about the current development are posted to that board about every week.
+
 ## Compiling
 
 ### Dependencies
