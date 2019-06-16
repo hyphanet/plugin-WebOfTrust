@@ -39,8 +39,8 @@ For an in-depth explanation of how WoT works see the [whitepaper / core develope
 ## Contributing
 
 While the repository for the officially shipped WoT binary is hosted on
-[Freenet's GitHub](https://github.com/freenet/plugin-WebOfTrust), you may consider to instead create
-your pull requests at [xor-freenet's repository](https://github.com/xor-freenet/plugin-WebOfTrust)
+[Freenet's GitHub](https://github.com/freenet), you may consider to instead create your pull
+requests at [xor-freenet's WoT repository](https://github.com/xor-freenet/plugin-WebOfTrust)
 to receive extended and accelerated review:  
 He wrote most of WoT's code and works on it every week.  
 After his review xor will submit your code to the official Freenet developers for inclusion in the
