@@ -17,7 +17,7 @@ Conventional spam filters cannot work in such an environment:
   e.g. lists of bad words won't work.
 
 WoT deals with these issues by allowing each user to create so-called _identities_ which can assign
-_trust values_ to the identities of other users.  
+_trust values_ to the identities of other users and optionally publish these.  
 These constitute a democratic vote among users, where the distance of other users' identities in the
 social graph is used to weigh their votes in your local WoT. This is similar to the concept of
 [subsidiarity](https://en.wikipedia.org/wiki/Subsidiarity) in democracy.  
