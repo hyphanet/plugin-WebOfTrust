@@ -44,8 +44,8 @@ to his repository first would just be for review purposes, the codebase is the s
 
 ## Support
 
-You can mail `xor@freenetproject.org`, or to remain anonymous by using Freenet post on the FMS board
-`freenet`.  
+You can mail `xor@freenetproject.org`, or to remain anonymous by using Freenet post on the
+[FMS](https://github.com/freenet/wiki/wiki/FMS) board `freenet`.  
 By the way: News about the current development are posted to that board about every week.
 
 ## Compiling
