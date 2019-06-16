@@ -44,7 +44,7 @@ your pull requests at [xor-freenet's repository](https://github.com/xor-freenet/
 to receive accelerated and extended review:  
 He works on WoT about every second day, and wrote most of its code.  
 Your code will still be shipped to the official Freenet repository by xor, submitting pull requests
-to his repository first would just be for review purposes, the codebase is the same.
+to his repository first would just be for review purposes.
 
 ## Support
 
