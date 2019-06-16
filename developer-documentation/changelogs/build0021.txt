@@ -462,6 +462,7 @@ CHANGELOG about stuff only interesting for developers
   All information in it was reviewed and fixed to match how things work
   currently.
 
+  "Contributing" and "Support" sections have been added.
   The compilation, testing and debugging instructions have been amended
   to e.g. explain special features such as benchmark scripts, test
   scripts and test coverage analysis.
@@ -496,4 +497,4 @@ CHANGELOG about stuff only interesting for developers
 
 THANKS TO
 
-  - ArneBab
+  - ArneBab for providing lots and lots of code review!
