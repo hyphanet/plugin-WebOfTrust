@@ -249,7 +249,7 @@ public final class XYChartUtils {
 		// But if the result set is empty then ignore the minimum amount so we never return an
 		// empty result.
 		// FIXME: Does this still make sense with a moving average?
-		if(((windowEnd - windowStart) >= 16 && unyieldedAmount > 0) || result.size() == 0) {
+		if((unyieldedAmount > 0 && (windowEnd - windowStart) >= 16) || result.size() == 0) {
 			result.addLast(new Pair<>(xAverage, yAverage));
 			System.out.println("Yielded tail element " + result.size()
 				+ " from: xyArray[" + windowStart + "] to xyArray[" + (windowEnd-1) + "]."
