@@ -84,29 +84,6 @@ public final class XYChartUtilsTest extends AbstractJUnit4BaseTest {
 		Pair<Double, Double> a = average.peekLast();
 		assertEqualsApprox( sumOfNumbers(32) / 32, a.x, 99.999d);
 		assertEqualsApprox(-sumOfNumbers(32) / 32, a.y, 99.999d);
-		
-		// Trailing elements which don't fulfill the quota of seconds should be yielded in a single
-		// output element as long as there are at least 16 trailing ones.
-		// I.e. the window size in seconds only applies to the main body of the moving average, but
-		// not to the very last element.
-		
-		// Try with 15 first, shouldn't yield a tail element...
-		for(int i=0; i < 15; ++i)
-			data.addLast(pair((double) 32, (double) -32));
-		assert(data.size() == 32+15);
-		assert(equalsApprox(31, data.peekLast().x - data.peekFirst().x, 99.999d));
-		average = movingAverage(data, 31);
-		assertEquals(1, average.size());
-		a = average.peekLast();
-		assertEqualsApprox( sumOfNumbers(32) / 32, a.x, 99.999d);
-		assertEqualsApprox(-sumOfNumbers(32) / 32, a.y, 99.999d);
-		// ... and then with 16, which should yield a tail element.		
-		data.addLast(pair((double) 32, (double) -32));
-		assert(data.size() == 32+16);
-		assert(equalsApprox(31, data.peekLast().x - data.peekFirst().x, 99.999d));
-		average = movingAverage(data, 31);
-		assertEquals(2, average.size());
-		fail("FIXME: Test the values of the averages");
 	}
 
 	private static double sumOfNumbers(int n) {

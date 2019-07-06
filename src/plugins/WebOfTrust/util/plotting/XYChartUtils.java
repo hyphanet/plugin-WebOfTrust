@@ -244,21 +244,10 @@ public final class XYChartUtils {
 			}
 		} while(++windowEnd < xyArray.length);
 		
-		// If there is remaining data add it to the result if it contains at least the minimum
-		// amount of measurements.
-		// But if the result set is empty then ignore the minimum amount so we never return an
-		// empty result.
-		// FIXME: Does this still make sense with a moving average?
-		if((unyieldedAmount > 0 && (windowEnd - windowStart) >= 16) || result.size() == 0) {
-			result.addLast(new Pair<>(xAverage, yAverage));
-			System.out.println("Yielded tail element " + result.size()
-				+ " from: xyArray[" + windowStart + "] to xyArray[" + (windowEnd-1) + "]."
-				+ " seconds = " + (xyArray[windowEnd-1].x - xyArray[windowStart].x)
-				+ "; amount = " + (windowEnd-1 - windowStart + 1));
-		}
+		System.out.println("Remaining unyielded amount: " + unyieldedAmount);
 		
 		assert(result.size() <=
-			max(1, (xyData.size() - 16 /* Due to loop */ + 1 /* Due to above if */)));
+			max(0, (xyData.size() - 16 /* Due to minimum amount of measurements */)));
 		return result;
 	}
 

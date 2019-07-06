@@ -215,7 +215,8 @@ public class StatisticsPage extends WebPageImpl {
 				double currentTime
 					= (double)(CurrentTimeUTC.getInMillis() - t0) / SECONDS.toMillis(1);
 				downloadsPerHour.addFirst(new Pair<>(startupTime, 0d));
-				downloadsPerHour.addLast(new Pair<>(currentTime, downloadsPerHour.peekLast().y));
+				downloadsPerHour.addLast(new Pair<>(currentTime,
+					downloadsPerHour.size() > 0 ? downloadsPerHour.peekLast().y : 0d));
 				
 				return getTimeBasedPlotPNG(downloadsPerHour, wot.getBaseL10n(), l10n + "Title",
 					l10n + "XAxis.Hours", l10n + "XAxis.Minutes",  l10n + "YAxis");
