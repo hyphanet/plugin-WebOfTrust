@@ -227,6 +227,7 @@ public final class XYChartUtils {
 				yAverage /= amount;
 				
 				++windowStart;
+				assert(amount == windowEnd - windowStart + 1);
 				unyieldedAmount = 0;
 			} else {
 				System.out.println("Not yielding element"
