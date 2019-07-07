@@ -160,7 +160,7 @@ public final class XYChartUtils {
 		
 		TimeChart<Double> result = new TimeChart<>(xyData.sizeLimit());
 		
-		if(xyData.size() < 1)
+		if(xyData.size() == 0)
 			return result;
 		
 		@SuppressWarnings("unchecked")
