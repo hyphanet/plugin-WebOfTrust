@@ -248,6 +248,51 @@ public final class XYChartUtils {
 	}
 
 	/**
+	 * Rewrite of {@link #movingAverage(TimeChart, int)} without performance
+	 * optimizations in order to fix its problem with the window continuously growing.
+	 * FIXME: Replace the former function with this one if it is fast enough in the end.
+	 * If it is not then test the former against this one in a unit test. */
+	public static final <T extends Number> TimeChart<Double> movingAverageRewrite(
+			TimeChart<T> chart, int seconds) {
+		
+		// FIXME: Comment all logging in this function out once the bugs are fixed
+		System.out.println("movingAverage(chart, " + seconds + ")...");
+		
+		assert(seconds > 0);
+		
+		TimeChart<Double> result = new TimeChart<>(chart.sizeLimit());
+		
+		if(chart.size() == 0)
+			return result;
+		
+		@SuppressWarnings("unchecked")
+		Pair<Double, T>[] data
+			= (Pair<Double, T>[]) chart.toArray(new Pair[chart.size()]);
+		
+		int windowStart = 0;
+		int windowEnd = 0;
+		// Don't compute average by first summing up all entries and then dividing, but by
+		// continuously maintaining an already divided real average.
+		// We must divide at every added item instead of only dividing after the last because the
+		// values may be so large that they cause overflow or imprecision if we keep adding them up
+		// until the end.
+		double xAverage = 0;
+		double yAverage = 0;
+		int unyieldedAmount = 0; // Included in average but not yielded as output yet
+
+		do {
+			// FIXME: Implement
+		} while(++windowEnd < data.length);
+		
+		System.out.println("Remaining unyielded amount: " + unyieldedAmount);
+		
+		// Each output element must consist of at least 16 inputs so the first 15 inputs do not
+		// cause output.
+		assert(result.size() <= max(0, chart.size() - 15));
+		return result;
+	}
+
+	/**
 	 * Returns a new TimeChart which contains the dy/dx of the given plot data.
 	 * 
 	 * The resulting dataset's {@link TimeChart#size()} will be at most the size() of the input
