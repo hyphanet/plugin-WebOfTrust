@@ -196,6 +196,10 @@ public final class XYChartUtils {
 			if((xyArray[windowEnd].x - xyArray[windowStart].x) >= seconds
 					&& amount >= 16) {
 				
+				// FIXME: Increase windowStart until we're as close to 60 seconds as possible.
+				// Otherwise the window size will continuously increase, see the debug output on
+				// stdout.
+				
 				assert(xAverage >= xyArray[windowStart].x);
 				assert(xAverage <= xyArray[windowEnd].x);
 				
