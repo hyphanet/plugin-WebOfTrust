@@ -236,8 +236,9 @@ public final class XYChartUtils {
 		
 		System.out.println("Remaining unyielded amount: " + unyieldedAmount);
 		
-		assert(result.size() <=
-			max(0, (xyData.size() - 16 /* Due to minimum amount of measurements */)));
+		// Each output element must consist of at least 16 inputs so the first 15 inputs do not
+		// cause output.
+		assert(result.size() <= max(0, xyData.size() - 15));
 		return result;
 	}
 
