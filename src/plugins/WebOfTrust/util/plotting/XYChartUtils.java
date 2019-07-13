@@ -262,29 +262,68 @@ public final class XYChartUtils {
 		
 		TimeChart<Double> result = new TimeChart<>(chart.sizeLimit());
 		
-		if(chart.size() == 0)
+		if(chart.size() < 16)
 			return result;
 		
 		@SuppressWarnings("unchecked")
 		Pair<Double, T>[] data
 			= (Pair<Double, T>[]) chart.toArray(new Pair[chart.size()]);
 		
-		int windowStart = 0;
-		int windowEnd = 0;
-		// Don't compute average by first summing up all entries and then dividing, but by
-		// continuously maintaining an already divided real average.
-		// We must divide at every added item instead of only dividing after the last because the
-		// values may be so large that they cause overflow or imprecision if we keep adding them up
-		// until the end.
-		double xAverage = 0;
-		double yAverage = 0;
 		int unyieldedAmount = 0; // Included in average but not yielded as output yet
 
-		do {
-			// FIXME: Implement
-		} while(++windowEnd < data.length);
+		for(int windowEnd = 15; windowEnd < data.length; ++windowEnd) {
+			int windowStart = windowEnd;
+			// Don't compute average by first summing up all entries and then dividing, but by
+			// continuously maintaining an already divided real average.
+			// We must divide at every added item instead of only dividing after the last because
+			// the values may be so large that they cause overflow or imprecision if we keep adding
+			// them up until the end.
+			double xAverage = data[windowEnd].x;
+			double yAverage = data[windowEnd].y.doubleValue();
+			int amount = 1;
+			// Expand the window towards the beginning of the array until it is large enough
+			// to cover the given minimum amount measurements and seconds.
+			boolean enoughData;
+			while((enoughData =
+						(amount >= 16 && data[windowEnd].x - data[windowStart].x >= seconds))
+					== false) {
+				
+				--windowStart;
+				
+				if(windowStart < 0) {
+					enoughData = false;
+					break;
+				}
+				
+				xAverage *= amount;
+				yAverage *= amount;
+				xAverage += data[windowStart].x;
+				yAverage += data[windowStart].y.doubleValue();
+				++amount;
+				xAverage /= amount;
+				yAverage /= amount;
+				
+				assert(amount == windowEnd - windowStart + 1);
+				assert(xAverage >= data[windowStart].x);
+				assert(xAverage <= data[windowEnd].x);
+			}
+			
+			String logPrefix;
+			if(enoughData) {
+				result.addLast(new Pair<>(xAverage, yAverage));
+				logPrefix = "Yielded element " + result.size();
+			} else {
+				++unyieldedAmount;
+				logPrefix = "Not yielding element";
+			}
+			
+			System.out.println(logPrefix
+				+ " from: data[" + windowStart + "] to data[" + windowEnd + "]."
+				+ " seconds = " + (data[windowEnd].x - data[windowStart].x)
+				+ "; amount = " + amount);
+		}
 		
-		System.out.println("Remaining unyielded amount: " + unyieldedAmount);
+		System.out.println("Total unyielded amount: " + unyieldedAmount);
 		
 		// Each output element must consist of at least 16 inputs so the first 15 inputs do not
 		// cause output.
