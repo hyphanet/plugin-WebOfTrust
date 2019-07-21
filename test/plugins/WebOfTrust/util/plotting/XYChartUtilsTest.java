@@ -86,6 +86,7 @@ public final class XYChartUtilsTest extends AbstractJUnit4BaseTest {
 		assertEqualsApprox(-sumOfNumbers(32) / 32, a.y, 99.999d);
 	}
 
+	/** @see #testSumOfNumbers() */
 	private static double sumOfNumbers(int n) {
 		assert(n >= 0);
 		int enumerator = n*(n+1);
@@ -93,9 +94,15 @@ public final class XYChartUtilsTest extends AbstractJUnit4BaseTest {
 		return enumerator / 2;
 	}
 
+	/** @see #testSumOfNumbers() */
 	private static double sumOfNumbers(int a, int b) {
 		assert(b > a);
 		return sumOfNumbers(b) - sumOfNumbers(a);
+	}
+	
+	@Test public void testSumOfNumbers() {
+		assertEqualsApprox(1 + 2 + 3 + 4 + 5, sumOfNumbers(5),    99.999d);
+		assertEqualsApprox(            4 + 5, sumOfNumbers(3, 5), 99.999d);
 	}
 
 	@Test public void testDifferentiate() {
