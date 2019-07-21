@@ -65,7 +65,7 @@ public final class XYChartUtilsTest extends AbstractJUnit4BaseTest {
 			Pair<Double, Double> a = average.peekLast();
 			// The window size of movingAverage() is at least 1 second, which we fulfill by spacing
 			// elements by 1, and at least 16 elements. So every iteration of our loop the element
-			// n-16 falls out.
+			// n-16 falls out. sumOfNumbers(a, b) excludes all up to including a to match this.
 			assertEqualsApprox( sumOfNumbers(n-16, n) / 16, a.x, 99.999d);
 			assertEqualsApprox(-sumOfNumbers(n-16, n) / 16, a.y, 99.999d);
 		}
