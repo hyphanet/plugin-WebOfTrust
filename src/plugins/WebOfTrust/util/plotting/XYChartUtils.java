@@ -317,6 +317,7 @@ public final class XYChartUtils {
 				logPrefix = "Not yielding element";
 			}
 			
+			windowStart = max(windowStart, 0); // Prevent ArrayIndexOutOfBoundsException
 			System.out.println(logPrefix
 				+ " from: data[" + windowStart + "] to data[" + windowEnd + "]."
 				+ " seconds = " + (data[windowEnd].x - data[windowStart].x)
