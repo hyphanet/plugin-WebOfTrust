@@ -150,7 +150,7 @@ public final class XYChartUtils {
 	 * The resulting dataset's {@link TimeChart#size()} will be less than or equal to the input's
 	 * size.
 	 * Its {@link TimeChart#sizeLimit()} will be the same. */
-	public static final <T extends Number> TimeChart<Double> movingAverage(
+	public static final <T extends Number> TimeChart<Double> movingAverageOld(
 			TimeChart<T> xyData, int seconds) {
 		
 		// FIXME: Comment all logging in this function out once the bugs are fixed
@@ -248,11 +248,11 @@ public final class XYChartUtils {
 	}
 
 	/**
-	 * Rewrite of {@link #movingAverage(TimeChart, int)} without performance
+	 * Rewrite of {@link #movingAverageOld(TimeChart, int)} without performance
 	 * optimizations in order to fix its problem with the window continuously growing.
 	 * FIXME: Replace the former function with this one if it is fast enough in the end.
 	 * If it is not then test the former against this one in a unit test. */
-	public static final <T extends Number> TimeChart<Double> movingAverageRewrite(
+	public static final <T extends Number> TimeChart<Double> movingAverage(
 			TimeChart<T> chart, int seconds) {
 		
 		// FIXME: Comment all logging in this function out once the bugs are fixed
