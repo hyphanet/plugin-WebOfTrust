@@ -321,7 +321,7 @@ public final class XYChartUtils {
 			System.out.println(logPrefix
 				+ " from: data[" + windowStart + "] to data[" + windowEnd + "]."
 				+ " seconds = " + (data[windowEnd].x - data[windowStart].x)
-				+ "; amount = " + amount);
+				+ "; amount = " + amount + "; xAverage = " + xAverage + "; yAverage = " + yAverage);
 		}
 		
 		System.out.println("Total unyielded amount: " + unyieldedAmount);
