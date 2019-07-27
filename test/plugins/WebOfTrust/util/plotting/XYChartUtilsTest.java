@@ -32,12 +32,16 @@ public final class XYChartUtilsTest extends AbstractJUnit4BaseTest {
 		//     sum(1, 2, 3, ..., N) = N*(N+1) / 2
 		// This equation is unnamed in English, it can be found by its German name
 		// "Gaußsche Summenformel".
-		for(int n = 1; n <= 16; ++n)
+		for(int n = 1; n <= 15; ++n)
 			data.addLast(pair((double) n, (double) -n));
 		
 		TimeChart<Double> average = movingAverage(data, 1);
 		// For the first 16 elements only one average will be yielded as the minimum window size
 		// is not only the given amount of seconds but also 16 elements.
+		// We only added 15 yet so nothing should be yielded.
+		assertEquals(0, average.size());
+		data.addLast(pair(16d, -16d));
+		average = movingAverage(data, 1);
 		assertEquals(1, average.size());
 		Pair<Double, Double> a1 = average.peekFirst();
 		assertEqualsApprox( sumOfNumbers(16) / 16, a1.x, 99.999d);
