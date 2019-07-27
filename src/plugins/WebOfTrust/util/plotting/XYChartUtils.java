@@ -255,8 +255,7 @@ public final class XYChartUtils {
 	public static final <T extends Number> TimeChart<Double> movingAverage(
 			TimeChart<T> chart, int seconds) {
 		
-		// FIXME: Comment all logging in this function out once the bugs are fixed
-		System.out.println("movingAverage(chart, " + seconds + ")...");
+		// System.out.println("movingAverage(chart, " + seconds + ")...");
 		
 		assert(seconds > 0);
 		
@@ -269,7 +268,7 @@ public final class XYChartUtils {
 		Pair<Double, T>[] data
 			= (Pair<Double, T>[]) chart.toArray(new Pair[chart.size()]);
 		
-		int unyieldedAmount = 0; // Included in average but not yielded as output yet
+		// int unyieldedAmount = 0; // Included in average but not yielded as output yet
 
 		for(int windowEnd = 15; windowEnd < data.length; ++windowEnd) {
 			int windowStart = windowEnd;
@@ -308,23 +307,25 @@ public final class XYChartUtils {
 				assert(xAverage <= data[windowEnd].x);
 			}
 			
-			String logPrefix;
+			// String logPrefix;
 			if(enoughData) {
 				result.addLast(new Pair<>(xAverage, yAverage));
-				logPrefix = "Yielded element " + result.size();
+				// logPrefix = "Yielded element " + result.size();
 			} else {
-				++unyieldedAmount;
-				logPrefix = "Not yielding element";
+				// ++unyieldedAmount;
+				// logPrefix = "Not yielding element";
 			}
 			
 			windowStart = max(windowStart, 0); // Prevent ArrayIndexOutOfBoundsException
+			/*
 			System.out.println(logPrefix
 				+ " from: data[" + windowStart + "] to data[" + windowEnd + "]."
 				+ " seconds = " + (data[windowEnd].x - data[windowStart].x)
 				+ "; amount = " + amount + "; xAverage = " + xAverage + "; yAverage = " + yAverage);
+			*/
 		}
 		
-		System.out.println("Total unyielded amount: " + unyieldedAmount);
+		// System.out.println("Total unyielded amount: " + unyieldedAmount);
 		
 		// Each output element must consist of at least 16 inputs so the first 15 inputs do not
 		// cause output.
