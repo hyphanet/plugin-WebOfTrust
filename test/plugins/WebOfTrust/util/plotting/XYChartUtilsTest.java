@@ -27,6 +27,8 @@ public final class XYChartUtilsTest extends AbstractJUnit4BaseTest {
 
 	@Test public void testMovingAverage() {
 		TimeChart<Double> data = new TimeChart<>(128);
+		assertEquals(0, movingAverage(data, 1).size());
+		
 		// Use the first N natural numbers as input for the average as their sum can easily be
 		// calculated as:
 		//     sum(1, 2, 3, ..., N) = N*(N+1) / 2
