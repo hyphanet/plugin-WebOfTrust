@@ -143,115 +143,15 @@ public final class XYChartUtils {
 	 *
 	 * This is computed by sliding a moving window across the dataset and yielding an output Pair
 	 * for every input pair as long as:
-	 * - the current window contains measurements which span at least the given amount of seconds.
+	 * - the current window size is large enough to span at least the given amount of seconds,
+	 *   and small enough that removal of a single element would result in less contained
+	 *   measurements than for the desired amount of seconds.
 	 * - the window contains at least 16 Pairs of measurements. This additional requirement prevents
 	 *   the plot from being jumpy in time areas where there have been few measurements.
 	 * 
 	 * The resulting dataset's {@link TimeChart#size()} will be less than or equal to the input's
-	 * size.
+	 * size minus 15 elements.
 	 * Its {@link TimeChart#sizeLimit()} will be the same. */
-	public static final <T extends Number> TimeChart<Double> movingAverageOld(
-			TimeChart<T> xyData, int seconds) {
-		
-		// FIXME: Comment all logging in this function out once the bugs are fixed
-		System.out.println("movingAverage(data, " + seconds + ")...");
-		
-		assert(seconds > 0);
-		
-		TimeChart<Double> result = new TimeChart<>(xyData.sizeLimit());
-		
-		if(xyData.size() == 0)
-			return result;
-		
-		@SuppressWarnings("unchecked")
-		Pair<Double, T>[] xyArray
-			= (Pair<Double, T>[]) xyData.toArray(new Pair[xyData.size()]);
-		
-		int windowStart = 0;
-		int windowEnd = 0;
-		// Don't compute average by first summing up all entries and then dividing, but by
-		// continuously maintaining an already divided real average.
-		// We must divide at every added item instead of only dividing after the last because the
-		// values may be so large that they cause overflow or imprecision if we keep adding them up
-		// until the end.
-		double xAverage = 0;
-		double yAverage = 0;
-		int unyieldedAmount = 0; // Included in average but not yielded as output yet
-		do {
-			int amount = windowEnd - windowStart;
-			assert(amount >= 0);
-			
-			// Undo previous averaging
-			xAverage *= amount;
-			yAverage *= amount;
-			
-			// Put windowEnd into average
-			xAverage += xyArray[windowEnd].x;
-			yAverage += xyArray[windowEnd].y.doubleValue();
-			++amount;
-			xAverage /= amount;
-			yAverage /= amount;
-			
-			// If the average contains enough measurements now then yield it
-			if((xyArray[windowEnd].x - xyArray[windowStart].x) >= seconds
-					&& amount >= 16) {
-				
-				// FIXME: Increase windowStart until we're as close to 60 seconds as possible.
-				// Otherwise the window size will continuously increase, see the debug output on
-				// stdout.
-				
-				assert(xAverage >= xyArray[windowStart].x);
-				assert(xAverage <= xyArray[windowEnd].x);
-				
-				result.addLast(new Pair<>(xAverage, yAverage));
-				System.out.println("Yielded element " + result.size()
-					+ " from: xyArray[" + windowStart + "] to xyArray[" + windowEnd + "]."
-					+ " seconds = " + (xyArray[windowEnd].x - xyArray[windowStart].x)
-					+ "; amount = " + amount);
-				
-				// Remove windowStart from average in preparation of next iteration in order to
-				// actually make this a moving average with a window of the given amount of seconds.
-				// Do this here instead of at beginning of the loop so we don't need to check
-				// whether we're eligible to do it.
-				// FIXME: It'd be better to do it at the beginning to avoid one useless division
-				// and multiplication by amount, that may be a waste of floating point accuracy.
-				// Avoiding having the same if() at the loop beginning can also be achieved by
-				// setting a "boolean shiftWindowStart" to true here and checking it at the
-				// beginning.
-				xAverage *= amount;
-				yAverage *= amount;
-				xAverage -= xyArray[windowStart].x;
-				yAverage -= xyArray[windowStart].y.doubleValue();
-				--amount;
-				xAverage /= amount;
-				yAverage /= amount;
-				
-				++windowStart;
-				assert(amount == windowEnd - windowStart + 1);
-				unyieldedAmount = 0;
-			} else {
-				System.out.println("Not yielding element"
-					+ " from: xyArray[" + windowStart + "] to xyArray[" + windowEnd + "]."
-					+ " seconds = " + (xyArray[windowEnd].x - xyArray[windowStart].x)
-					+ "; amount = " + amount);
-				
-				++unyieldedAmount;
-			}
-		} while(++windowEnd < xyArray.length);
-		
-		System.out.println("Remaining unyielded amount: " + unyieldedAmount);
-		
-		// Each output element must consist of at least 16 inputs so the first 15 inputs do not
-		// cause output.
-		assert(result.size() <= max(0, xyData.size() - 15));
-		return result;
-	}
-
-	/**
-	 * Rewrite of {@link #movingAverageOld(TimeChart, int)} without performance
-	 * optimizations in order to fix its problem with the window continuously growing.
-	 * FIXME: Replace the former function with this one if it is fast enough in the end.
-	 * If it is not then test the former against this one in a unit test. */
 	public static final <T extends Number> TimeChart<Double> movingAverage(
 			TimeChart<T> chart, int seconds) {
 		
