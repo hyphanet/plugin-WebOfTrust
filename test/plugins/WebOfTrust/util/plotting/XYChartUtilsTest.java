@@ -4,8 +4,8 @@ import static java.lang.Math.PI;
 import static java.lang.Math.cos;
 import static java.lang.Math.sin;
 import static java.util.Arrays.asList;
+import static java.util.concurrent.TimeUnit.SECONDS;
 import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.fail;
 import static plugins.WebOfTrust.util.CollectionUtil.array;
 import static plugins.WebOfTrust.util.MathUtil.equalsApprox;
 import static plugins.WebOfTrust.util.Pair.pair;
@@ -20,10 +20,28 @@ import org.junit.Test;
 
 import plugins.WebOfTrust.AbstractJUnit4BaseTest;
 import plugins.WebOfTrust.WebOfTrust;
+import plugins.WebOfTrust.util.LimitedArrayDeque;
 import plugins.WebOfTrust.util.Pair;
 import plugins.WebOfTrust.util.plotting.XYChartUtils.TimeChart;
 
 public final class XYChartUtilsTest extends AbstractJUnit4BaseTest {
+	
+	@Test public void testTimeChartConstructors() {
+		TimeChart<Double> c1 = new TimeChart<>(1);
+		assertEquals(1, c1.sizeLimit());
+		
+		LimitedArrayDeque<Pair<Long, Long>> data = new LimitedArrayDeque<>(2);
+		data.addLast(pair(SECONDS.toMillis(10), 123l));
+		data.addLast(pair(SECONDS.toMillis(20), 345l));
+		long t0 = SECONDS.toMillis(1);
+		TimeChart<Long> c2 = new TimeChart<Long>(data, t0);
+		assertEquals(2, c2.size());
+		assertEquals(2, c2.sizeLimit());
+		assertEqualsApprox(9,  c2.peekFirst().x, 99.99d);
+		assertEquals(123l,     c2.peekFirst().y.longValue());
+		assertEqualsApprox(19, c2.peekLast().x, 99.99d);
+		assertEquals(345l,     c2.peekLast().y.longValue());
+	}
 
 	@Test public void testMovingAverage() {
 		TimeChart<Double> data = new TimeChart<>(128);
