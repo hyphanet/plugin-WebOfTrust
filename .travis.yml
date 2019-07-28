@@ -116,12 +116,12 @@ matrix:
       ## jdk: openjdk$FREENET_MINIMUM_JAVA_VERSION
       jdk: openjdk7
 
-    - jdk: openjdk7
+    # jdk: openjdk7: Java 7 is not supported on fred branch next anymore.
+    - jdk: openjdk8
       # Still use Ant on one Java version to ensure it keeps working.
       # Don't use it on the above job because deployment happens there which is slow, just like Ant
       # - we would risk exhausting the time limit.
       env: FRED=next BUILDER=ant
-    - jdk: openjdk8
     - jdk: openjdk9
     - jdk: openjdk10
     - jdk: openjdk11
