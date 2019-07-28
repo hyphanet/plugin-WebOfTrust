@@ -135,6 +135,12 @@ public final class XYChartUtilsTest extends AbstractJUnit4BaseTest {
 			assertEqualsApprox(x, p.x, 99.999d);
 			assertEqualsApprox(y, p.y, 99.999d);
 		}
+		
+		// Test special cases:
+		// - Trying to differentiate a single value, which is not possible
+		TimeChart<Double> data = new TimeChart<>(1);
+		data.addLast(pair(1d, 1d));
+		assertEquals(0, differentiate(data).size());
 	}
 
 	@Test public void testMultiplyY() {
