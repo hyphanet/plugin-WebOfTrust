@@ -141,6 +141,11 @@ public final class XYChartUtilsTest extends AbstractJUnit4BaseTest {
 		TimeChart<Double> data = new TimeChart<>(1);
 		data.addLast(pair(1d, 1d));
 		assertEquals(0, differentiate(data).size());
+		// - dx == 0, which would result in divion by zero if not handled properly.
+		data = new TimeChart<>(2);
+		data.addLast(pair(0d, 0d));
+		data.addLast(pair(0d, 1d));
+		assertEquals(0, differentiate(data).size());
 	}
 
 	@Test public void testMultiplyY() {
