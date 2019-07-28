@@ -48,6 +48,8 @@ public final class XYChartUtils {
 	 * areas of minutes to hours and hence millisecond values are not interesting to the user. */
 	public static final class TimeChart<T extends Number>
 			extends LimitedArrayDeque<Pair<Double, T>> {
+		
+		String mLabel = null;
 
 		public TimeChart(int sizeLimit) {
 			super(sizeLimit);
@@ -72,6 +74,10 @@ public final class XYChartUtils {
 				double xInSeconds = (double)x / oneSecondInMillis;
 				addLast(new Pair<Double, T>(xInSeconds, p.y));
 			}
+		}
+		
+		public void setLabel(String label) {
+			mLabel = label;
 		}
 	}
 
