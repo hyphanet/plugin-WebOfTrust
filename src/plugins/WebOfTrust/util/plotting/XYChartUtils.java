@@ -117,6 +117,8 @@ public final class XYChartUtils {
 		c.setTitle(l10n.getString(title));
 		c.setXAxisTitle(l10n.getString(hours ? xLabelHours : xLabelMinutes));
 		c.setYAxisTitle(l10n.getString(yLabel));
+		// Visibility of the labels to distinguish the multiple TimeCharts we render into the plot.
+		c.getStyler().setLegendVisible(timeCharts.length > 1);
 		
 		for(TimeChart<T> xyData : timeCharts) {
 		double timeUnit = (hours ? HOURS : MINUTES).toSeconds(1);
@@ -128,8 +130,9 @@ public final class XYChartUtils {
 			y[i] = p.y.doubleValue();
 			++i;
 		}
-
-		XYSeries s = c.addSeries(xyData.mLabel, x, y);
+		
+		// The series label is not allowed to be empty so use the chart title if it is.
+		XYSeries s = c.addSeries(xyData.mLabel != null ? xyData.mLabel : c.getTitle(), x, y);
 		// For debugging use e.g. SeriesMarkers.CIRCLE
 		s.setMarker(SeriesMarkers.NONE);
 		}
