@@ -95,19 +95,30 @@ public final class XYChartUtils {
 	 *     minutes.
 	 * @param yLabel L10n key of the Y-axis label.
 	 * @return An image of the PNG format, serialized to a byte array. */
+	@SafeVarargs
 	public static final <T extends Number> byte[] getTimeBasedPlotPNG(
-			TimeChart<T> xyData, BaseL10n l10n, String title, String xLabelHours,
-			String xLabelMinutes, String yLabel) {
+			BaseL10n l10n, String title, String xLabelHours,
+			String xLabelMinutes, String yLabel, TimeChart<T>... timeCharts) {
 		
 		// If the amount of measurements we've gathered is at least 2 hours then we measure the
 		// X-axis in hours, otherwise we measure it in minutes.
 		// Using 2 hours instead of the more natural 1 hour because 1 hour measurements are a
 		// typical benchmark of bootstrapping and I don't want to annoy people who want to measure
 		// that with the X-axis not showing minutes.
-		boolean hours = SECONDS.toHours(
+		boolean hours = false;
+		for(TimeChart<T> xyData : timeCharts) {
+			hours |= SECONDS.toHours(
 				(long)(xyData.peekLast().x - xyData.peekFirst().x)
 			) >= 2;
+		}
 		
+		// FIXME: Use large resolution and have the HTML scale it to the screen size
+		XYChart c = new XYChart(600, 400);
+		c.setTitle(l10n.getString(title));
+		c.setXAxisTitle(l10n.getString(hours ? xLabelHours : xLabelMinutes));
+		c.setYAxisTitle(l10n.getString(yLabel));
+		
+		for(TimeChart<T> xyData : timeCharts) {
 		double timeUnit = (hours ? HOURS : MINUTES).toSeconds(1);
 		double[] x = new double[xyData.size()];
 		double[] y = new double[x.length];
@@ -117,16 +128,11 @@ public final class XYChartUtils {
 			y[i] = p.y.doubleValue();
 			++i;
 		}
-		
-		// FIXME: Use large resolution and have the HTML scale it to the screen size
-		XYChart c = new XYChart(600, 400);
-		c.setTitle(l10n.getString(title));
-		c.setXAxisTitle(l10n.getString(hours ? xLabelHours : xLabelMinutes));
-		c.setYAxisTitle(l10n.getString(yLabel));
 
 		XYSeries s = c.addSeries(xyData.mLabel, x, y);
 		// For debugging use e.g. SeriesMarkers.CIRCLE
 		s.setMarker(SeriesMarkers.NONE);
+		}
 		
 		byte[] png;
 		try {
@@ -138,6 +144,14 @@ public final class XYChartUtils {
 		}
 		
 		return png;
+	}
+
+	/** FIXME: Replace all usage of this with the varargs getTimeBasedPlotPNG() */
+	public static final <T extends Number> byte[] getTimeBasedPlotPNG(
+			TimeChart<T> timeChart, BaseL10n l10n, String title, String xLabelHours,
+			String xLabelMinutes, String yLabel) {
+		
+		return getTimeBasedPlotPNG(l10n, title, xLabelHours, xLabelMinutes, yLabel, timeChart);
 	}
 
 	/**
