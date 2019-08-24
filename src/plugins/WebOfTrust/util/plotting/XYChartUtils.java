@@ -123,20 +123,20 @@ public final class XYChartUtils {
 		c.getStyler().setLegendVisible(timeCharts.length > 1);
 		
 		for(TimeChart<T> xyData : timeCharts) {
-		double timeUnit = (hours ? HOURS : MINUTES).toSeconds(1);
-		double[] x = new double[xyData.size()];
-		double[] y = new double[x.length];
-		int i = 0;
-		for(Pair<Double, T> p : xyData) {
-			x[i] = p.x / timeUnit;
-			y[i] = p.y.doubleValue();
-			++i;
-		}
-		
-		// The series label is not allowed to be empty so use the chart title if it is.
-		XYSeries s = c.addSeries(xyData.mLabel != null ? xyData.mLabel : c.getTitle(), x, y);
-		// For debugging use e.g. SeriesMarkers.CIRCLE
-		s.setMarker(SeriesMarkers.NONE);
+			double timeUnit = (hours ? HOURS : MINUTES).toSeconds(1);
+			double[] x = new double[xyData.size()];
+			double[] y = new double[x.length];
+			int i = 0;
+			for(Pair<Double, T> p : xyData) {
+				x[i] = p.x / timeUnit;
+				y[i] = p.y.doubleValue();
+				++i;
+			}
+			
+			// The series label is not allowed to be empty so use the chart title if it is.
+			XYSeries s = c.addSeries(xyData.mLabel != null ? xyData.mLabel : c.getTitle(), x, y);
+			// For debugging use e.g. SeriesMarkers.CIRCLE
+			s.setMarker(SeriesMarkers.NONE);
 		}
 		
 		byte[] png;
