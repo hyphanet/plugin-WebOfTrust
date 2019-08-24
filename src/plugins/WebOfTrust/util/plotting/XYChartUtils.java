@@ -13,15 +13,16 @@ import java.util.Iterator;
 
 import org.knowm.xchart.BitmapEncoder;
 import org.knowm.xchart.BitmapEncoder.BitmapFormat;
-import org.knowm.xchart.QuickChart;
 import org.knowm.xchart.XYChart;
+import org.knowm.xchart.XYSeries;
+import org.knowm.xchart.style.markers.SeriesMarkers;
 
+import freenet.l10n.BaseL10n;
+import freenet.support.CurrentTimeUTC;
 import plugins.WebOfTrust.ui.web.StatisticsPage;
 import plugins.WebOfTrust.ui.web.StatisticsPage.StatisticsPlotRenderer;
 import plugins.WebOfTrust.util.LimitedArrayDeque;
 import plugins.WebOfTrust.util.Pair;
-import freenet.l10n.BaseL10n;
-import freenet.support.CurrentTimeUTC;
 
 /**
  * Utility classes to preprocess data to make it suitable for plotting, and to plot it using the
@@ -117,14 +118,15 @@ public final class XYChartUtils {
 			++i;
 		}
 		
-		XYChart c = QuickChart.getChart(l10n.getString(title),
-			l10n.getString(hours ? xLabelHours : xLabelMinutes),
-			l10n.getString(yLabel), null, x, y);
-		
-		/* For debugging
-			for(XYSeries s: c.getSeriesMap().values())
-				s.setMarker(SeriesMarkers.CIRCLE);
-		 */
+		// FIXME: Use large resolution and have the HTML scale it to the screen size
+		XYChart c = new XYChart(600, 400);
+		c.setTitle(l10n.getString(title));
+		c.setXAxisTitle(l10n.getString(hours ? xLabelHours : xLabelMinutes));
+		c.setYAxisTitle(l10n.getString(yLabel));
+
+		XYSeries s = c.addSeries(xyData.mLabel, x, y);
+		// For debugging use e.g. SeriesMarkers.CIRCLE
+		s.setMarker(SeriesMarkers.NONE);
 		
 		byte[] png;
 		try {
