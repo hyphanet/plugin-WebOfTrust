@@ -7,6 +7,7 @@ import static java.lang.Math.max;
 import static java.util.concurrent.TimeUnit.HOURS;
 import static java.util.concurrent.TimeUnit.MINUTES;
 import static java.util.concurrent.TimeUnit.SECONDS;
+import static org.knowm.xchart.style.Styler.LegendPosition.InsideNW;
 
 import java.io.IOException;
 import java.util.Iterator;
@@ -117,6 +118,7 @@ public final class XYChartUtils {
 		c.setTitle(l10n.getString(title));
 		c.setXAxisTitle(l10n.getString(hours ? xLabelHours : xLabelMinutes));
 		c.setYAxisTitle(l10n.getString(yLabel));
+		c.getStyler().setLegendPosition(InsideNW);
 		// Visibility of the labels to distinguish the multiple TimeCharts we render into the plot.
 		c.getStyler().setLegendVisible(timeCharts.length > 1);
 		
