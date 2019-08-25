@@ -282,6 +282,8 @@ public interface IdentityFileQueue {
 				if(deserialized == null)
 					throw new IOException("No IdentityFileQueueStatistics in file: " + source);
 				
+				assert(deserialized.checkConsistency());
+				
 				return deserialized;
 			} catch(ClassNotFoundException e) {
 				throw new IOException(e);
