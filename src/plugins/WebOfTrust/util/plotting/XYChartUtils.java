@@ -110,9 +110,9 @@ public final class XYChartUtils {
 		// typical benchmark of bootstrapping and I don't want to annoy people who want to measure
 		// that with the X-axis not showing minutes.
 		boolean hours = false;
-		for(TimeChart<T> xyData : timeCharts) {
+		for(TimeChart<T> series : timeCharts) {
 			hours |= SECONDS.toHours(
-				(long)(xyData.peekLast().x - xyData.peekFirst().x)
+				(long)(series.peekLast().x - series.peekFirst().x)
 			) >= 2;
 		}
 		
