@@ -154,14 +154,6 @@ public final class XYChartUtils {
 		return png;
 	}
 
-	/** FIXME: Replace all usage of this with the varargs getTimeBasedPlotPNG() */
-	public static final <T extends Number> byte[] getTimeBasedPlotPNG(
-			TimeChart<T> timeChart, BaseL10n l10n, String title, String xLabelHours,
-			String xLabelMinutes, String yLabel) {
-		
-		return getTimeBasedPlotPNG(l10n, title, xLabelHours, xLabelMinutes, yLabel, timeChart);
-	}
-
 	/**
 	 * Input:
 	 * - a {@link TimeChart} to be processed.

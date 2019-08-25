@@ -169,8 +169,8 @@ public class StatisticsPage extends WebPageImpl {
 					= (double)(CurrentTimeUTC.getInMillis() - t0) / SECONDS.toMillis(1);
 				timesOfQueuing.addLast(new Pair<>(currentTime, timesOfQueuing.peekLast().y));
 				
-				return getTimeBasedPlotPNG(timesOfQueuing, wot.getBaseL10n(), l10n + "Title",
-					l10n + "XAxis.Hours", l10n + "XAxis.Minutes",  l10n + "YAxis");
+				return getTimeBasedPlotPNG(wot.getBaseL10n(), l10n + "Title", l10n + "XAxis.Hours",
+					l10n + "XAxis.Minutes",  l10n + "YAxis", timesOfQueuing);
 			}
 		}),
 		DownloadsPerHour(new StatisticsPlotRenderer() {
@@ -218,8 +218,8 @@ public class StatisticsPage extends WebPageImpl {
 				downloadsPerHour.addLast(new Pair<>(currentTime,
 					downloadsPerHour.size() > 0 ? downloadsPerHour.peekLast().y : 0d));
 				
-				return getTimeBasedPlotPNG(downloadsPerHour, wot.getBaseL10n(), l10n + "Title",
-					l10n + "XAxis.Hours", l10n + "XAxis.Minutes",  l10n + "YAxis");
+				return getTimeBasedPlotPNG(wot.getBaseL10n(), l10n + "Title", l10n + "XAxis.Hours",
+					l10n + "XAxis.Minutes",  l10n + "YAxis", downloadsPerHour);
 			}
 		});
 
