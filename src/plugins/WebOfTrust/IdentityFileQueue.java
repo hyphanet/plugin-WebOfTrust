@@ -3,15 +3,23 @@
  * any later version). See http://www.gnu.org/ for details of the GPL. */
 package plugins.WebOfTrust;
 
+import java.io.File;
+import java.io.FileInputStream;
+import java.io.FileOutputStream;
 import java.io.FilterInputStream;
+import java.io.IOException;
 import java.io.InputStream;
+import java.io.ObjectInputStream;
+import java.io.ObjectOutputStream;
+import java.io.Serializable;
 
+import freenet.keys.FreenetURI;
+import freenet.support.CurrentTimeUTC;
+import freenet.support.io.Closer;
 import plugins.WebOfTrust.network.input.IdentityDownloader;
 import plugins.WebOfTrust.util.LimitedArrayDeque;
 import plugins.WebOfTrust.util.Pair;
 import plugins.WebOfTrust.util.jobs.BackgroundJob;
-import freenet.keys.FreenetURI;
-import freenet.support.CurrentTimeUTC;
 
 
 /**
@@ -101,7 +109,7 @@ public interface IdentityFileQueue {
 	public IdentityFileQueueStatistics getStatistics();
 
 
-	public static final class IdentityFileQueueStatistics implements Cloneable {
+	public static final class IdentityFileQueueStatistics implements Cloneable, Serializable {
 		/**
 		 * Count of files which were passed to {@link #add(IdentityFileStream)}.
 		 * This is equal to the total number of downloaded Identity files as the contract of
@@ -182,6 +190,8 @@ public interface IdentityFileQueue {
 		/** Value of {@link CurrentTimeUTC#getInMillis()} when this object was created. */
 		public final long mStartupTimeMilliseconds = CurrentTimeUTC.getInMillis();
 	
+		private static final long serialVersionUID = 1L;
+	
 	
 		IdentityFileQueueStatistics() {
 			mTimesOfQueuing.addLast(new Pair<>(mStartupTimeMilliseconds, mTotalQueuedFiles));
@@ -242,6 +252,22 @@ public interface IdentityFileQueue {
 				 && (mDeduplicatedFiles ==
 						mTotalQueuedFiles - mQueuedFiles - mProcessingFiles - mFinishedFiles)
 			 );
+		}
+	
+		void write(File file) {
+			FileOutputStream fos = null;
+			ObjectOutputStream ous = null;
+			
+			try {
+				fos = new FileOutputStream(file);
+				ous = new ObjectOutputStream(fos);
+				ous.writeObject(this);
+			} catch(IOException e) {
+				throw new RuntimeException(e);
+			} finally {
+				Closer.close(ous);
+				Closer.close(fos);
+			}
 		}
 	}
 }
