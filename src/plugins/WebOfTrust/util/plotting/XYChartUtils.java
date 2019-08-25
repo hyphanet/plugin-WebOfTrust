@@ -125,19 +125,19 @@ public final class XYChartUtils {
 		// Visibility of the labels to distinguish the multiple TimeCharts we render into the plot.
 		c.getStyler().setLegendVisible(timeCharts.length > 1);
 		
-		for(TimeChart<T> xyData : timeCharts) {
+		for(TimeChart<T> series : timeCharts) {
 			double timeUnit = (hours ? HOURS : MINUTES).toSeconds(1);
-			double[] x = new double[xyData.size()];
+			double[] x = new double[series.size()];
 			double[] y = new double[x.length];
 			int i = 0;
-			for(Pair<Double, T> p : xyData) {
+			for(Pair<Double, T> p : series) {
 				x[i] = p.x / timeUnit;
 				y[i] = p.y.doubleValue();
 				++i;
 			}
 			
 			// The series label is not allowed to be empty so use the chart title if it is.
-			XYSeries s = c.addSeries(xyData.mLabel != null ? xyData.mLabel : c.getTitle(), x, y);
+			XYSeries s = c.addSeries(series.mLabel != null ? series.mLabel : c.getTitle(), x, y);
 			// For debugging use e.g. SeriesMarkers.CIRCLE
 			s.setMarker(SeriesMarkers.NONE);
 		}
