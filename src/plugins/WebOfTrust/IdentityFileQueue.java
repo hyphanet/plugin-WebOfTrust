@@ -269,5 +269,26 @@ public interface IdentityFileQueue {
 				Closer.close(fos);
 			}
 		}
+	
+		static IdentityFileQueueStatistics read(File source) throws IOException {
+			FileInputStream fis = null;
+			ObjectInputStream ois = null;
+			
+			try {
+				fis = new FileInputStream(source);
+				ois = new ObjectInputStream(fis);
+				IdentityFileQueueStatistics deserialized
+					= (IdentityFileQueueStatistics)ois.readObject();
+				if(deserialized == null)
+					throw new IOException("No IdentityFileQueueStatistics in file: " + source);
+				
+				return deserialized;
+			} catch(ClassNotFoundException e) {
+				throw new IOException(e);
+			} finally {
+				Closer.close(ois);
+				Closer.close(fis);
+			}
+		}
 	}
 }
