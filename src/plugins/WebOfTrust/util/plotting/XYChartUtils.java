@@ -87,7 +87,6 @@ public final class XYChartUtils {
 	 * Generic implementation of creating an {@link XYChart} where the X-axis is the time.
 	 * Can be used by {@link StatisticsPlotRenderer} implementations for their purposes.
 	 * 
-	 * @param xyData The plot data. ATTENTION: It MUST always contain at least one entry.
 	 * @param l10n The {@link BaseL10n} used to translate the given string keys.
 	 * @param title L10n key of the label on top of the plot.
 	 * @param xLabelHours L10n key of the X-axis label if it is automatically chosen to display
@@ -95,6 +94,10 @@ public final class XYChartUtils {
 	 * @param xLabelMinutes L10n key of the X-axis label if it is automatically chosen to display
 	 *     minutes.
 	 * @param yLabel L10n key of the Y-axis label.
+	 * @param timeCharts The plot data, or multiple series of data to render into a single plot.
+	 *     ATTENTION: Each TimeChart MUST always contain at least one entry.
+	 *     If there is more than one TimeChart, each must be assigned a label via
+	 *     {@link TimeChart#setLabel(String)} to allow the user to distinguish them.
 	 * @return An image of the PNG format, serialized to a byte array. */
 	@SafeVarargs
 	public static final <T extends Number> byte[] getTimeBasedPlotPNG(
