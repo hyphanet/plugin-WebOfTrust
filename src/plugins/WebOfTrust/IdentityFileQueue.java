@@ -263,6 +263,9 @@ public interface IdentityFileQueue {
 			ObjectOutputStream ous = null;
 			
 			try {
+				if(file.exists())
+					throw new IOException("Output file exists already: " + file);
+				
 				fos = new FileOutputStream(file);
 				ous = new ObjectOutputStream(fos);
 				ous.writeObject(this);
