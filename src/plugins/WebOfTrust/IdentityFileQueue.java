@@ -254,6 +254,10 @@ public interface IdentityFileQueue {
 			 );
 		}
 	
+		/**
+		 * Uses Java serialization instead of WoT's main db4o database so statistics plots of
+		 * different runs with a blank db4o database each can be compared against one and another as
+		 * a benchmark. */
 		void write(File file) {
 			FileOutputStream fos = null;
 			ObjectOutputStream ous = null;
@@ -270,6 +274,7 @@ public interface IdentityFileQueue {
 			}
 		}
 	
+		/** @see #write(File) */
 		static IdentityFileQueueStatistics read(File source) throws IOException {
 			FileInputStream fis = null;
 			ObjectInputStream ois = null;
