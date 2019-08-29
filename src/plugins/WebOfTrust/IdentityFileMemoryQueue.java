@@ -4,6 +4,7 @@
 package plugins.WebOfTrust;
 
 import java.io.ByteArrayInputStream;
+import java.io.IOException;
 import java.util.LinkedList;
 
 import freenet.support.CurrentTimeUTC;
@@ -128,6 +129,10 @@ final class IdentityFileMemoryQueue implements IdentityFileQueue {
 		assert(checkConsistency());
 		return mStatistics.clone();
 	}
+	
+	@Override public IdentityFileQueueStatistics getStatisticsOfLastSession() throws IOException {
+		throw new IOException("IdentityFileMemoryQueue does not store anything to disk!");
+	}
 
 	private synchronized boolean checkConsistency() {
 		return
@@ -136,4 +141,6 @@ final class IdentityFileMemoryQueue implements IdentityFileQueue {
 			&& mStatistics.mProcessingFiles == 0
 			&& mStatistics.mQueuedFiles == mQueue.size();
 	}
+
+	@Override public void stop() { }
 }
