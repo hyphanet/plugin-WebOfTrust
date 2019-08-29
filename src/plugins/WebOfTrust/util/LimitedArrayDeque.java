@@ -1,5 +1,6 @@
 package plugins.WebOfTrust.util;
 
+import java.io.Serializable;
 import java.util.ArrayDeque;
 import java.util.Collection;
 import java.util.Iterator;
@@ -8,7 +9,9 @@ import java.util.Iterator;
  * A wrapper around class {@link ArrayDeque} which automatically obeys a size limit.
  * Once the limit is reached adding an element to the tail will remove the head element and vice
  * versa. */
-public class LimitedArrayDeque<T> implements Cloneable, Iterable<T> {
+public class LimitedArrayDeque<T> implements Cloneable, Iterable<T>, Serializable {
+
+	private static final long serialVersionUID = 1L;
 
 	private final ArrayDeque<T> mQueue;
 
