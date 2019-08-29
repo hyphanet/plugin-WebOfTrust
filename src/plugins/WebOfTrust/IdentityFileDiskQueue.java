@@ -57,7 +57,10 @@ final class IdentityFileDiskQueue implements IdentityFileQueue {
 
 	/** @see #getStatistics() */
 	private final IdentityFileQueueStatistics mStatistics = new IdentityFileQueueStatistics();
-	
+
+	/** @see #getStatisticsOfLastSession() */
+	private static final String STATISTICS_OF_LAST_SESSION_FILENAME = "Statistics.ser";
+
 	/** @see #registerEventHandler(BackgroundJob) */
 	private BackgroundJob mEventHandler;
 
@@ -545,7 +548,23 @@ final class IdentityFileDiskQueue implements IdentityFileQueue {
 		assert(checkDiskConsistency());
 		return result;
 	}
-	
+
+	@Override public synchronized IdentityFileQueueStatistics getStatisticsOfLastSession()
+			throws IOException {
+		return IdentityFileQueueStatistics.read(
+			new File(mDataDir, STATISTICS_OF_LAST_SESSION_FILENAME));
+	}
+
+	private synchronized void saveStatistics() {
+		File output = new File(mDataDir, STATISTICS_OF_LAST_SESSION_FILENAME);
+		output.delete();
+		mStatistics.write(output);
+	}
+
+	@Override public synchronized void stop() {
+		saveStatistics();
+	}
+
 	/**
 	 * Returns true if the numbers in {@link #mStatistics} match the amount of files in the on-disk
 	 * directories. */
