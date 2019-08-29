@@ -555,14 +555,18 @@ final class IdentityFileDiskQueue implements IdentityFileQueue {
 			new File(mDataDir, STATISTICS_OF_LAST_SESSION_FILENAME));
 	}
 
-	private synchronized void saveStatistics() {
+	private synchronized void saveStatistics() throws IOException {
 		File output = new File(mDataDir, STATISTICS_OF_LAST_SESSION_FILENAME);
 		output.delete();
 		mStatistics.write(output);
 	}
 
 	@Override public synchronized void stop() {
-		saveStatistics();
+		try {
+			saveStatistics();
+		} catch(IOException e) {
+			Logger.error(this, "saveStatistics() failed!", e);
+		}
 	}
 
 	/**
