@@ -108,6 +108,19 @@ public interface IdentityFileQueue {
 	 *     The object is a clone, you may interfere with the contents of the member variables. */
 	public IdentityFileQueueStatistics getStatistics();
 
+	/**
+	 * Same as {@link #getStatistics()}, but returns the statistics of the previous run of WoT.
+	 * The statistics are stored in a file separate to the main WoT db4o database so benchmarks of
+	 * multiple runs with different databases can be compared against one and another.
+	 * 
+	 * @throws IOException
+	 *     If there was no previous session, if the file storing the statistics is corrupted, or
+	 *     the particular IdentityFileQueue implementation does not implement storage. */
+	public IdentityFileQueueStatistics getStatisticsOfLastSession() throws IOException;
+
+	/** Must be called by WoT upon shutdown. */
+	public void stop();
+
 
 	public static final class IdentityFileQueueStatistics implements Cloneable, Serializable {
 		/**
