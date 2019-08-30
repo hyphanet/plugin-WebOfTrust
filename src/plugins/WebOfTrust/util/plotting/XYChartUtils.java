@@ -78,8 +78,9 @@ public final class XYChartUtils {
 			}
 		}
 		
-		public void setLabel(String label) {
-			mLabel = label;
+		/** @param The {@link BaseL10n} key of the label. */
+		public void setLabel(String labelL10nKey) {
+			mLabel = labelL10nKey;
 		}
 	}
 
@@ -137,7 +138,8 @@ public final class XYChartUtils {
 			}
 			
 			// The series label is not allowed to be empty so use the chart title if it is.
-			XYSeries s = c.addSeries(series.mLabel != null ? series.mLabel : c.getTitle(), x, y);
+			XYSeries s = c.addSeries(
+				series.mLabel != null ? l10n.getString(series.mLabel) : c.getTitle(), x, y);
 			// For debugging use e.g. SeriesMarkers.CIRCLE
 			s.setMarker(SeriesMarkers.NONE);
 		}
