@@ -1,5 +1,6 @@
 package plugins.WebOfTrust.util;
 
+import java.util.ArrayList;
 import java.util.Arrays;
 
 public final class CollectionUtil {
@@ -35,6 +36,21 @@ public final class CollectionUtil {
 		
 		for(T e : array)
 			result.add(e);
+		
+		return result;
+	}
+
+	/**
+	 * TODO: Java 8: Use list.removeIf(Objects::isNull);
+	 * Or replace caller logic with using arrays instead as:
+	 *     Arrays.stream(array).filter(Objects::nonNull).toArray(ArrayClass[]::new); */
+	public static <T> ArrayList<T> ignoreNulls(ArrayList<T> list) {
+		ArrayList<T> result = new ArrayList<>();
+		
+		for(T e : list) {
+			if(e != null)
+				result.add(e);
+		}
 		
 		return result;
 	}
