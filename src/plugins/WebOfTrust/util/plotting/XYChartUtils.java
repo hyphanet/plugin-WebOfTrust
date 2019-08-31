@@ -10,6 +10,7 @@ import static java.util.concurrent.TimeUnit.SECONDS;
 import static org.knowm.xchart.style.Styler.LegendPosition.InsideNW;
 
 import java.io.IOException;
+import java.util.Collection;
 import java.util.Iterator;
 
 import org.knowm.xchart.BitmapEncoder;
