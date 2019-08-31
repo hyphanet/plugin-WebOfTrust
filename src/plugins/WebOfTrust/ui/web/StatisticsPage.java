@@ -188,10 +188,10 @@ public class StatisticsPage extends WebPageImpl {
 				long t0 = stats.mStartupTimeMilliseconds;
 				TimeChart<Integer> timesOfQueuing = new TimeChart<>(stats.mTimesOfQueuing, t0);
 				
-				// peekLast() will always work: IdentityFileQueueStatistics specifies it to always
-				// contain at least one entry.
 				double currentTime
 					= (double)(CurrentTimeUTC.getInMillis() - t0) / SECONDS.toMillis(1);
+				// peekLast() will always work: IdentityFileQueueStatistics specifies it to always
+				// contain at least one entry.
 				timesOfQueuing.addLast(new Pair<>(currentTime, timesOfQueuing.peekLast().y));
 				
 				return timesOfQueuing;
