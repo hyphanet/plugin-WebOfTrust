@@ -28,4 +28,14 @@ public final class CollectionUtil {
 		
 		return Arrays.copyOf(array, array.length);
 	}
+
+	@SafeVarargs
+	public static <T> ArrayList<T> arrayList(T... array) {
+		ArrayList<T> result = new ArrayList<>(array.length);
+		
+		for(T e : array)
+			result.add(e);
+		
+		return result;
+	}
 }
