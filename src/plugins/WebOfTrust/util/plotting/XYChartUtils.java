@@ -100,10 +100,9 @@ public final class XYChartUtils {
 	 *     If there is more than one TimeChart, each must be assigned a label via
 	 *     {@link TimeChart#setLabel(String)} to allow the user to distinguish them.
 	 * @return An image of the PNG format, serialized to a byte array. */
-	@SafeVarargs
 	public static final <T extends Number> byte[] getTimeBasedPlotPNG(
 			BaseL10n l10n, String title, String xLabelHours,
-			String xLabelMinutes, String yLabel, TimeChart<T>... timeCharts) {
+			String xLabelMinutes, String yLabel, Collection<TimeChart<T>> timeCharts) {
 		
 		// If the amount of measurements we've gathered is at least 2 hours then we measure the
 		// X-axis in hours, otherwise we measure it in minutes.
@@ -124,7 +123,7 @@ public final class XYChartUtils {
 		c.setYAxisTitle(l10n.getString(yLabel));
 		c.getStyler().setLegendPosition(InsideNW);
 		// Visibility of the labels to distinguish the multiple TimeCharts we render into the plot.
-		c.getStyler().setLegendVisible(timeCharts.length > 1);
+		c.getStyler().setLegendVisible(timeCharts.size() > 1);
 		
 		for(TimeChart<T> series : timeCharts) {
 			double timeUnit = (hours ? HOURS : MINUTES).toSeconds(1);

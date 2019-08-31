@@ -10,6 +10,7 @@ import static java.util.concurrent.TimeUnit.SECONDS;
 import static plugins.WebOfTrust.Configuration.DEFAULT_DEFRAG_INTERVAL;
 import static plugins.WebOfTrust.Configuration.DEFAULT_VERIFY_SCORES_INTERVAL;
 import static plugins.WebOfTrust.ui.web.CommonWebUtils.formatTimeDelta;
+import static plugins.WebOfTrust.util.CollectionUtil.arrayList;
 import static plugins.WebOfTrust.util.plotting.XYChartUtils.differentiate;
 import static plugins.WebOfTrust.util.plotting.XYChartUtils.getTimeBasedPlotPNG;
 import static plugins.WebOfTrust.util.plotting.XYChartUtils.movingAverage;
@@ -170,7 +171,7 @@ public class StatisticsPage extends WebPageImpl {
 				timesOfQueuing.addLast(new Pair<>(currentTime, timesOfQueuing.peekLast().y));
 				
 				return getTimeBasedPlotPNG(wot.getBaseL10n(), l10n + "Title", l10n + "XAxis.Hours",
-					l10n + "XAxis.Minutes",  l10n + "YAxis", timesOfQueuing);
+					l10n + "XAxis.Minutes",  l10n + "YAxis", arrayList(timesOfQueuing));
 			}
 		}),
 		DownloadsPerHour(new StatisticsPlotRenderer() {
@@ -219,7 +220,7 @@ public class StatisticsPage extends WebPageImpl {
 					downloadsPerHour.size() > 0 ? downloadsPerHour.peekLast().y : 0d));
 				
 				return getTimeBasedPlotPNG(wot.getBaseL10n(), l10n + "Title", l10n + "XAxis.Hours",
-					l10n + "XAxis.Minutes",  l10n + "YAxis", downloadsPerHour);
+					l10n + "XAxis.Minutes",  l10n + "YAxis", arrayList(downloadsPerHour));
 			}
 		});
 
