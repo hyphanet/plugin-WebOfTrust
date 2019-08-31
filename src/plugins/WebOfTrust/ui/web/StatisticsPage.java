@@ -11,11 +11,13 @@ import static plugins.WebOfTrust.Configuration.DEFAULT_DEFRAG_INTERVAL;
 import static plugins.WebOfTrust.Configuration.DEFAULT_VERIFY_SCORES_INTERVAL;
 import static plugins.WebOfTrust.ui.web.CommonWebUtils.formatTimeDelta;
 import static plugins.WebOfTrust.util.CollectionUtil.arrayList;
+import static plugins.WebOfTrust.util.CollectionUtil.ignoreNulls;
 import static plugins.WebOfTrust.util.plotting.XYChartUtils.differentiate;
 import static plugins.WebOfTrust.util.plotting.XYChartUtils.getTimeBasedPlotPNG;
 import static plugins.WebOfTrust.util.plotting.XYChartUtils.movingAverage;
 import static plugins.WebOfTrust.util.plotting.XYChartUtils.multiplyY;
 
+import java.io.IOException;
 import java.net.URI;
 import java.text.SimpleDateFormat;
 import java.util.Date;
@@ -25,6 +27,7 @@ import plugins.WebOfTrust.Configuration;
 import plugins.WebOfTrust.Identity;
 import plugins.WebOfTrust.IdentityFile;
 import plugins.WebOfTrust.IdentityFileProcessor;
+import plugins.WebOfTrust.IdentityFileQueue;
 import plugins.WebOfTrust.IdentityFileQueue.IdentityFileQueueStatistics;
 import plugins.WebOfTrust.SubscriptionManager;
 import plugins.WebOfTrust.WebOfTrust;
@@ -156,10 +159,30 @@ public class StatisticsPage extends WebPageImpl {
 			 * @see IdentityFileQueueStatistics#mTotalQueuedFiles
 			 * @see IdentityFileQueueStatistics#mTimesOfQueuing */
 			@Override public byte[] getPNG(WebOfTrust wot) {
-				IdentityFileQueueStatistics stats = wot.getIdentityFileQueue().getStatistics();
+				IdentityFileQueue q = wot.getIdentityFileQueue();
+				
+				TimeChart<Integer> chartOld;
+				try {
+					IdentityFileQueueStatistics s = q.getStatisticsOfLastSession();
+					chartOld = new TimeChart<>(s.mTimesOfQueuing, s.mStartupTimeMilliseconds);
+					chartOld.setLabel("StatisticsPage.PlotBox.LastSession");
+				} catch (IOException e) {
+					// No data of previous session available
+					chartOld = null;
+				}
+				
+				TimeChart<Integer> chartNew = appendCurrentTimeDummy(q.getStatistics());
+				chartNew.setLabel("StatisticsPage.PlotBox.CurrentSession");
+				
+				String l10n = "StatisticsPage.PlotBox.TotalDownloadCountPlot.";
+				return getTimeBasedPlotPNG(wot.getBaseL10n(), l10n + "Title", l10n + "XAxis.Hours",
+					l10n + "XAxis.Minutes",  l10n + "YAxis",
+					ignoreNulls(arrayList(chartNew, chartOld)));
+			}
+			
+			private TimeChart<Integer> appendCurrentTimeDummy(IdentityFileQueueStatistics stats) {
 				long t0 = stats.mStartupTimeMilliseconds;
 				TimeChart<Integer> timesOfQueuing = new TimeChart<>(stats.mTimesOfQueuing, t0);
-				String l10n = "StatisticsPage.PlotBox.TotalDownloadCountPlot.";
 				
 				// Add a dummy entry for the current time to the end of the plot so refreshing the
 				// image periodically shows that it is live even when there is no progress.
@@ -170,8 +193,7 @@ public class StatisticsPage extends WebPageImpl {
 					= (double)(CurrentTimeUTC.getInMillis() - t0) / SECONDS.toMillis(1);
 				timesOfQueuing.addLast(new Pair<>(currentTime, timesOfQueuing.peekLast().y));
 				
-				return getTimeBasedPlotPNG(wot.getBaseL10n(), l10n + "Title", l10n + "XAxis.Hours",
-					l10n + "XAxis.Minutes",  l10n + "YAxis", arrayList(timesOfQueuing));
+				return timesOfQueuing;
 			}
 		}),
 		DownloadsPerHour(new StatisticsPlotRenderer() {
