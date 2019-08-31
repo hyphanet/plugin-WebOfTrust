@@ -51,7 +51,9 @@ public final class XYChartUtils {
 	 * areas of minutes to hours and hence millisecond values are not interesting to the user. */
 	public static final class TimeChart<T extends Number>
 			extends LimitedArrayDeque<Pair<Double, T>> {
-		
+
+		private static final long serialVersionUID = 1L;
+
 		String mLabel = null;
 
 		public TimeChart(int sizeLimit) {
