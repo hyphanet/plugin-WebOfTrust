@@ -171,6 +171,10 @@ public class StatisticsPage extends WebPageImpl {
 					chartOld = null;
 				}
 				
+				// Add a dummy entry for the current time to the end of the plot so refreshing the
+				// image periodically shows that it is live even when there is no progress.
+				// The return value of q.getStatistics() is safe to be modified here, it returns a
+				// clone().
 				TimeChart<Integer> chartNew = appendCurrentTimeDummy(q.getStatistics());
 				chartNew.setLabel("StatisticsPage.PlotBox.CurrentSession");
 				
@@ -184,9 +188,6 @@ public class StatisticsPage extends WebPageImpl {
 				long t0 = stats.mStartupTimeMilliseconds;
 				TimeChart<Integer> timesOfQueuing = new TimeChart<>(stats.mTimesOfQueuing, t0);
 				
-				// Add a dummy entry for the current time to the end of the plot so refreshing the
-				// image periodically shows that it is live even when there is no progress.
-				// timesOfQueuing is safe to be modified here: getStatistics() returns a clone().
 				// peekLast() will always work: IdentityFileQueueStatistics specifies it to always
 				// contain at least one entry.
 				double currentTime
