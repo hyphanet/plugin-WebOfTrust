@@ -209,7 +209,6 @@ public class StatisticsPage extends WebPageImpl {
 				IdentityFileQueueStatistics stats = wot.getIdentityFileQueue().getStatistics();
 				long t0 = stats.mStartupTimeMilliseconds;
 				TimeChart<Integer> timesOfQueuing = new TimeChart<>(stats.mTimesOfQueuing, t0);
-				String l10n = "StatisticsPage.PlotBox.DownloadsPerHourPlot.";
 				
 				// - Build the average before differentiating to prevent a jumpy graph due to
 				//   fred delivering batches of many files at once for internal reasons.
@@ -242,6 +241,7 @@ public class StatisticsPage extends WebPageImpl {
 				downloadsPerHour.addLast(new Pair<>(currentTime,
 					downloadsPerHour.size() > 0 ? downloadsPerHour.peekLast().y : 0d));
 				
+				String l10n = "StatisticsPage.PlotBox.DownloadsPerHourPlot.";
 				return getTimeBasedPlotPNG(wot.getBaseL10n(), l10n + "Title", l10n + "XAxis.Hours",
 					l10n + "XAxis.Minutes",  l10n + "YAxis", arrayList(downloadsPerHour));
 			}
