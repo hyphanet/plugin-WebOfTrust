@@ -208,7 +208,23 @@ public class StatisticsPage extends WebPageImpl {
 			@Override public byte[] getPNG(WebOfTrust wot) {
 				IdentityFileQueueStatistics stats = wot.getIdentityFileQueue().getStatistics();
 				long t0 = stats.mStartupTimeMilliseconds;
-				TimeChart<Integer> timesOfQueuing = new TimeChart<>(stats.mTimesOfQueuing, t0);
+				TimeChart<Double> downloadsPerHour = calculateTimeChart(stats);
+				
+				// Ensure the resulting dataset contains an entry for the current time so refreshing
+				// the image periodically shows that it is live even when there is no progress.
+				double currentTime
+					= (double)(CurrentTimeUTC.getInMillis() - t0) / SECONDS.toMillis(1);
+				downloadsPerHour.addLast(new Pair<>(currentTime,
+					downloadsPerHour.size() > 0 ? downloadsPerHour.peekLast().y : 0d));
+				
+				String l10n = "StatisticsPage.PlotBox.DownloadsPerHourPlot.";
+				return getTimeBasedPlotPNG(wot.getBaseL10n(), l10n + "Title", l10n + "XAxis.Hours",
+					l10n + "XAxis.Minutes",  l10n + "YAxis", arrayList(downloadsPerHour));
+			}
+			
+			private TimeChart<Double> calculateTimeChart(IdentityFileQueueStatistics stats) {
+				TimeChart<Integer> timesOfQueuing
+					= new TimeChart<>(stats.mTimesOfQueuing, stats.mStartupTimeMilliseconds);
 				
 				// - Build the average before differentiating to prevent a jumpy graph due to
 				//   fred delivering batches of many files at once for internal reasons.
@@ -228,22 +244,12 @@ public class StatisticsPage extends WebPageImpl {
 						multiplyY(movingAverage(timesOfQueuing, 60), HOURS.toSeconds(1))
 					);
 				
-				// Ensure the resulting dataset is no empty, and that it contains an entry for the
-				// current time so refreshing the image periodically shows that it is live even when
-				// there is no progress.
+				// Ensure the resulting dataset is no empty.
 				// differentiate() will return at most size() - 1 elements, so addFirst() won't
 				// discard the tail element even if our input LimitedArrayDeque was full.
-				double startupTime
-					= (double)(stats.mStartupTimeMilliseconds - t0) / SECONDS.toMillis(1);
-				double currentTime
-					= (double)(CurrentTimeUTC.getInMillis() - t0) / SECONDS.toMillis(1);
-				downloadsPerHour.addFirst(new Pair<>(startupTime, 0d));
-				downloadsPerHour.addLast(new Pair<>(currentTime,
-					downloadsPerHour.size() > 0 ? downloadsPerHour.peekLast().y : 0d));
+				downloadsPerHour.addFirst(new Pair<>(0d, 0d));
 				
-				String l10n = "StatisticsPage.PlotBox.DownloadsPerHourPlot.";
-				return getTimeBasedPlotPNG(wot.getBaseL10n(), l10n + "Title", l10n + "XAxis.Hours",
-					l10n + "XAxis.Minutes",  l10n + "YAxis", arrayList(downloadsPerHour));
+				return downloadsPerHour;
 			}
 		});
 
