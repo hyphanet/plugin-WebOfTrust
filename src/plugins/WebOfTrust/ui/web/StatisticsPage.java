@@ -206,8 +206,20 @@ public class StatisticsPage extends WebPageImpl {
 			 * @see IdentityFileQueueStatistics#mTotalQueuedFiles
 			 * @see IdentityFileQueueStatistics#mTimesOfQueuing */
 			@Override public byte[] getPNG(WebOfTrust wot) {
-				IdentityFileQueueStatistics stats = wot.getIdentityFileQueue().getStatistics();
+				IdentityFileQueue q = wot.getIdentityFileQueue();
+				
+				TimeChart<Double> chartOld;
+				try {
+					chartOld = calculateDownloadsPerHour(q.getStatisticsOfLastSession());
+					chartOld.setLabel("StatisticsPage.PlotBox.LastSession");
+				} catch (IOException e) {
+					// No data of previous session available
+					chartOld = null;
+				}
+				
+				IdentityFileQueueStatistics stats = q.getStatistics();
 				TimeChart<Double> downloadsPerHour = calculateDownloadsPerHour(stats);
+				downloadsPerHour.setLabel("StatisticsPage.PlotBox.CurrentSession");
 				
 				// Ensure the resulting dataset contains an entry for the current time so refreshing
 				// the image periodically shows that it is live even when there is no progress.
@@ -219,7 +231,8 @@ public class StatisticsPage extends WebPageImpl {
 				
 				String l10n = "StatisticsPage.PlotBox.DownloadsPerHourPlot.";
 				return getTimeBasedPlotPNG(wot.getBaseL10n(), l10n + "Title", l10n + "XAxis.Hours",
-					l10n + "XAxis.Minutes",  l10n + "YAxis", arrayList(downloadsPerHour));
+					l10n + "XAxis.Minutes",  l10n + "YAxis",
+					ignoreNulls(arrayList(downloadsPerHour, chartOld)));
 			}
 			
 			private TimeChart<Double> calculateDownloadsPerHour(IdentityFileQueueStatistics stats) {
