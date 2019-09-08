@@ -236,7 +236,6 @@ public class StatisticsPage extends WebPageImpl {
 				//   jumpiness.
 				// - Convert to hours before differentiating to aid the "dy/dx" division in
 				//   preserving floating point accuracy.
-				// - FIXME: Test differentiate() by integrating it again
 				TimeChart<Double> downloadsPerHour
 					= differentiate(
 						multiplyY(movingAverage(timesOfQueuing, 60), HOURS.toSeconds(1))
