@@ -208,7 +208,7 @@ public class StatisticsPage extends WebPageImpl {
 			@Override public byte[] getPNG(WebOfTrust wot) {
 				IdentityFileQueueStatistics stats = wot.getIdentityFileQueue().getStatistics();
 				long t0 = stats.mStartupTimeMilliseconds;
-				TimeChart<Double> downloadsPerHour = calculateTimeChart(stats);
+				TimeChart<Double> downloadsPerHour = calculateDownloadsPerHour(stats);
 				
 				// Ensure the resulting dataset contains an entry for the current time so refreshing
 				// the image periodically shows that it is live even when there is no progress.
@@ -222,7 +222,7 @@ public class StatisticsPage extends WebPageImpl {
 					l10n + "XAxis.Minutes",  l10n + "YAxis", arrayList(downloadsPerHour));
 			}
 			
-			private TimeChart<Double> calculateTimeChart(IdentityFileQueueStatistics stats) {
+			private TimeChart<Double> calculateDownloadsPerHour(IdentityFileQueueStatistics stats) {
 				TimeChart<Integer> timesOfQueuing
 					= new TimeChart<>(stats.mTimesOfQueuing, stats.mStartupTimeMilliseconds);
 				
