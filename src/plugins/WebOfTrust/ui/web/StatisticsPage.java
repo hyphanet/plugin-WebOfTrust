@@ -207,11 +207,11 @@ public class StatisticsPage extends WebPageImpl {
 			 * @see IdentityFileQueueStatistics#mTimesOfQueuing */
 			@Override public byte[] getPNG(WebOfTrust wot) {
 				IdentityFileQueueStatistics stats = wot.getIdentityFileQueue().getStatistics();
-				long t0 = stats.mStartupTimeMilliseconds;
 				TimeChart<Double> downloadsPerHour = calculateDownloadsPerHour(stats);
 				
 				// Ensure the resulting dataset contains an entry for the current time so refreshing
 				// the image periodically shows that it is live even when there is no progress.
+				long t0 = stats.mStartupTimeMilliseconds;
 				double currentTime
 					= (double)(CurrentTimeUTC.getInMillis() - t0) / SECONDS.toMillis(1);
 				downloadsPerHour.addLast(new Pair<>(currentTime,
