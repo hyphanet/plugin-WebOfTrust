@@ -223,11 +223,7 @@ public class StatisticsPage extends WebPageImpl {
 				
 				// Ensure the resulting dataset contains an entry for the current time so refreshing
 				// the image periodically shows that it is live even when there is no progress.
-				long t0 = stats.mStartupTimeMilliseconds;
-				double currentTime
-					= (double)(CurrentTimeUTC.getInMillis() - t0) / SECONDS.toMillis(1);
-				chartNew.addLast(new Pair<>(currentTime,
-					chartNew.size() > 0 ? chartNew.peekLast().y : 0d));
+				appendCurrentTimeDummy(chartNew, stats.mStartupTimeMilliseconds);
 				
 				String l10n = "StatisticsPage.PlotBox.DownloadsPerHourPlot.";
 				return getTimeBasedPlotPNG(wot.getBaseL10n(), l10n + "Title", l10n + "XAxis.Hours",
@@ -261,6 +257,14 @@ public class StatisticsPage extends WebPageImpl {
 				
 				return downloadsPerHour;
 			}
+
+			private void appendCurrentTimeDummy(TimeChart<Double> chart, long t0) {
+				double currentTime
+					= (double)(CurrentTimeUTC.getInMillis() - t0) / SECONDS.toMillis(1);
+				chart.addLast(new Pair<>(currentTime,
+					chart.size() > 0 ? chart.peekLast().y : 0d));
+			}
+
 		});
 
 		private final StatisticsPlotRenderer mRenderer;
