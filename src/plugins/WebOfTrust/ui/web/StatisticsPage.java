@@ -218,21 +218,21 @@ public class StatisticsPage extends WebPageImpl {
 				}
 				
 				IdentityFileQueueStatistics stats = q.getStatistics();
-				TimeChart<Double> downloadsPerHour = calculateDownloadsPerHour(stats);
-				downloadsPerHour.setLabel("StatisticsPage.PlotBox.CurrentSession");
+				TimeChart<Double> chartNew = calculateDownloadsPerHour(stats);
+				chartNew.setLabel("StatisticsPage.PlotBox.CurrentSession");
 				
 				// Ensure the resulting dataset contains an entry for the current time so refreshing
 				// the image periodically shows that it is live even when there is no progress.
 				long t0 = stats.mStartupTimeMilliseconds;
 				double currentTime
 					= (double)(CurrentTimeUTC.getInMillis() - t0) / SECONDS.toMillis(1);
-				downloadsPerHour.addLast(new Pair<>(currentTime,
-					downloadsPerHour.size() > 0 ? downloadsPerHour.peekLast().y : 0d));
+				chartNew.addLast(new Pair<>(currentTime,
+					chartNew.size() > 0 ? chartNew.peekLast().y : 0d));
 				
 				String l10n = "StatisticsPage.PlotBox.DownloadsPerHourPlot.";
 				return getTimeBasedPlotPNG(wot.getBaseL10n(), l10n + "Title", l10n + "XAxis.Hours",
 					l10n + "XAxis.Minutes",  l10n + "YAxis",
-					ignoreNulls(arrayList(downloadsPerHour, chartOld)));
+					ignoreNulls(arrayList(chartNew, chartOld)));
 			}
 			
 			private TimeChart<Double> calculateDownloadsPerHour(IdentityFileQueueStatistics stats) {
