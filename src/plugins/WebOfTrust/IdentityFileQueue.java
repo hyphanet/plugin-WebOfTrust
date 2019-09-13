@@ -134,12 +134,19 @@ public interface IdentityFileQueue {
 		 * - are still queued (see {@link #mQueuedFiles}).
 		 * - were deleted due to deduplication (see {@link #mDeduplicatedFiles}).
 		 * - failed en-/dequeuing due to errors (see {@link #mFailedFiles}).
+		 * - were left over from the last session (see {@link #mLeftoverFilesOfLastSession}).
 		 * 
 		 * The lost files are included to ensure that errors can be noticed by the user from
 		 * statistics in the UI, and because this variable shall represent the total number of
 		 * downloaded files. */
 		public int mTotalQueuedFiles = 0;
-	
+
+		/**
+		 * Count of files which have been passed to {@link #add(IdentityFileStream)} during the last
+		 * time WoT was run but had not been dequeued by {@link #poll()} yet.
+		 * This value is **not** decremented once the files have been processed! */
+		public int mLeftoverFilesOfLastSession = 0;
+
 		/**
 		 * For each queued file, i.e. each file part of {@link #mTotalQueuedFiles}, a {@link Pair}
 		 * is added with {@link Pair#x} = {@link CurrentTimeUTC#getInMillis()} and {@link Pair#y}
@@ -251,6 +258,8 @@ public interface IdentityFileQueue {
 				 && (mDeduplicatedFiles >= 0)
 				 
 				 && (mFailedFiles == 0)
+				 
+				 && (mLeftoverFilesOfLastSession <= mTotalQueuedFiles)
 				
 				 && (mQueuedFiles <= mTotalQueuedFiles)
 				 
