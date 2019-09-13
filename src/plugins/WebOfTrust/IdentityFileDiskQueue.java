@@ -131,13 +131,6 @@ final class IdentityFileDiskQueue implements IdentityFileQueue {
 			++mStatistics.mLeftoverFilesOfLastSession;
 		}
 		
-		if(mStatistics.mTotalQueuedFiles > 0) {
-			// mTimesOfQueuing contains an initial entry for 0 files, which is wrong so remove it.
-			mStatistics.mTimesOfQueuing.clear();
-			mStatistics.mTimesOfQueuing.addLast(
-				new Pair<>(mStatistics.mStartupTimeMilliseconds, mStatistics.mTotalQueuedFiles));
-		}
-		
 		Logger.normal(this, "cleanDirectories(): Old queued files: " + mStatistics.mQueuedFiles);
 
 		// Processing dir policy:
@@ -211,7 +204,8 @@ final class IdentityFileDiskQueue implements IdentityFileQueue {
 			// in the UI.
 			++mStatistics.mTotalQueuedFiles;
 			mStatistics.mTimesOfQueuing.addLast(
-				new Pair<>(CurrentTimeUTC.getInMillis(), mStatistics.mTotalQueuedFiles));
+				new Pair<>(CurrentTimeUTC.getInMillis(),
+					mStatistics.mTotalQueuedFiles - mStatistics.mLeftoverFilesOfLastSession));
 			
 			File filename = getQueueFilename(identityFileStream.mURI);
 			// Delete for deduplication

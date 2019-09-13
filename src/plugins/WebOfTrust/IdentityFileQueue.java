@@ -148,12 +148,12 @@ public interface IdentityFileQueue {
 		public int mLeftoverFilesOfLastSession = 0;
 
 		/**
-		 * For each queued file, i.e. each file part of {@link #mTotalQueuedFiles}, a {@link Pair}
-		 * is added with {@link Pair#x} = {@link CurrentTimeUTC#getInMillis()} and {@link Pair#y}
-		 * = {@link #mTotalQueuedFiles}.
+		 * For each newly enqueued file, a {@link Pair} is added with {@link Pair#x} =
+		 * {@link CurrentTimeUTC#getInMillis()} and {@link Pair#y} =
+		 * {@link #mTotalQueuedFiles} minus {@link #mLeftoverFilesOfLastSession}.
 		 * 
-		 * Thus this contains the X/Y values for a plot of total downloaded Identity files across
-		 * the uptime of WoT.
+		 * Thus this contains the X/Y values for a plot of total downloaded Identity files - in the
+		 * current session - across the uptime of WoT.
 		 * 
 		 * Additionally, for allowing external code to work without checks for emptiness, a first
 		 * Pair is added at construction to represent the initial amount of 0 files at time of
@@ -214,7 +214,7 @@ public interface IdentityFileQueue {
 	
 	
 		IdentityFileQueueStatistics() {
-			mTimesOfQueuing.addLast(new Pair<>(mStartupTimeMilliseconds, mTotalQueuedFiles));
+			mTimesOfQueuing.addLast(new Pair<>(mStartupTimeMilliseconds, 0));
 		}
 	
 		@Override public IdentityFileQueueStatistics clone() {

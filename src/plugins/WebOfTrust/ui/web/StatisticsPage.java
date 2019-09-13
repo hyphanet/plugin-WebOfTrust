@@ -156,7 +156,6 @@ public class StatisticsPage extends WebPageImpl {
 			 * Renders a chart where the X-axis is the uptime of WoT, and the Y-axis is the total
 			 * number of downloaded {@link IdentityFile}s.
 			 * 
-			 * @see IdentityFileQueueStatistics#mTotalQueuedFiles
 			 * @see IdentityFileQueueStatistics#mTimesOfQueuing */
 			@Override public byte[] getPNG(WebOfTrust wot) {
 				IdentityFileQueue q = wot.getIdentityFileQueue();
@@ -203,7 +202,6 @@ public class StatisticsPage extends WebPageImpl {
 			 * of downloaded {@link IdentityFile}s per hour.
 			 * This is calculated by differentiating the total download count.
 			 * 
-			 * @see IdentityFileQueueStatistics#mTotalQueuedFiles
 			 * @see IdentityFileQueueStatistics#mTimesOfQueuing */
 			@Override public byte[] getPNG(WebOfTrust wot) {
 				IdentityFileQueue q = wot.getIdentityFileQueue();
