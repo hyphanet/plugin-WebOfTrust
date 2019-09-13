@@ -128,6 +128,7 @@ final class IdentityFileDiskQueue implements IdentityFileQueue {
 
 			++mStatistics.mQueuedFiles;
 			++mStatistics.mTotalQueuedFiles;
+			++mStatistics.mLeftoverFilesOfLastSession;
 		}
 		
 		if(mStatistics.mTotalQueuedFiles > 0) {
