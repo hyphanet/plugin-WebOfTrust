@@ -6,10 +6,13 @@ import static java.lang.Math.sin;
 import static java.util.Arrays.asList;
 import static java.util.concurrent.TimeUnit.SECONDS;
 import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertNotEquals;
 import static plugins.WebOfTrust.util.CollectionUtil.array;
+import static plugins.WebOfTrust.util.CollectionUtil.arrayList;
 import static plugins.WebOfTrust.util.MathUtil.equalsApprox;
 import static plugins.WebOfTrust.util.Pair.pair;
 import static plugins.WebOfTrust.util.plotting.XYChartUtils.differentiate;
+import static plugins.WebOfTrust.util.plotting.XYChartUtils.getTimeBasedPlotPNG;
 import static plugins.WebOfTrust.util.plotting.XYChartUtils.movingAverage;
 import static plugins.WebOfTrust.util.plotting.XYChartUtils.multiplyY;
 
@@ -41,6 +44,27 @@ public final class XYChartUtilsTest extends AbstractJUnit4BaseTest {
 		assertEquals(123l,     c2.peekFirst().y.longValue());
 		assertEqualsApprox(19, c2.peekLast().x, 99.99d);
 		assertEquals(345l,     c2.peekLast().y.longValue());
+	}
+
+	/**
+	 * Pseudo-test for {@link XYChartUtils#getTimeBasedPlotPNG(freenet.l10n.BaseL10n, String,
+	 * String, String, String, java.util.Collection)}:
+	 * We cannot easily test if the rendered image makes sense, but we can test if generating it at
+	 * least does now throw. */
+	@Test public void testGetTimeBasedPlotPNG() {
+		TimeChart<Integer> c = new TimeChart<>(1);
+		
+		// It is fine to use arbitrary strings which don't exist as l10n keys in the l10n files, the
+		// l10n code will consider them as untranslated.
+		byte[] png = getTimeBasedPlotPNG(constructEmptyWebOfTrust().getBaseL10n(), "title",
+			"xLabelHours", "xLabelMinutes", "yLabel", arrayList(c));
+		
+		assertNotEquals(0, png.length);
+		
+		// TODO: Code quality: Use Freenet's PNGFilter to test if the image is valid.
+		// At first glance it currently does not seem possible since the constructor of PNGFilter is
+		// not public, but I do feel like remembering that fred plugins can filter images to e.g.
+		// display avatars in Freetalk.
 	}
 
 	@Test public void testMovingAverage() {
