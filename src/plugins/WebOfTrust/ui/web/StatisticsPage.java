@@ -452,6 +452,8 @@ public class StatisticsPage extends WebPageImpl {
 
 		list.addChild(new HTMLNode("li", l10n().getString(l10nPrefix + "AverageQueuedFilesPerHour")
 			+ " " + stats.getAverageQueuedFilesPerHour()));
+		list.addChild(new HTMLNode("li", l10n().getString(l10nPrefix + "LeftoverFilesOfLastSession")
+			+ " " + stats.mLeftoverFilesOfLastSession));
 		list.addChild(new HTMLNode("li", l10n().getString(l10nPrefix + "TotalQueuedFiles")
 			+ " " + stats.mTotalQueuedFiles));
 		list.addChild(new HTMLNode("li", l10n().getString(l10nPrefix + "QueuedFiles")
