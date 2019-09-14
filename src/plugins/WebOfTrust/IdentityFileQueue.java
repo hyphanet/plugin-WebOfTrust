@@ -239,7 +239,7 @@ public interface IdentityFileQueue {
 			if(uptimeHours == 0) // prevent division by 0
 				return 0;
 			
-			return (float)mTotalQueuedFiles / uptimeHours;		
+			return (float)(mTotalQueuedFiles - mLeftoverFilesOfLastSession) / uptimeHours;
 		}
 
 		boolean checkConsistency() {
