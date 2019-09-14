@@ -177,7 +177,7 @@ StatisticsPage.IdentityFileQueueBox.Header=Identity file queue
 StatisticsPage.IdentityFileQueueBox.LeftoverFilesOfLastSession=Leftover files of last session:
 StatisticsPage.IdentityFileQueueBox.ProcessingFiles=Files in processing:
 StatisticsPage.IdentityFileQueueBox.QueuedFiles=Queued files:
-StatisticsPage.IdentityFileQueueBox.TotalQueuedFiles=Total ever enqueued (= downloaded) files:
+StatisticsPage.IdentityFileQueueBox.TotalQueuedFiles=Total enqueued (= downloaded and leftover) files since restart:
 StatisticsPage.MaintenanceBox.Header=Maintenance
 StatisticsPage.MaintenanceBox.LastDefrag=Last defragmentation of database: ${lastTime} (schedule: every ${interval})
 StatisticsPage.MaintenanceBox.LastScoreVerification=Last verification of incrementally computed trust values: ${lastTime} (schedule: every ${interval})

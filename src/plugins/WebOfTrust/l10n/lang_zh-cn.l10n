@@ -152,7 +152,6 @@ StatisticsPage.IdentityFileQueueBox.FinishedFiles=完成的文件：
 StatisticsPage.IdentityFileQueueBox.Header=身份文件队列
 StatisticsPage.IdentityFileQueueBox.ProcessingFiles=文件正在处理：
 StatisticsPage.IdentityFileQueueBox.QueuedFiles=排队的文件：
-StatisticsPage.IdentityFileQueueBox.TotalQueuedFiles=总计入队（\=已下载）文件数：
 StatisticsPage.MaintenanceBox.Header=维护
 StatisticsPage.MaintenanceBox.LastDefrag=上次对数据库整理碎片：${lastTime}（计划：每 ${interval}）
 StatisticsPage.MaintenanceBox.LastScoreVerification=上次验证增量计算的信任值：${lastTime}（计划：每 ${interval}）
