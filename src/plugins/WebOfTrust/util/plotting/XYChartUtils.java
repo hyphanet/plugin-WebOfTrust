@@ -114,6 +114,9 @@ public final class XYChartUtils {
 		// that with the X-axis not showing minutes.
 		boolean hours = false;
 		for(TimeChart<T> series : timeCharts) {
+			if(series.size() == 0)
+				continue;
+			
 			hours |= SECONDS.toHours(
 				(long)(series.peekLast().x - series.peekFirst().x)
 			) >= 2;
