@@ -76,7 +76,11 @@ final class IdentityFileMemoryQueue implements IdentityFileQueue {
 		} finally {
 			++mStatistics.mTotalQueuedFiles;
 			mStatistics.mTimesOfQueuing.addLast(
-				new Pair<>(CurrentTimeUTC.getInMillis(), mStatistics.mTotalQueuedFiles));
+				new Pair<>(CurrentTimeUTC.getInMillis(),
+					// IdentityFileMemoryQueue is not persisted across sessions, so subtracting
+					// mLefoverFilesOfLastSession is not necessary - but let's do it anyway in case
+					// the class is someday amended with persistence.
+					mStatistics.mTotalQueuedFiles - mStatistics.mLeftoverFilesOfLastSession));
 			assert(checkConsistency());
 		}
 	}
