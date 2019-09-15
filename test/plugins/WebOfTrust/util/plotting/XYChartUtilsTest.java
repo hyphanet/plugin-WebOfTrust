@@ -4,6 +4,7 @@ import static java.lang.Math.PI;
 import static java.lang.Math.cos;
 import static java.lang.Math.sin;
 import static java.util.Arrays.asList;
+import static java.util.concurrent.TimeUnit.HOURS;
 import static java.util.concurrent.TimeUnit.SECONDS;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNotEquals;
@@ -52,7 +53,7 @@ public final class XYChartUtilsTest extends AbstractJUnit4BaseTest {
 	 * We cannot easily test if the rendered image makes sense, but we can test if generating it at
 	 * least does now throw. */
 	@Test public void testGetTimeBasedPlotPNG() {
-		TimeChart<Integer> c = new TimeChart<>(1);
+		TimeChart<Integer> c = new TimeChart<>(2);
 		// The underlying XChart library won't accept an empty dataset so add one element.
 		c.addLast(pair(1d, 1));
 		
@@ -60,13 +61,17 @@ public final class XYChartUtilsTest extends AbstractJUnit4BaseTest {
 		// l10n code will consider them as untranslated.
 		byte[] png = getTimeBasedPlotPNG(constructEmptyWebOfTrust().getBaseL10n(), "title",
 			"xLabelHours", "xLabelMinutes", "yLabel", arrayList(c));
-		
 		assertNotEquals(0, png.length);
-		
 		// TODO: Code quality: Use Freenet's PNGFilter to test if the image is valid.
 		// At first glance it currently does not seem possible since the constructor of PNGFilter is
 		// not public, but I do feel like remembering that fred plugins can filter images to e.g.
 		// display avatars in Freetalk.
+		
+		// Test code path for switching the x-axis label to hours.
+		c.addLast(pair(1d + HOURS.toSeconds(2), 1));
+		png = getTimeBasedPlotPNG(constructEmptyWebOfTrust().getBaseL10n(), "title",
+			"xLabelHours", "xLabelMinutes", "yLabel", arrayList(c));
+		assertNotEquals(0, png.length);
 	}
 
 	@Test public void testMovingAverage() {
