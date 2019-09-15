@@ -53,6 +53,8 @@ public final class XYChartUtilsTest extends AbstractJUnit4BaseTest {
 	 * least does now throw. */
 	@Test public void testGetTimeBasedPlotPNG() {
 		TimeChart<Integer> c = new TimeChart<>(1);
+		// The underlying XChart library won't accept an empty dataset so add one element.
+		c.addLast(pair(1d, 1));
 		
 		// It is fine to use arbitrary strings which don't exist as l10n keys in the l10n files, the
 		// l10n code will consider them as untranslated.
