@@ -74,6 +74,14 @@ public final class XYChartUtilsTest extends AbstractJUnit4BaseTest {
 		png = getTimeBasedPlotPNG(l10n, "title", "xLabelHours", "xLabelMinutes", "yLabel",
 			arrayList(c));
 		assertNotEquals(0, png.length);
+		
+		// Test code path for rendering multiple TimeCharts into one output
+		TimeChart<Integer> c2 = new TimeChart<>(1);
+		c2.addLast(pair(1d, 1));
+		c2.setLabel("c2"); // Prevent XChart from complaining that the series name was already used
+		png = getTimeBasedPlotPNG(l10n, "title", "xLabelHours", "xLabelMinutes", "yLabel",
+			arrayList(c, c2));
+		assertNotEquals(0, png.length);
 	}
 
 	@Test public void testMovingAverage() {
