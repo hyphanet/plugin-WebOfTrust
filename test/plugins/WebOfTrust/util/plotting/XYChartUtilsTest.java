@@ -22,6 +22,7 @@ import java.util.List;
 
 import org.junit.Test;
 
+import freenet.l10n.BaseL10n;
 import plugins.WebOfTrust.AbstractJUnit4BaseTest;
 import plugins.WebOfTrust.WebOfTrust;
 import plugins.WebOfTrust.util.LimitedArrayDeque;
@@ -53,14 +54,15 @@ public final class XYChartUtilsTest extends AbstractJUnit4BaseTest {
 	 * We cannot easily test if the rendered image makes sense, but we can test if generating it at
 	 * least does now throw. */
 	@Test public void testGetTimeBasedPlotPNG() {
+		BaseL10n l10n = constructEmptyWebOfTrust().getBaseL10n();
 		TimeChart<Integer> c = new TimeChart<>(2);
 		// The underlying XChart library won't accept an empty dataset so add one element.
 		c.addLast(pair(1d, 1));
 		
 		// It is fine to use arbitrary strings which don't exist as l10n keys in the l10n files, the
 		// l10n code will consider them as untranslated.
-		byte[] png = getTimeBasedPlotPNG(constructEmptyWebOfTrust().getBaseL10n(), "title",
-			"xLabelHours", "xLabelMinutes", "yLabel", arrayList(c));
+		byte[] png = getTimeBasedPlotPNG(l10n, "title", "xLabelHours", "xLabelMinutes", "yLabel",
+			arrayList(c));
 		assertNotEquals(0, png.length);
 		// TODO: Code quality: Use Freenet's PNGFilter to test if the image is valid.
 		// At first glance it currently does not seem possible since the constructor of PNGFilter is
@@ -69,8 +71,8 @@ public final class XYChartUtilsTest extends AbstractJUnit4BaseTest {
 		
 		// Test code path for switching the x-axis label to hours.
 		c.addLast(pair(1d + HOURS.toSeconds(2), 1));
-		png = getTimeBasedPlotPNG(constructEmptyWebOfTrust().getBaseL10n(), "title",
-			"xLabelHours", "xLabelMinutes", "yLabel", arrayList(c));
+		png = getTimeBasedPlotPNG(l10n, "title", "xLabelHours", "xLabelMinutes", "yLabel",
+			arrayList(c));
 		assertNotEquals(0, png.length);
 	}
 
