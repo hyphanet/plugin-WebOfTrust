@@ -9,7 +9,7 @@ import java.util.ArrayList;
 
 import org.junit.Test;
 
-public class CollectionUtilTest {
+public final class CollectionUtilTest {
 
 	@Test public void testArray() {
 		Integer[] a = array(10, 20, 30);
