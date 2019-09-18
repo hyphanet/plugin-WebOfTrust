@@ -3,6 +3,7 @@ package plugins.WebOfTrust.util;
 import static org.junit.Assert.*;
 import static plugins.WebOfTrust.util.CollectionUtil.array;
 import static plugins.WebOfTrust.util.CollectionUtil.arrayList;
+import static plugins.WebOfTrust.util.CollectionUtil.ignoreNulls;
 
 import java.util.ArrayList;
 
@@ -39,7 +40,11 @@ public class CollectionUtilTest {
 	}
 
 	@Test public void testIgnoreNulls() {
-		fail("Not yet implemented");
+		ArrayList<Integer> a = ignoreNulls(arrayList(null, 10, null, 20, null, 30, null));
+		assertEquals(3, a.size());
+		assertEquals(Integer.valueOf(10), a.get(0));
+		assertEquals(Integer.valueOf(20), a.get(1));
+		assertEquals(Integer.valueOf(30), a.get(2));
 	}
 
 }
