@@ -6,10 +6,18 @@ import static plugins.WebOfTrust.util.AssertUtil.assertDidThrow;
 
 import java.util.concurrent.Callable;
 
+import org.junit.BeforeClass;
 import org.junit.Test;
 
 /** Tests {@link LimitedArrayDeque}. */
 public final class LimitedArrayDequeTest {
+
+	@BeforeClass public static void beforeClass() {
+		// The functions we use of AssertUtil use Java assertions, not JUnit assertions, so check if
+		// they are enabled.
+		// TODO: Code quality: Provide copies of these functions in a class JUnitUtil to fix this.
+		assertTrue(AssertUtil.class.desiredAssertionStatus());
+	}
 
 	@Test public void testConstructor() {
 		assertEquals(123, new LimitedArrayDeque<Integer>(123).sizeLimit());
