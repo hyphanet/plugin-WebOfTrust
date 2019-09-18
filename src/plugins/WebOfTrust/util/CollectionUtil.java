@@ -30,8 +30,14 @@ public final class CollectionUtil {
 		return Arrays.copyOf(array, array.length);
 	}
 
+	/** WARNING: See the documentation of {@link #array(Object...)} for how to use this properly! */
 	@SafeVarargs
 	public static <T> ArrayList<T> arrayList(T... array) {
+		if(array.length == 0) {
+			throw new IllegalArgumentException(
+				"Would cause ClassCastException due to ArrayList having wrong type!");
+		}
+		
 		ArrayList<T> result = new ArrayList<>(array.length);
 		
 		for(T e : array)
