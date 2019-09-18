@@ -9,6 +9,7 @@ import java.util.ArrayList;
 
 import org.junit.Test;
 
+/** Tests {@link CollectionUtil}. */
 public final class CollectionUtilTest {
 
 	@Test public void testArray() {
