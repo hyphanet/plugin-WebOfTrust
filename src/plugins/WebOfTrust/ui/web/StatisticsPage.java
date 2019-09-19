@@ -250,7 +250,7 @@ public class StatisticsPage extends WebPageImpl {
 				
 				// Ensure the resulting dataset is not empty.
 				// differentiate() will return at most size() - 1 elements, so addFirst() won't
-				// discard the tail element even if our input LimitedArrayDeque was full.
+				// discard the tail element even if our input RingBuffer was full.
 				downloadsPerHour.addFirst(new Pair<>(0d, 0d));
 				
 				return downloadsPerHour;

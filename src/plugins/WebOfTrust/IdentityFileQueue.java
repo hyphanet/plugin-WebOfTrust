@@ -17,7 +17,7 @@ import freenet.keys.FreenetURI;
 import freenet.support.CurrentTimeUTC;
 import freenet.support.io.Closer;
 import plugins.WebOfTrust.network.input.IdentityDownloader;
-import plugins.WebOfTrust.util.LimitedArrayDeque;
+import plugins.WebOfTrust.util.RingBuffer;
 import plugins.WebOfTrust.util.Pair;
 import plugins.WebOfTrust.util.jobs.BackgroundJob;
 
@@ -158,8 +158,8 @@ public interface IdentityFileQueue {
 		 * Additionally, for allowing external code to work without checks for emptiness, a first
 		 * Pair is added at construction to represent the initial amount of 0 files at time of
 		 * construction. */
-		public LimitedArrayDeque<Pair<Long, Integer>> mTimesOfQueuing
-			= new LimitedArrayDeque<>(MAX_TIMES_OF_QUEUING_SIZE);
+		public RingBuffer<Pair<Long, Integer>> mTimesOfQueuing
+			= new RingBuffer<>(MAX_TIMES_OF_QUEUING_SIZE);
 	
 		public static final int MAX_TIMES_OF_QUEUING_SIZE = 128 * 1024;
 	

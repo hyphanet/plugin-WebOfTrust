@@ -25,7 +25,7 @@ import org.junit.Test;
 import freenet.l10n.BaseL10n;
 import plugins.WebOfTrust.AbstractJUnit4BaseTest;
 import plugins.WebOfTrust.WebOfTrust;
-import plugins.WebOfTrust.util.LimitedArrayDeque;
+import plugins.WebOfTrust.util.RingBuffer;
 import plugins.WebOfTrust.util.Pair;
 import plugins.WebOfTrust.util.plotting.XYChartUtils.TimeChart;
 
@@ -35,7 +35,7 @@ public final class XYChartUtilsTest extends AbstractJUnit4BaseTest {
 		TimeChart<Double> c1 = new TimeChart<>(1);
 		assertEquals(1, c1.sizeLimit());
 		
-		LimitedArrayDeque<Pair<Long, Long>> data = new LimitedArrayDeque<>(2);
+		RingBuffer<Pair<Long, Long>> data = new RingBuffer<>(2);
 		data.addLast(pair(SECONDS.toMillis(10), 123l));
 		data.addLast(pair(SECONDS.toMillis(20), 345l));
 		long t0 = SECONDS.toMillis(1);
