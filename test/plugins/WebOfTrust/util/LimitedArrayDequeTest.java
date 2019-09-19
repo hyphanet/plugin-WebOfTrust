@@ -60,9 +60,9 @@ public final class LimitedArrayDequeTest {
 		assertEquals(integer(30), q.peekFirst());
 		assertEquals(integer(20), q.peekLast());
 
-		q.addFirst(40);
+		q.addFirst(-40);
 		assertEquals(2, q.size());
-		assertEquals(integer(40), q.peekFirst());
+		assertEquals(integer(-40), q.peekFirst());
 		assertEquals(integer(30), q.peekLast());
 	}
 
