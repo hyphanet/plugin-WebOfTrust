@@ -31,7 +31,8 @@ public final class CollectionUtil {
 	}
 
 	/** WARNING: See the documentation of {@link #array(Object...)} for how to use this properly!
-	 *  Use {@link Arrays#asList(Object...)} instead where possible, but do read its JavaDoc. */
+	 *  TODO: Code quality: Use {@link Arrays#asList(Object...)} instead where possible, but do read
+	 *  its JavaDoc first, its behavior is slightly different. */
 	@SafeVarargs
 	public static <T> ArrayList<T> arrayList(T... array) {
 		if(array.length == 0) {
