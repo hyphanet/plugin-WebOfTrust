@@ -41,4 +41,12 @@ public final class MathUtil {
 		double errorPercentage = 100d - percentage;
 		return delta <= (errorPercentage/100d) * size;
 	}
+
+	/** Same as {@link Integer#valueOf(int)} but suitable as a static import so it can be called
+	 *  without prefixing it with the class name:
+	 *  Statically importing {@link Integer#valueOf(int)} instead would result in the name of the
+	 *  function not being descriptive enough so that is no solution. */
+	public static Integer integer(int value) {
+		return Integer.valueOf(value);
+	}
 }
