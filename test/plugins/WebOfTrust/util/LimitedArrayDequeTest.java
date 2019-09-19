@@ -1,10 +1,12 @@
 package plugins.WebOfTrust.util;
 
+import static java.util.Arrays.asList;
 import static org.junit.Assert.*;
 import static plugins.WebOfTrust.util.AssertUtil.assertDidNotThrow;
 import static plugins.WebOfTrust.util.AssertUtil.assertDidThrow;
 import static plugins.WebOfTrust.util.MathUtil.integer;
 
+import java.util.Iterator;
 import java.util.concurrent.Callable;
 
 import org.junit.BeforeClass;
@@ -91,7 +93,23 @@ public final class LimitedArrayDequeTest {
 	}
 
 	@Test public void testAddAll() {
-		fail("Not yet implemented");
+		LimitedArrayDeque<Integer> q = new LimitedArrayDeque<>(3);
+
+		q.addAll(asList(10, -20, 30, -40, 50));
+		assertEquals(3, q.size());
+		Iterator<Integer> i = q.iterator();
+		assertEquals(integer( 30), i.next());
+		assertEquals(integer(-40), i.next());
+		assertEquals(integer( 50), i.next());
+		assertFalse(i.hasNext());
+		
+		q.addAll(asList(-20, 10));
+		assertEquals(3, q.size());
+		i = q.iterator();
+		assertEquals(integer( 50), i.next());
+		assertEquals(integer(-20), i.next());
+		assertEquals(integer( 10), i.next());
+		assertFalse(i.hasNext());
 	}
 
 	@Test public void testClear() {

@@ -30,7 +30,8 @@ public final class CollectionUtil {
 		return Arrays.copyOf(array, array.length);
 	}
 
-	/** WARNING: See the documentation of {@link #array(Object...)} for how to use this properly! */
+	/** WARNING: See the documentation of {@link #array(Object...)} for how to use this properly!
+	 *  Use {@link Arrays#asList(Object...)} instead where possible, but do read its JavaDoc. */
 	@SafeVarargs
 	public static <T> ArrayList<T> arrayList(T... array) {
 		if(array.length == 0) {
