@@ -113,7 +113,12 @@ public final class LimitedArrayDequeTest {
 	}
 
 	@Test public void testClear() {
-		fail("Not yet implemented");
+		LimitedArrayDeque<Integer> q = new LimitedArrayDeque<>(3);
+		q.addAll(asList(10, -20, 30));
+		assertEquals(3, q.size());
+		q.clear();
+		assertEquals(0, q.size());
+		assertEquals(3, q.sizeLimit());
 	}
 
 	@Test public void testPeekFirst() {
