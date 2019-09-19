@@ -67,7 +67,27 @@ public final class LimitedArrayDequeTest {
 	}
 
 	@Test public void testAddLast() {
-		fail("Not yet implemented");
+		LimitedArrayDeque<Integer> q = new LimitedArrayDeque<>(2);
+		
+		assertEquals(0, q.size());
+		q.addLast(10);
+		assertEquals(1, q.size());
+		assertEquals(integer(10), q.peekLast());
+		
+		q.addLast(20);
+		assertEquals(2, q.size());
+		assertEquals(integer(10), q.peekFirst());
+		assertEquals(integer(20), q.peekLast());
+		
+		q.addLast(30);
+		assertEquals(2, q.size());
+		assertEquals(integer(20), q.peekFirst());
+		assertEquals(integer(30), q.peekLast());
+
+		q.addLast(-40);
+		assertEquals(2, q.size());
+		assertEquals(integer(30), q.peekFirst());
+		assertEquals(integer(-40), q.peekLast());
 	}
 
 	@Test public void testAddAll() {
