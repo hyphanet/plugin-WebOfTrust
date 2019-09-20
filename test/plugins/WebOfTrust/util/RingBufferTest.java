@@ -7,6 +7,7 @@ import static plugins.WebOfTrust.util.AssertUtil.assertDidThrow;
 import static plugins.WebOfTrust.util.MathUtil.integer;
 
 import java.util.Iterator;
+import java.util.NoSuchElementException;
 import java.util.concurrent.Callable;
 
 import org.junit.BeforeClass;
@@ -183,7 +184,37 @@ public final class RingBufferTest {
 	}
 
 	@Test public void testIterator() {
-		fail("Not yet implemented");
+		// TODO: Java 8: Use lambda expression instead of anonymous classes.
+		
+		RingBuffer<Integer> b = new RingBuffer<>(3);
+		
+		final Iterator<Integer> i1 = b.iterator();
+		assertFalse(i1.hasNext());
+		assertDidThrow(new Callable<Integer>() { @Override public Integer call() throws Exception {
+			return i1.next();
+		}}, NoSuchElementException.class);
+		
+		b.addFirst(10);
+		
+		final Iterator<Integer> i2 = b.iterator();
+		assertTrue(i2.hasNext());
+		assertEquals(integer(10), i2.next());
+		assertFalse(i2.hasNext());
+		assertDidThrow(new Callable<Integer>() { @Override public Integer call() throws Exception {
+			return i2.next();
+		}}, NoSuchElementException.class);
+		
+		b.addLast(-20);
+		b.addLast(30);
+		
+		final Iterator<Integer> i3 = b.iterator();
+		assertTrue(i3.hasNext()); assertEquals(integer( 10), i3.next());
+		assertTrue(i3.hasNext()); assertEquals(integer(-20), i3.next());
+		assertTrue(i3.hasNext()); assertEquals(integer( 30), i3.next());
+		assertFalse(i3.hasNext());
+		assertDidThrow(new Callable<Integer>() { @Override public Integer call() throws Exception {
+			return i3.next();
+		}}, NoSuchElementException.class);
 	}
 
 	@Test public void testToArray() {
