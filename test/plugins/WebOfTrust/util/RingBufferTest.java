@@ -113,12 +113,12 @@ public final class RingBufferTest {
 	}
 
 	@Test public void testClear() {
-		RingBuffer<Integer> q = new RingBuffer<>(3);
-		q.addAll(asList(10, -20, 30));
-		assertEquals(3, q.size());
-		q.clear();
-		assertEquals(0, q.size());
-		assertEquals(3, q.sizeLimit());
+		RingBuffer<Integer> b = new RingBuffer<>(3);
+		b.addAll(asList(10, -20, 30));
+		assertEquals(3, b.size());
+		b.clear();
+		assertEquals(0, b.size());
+		assertEquals(3, b.sizeLimit());
 	}
 
 	@Test public void testPeekFirst() {
