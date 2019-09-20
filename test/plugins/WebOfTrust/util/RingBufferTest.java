@@ -93,19 +93,19 @@ public final class RingBufferTest {
 	}
 
 	@Test public void testAddAll() {
-		RingBuffer<Integer> q = new RingBuffer<>(3);
+		RingBuffer<Integer> b = new RingBuffer<>(3);
 
-		q.addAll(asList(10, -20, 30, -40, 50));
-		assertEquals(3, q.size());
-		Iterator<Integer> i = q.iterator();
+		b.addAll(asList(10, -20, 30, -40, 50));
+		assertEquals(3, b.size());
+		Iterator<Integer> i = b.iterator();
 		assertEquals(integer( 30), i.next());
 		assertEquals(integer(-40), i.next());
 		assertEquals(integer( 50), i.next());
 		assertFalse(i.hasNext());
 		
-		q.addAll(asList(-20, 10));
-		assertEquals(3, q.size());
-		i = q.iterator();
+		b.addAll(asList(-20, 10));
+		assertEquals(3, b.size());
+		i = b.iterator();
 		assertEquals(integer( 50), i.next());
 		assertEquals(integer(-20), i.next());
 		assertEquals(integer( 10), i.next());
