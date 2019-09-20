@@ -234,11 +234,17 @@ public final class RingBufferTest {
 	}
 
 	@Test public void testHashCode() {
-		fail("Not yet implemented");
+		// TODO: Java 8: Use lambda expression instead of anonymous class.
+		assertDidThrow(new Callable<Integer>() { @Override public Integer call() throws Exception {
+			return new RingBuffer<Integer>(1).hashCode();
+		}}, UnsupportedOperationException.class);
 	}
 
 	@Test public void testEquals() {
-		fail("Not yet implemented");
+		// TODO: Java 8: Use lambda expression instead of anonymous class.
+		assertDidThrow(new Callable<Boolean>() { @Override public Boolean call() throws Exception {
+			return new RingBuffer<Integer>(1).equals(new RingBuffer<Integer>(1));
+		}}, UnsupportedOperationException.class);
 	}
 
 }
