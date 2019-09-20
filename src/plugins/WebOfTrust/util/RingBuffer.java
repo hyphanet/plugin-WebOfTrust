@@ -94,4 +94,12 @@ public class RingBuffer<T> implements Cloneable, Iterable<T>, Serializable {
 	public final T[] toArray(T[] output) {
 		return mQueue.toArray(output);
 	}
+
+	@Override public final int hashCode() {
+		throw new UnsupportedOperationException("Not implemented yet!");
+	}
+
+	@Override public final boolean equals(Object obj) {
+		throw new UnsupportedOperationException("Not implemented yet!");
+	}
 }
