@@ -121,12 +121,19 @@ public final class RingBufferTest {
 		assertEquals(3, b.sizeLimit());
 	}
 
-	@Test public void testPeekFirst() {
-		fail("Not yet implemented");
-	}
-
-	@Test public void testPeekLast() {
-		fail("Not yet implemented");
+	@Test public void testPeek() {
+		RingBuffer<Integer> b = new RingBuffer<>(2);
+		b.addFirst(10);
+		b.addLast(20);
+		assertEquals(2, b.size());
+		assertEquals(2, b.sizeLimit());
+		assertEquals(integer(10), b.peekFirst());
+		assertEquals(integer(20), b.peekLast());
+		// Test if elements didn't get removed instead of just peeking
+		assertEquals(integer(10), b.peekFirst());
+		assertEquals(integer(20), b.peekLast());
+		assertEquals(2, b.size());
+		assertEquals(2, b.sizeLimit());
 	}
 
 	@Test public void testSize() {
