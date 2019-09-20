@@ -12,7 +12,7 @@ import java.util.concurrent.Callable;
 import org.junit.BeforeClass;
 import org.junit.Test;
 
-/** Tests {@link LimitedArrayDeque}. */
+/** Tests {@link RingBuffer}. */
 public final class LimitedArrayDequeTest {
 
 	@BeforeClass public static void beforeClass() {
@@ -23,29 +23,29 @@ public final class LimitedArrayDequeTest {
 	}
 
 	@Test public void testConstructor() {
-		assertEquals(123, new LimitedArrayDeque<Integer>(123).sizeLimit());
+		assertEquals(123, new RingBuffer<Integer>(123).sizeLimit());
 		
 		// Size limits less than 1 should not be accepted, test that...
 		// TODO: Java 8: Use lambda expressions instead of anonymous classes.
 		
 		assertDidThrow(new Callable<Object>() {
 		@Override public Object call() throws Exception {
-			return new LimitedArrayDeque<Integer>(-1);
+			return new RingBuffer<Integer>(-1);
 		}}, IllegalArgumentException.class);
 		
 		assertDidThrow(new Callable<Object>() {
 		@Override public Object call() throws Exception {
-			return new LimitedArrayDeque<Integer>(0);
+			return new RingBuffer<Integer>(0);
 		}}, IllegalArgumentException.class);
 		
 		assertDidNotThrow(new Runnable() {
 		@Override public void run() {
-			 new LimitedArrayDeque<Integer>(1);
+			 new RingBuffer<Integer>(1);
 		}});
 	}
 
 	@Test public void testAddFirst() {
-		LimitedArrayDeque<Integer> q = new LimitedArrayDeque<>(2);
+		RingBuffer<Integer> q = new RingBuffer<>(2);
 		
 		assertEquals(0, q.size());
 		q.addFirst(10);
@@ -69,7 +69,7 @@ public final class LimitedArrayDequeTest {
 	}
 
 	@Test public void testAddLast() {
-		LimitedArrayDeque<Integer> q = new LimitedArrayDeque<>(2);
+		RingBuffer<Integer> q = new RingBuffer<>(2);
 		
 		assertEquals(0, q.size());
 		q.addLast(10);
@@ -93,7 +93,7 @@ public final class LimitedArrayDequeTest {
 	}
 
 	@Test public void testAddAll() {
-		LimitedArrayDeque<Integer> q = new LimitedArrayDeque<>(3);
+		RingBuffer<Integer> q = new RingBuffer<>(3);
 
 		q.addAll(asList(10, -20, 30, -40, 50));
 		assertEquals(3, q.size());
@@ -113,7 +113,7 @@ public final class LimitedArrayDequeTest {
 	}
 
 	@Test public void testClear() {
-		LimitedArrayDeque<Integer> q = new LimitedArrayDeque<>(3);
+		RingBuffer<Integer> q = new RingBuffer<>(3);
 		q.addAll(asList(10, -20, 30));
 		assertEquals(3, q.size());
 		q.clear();

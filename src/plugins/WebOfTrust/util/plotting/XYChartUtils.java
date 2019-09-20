@@ -59,7 +59,7 @@ public final class XYChartUtils {
 		}
 
 		/**
-		 * @param data A queue where the x-value of the containing Pairs is a
+		 * @param data A RingBuffer where the x-value of the containing Pairs is a
 		 *     {@link CurrentTimeUTC#getInMillis()} timestamp.
 		 * @param t0 The {@link CurrentTimeUTC#getInMillis()} at the t=0 origin of the resulting
 		 *     plot. By using this the time labels on the X-axis will not be absolute time but a
