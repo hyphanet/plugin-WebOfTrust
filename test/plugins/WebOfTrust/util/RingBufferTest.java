@@ -13,7 +13,7 @@ import org.junit.BeforeClass;
 import org.junit.Test;
 
 /** Tests {@link RingBuffer}. */
-public final class LimitedArrayDequeTest {
+public final class RingBufferTest {
 
 	@BeforeClass public static void beforeClass() {
 		// The functions we use of AssertUtil use Java assertions, not JUnit assertions, so check if
