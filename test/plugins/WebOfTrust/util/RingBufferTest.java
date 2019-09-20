@@ -215,6 +215,14 @@ public final class RingBufferTest {
 		assertDidThrow(new Callable<Integer>() { @Override public Integer call() throws Exception {
 			return i3.next();
 		}}, NoSuchElementException.class);
+		
+		b.clear();
+		
+		final Iterator<Integer> i4 = b.iterator();
+		assertFalse(i4.hasNext());
+		assertDidThrow(new Callable<Integer>() { @Override public Integer call() throws Exception {
+			return i4.next();
+		}}, NoSuchElementException.class);
 	}
 
 	@Test public void testToArray() {
