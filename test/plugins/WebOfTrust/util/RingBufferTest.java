@@ -136,12 +136,22 @@ public final class RingBufferTest {
 		assertEquals(2, b.sizeLimit());
 	}
 
-	@Test public void testSize() {
-		fail("Not yet implemented");
-	}
-
-	@Test public void testSizeLimit() {
-		fail("Not yet implemented");
+	@Test public void testSize_sizeLimit() {
+		RingBuffer<Integer> b = new RingBuffer<>(4);
+		assertEquals(0, b.size());
+		assertEquals(4, b.sizeLimit());
+		b.addFirst(10);
+		assertEquals(1, b.size());
+		assertEquals(4, b.sizeLimit());
+		b.addLast(-20);
+		assertEquals(2, b.size());
+		assertEquals(4, b.sizeLimit());
+		b.addAll(asList(30));
+		assertEquals(3, b.size());
+		assertEquals(4, b.sizeLimit());
+		b.clear();
+		assertEquals(0, b.size());
+		assertEquals(4, b.sizeLimit());
 	}
 
 	@Test public void testClone() {
