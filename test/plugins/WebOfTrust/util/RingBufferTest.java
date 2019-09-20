@@ -226,7 +226,11 @@ public final class RingBufferTest {
 	}
 
 	@Test public void testToArray() {
-		fail("Not yet implemented");
+		RingBuffer<Integer> b = new RingBuffer<>(3);
+		assertArrayEquals(new Integer[0], b.toArray(new Integer[0]));
+		Integer a[] = new Integer[] { 10, -20, 30 };
+		b.addAll(asList(a.clone()));
+		assertArrayEquals(a, b.toArray(new Integer[3]));
 	}
 
 	@Test public void testHashCode() {
