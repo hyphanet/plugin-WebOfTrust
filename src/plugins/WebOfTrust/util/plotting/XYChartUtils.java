@@ -23,7 +23,7 @@ import freenet.l10n.BaseL10n;
 import freenet.support.CurrentTimeUTC;
 import plugins.WebOfTrust.ui.web.StatisticsPage;
 import plugins.WebOfTrust.ui.web.StatisticsPage.StatisticsPlotRenderer;
-import plugins.WebOfTrust.util.LimitedArrayDeque;
+import plugins.WebOfTrust.util.RingBuffer;
 import plugins.WebOfTrust.util.Pair;
 
 /**
@@ -40,7 +40,7 @@ public final class XYChartUtils {
 	 * by its {@link XYChartUtils#getTimeBasedPlotPNG(TimeChart, BaseL10n, String, String, String,
 	 * String)}.
 	 * 
-	 * Is a {@link LimitedArrayDeque} of {@link Pair}s where the Pair's x-value is a
+	 * Is a {@link RingBuffer} of {@link Pair}s where the Pair's x-value is a
 	 * {@link CurrentTimeUTC#getInMillis()} timestamp, converted to a double value of seconds; and
 	 * the y-value is an arbitrary {@link Number} which supports {@link Number#doubleValue()} and is
 	 * the subject of the chart to be plotted.
@@ -49,9 +49,7 @@ public final class XYChartUtils {
 	 * {@link XYChartUtils}'s preprocessing functions.
 	 * This conversion is a valid thing to do here as the charts are typically intended to cover
 	 * areas of minutes to hours and hence millisecond values are not interesting to the user. */
-	public static final class TimeChart<T extends Number>
-			extends LimitedArrayDeque<Pair<Double, T>> {
-
+	public static final class TimeChart<T extends Number> extends RingBuffer<Pair<Double, T>> {
 		private static final long serialVersionUID = 1L;
 
 		String mLabel = null;
@@ -69,7 +67,7 @@ public final class XYChartUtils {
 		 *     This value is subtracted from each x value of the data to move the origin of the
 		 *     resulting chart to this point in time.
 		 *     Typically you would set this to the startup time of WoT. */
-		public TimeChart(LimitedArrayDeque<Pair<Long, T>> data, long t0) {
+		public TimeChart(RingBuffer<Pair<Long, T>> data, long t0) {
 			super(data.sizeLimit());
 			
 			double oneSecondInMillis = SECONDS.toMillis(1);
