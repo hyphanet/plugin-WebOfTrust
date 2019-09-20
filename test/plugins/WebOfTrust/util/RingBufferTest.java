@@ -154,8 +154,32 @@ public final class RingBufferTest {
 		assertEquals(4, b.sizeLimit());
 	}
 
-	@Test public void testClone() {
-		fail("Not yet implemented");
+	@Test public void testClone() throws CloneNotSupportedException {
+		class CloneableClass implements Cloneable {
+			public CloneableClass clone() throws CloneNotSupportedException {
+				return (CloneableClass)super.clone();
+			}
+		}
+		
+		RingBuffer<CloneableClass> b1 = new RingBuffer<>(2);
+		CloneableClass x = new CloneableClass();
+		CloneableClass y = new CloneableClass();
+		assertNotSame(x, x.clone());
+		b1.addFirst(x);
+		b1.addLast(y);
+		
+		RingBuffer<CloneableClass> b2 = b1.clone();
+		assertNotSame(b1, b2);
+		assertSame(b1.peekFirst(), b2.peekFirst());
+		assertSame(b1.peekLast(),  b2.peekLast());
+		assertEquals(b1.size(),      b2.size());
+		assertEquals(b1.sizeLimit(), b2.sizeLimit());
+		b1.addLast(new CloneableClass());
+		assertEquals(2, b2.size());
+		assertNotSame(b1.peekFirst(), b2.peekFirst());
+		assertNotSame(b1.peekLast(),  b2.peekLast());
+		assertSame(x, b2.peekFirst());
+		assertSame(y, b2.peekLast());
 	}
 
 	@Test public void testIterator() {
