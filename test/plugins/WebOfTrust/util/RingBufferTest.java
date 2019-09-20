@@ -69,27 +69,27 @@ public final class RingBufferTest {
 	}
 
 	@Test public void testAddLast() {
-		RingBuffer<Integer> q = new RingBuffer<>(2);
+		RingBuffer<Integer> b = new RingBuffer<>(2);
 		
-		assertEquals(0, q.size());
-		q.addLast(10);
-		assertEquals(1, q.size());
-		assertEquals(integer(10), q.peekLast());
+		assertEquals(0, b.size());
+		b.addLast(10);
+		assertEquals(1, b.size());
+		assertEquals(integer(10), b.peekLast());
 		
-		q.addLast(20);
-		assertEquals(2, q.size());
-		assertEquals(integer(10), q.peekFirst());
-		assertEquals(integer(20), q.peekLast());
+		b.addLast(20);
+		assertEquals(2, b.size());
+		assertEquals(integer(10), b.peekFirst());
+		assertEquals(integer(20), b.peekLast());
 		
-		q.addLast(30);
-		assertEquals(2, q.size());
-		assertEquals(integer(20), q.peekFirst());
-		assertEquals(integer(30), q.peekLast());
+		b.addLast(30);
+		assertEquals(2, b.size());
+		assertEquals(integer(20), b.peekFirst());
+		assertEquals(integer(30), b.peekLast());
 
-		q.addLast(-40);
-		assertEquals(2, q.size());
-		assertEquals(integer(30), q.peekFirst());
-		assertEquals(integer(-40), q.peekLast());
+		b.addLast(-40);
+		assertEquals(2, b.size());
+		assertEquals(integer(30), b.peekFirst());
+		assertEquals(integer(-40), b.peekLast());
 	}
 
 	@Test public void testAddAll() {
