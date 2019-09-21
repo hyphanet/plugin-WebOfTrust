@@ -21,8 +21,9 @@ public final class MathUtilTest {
 		
 		// Special cases
 		
-		assertTrue(equalsApprox(a,   a, 99.999d));
-		assertTrue(equalsApprox(0d, 0d, 99.999d));
+		assertTrue( equalsApprox(a,   a, 99.999d));
+		assertFalse(equalsApprox(a,  -a, 99.999d));
+		assertTrue( equalsApprox(0d, 0d, 99.999d));
 	}
 
 	@Test public void testInteger() {
