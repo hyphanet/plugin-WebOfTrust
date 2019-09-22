@@ -28,17 +28,23 @@ public final class MathUtilTest {
 		assertFalse(equalsApprox(a,  -a, 99.999d));
 		assertTrue( equalsApprox(0d, 0d, 99.999d));
 		
-		// TODO: Java 8: Use lambda expressions instead of anonymous classes.
-		
+		// The JavaDoc of equalsApprox() promises that it throws ArithmeticException when any of
+		// these Double.* values is passed to it for comparison.
 		double[] specialValues = {
-			1d,
 			Double.NaN,
 			Double.POSITIVE_INFINITY,
 			Double.NEGATIVE_INFINITY,
 			Double.MAX_VALUE,
 			Double.MIN_VALUE,
-			Double.MIN_NORMAL };
+			Double.MIN_NORMAL,
+			1d /* Not special, we use it to test if one special value as input is enough */};
 		
+		// Test each pair of a special value and non-special value 1d being passed to either of the
+		// both input parameters of equalsApprox().
+		// Also test special values against another to catch the potential bug of equalsApprox()
+		// doing computations with the input before checking for the values being special which
+		// might lead to the output not being special anymore and thereby not hitting the check for
+		// if it is special.
 		for(int i = 0; i < specialValues.length; ++i) {
 			for(int j = 0; j < specialValues.length; ++j) {
 				if(i==0 && j==0)
@@ -46,6 +52,7 @@ public final class MathUtilTest {
 				
 				final double x = specialValues[i];
 				final double y = specialValues[j];
+				// TODO: Java 8: Use lambda expression instead of anonymous class.
 				assertDidThrow(new Callable<Boolean>() { @Override public Boolean call() {
 					return equalsApprox(x, y, 90);
 				}}, ArithmeticException.class);
