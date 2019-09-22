@@ -30,19 +30,27 @@ public final class MathUtilTest {
 		
 		// TODO: Java 8: Use lambda expressions instead of anonymous classes.
 		
-		assertDidThrow(new Callable<Boolean>() { @Override public Boolean call() throws Exception {
-			return equalsApprox(1d, Double.NaN, 90);
-		}}, ArithmeticException.class);
-		assertDidThrow(new Callable<Boolean>() { @Override public Boolean call() throws Exception {
-			return equalsApprox(Double.NaN, 1d, 90);
-		}}, ArithmeticException.class);
+		double[] specialValues = {
+			1d,
+			Double.NaN,
+			Double.POSITIVE_INFINITY,
+			Double.NEGATIVE_INFINITY,
+			Double.MAX_VALUE,
+			Double.MIN_VALUE,
+			Double.MIN_NORMAL };
 		
-		assertDidThrow(new Callable<Boolean>() { @Override public Boolean call() throws Exception {
-			return equalsApprox(1d, Double.POSITIVE_INFINITY, 90);
-		}}, ArithmeticException.class);
-		assertDidThrow(new Callable<Boolean>() { @Override public Boolean call() throws Exception {
-			return equalsApprox(Double.POSITIVE_INFINITY, 1d, 90);
-		}}, ArithmeticException.class);
+		for(int i = 0; i < specialValues.length; ++i) {
+			for(int j = 0; j < specialValues.length; ++j) {
+				if(i==0 && j==0)
+					continue;
+				
+				final double x = specialValues[i];
+				final double y = specialValues[j];
+				assertDidThrow(new Callable<Boolean>() { @Override public Boolean call() {
+					return equalsApprox(x, y, 90);
+				}}, ArithmeticException.class);
+			}
+		}
 	}
 
 	@Test public void testInteger() {
