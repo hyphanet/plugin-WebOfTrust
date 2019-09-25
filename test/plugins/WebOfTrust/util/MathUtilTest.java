@@ -70,7 +70,7 @@ public final class MathUtilTest {
 	}
 
 	@Test public void testInteger() {
-		fail("Not yet implemented");
+		assertEquals(Integer.valueOf(123), MathUtil.integer(123));
 	}
 
 }
