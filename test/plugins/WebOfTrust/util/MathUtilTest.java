@@ -31,13 +31,13 @@ public final class MathUtilTest {
 		// The JavaDoc of equalsApprox() promises that it throws ArithmeticException when any of
 		// these Double.* values is passed to it for comparison.
 		double[] specialValues = {
+			1d, /* Not special, we use it to test if one special value as input is enough */
 			Double.NaN,
 			Double.POSITIVE_INFINITY,
 			Double.NEGATIVE_INFINITY,
 			Double.MAX_VALUE,
 			Double.MIN_VALUE,
-			Double.MIN_NORMAL,
-			1d /* Not special, we use it to test if one special value as input is enough */};
+			Double.MIN_NORMAL };
 		
 		// Test each pair of a special value and non-special value 1d being passed to either of the
 		// both input parameters of equalsApprox().
