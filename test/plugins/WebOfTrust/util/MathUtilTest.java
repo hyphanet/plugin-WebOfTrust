@@ -46,7 +46,11 @@ public final class MathUtilTest {
 			Double.NEGATIVE_INFINITY,
 			Double.MAX_VALUE,
 			Double.MIN_VALUE,
-			Double.MIN_NORMAL };
+			// MIN_NORMAL is a lot larger than MIN_VALUE. Normal double values fulfill some special
+			// purpose which I've briefly read up on and which doesn't sound like it is relevant
+			// here, so equalsApprox() accepts non-normal values currently and we thus don't test
+			// with values <= MIN_NORMAL here.
+			/* Double.MIN_NORMAL */ };
 		
 		// Test each pair of a special value and non-special value 1d being passed to either of the
 		// both input parameters of equalsApprox().
