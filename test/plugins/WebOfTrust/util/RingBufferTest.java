@@ -20,6 +20,7 @@ public final class RingBufferTest {
 		// The functions we use of AssertUtil use Java assertions, not JUnit assertions, so check if
 		// they are enabled.
 		// TODO: Code quality: Provide copies of these functions in a class JUnitUtil to fix this.
+		// A copy of this TODO exists at class MathUtilTest.
 		assertTrue(AssertUtil.class.desiredAssertionStatus());
 	}
 

@@ -6,10 +6,19 @@ import static plugins.WebOfTrust.util.MathUtil.equalsApprox;
 
 import java.util.concurrent.Callable;
 
+import org.junit.BeforeClass;
 import org.junit.Test;
 
 /** Tests {@link MathUtil}. */
 public final class MathUtilTest {
+
+	@BeforeClass public static void beforeClass() {
+		// The functions we use of AssertUtil use Java assertions, not JUnit assertions, so check if
+		// they are enabled.
+		// TODO: Code quality: Provide copies of these functions in a class JUnitUtil to fix this.
+		// A copy of this TODO exists at class RingBufferTest.
+		assertTrue(AssertUtil.class.desiredAssertionStatus());
+	}
 
 	@Test public void testEqualsApprox() {
 		final double a = 0.87654321d * Double.MAX_VALUE;
