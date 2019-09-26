@@ -21,7 +21,12 @@ public final class PairTest {
 	}
 
 	@Test public void testHashCode() {
-		fail("Not yet implemented");
+		Object x = new Object();
+		Object y = new Object();
+		assertEquals(new Pair<>(x, y).hashCode(), new Pair<>(x, y).hashCode());
+		
+		assertNotEquals(new Pair<>(10, 20).hashCode(), new Pair<>(10,  0).hashCode());
+		assertNotEquals(new Pair<>(10, 20).hashCode(), new Pair<>(0 , 20).hashCode());
 	}
 
 	@Test public void testEquals() {
