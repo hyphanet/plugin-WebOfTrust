@@ -30,7 +30,17 @@ public final class PairTest {
 	}
 
 	@Test public void testEquals() {
-		fail("Not yet implemented");
+		Object x = new Object();
+		Object y = new Object();
+		Object z = new Object();
+		
+		assertEquals(   new Pair<>(x, y), new Pair<>(x, y));
+		assertNotEquals(new Pair<>(x, y), new Pair<>(x, z));
+		assertNotEquals(new Pair<>(x, y), new Pair<>(z, y));
+		
+		assertFalse(new Pair<>(x, y).equals(new Object()));
+		assertFalse(new Pair<>(x, y).equals(null));
+		assertEquals(new Pair<>(null, null), new Pair<>(null, null));
 	}
 
 }
