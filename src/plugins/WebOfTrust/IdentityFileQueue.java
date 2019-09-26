@@ -246,7 +246,8 @@ public interface IdentityFileQueue {
 			return (
 					(mTotalQueuedFiles >= 0)
 				
-				 && (mTimesOfQueuing.size() == (mTotalQueuedFiles + 1 /* for initial entry */)
+				 && (mTimesOfQueuing.size() ==
+				      (mTotalQueuedFiles - mLeftoverFilesOfLastSession + 1 /* for initial entry */)
 					|| mTimesOfQueuing.size() == MAX_TIMES_OF_QUEUING_SIZE)
 				
 				 && (mQueuedFiles >= 0)
