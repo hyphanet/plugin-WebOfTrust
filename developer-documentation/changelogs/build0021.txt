@@ -28,6 +28,40 @@ CHANGELOG - prefixed with the bugtracker issue number
   Blah.
   Blah.
 
+- 0007021: [Performance] Statistics page: Add graphs of download speed
+           (xor)
+
+  This adds two plots to the page:
+  - Total downloaded identity files plotted against the uptime of WoT
+  - Identity files downloaded per hour plotted against the uptime.
+
+  They show both data of the current session as well as of the last
+  session, i.e. from before Freenet / WoT was restarted the last time.
+  Each of both is displayed separately for comparison.
+
+  The data of the last session is stored in a file separate to the main
+  WoT database.
+  This allows benchmarking changes to the codebase by doing two runs,
+  with the old and the new code, using a fresh db4o database each while
+  keeping the statistics file.
+  The resulting plots will contain both test runs then.
+  This will be used to benchmark the main goal of this build - the
+  rewrite of the code for downloading identities.
+
+  The XChart plotting library was used to produce the plots, which seems
+  very easy to use and thus luckily was a good choice.
+  As XChart provides only rendering, not computation, I wrote lots of
+  utility classes to make it easy to gather and preprocess the input
+  data for plots.
+  Unit tests to provide full test coverage for them utility classes have
+  been shipped as well. The support for using the Cobertura test
+  coverage analysis library which I've recently added to WoT is now
+  paying off.
+  Overall it will now be very easy to add further plots to WoT of
+  different aspects which are a good idea to measure for performance
+  improvement purposes. I will definitely consider this for future
+  releases.
+
 - 0006994: [Performance] Fix up to 1.5 hour delay of captcha solution
            download (xor)
 
