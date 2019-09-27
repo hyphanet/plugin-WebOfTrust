@@ -2,7 +2,6 @@
 branches:
   except:
     - issue-0003816-IdentityFetcher-rewrite
-    - issue-0007021-plot-download-stats
 
 language: java
 
