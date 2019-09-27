@@ -20,8 +20,8 @@ import freenet.keys.FreenetURI;
 
 /**
  * Downloads {@link Identity} objects from the P2P network.
- * They are then fed as {@link IdentityFile} to the {@link IdentityFileQueue}, which is consumed by
- * the {@link IdentityFileProcessor}.
+ * Strictly all of them are then fed as {@link IdentityFile} to the {@link IdentityFileQueue}, which
+ * is consumed by the {@link IdentityFileProcessor}.
  * 
  * Implementations are allowed to and do store pointers to {@link Identity} and {@link OwnIdentity}
  * objects in their database, e.g. as part of {@link EditionHint} objects and

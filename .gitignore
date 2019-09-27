@@ -1,4 +1,5 @@
 build
 build-test
+dependencies
 dist
 override.properties

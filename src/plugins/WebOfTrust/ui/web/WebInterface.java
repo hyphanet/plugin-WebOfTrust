@@ -25,6 +25,7 @@ import plugins.WebOfTrust.exceptions.UnknownIdentityException;
 import plugins.WebOfTrust.identicon.Identicon;
 import plugins.WebOfTrust.introduction.IntroductionPuzzle;
 import plugins.WebOfTrust.introduction.IntroductionPuzzleStore;
+import plugins.WebOfTrust.ui.web.StatisticsPage.StatisticsPlotType;
 import freenet.client.HighLevelSimpleClient;
 import freenet.client.filter.ContentFilter;
 import freenet.clients.http.PageMaker;
@@ -305,14 +306,7 @@ public class WebInterface {
 		}
 
 		public URI getURI(String puzzleID) {
-			final URI baseURI = getURI();
-			
-			try {
-				// The parameter which is baseURI.getPath() may not be null, otherwise the last directory is stripped.
-				return baseURI.resolve(new URI(null, null, baseURI.getPath(), "PuzzleID=" + puzzleID, null));
-			} catch (URISyntaxException e) {
-				throw new RuntimeException(e);
-			}
+			return getURIWithParams("PuzzleID=" + puzzleID);
 		}
 
 		@Override
@@ -426,6 +420,58 @@ public class WebInterface {
 
 	}
 
+	/** Toadlet which serves the PNG images of all generated statistics PNG images of the enum
+	 *  {@link StatisticsPage.StatisticsPlotType}.
+	 *  New types added to that enum will be served automatically, no changes are required here. */
+	public final class StatisticsPNGWebInterfaceToadlet extends WebInterfaceToadlet {
+		public StatisticsPNGWebInterfaceToadlet(HighLevelSimpleClient highLevelSimpleClient,
+				WebInterface webInterface, NodeClientCore nodeClientCore, String pageTitle) {
+			
+			super(highLevelSimpleClient, webInterface, nodeClientCore, pageTitle);
+		}
+	
+		public URI getURI(StatisticsPlotType type) {
+			return getURIWithParams("type=" + type);
+		}
+	
+		@Override public void handleMethodGET(URI uri, HTTPRequest httpRequest,
+				ToadletContext toadletContext) throws ToadletContextClosedException, IOException,
+				RedirectException {
+			
+			if(!toadletContext.checkFullAccess(this))
+				return;
+			
+			StatisticsPlotType stats;
+			try {
+				stats = StatisticsPlotType.valueOf(httpRequest.getParam("type"));
+			} catch(IllegalArgumentException e) {
+				sendErrorPage(toadletContext, 404, "Not found",
+					"HTTP GET request parameter 'type' must be one these: " +
+						Arrays.toString(StatisticsPlotType.values()));
+				return;
+			}
+			
+			returnPNG(toadletContext, stats.getPNG(mWoT));
+		}
+	
+		private void returnPNG(ToadletContext toadletContext, byte[] pngData)
+				throws IOException, ToadletContextClosedException {
+			
+			Bucket imageBucket = null;
+			try {
+				imageBucket = BucketTools.makeImmutableBucket(core.tempBucketFactory, pngData);
+				writeReply(toadletContext, 200, "image/png", "OK", imageBucket);
+			} finally {
+				// FIXME: Why doesn't GetIdenticonWebInterfaceToadlet do this?
+				Closer.close(imageBucket);
+			}
+		}
+	
+		@Override WebPage makeWebPage(HTTPRequest req, ToadletContext context) {
+			throw new UnsupportedOperationException("Should not be called!");
+		}
+	}
+
 	/**
 	 * @return Null if the Freenet web interface is disabled, a valid WOT WebInterface otherwise.
 	 */
@@ -488,7 +534,9 @@ public class WebInterface {
 			new IntroduceIdentityWebInterfaceToadlet(null, this, core, "IntroduceIdentity"),
 			new IdentityWebInterfaceToadlet(null, this, core, "ShowIdentity"),
 			new GetPuzzleWebInterfaceToadlet(null, this, core, "GetPuzzle"),
-			new GetIdenticonWebInterfaceToadlet(null, this, core, "GetIdenticon")
+			new GetIdenticonWebInterfaceToadlet(null, this, core, "GetIdenticon"),
+			new StatisticsPNGWebInterfaceToadlet(null, this, core, "statistics.png")
+
 		));
 
 		for (WebInterfaceToadlet toadlet : unlisted) {

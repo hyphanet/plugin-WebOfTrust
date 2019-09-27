@@ -151,7 +151,6 @@ StatisticsPage.IdentityFileQueueBox.FinishedFiles=Završenih datoteka:
 StatisticsPage.IdentityFileQueueBox.Header=Red datoteka identiteta
 StatisticsPage.IdentityFileQueueBox.ProcessingFiles=Datoteka u obradi:
 StatisticsPage.IdentityFileQueueBox.QueuedFiles=Datoteke u redu:
-StatisticsPage.IdentityFileQueueBox.TotalQueuedFiles=Ukupno datoteka ikad stavljeno u red (\= preuzeto):
 StatisticsPage.MaintenanceBox.Header=Održavanje
 StatisticsPage.MaintenanceBox.LastDefrag=Posljednje defragmentiranje baze podatka: ${lastTime} (raspored: svakih ${interval})
 StatisticsPage.MaintenanceBox.LastScoreVerification=Posljednje verificiranje inkrementalno izračunatih vrijednosti povjerenja: ${lastTime} (raspored: svakih ${interval})

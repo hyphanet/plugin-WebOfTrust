@@ -4,9 +4,12 @@
 package plugins.WebOfTrust;
 
 import java.io.ByteArrayInputStream;
+import java.io.IOException;
 import java.util.LinkedList;
 
+import freenet.support.CurrentTimeUTC;
 import freenet.support.Logger;
+import plugins.WebOfTrust.util.Pair;
 import plugins.WebOfTrust.util.jobs.BackgroundJob;
 
 /**
@@ -72,6 +75,12 @@ final class IdentityFileMemoryQueue implements IdentityFileQueue {
 			throw e;
 		} finally {
 			++mStatistics.mTotalQueuedFiles;
+			mStatistics.mTimesOfQueuing.addLast(
+				new Pair<>(CurrentTimeUTC.getInMillis(),
+					// IdentityFileMemoryQueue is not persisted across sessions, so subtracting
+					// mLefoverFilesOfLastSession is not necessary - but let's do it anyway in case
+					// the class is someday amended with persistence.
+					mStatistics.mTotalQueuedFiles - mStatistics.mLeftoverFilesOfLastSession));
 			assert(checkConsistency());
 		}
 	}
@@ -124,6 +133,10 @@ final class IdentityFileMemoryQueue implements IdentityFileQueue {
 		assert(checkConsistency());
 		return mStatistics.clone();
 	}
+	
+	@Override public IdentityFileQueueStatistics getStatisticsOfLastSession() throws IOException {
+		throw new IOException("IdentityFileMemoryQueue does not store anything to disk!");
+	}
 
 	private synchronized boolean checkConsistency() {
 		return
@@ -132,4 +145,6 @@ final class IdentityFileMemoryQueue implements IdentityFileQueue {
 			&& mStatistics.mProcessingFiles == 0
 			&& mStatistics.mQueuedFiles == mQueue.size();
 	}
+
+	@Override public void stop() { }
 }

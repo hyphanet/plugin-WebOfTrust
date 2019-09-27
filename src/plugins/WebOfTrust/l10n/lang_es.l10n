@@ -149,7 +149,6 @@ StatisticsPage.IdentityFileQueueBox.FinishedFiles=Ficheros finalizados:
 StatisticsPage.IdentityFileQueueBox.Header=Cola de ficheros de identidad
 StatisticsPage.IdentityFileQueueBox.ProcessingFiles=Ficheros en proceso:
 StatisticsPage.IdentityFileQueueBox.QueuedFiles=Ficheros en cola:
-StatisticsPage.IdentityFileQueueBox.TotalQueuedFiles=Máximo de ficheros en cola (\= descargados) en algún momento:
 StatisticsPage.MaintenanceBox.Header=Mantenimiento
 StatisticsPage.MaintenanceBox.LastDefrag=Última defragmentación de la base de datos: ${lastTime} (periodicidad: cada ${interval})
 StatisticsPage.MaintenanceBox.LastScoreVerification=Última verificación de valores de confianza computados incrementalmente: ${lastTime} (periodicidad: cada ${interval})

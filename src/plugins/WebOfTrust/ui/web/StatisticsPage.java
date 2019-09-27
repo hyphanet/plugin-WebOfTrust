@@ -5,17 +5,29 @@ package plugins.WebOfTrust.ui.web;
 
 import static freenet.support.TimeUtil.formatTime;
 import static java.lang.Math.max;
+import static java.util.concurrent.TimeUnit.HOURS;
+import static java.util.concurrent.TimeUnit.SECONDS;
 import static plugins.WebOfTrust.Configuration.DEFAULT_DEFRAG_INTERVAL;
 import static plugins.WebOfTrust.Configuration.DEFAULT_VERIFY_SCORES_INTERVAL;
 import static plugins.WebOfTrust.ui.web.CommonWebUtils.formatTimeDelta;
+import static plugins.WebOfTrust.util.CollectionUtil.arrayList;
+import static plugins.WebOfTrust.util.CollectionUtil.ignoreNulls;
+import static plugins.WebOfTrust.util.plotting.XYChartUtils.differentiate;
+import static plugins.WebOfTrust.util.plotting.XYChartUtils.getTimeBasedPlotPNG;
+import static plugins.WebOfTrust.util.plotting.XYChartUtils.movingAverage;
+import static plugins.WebOfTrust.util.plotting.XYChartUtils.multiplyY;
 
+import java.io.IOException;
+import java.net.URI;
 import java.text.SimpleDateFormat;
 import java.util.Date;
 import java.util.concurrent.TimeUnit;
 
 import plugins.WebOfTrust.Configuration;
 import plugins.WebOfTrust.Identity;
+import plugins.WebOfTrust.IdentityFile;
 import plugins.WebOfTrust.IdentityFileProcessor;
+import plugins.WebOfTrust.IdentityFileQueue;
 import plugins.WebOfTrust.IdentityFileQueue.IdentityFileQueueStatistics;
 import plugins.WebOfTrust.SubscriptionManager;
 import plugins.WebOfTrust.WebOfTrust;
@@ -25,6 +37,10 @@ import plugins.WebOfTrust.network.input.IdentityDownloaderFast;
 import plugins.WebOfTrust.network.input.IdentityDownloaderFast.IdentityDownloaderFastStatistics;
 import plugins.WebOfTrust.network.input.IdentityDownloaderSlow;
 import plugins.WebOfTrust.network.input.IdentityDownloaderSlow.IdentityDownloaderSlowStatistics;
+import plugins.WebOfTrust.ui.web.WebInterface.StatisticsPNGWebInterfaceToadlet;
+import plugins.WebOfTrust.util.Pair;
+import plugins.WebOfTrust.util.plotting.XYChartUtils;
+import plugins.WebOfTrust.util.plotting.XYChartUtils.TimeChart;
 import freenet.clients.http.ToadletContext;
 import freenet.l10n.BaseL10n;
 import freenet.support.CurrentTimeUTC;
@@ -53,6 +69,7 @@ public class StatisticsPage extends WebPageImpl {
 	@Override
 	public void make(final boolean mayWrite) {
 		makeSummary();
+		makePlotBox();
 		makeIdentityDownloaderFastBox();
 		makeIdentityDownloaderSlowBox();
 		makeIdentityDownloaderSlowQueueBox();
@@ -106,6 +123,170 @@ public class StatisticsPage extends WebPageImpl {
 		}
 		
 		box.addChild(list);
+	}
+
+	private void makePlotBox() {
+		HTMLNode box = addContentBox(l10n().getString("StatisticsPage.PlotBox.Header"));
+		for(StatisticsPlotType type : StatisticsPlotType.values())
+			box.addChild("img", "src", type.getURI(mWebInterface).toString());
+	}
+
+	/** A renderer for a {@link StatisticsPlotType}. */
+	public static interface StatisticsPlotRenderer {
+		/** Returns an image of the PNG format, serialized to a byte array.
+		 *  It is recommended to use {@link XYChartUtils} to implement this. */
+		public byte[] getPNG(WebOfTrust wot);
+	}
+
+	/**
+	 * Each value of this enum defines a {@link StatisticsPlotRenderer#getPNG(WebOfTrust)} to render
+	 * the associated plot.
+	 * 
+	 * The PNG images of all values of this enum will automatically be served by
+	 * {@link StatisticsPNGWebInterfaceToadlet} at the URI as obtainable by
+	 * {@link #getURI(WebInterface)}.
+	 * All images are automatically added to the HTML of the StatisticsPage, using that URI, by
+	 * {@link StatisticsPage#makePlotBox()}.
+	 * 
+	 * Thus to add a new type of statistics all you have to do is add a new value to this enum with
+	 * the associated {@link StatisticsPlotRenderer} passed to its constructor. */
+	public static enum StatisticsPlotType implements StatisticsPlotRenderer {
+		TotalDownloadCount(new StatisticsPlotRenderer() {
+			/**
+			 * Renders a chart where the X-axis is the uptime of WoT, and the Y-axis is the total
+			 * number of downloaded {@link IdentityFile}s.
+			 * 
+			 * @see IdentityFileQueueStatistics#mTimesOfQueuing */
+			@Override public byte[] getPNG(WebOfTrust wot) {
+				IdentityFileQueue q = wot.getIdentityFileQueue();
+				
+				TimeChart<Integer> chartOld;
+				try {
+					IdentityFileQueueStatistics s = q.getStatisticsOfLastSession();
+					chartOld = new TimeChart<>(s.mTimesOfQueuing, s.mStartupTimeMilliseconds);
+					chartOld.setLabel("StatisticsPage.PlotBox.LastSession");
+				} catch (IOException e) {
+					// No data of previous session available
+					chartOld = null;
+				}
+				
+				// Add a dummy entry for the current time to the end of the plot so refreshing the
+				// image periodically shows that it is live even when there is no progress.
+				// The return value of q.getStatistics() is safe to be modified here, it returns a
+				// clone().
+				TimeChart<Integer> chartNew = appendCurrentTimeDummy(q.getStatistics());
+				chartNew.setLabel("StatisticsPage.PlotBox.CurrentSession");
+				
+				String l10n = "StatisticsPage.PlotBox.TotalDownloadCountPlot.";
+				return getTimeBasedPlotPNG(wot.getBaseL10n(), l10n + "Title", l10n + "XAxis.Hours",
+					l10n + "XAxis.Minutes",  l10n + "YAxis",
+					ignoreNulls(arrayList(chartNew, chartOld)));
+			}
+			
+			private TimeChart<Integer> appendCurrentTimeDummy(IdentityFileQueueStatistics stats) {
+				long t0 = stats.mStartupTimeMilliseconds;
+				TimeChart<Integer> timesOfQueuing = new TimeChart<>(stats.mTimesOfQueuing, t0);
+				
+				double currentTime
+					= (double)(CurrentTimeUTC.getInMillis() - t0) / SECONDS.toMillis(1);
+				// peekLast() will always work: IdentityFileQueueStatistics specifies it to always
+				// contain at least one entry.
+				timesOfQueuing.addLast(new Pair<>(currentTime, timesOfQueuing.peekLast().y));
+				
+				return timesOfQueuing;
+			}
+		}),
+		DownloadsPerHour(new StatisticsPlotRenderer() {
+			/**
+			 * Renders a chart where the X-axis is the uptime of WoT, and the Y-axis is the number
+			 * of downloaded {@link IdentityFile}s per hour.
+			 * This is calculated by differentiating the total download count.
+			 * 
+			 * @see IdentityFileQueueStatistics#mTimesOfQueuing */
+			@Override public byte[] getPNG(WebOfTrust wot) {
+				IdentityFileQueue q = wot.getIdentityFileQueue();
+				
+				TimeChart<Double> chartOld;
+				try {
+					chartOld = calculateDownloadsPerHour(q.getStatisticsOfLastSession());
+					chartOld.setLabel("StatisticsPage.PlotBox.LastSession");
+				} catch (IOException e) {
+					// No data of previous session available
+					chartOld = null;
+				}
+				
+				IdentityFileQueueStatistics stats = q.getStatistics();
+				TimeChart<Double> chartNew = calculateDownloadsPerHour(stats);
+				chartNew.setLabel("StatisticsPage.PlotBox.CurrentSession");
+				
+				// Ensure the resulting dataset contains an entry for the current time so refreshing
+				// the image periodically shows that it is live even when there is no progress.
+				appendCurrentTimeDummy(chartNew, stats.mStartupTimeMilliseconds);
+				
+				String l10n = "StatisticsPage.PlotBox.DownloadsPerHourPlot.";
+				return getTimeBasedPlotPNG(wot.getBaseL10n(), l10n + "Title", l10n + "XAxis.Hours",
+					l10n + "XAxis.Minutes",  l10n + "YAxis",
+					ignoreNulls(arrayList(chartNew, chartOld)));
+			}
+			
+			private TimeChart<Double> calculateDownloadsPerHour(IdentityFileQueueStatistics stats) {
+				TimeChart<Integer> timesOfQueuing
+					= new TimeChart<>(stats.mTimesOfQueuing, stats.mStartupTimeMilliseconds);
+				
+				// - Build the average before differentiating to prevent a jumpy graph due to
+				//   fred delivering batches of many files at once for internal reasons.
+				// - FIXME: Consider applying movingAverage() again after differentiation to make
+				//   the graph even less jumpy. Though this can wait until the
+				//   IdentityDownloaderSlow has received a mechanism for auto-adjusting its number
+				//   of concurrent downloads to ensure the set of running downloads doesn't
+				//   run very empty about every minute, which probably is a major reason for the
+				//   jumpiness.
+				// - Convert to hours before differentiating to aid the "dy/dx" division in
+				//   preserving floating point accuracy.
+				TimeChart<Double> downloadsPerHour
+					= differentiate(
+						multiplyY(movingAverage(timesOfQueuing, 60), HOURS.toSeconds(1))
+					);
+				
+				// Ensure the resulting dataset is not empty.
+				// differentiate() will return at most size() - 1 elements, so addFirst() won't
+				// discard the tail element even if our input RingBuffer was full.
+				downloadsPerHour.addFirst(new Pair<>(0d, 0d));
+				
+				return downloadsPerHour;
+			}
+
+			private void appendCurrentTimeDummy(TimeChart<Double> chart, long t0) {
+				double currentTime
+					= (double)(CurrentTimeUTC.getInMillis() - t0) / SECONDS.toMillis(1);
+				chart.addLast(new Pair<>(currentTime,
+					chart.size() > 0 ? chart.peekLast().y : 0d));
+			}
+
+		});
+
+		private final StatisticsPlotRenderer mRenderer;
+	
+		private StatisticsPlotType(StatisticsPlotRenderer r) {
+			mRenderer = r;
+		}
+	
+		/**
+		 * TODO: Code quality: Java 8: In Java 8 the values of the enum will be able to implement
+		 * this directly without the indirection of the mRenderer variable:
+		 * https://stackoverflow.com/a/50472201 */
+		@Override public byte[] getPNG(WebOfTrust wot) {
+			return mRenderer.getPNG(wot);
+		}
+
+		/** Returns the URI of the PNG image of this StatisticsPlotType as served by the
+		 *  {@link StatisticsPNGWebInterfaceToadlet}. */
+		public URI getURI(WebInterface wi) {
+			StatisticsPNGWebInterfaceToadlet myToadlet = (StatisticsPNGWebInterfaceToadlet)
+				wi.getToadlet(StatisticsPNGWebInterfaceToadlet.class);
+			
+			return myToadlet.getURI(this);
+		}
 	}
 
 	/**
@@ -271,6 +452,8 @@ public class StatisticsPage extends WebPageImpl {
 
 		list.addChild(new HTMLNode("li", l10n().getString(l10nPrefix + "AverageQueuedFilesPerHour")
 			+ " " + stats.getAverageQueuedFilesPerHour()));
+		list.addChild(new HTMLNode("li", l10n().getString(l10nPrefix + "LeftoverFilesOfLastSession")
+			+ " " + stats.mLeftoverFilesOfLastSession));
 		list.addChild(new HTMLNode("li", l10n().getString(l10nPrefix + "TotalQueuedFiles")
 			+ " " + stats.mTotalQueuedFiles));
 		list.addChild(new HTMLNode("li", l10n().getString(l10nPrefix + "QueuedFiles")

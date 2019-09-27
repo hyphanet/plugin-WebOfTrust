@@ -148,7 +148,6 @@ StatisticsPage.IdentityFileQueueBox.FinishedFiles=Fichiers terminés :
 StatisticsPage.IdentityFileQueueBox.Header=File d'attente de fichiers d'identité
 StatisticsPage.IdentityFileQueueBox.ProcessingFiles=Fichiers en traitement :
 StatisticsPage.IdentityFileQueueBox.QueuedFiles=Fichiers mis en file d'attente :
-StatisticsPage.IdentityFileQueueBox.TotalQueuedFiles=Total des fichiers mis en attente jusqu’à maintenant ( \= téléchargés) :
 StatisticsPage.MaintenanceBox.LastDefrag=Dernière défragmentation de la base de données : ${lastTime} (planifier : tous les ${interval})
 StatisticsPage.MaintenanceBox.LastScoreVerification=Dernière vérification des valeurs de confiance à calcul incrémentiel : ${lastTime} (planifier : tous les ${interval})
 StatisticsPage.SummaryBox.EventNotifications.Pending=Notifications d'événement en attente d'envoi : ${amount}

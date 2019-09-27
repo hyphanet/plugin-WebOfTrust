@@ -38,10 +38,12 @@
 	<!-- Configuration which you should probably leave as is!                                    -->
 	<!-- ======================================================================================= -->
 	
-	<!-- Git submodule directory of the db4o source code. Will be compiled automatically! -->
+	<!-- Git submodule directories of dependencies. Will be compiled automatically! -->
 	<property name="db4o-submodule.location" location="db4o-7.4"/>
-	<!-- JAR which the Ant builder of db4o produces. -->
-	<property name="db4o.location" location="${db4o-submodule.location}/db4o.jar"/>
+	<property name="xchart-submodule.location" location="XChart"/>
+	<!-- After compiling the submodule JARs are copied into this directory and used from there.
+	     (Copying is necessary because <zipgroupfileset> needs to consume a directory.) -->
+	<property name="dependencies.location" location="dependencies/"/>
 	<property name="svn.revision" value="@custom@"/>
 	<property name="build" location="build/"/>
 	<property name="build-test" location="build-test/"/>
@@ -59,11 +61,10 @@
 	<available file="${cobertura.location}" property="cobertura.present"/>
 	<property name="test.coverage" unless:set="${test.coverage}" if:true="${cobertura.present}" value="true"/>
 
-	<!-- Libraries whose classes are to be bundled in our own JAR. -->
-	<path id="submodules.path">
-		<pathelement location="${db4o.location}"/>
-	</path>
-	<!-- Libraries which we get from fred. -->
+	<!-- Libraries which we get from fred.
+	     TODO: Code quality: Copy them to dependencies.location and use them from there, delete them
+	     at clean task. This will allow compiling if fred isn't currently compiled as long as clean
+	     isn't run. -->
 	<path id="lib.path">
 		<!-- Use filesets instead of <pathelement> to:
 		     - allow using wildcards when including freenet.lib.new.location so we don't need to
@@ -79,6 +80,13 @@
 		<fileset file="${freenet.lib.old.location.3}" erroronmissingdir="no"/>
 		<fileset file="${freenet.lib.old.location.4}" erroronmissingdir="no"/>
 		<fileset file="${freenet.lib.old.location.5}" erroronmissingdir="no"/>
+	</path>
+
+	<!-- Submodule libraries whose classes are to be bundled in our own JAR. -->
+	<path id="submodules.path">
+		<fileset dir="${dependencies.location}" erroronmissingdir="yes" casesensitive="no">
+			<include name="*.jar"/>
+		</fileset>
 	</path>
 
 	<path id="cobertura.path">
@@ -128,27 +136,39 @@
 		</and>
 	</condition>
 
-	<target name="get-submodules" description="Downloads the git submodules required by WoT">
-		<echo>Downloading db4o git submodule if it doesn't exist already...</echo>
+	<target name="get-submodules" description="Downloads the git submodule dependencies required by WoT">
+		<echo>Downloading git submodules if they don't exist already...</echo>
 		<exec executable="git">
 			<arg line="submodule update --init"/>
 		</exec>
 	</target>
 
-	<target name="db4o" depends="get-submodules" description="Compiles the database submodule">
+	<target name="compile-submodules" depends="get-submodules" description="Compiles the dependencies">
 		<echo>Compiling db4o submodule...</echo>
 		<ant dir="${db4o-submodule.location}" inheritAll="false" useNativeBasedir="true">
 			<property name="javac.source.version" value="${source-version}"/>
 			<property name="javac.target.version" value="${target-version}"/>
 		</ant>
+		
+		<echo>Compiling XChart submodule...</echo>
+		<ant dir="${xchart-submodule.location}" inheritAll="false" useNativeBasedir="true">
+			<property name="javac.source.version" value="${source-version}"/>
+			<property name="javac.target.version" value="${target-version}"/>
+		</ant>
+		
+		<copy file="${db4o-submodule.location}/db4o.jar" todir="${dependencies.location}" overwrite="true"/>
+		<copy file="${xchart-submodule.location}/xchart.jar" todir="${dependencies.location}" overwrite="true"/>
 	</target>
 
-	<target name="clean-db4o" depends="get-submodules" description="Cleans the database submodule">
+	<target name="clean-submodules" depends="get-submodules" description="Cleans the compile output of the dependencies">
 		<echo>Cleaning db4o submodule...</echo>
 		<ant dir="${db4o-submodule.location}" target="clean" inheritAll="false"
 			useNativeBasedir="true"/>
+		
+		<echo>Cleaning XChart submodule...</echo>
+		<ant dir="${xchart-submodule.location}" target="clean" inheritAll="false"
+			useNativeBasedir="true"/>
 	</target>
-
 
 	<target name="print-libs">
 		<echo>External dependencies on classpath follow, but ONLY those which did exist.</echo>
@@ -174,7 +194,7 @@
 	</target>
 
 	<!-- ================================================== -->
-	<target name="compile" depends="print-libs, db4o, mkdir">
+	<target name="compile" depends="print-libs, compile-submodules, mkdir">
 		<!-- Create the time stamp -->
 		<tstamp/>
 
@@ -269,9 +289,7 @@
 			</fileset>
 			
 			<fileset dir="${build-test}/test/"/> <!-- Separate directory to exclude the JAR -->
-			<zipfileset>
-				<path refid="submodules.path"/>
-			</zipfileset>
+			<zipgroupfileset dir="${dependencies.location}" casesensitive="no" includes="*.jar"/>
 		</jar>
 	</target>
 
@@ -330,6 +348,7 @@
 					<exclude name="**/TickerDelayedBackgroundJobTest.class"
 						unless="test.unreliable" />
 					<exclude name="com/db4o/**"/>
+					<exclude name="org/knowm/xchart/**"/>
 				</zipfileset>
 			</batchtest>
 			
@@ -369,6 +388,7 @@
 					     constructor. -->
 					<exclude name="**/*$*.class"/>
 					<exclude name="com/db4o/**"/>
+					<exclude name="org/knowm/xchart/**"/>
 				</zipfileset>
 			</batchtest>
 			
@@ -391,9 +411,7 @@
 				<include name="*.txt"/> <!-- Include the GPL -->
 			</fileset>
 			<fileset dir="${build}/"/>
-			<zipfileset>
-				<path refid="submodules.path"/>
-			</zipfileset>
+			<zipgroupfileset dir="${dependencies.location}" casesensitive="no" includes="*.jar"/>
 		</jar>
 	</target>
 
@@ -414,10 +432,11 @@
 	</target>
 
 	<!-- ================================================== -->
-	<target name="clean" depends="clean-db4o" description="Delete class files and docs dir and the plugin file in plugins/ of your debug node.">
+	<target name="clean" depends="clean-submodules" description="Delete class files and docs dir and the plugin file in plugins/ of your debug node.">
 		<delete dir="${build}"/>
 		<delete dir="${build-test}"/>
 		<delete dir="${build-test-coverage}"/>
+		<delete dir="${dependencies.location}"/>
 		<delete dir="${dist}"/>
 		<delete file="${debug-node-wot-plugin.location}"/>
 	</target>

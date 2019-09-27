@@ -228,4 +228,14 @@ public abstract class WebInterfaceToadlet extends Toadlet implements LinkEnabled
 			throw new RuntimeException(e);
 		}
 	}
+
+	/** Returns {@link #getURI()} plus query string such as "?key1=value1&key2=value2..." */
+	public final URI getURIWithParams(String queryString) {
+		URI u = getURI();
+		try {
+			return u.resolve(new URI(null, null, u.getPath(), queryString, u.getFragment()));
+		} catch (URISyntaxException e) {
+			throw new RuntimeException(e);
+		}
+	}
 }

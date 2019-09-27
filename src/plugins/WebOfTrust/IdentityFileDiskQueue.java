@@ -11,8 +11,10 @@ import java.io.InputStream;
 import java.util.Arrays;
 
 import plugins.WebOfTrust.Identity.IdentityID;
+import plugins.WebOfTrust.util.Pair;
 import plugins.WebOfTrust.util.jobs.BackgroundJob;
 import freenet.keys.FreenetURI;
+import freenet.support.CurrentTimeUTC;
 import freenet.support.Logger;
 import freenet.support.Logger.LogLevel;
 
@@ -55,7 +57,10 @@ final class IdentityFileDiskQueue implements IdentityFileQueue {
 
 	/** @see #getStatistics() */
 	private final IdentityFileQueueStatistics mStatistics = new IdentityFileQueueStatistics();
-	
+
+	/** @see #getStatisticsOfLastSession() */
+	private static final String STATISTICS_OF_LAST_SESSION_FILENAME = "Statistics.ser";
+
 	/** @see #registerEventHandler(BackgroundJob) */
 	private BackgroundJob mEventHandler;
 
@@ -123,8 +128,9 @@ final class IdentityFileDiskQueue implements IdentityFileQueue {
 
 			++mStatistics.mQueuedFiles;
 			++mStatistics.mTotalQueuedFiles;
+			++mStatistics.mLeftoverFilesOfLastSession;
 		}
-
+		
 		Logger.normal(this, "cleanDirectories(): Old queued files: " + mStatistics.mQueuedFiles);
 
 		// Processing dir policy:
@@ -197,6 +203,9 @@ final class IdentityFileDiskQueue implements IdentityFileQueue {
 			// included: This ensures that the user might notice dropped files from the statistics
 			// in the UI.
 			++mStatistics.mTotalQueuedFiles;
+			mStatistics.mTimesOfQueuing.addLast(
+				new Pair<>(CurrentTimeUTC.getInMillis(),
+					mStatistics.mTotalQueuedFiles - mStatistics.mLeftoverFilesOfLastSession));
 			
 			File filename = getQueueFilename(identityFileStream.mURI);
 			// Delete for deduplication
@@ -534,7 +543,27 @@ final class IdentityFileDiskQueue implements IdentityFileQueue {
 		assert(checkDiskConsistency());
 		return result;
 	}
-	
+
+	@Override public synchronized IdentityFileQueueStatistics getStatisticsOfLastSession()
+			throws IOException {
+		return IdentityFileQueueStatistics.read(
+			new File(mDataDir, STATISTICS_OF_LAST_SESSION_FILENAME));
+	}
+
+	private synchronized void saveStatistics() throws IOException {
+		File output = new File(mDataDir, STATISTICS_OF_LAST_SESSION_FILENAME);
+		output.delete();
+		mStatistics.write(output);
+	}
+
+	@Override public synchronized void stop() {
+		try {
+			saveStatistics();
+		} catch(IOException e) {
+			Logger.error(this, "saveStatistics() failed!", e);
+		}
+	}
+
 	/**
 	 * Returns true if the numbers in {@link #mStatistics} match the amount of files in the on-disk
 	 * directories. */

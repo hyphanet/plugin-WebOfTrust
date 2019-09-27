@@ -174,12 +174,24 @@ StatisticsPage.IdentityFileQueueBox.DeduplicatedFiles=Deduplizierte Dateien:
 StatisticsPage.IdentityFileQueueBox.FailedFiles=Fehlgeschlagene Dateien:
 StatisticsPage.IdentityFileQueueBox.FinishedFiles=Fertige Dateien:
 StatisticsPage.IdentityFileQueueBox.Header=Warteschlange für Identitäts-Dateien
+StatisticsPage.IdentityFileQueueBox.LeftoverFilesOfLastSession=Von letzter Laufzeit übrig gebliebene Dateien:
 StatisticsPage.IdentityFileQueueBox.ProcessingFiles=Dateien in Bearbeitung:
 StatisticsPage.IdentityFileQueueBox.QueuedFiles=Wartende Dateien:
-StatisticsPage.IdentityFileQueueBox.TotalQueuedFiles=Insgesamt eingefügte (= heruntergeladene) Dateien:
+StatisticsPage.IdentityFileQueueBox.TotalQueuedFiles=Insgesamt eingefügte (= heruntergeladene und übrig gebliebene) Dateien seit Neustart:
 StatisticsPage.MaintenanceBox.Header=Wartung
 StatisticsPage.MaintenanceBox.LastDefrag=Letzte Defragmentierung der Datenbank: ${lastTime} (Zeitplan: alle ${interval})
 StatisticsPage.MaintenanceBox.LastScoreVerification=Letzte Überprüfung der inkrementell berechneten Vertrauenswerte: ${lastTime} (Zeitplan: alle ${interval})
+StatisticsPage.PlotBox.DownloadsPerHourPlot.Title=Pro Stunde heruntergeladene Identitäts-Dateien
+StatisticsPage.PlotBox.DownloadsPerHourPlot.XAxis.Hours=Laufzeit in Stunden
+StatisticsPage.PlotBox.DownloadsPerHourPlot.XAxis.Minutes=Laufzeit in Minuten
+StatisticsPage.PlotBox.DownloadsPerHourPlot.YAxis=Dateien pro Stunde
+StatisticsPage.PlotBox.CurrentSession=Aktuelle Laufzeit
+StatisticsPage.PlotBox.Header=Graphen
+StatisticsPage.PlotBox.LastSession=Letzte Laufzeit
+StatisticsPage.PlotBox.TotalDownloadCountPlot.Title=Insgesamt heruntergeladene Identitäts-Dateien
+StatisticsPage.PlotBox.TotalDownloadCountPlot.XAxis.Hours=Laufzeit in Stunden
+StatisticsPage.PlotBox.TotalDownloadCountPlot.XAxis.Minutes=Laufzeit in Minuten
+StatisticsPage.PlotBox.TotalDownloadCountPlot.YAxis=Dateien
 StatisticsPage.SummaryBox.EventNotifications.Pending=Ereignismeldungen in der Versand-Warteschlange: ${amount}
 StatisticsPage.SummaryBox.EventNotifications.Total=Gesamtzahl der jemals erstellten Ereignismeldungen (nur für aktuelle Clients): ${amount}
 StatisticsPage.SummaryBox.FetchProgress=Summe aller Editionsnummern: ${editionCount}

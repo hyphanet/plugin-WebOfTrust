@@ -3,12 +3,23 @@
  * any later version). See http://www.gnu.org/ for details of the GPL. */
 package plugins.WebOfTrust;
 
+import java.io.File;
+import java.io.FileInputStream;
+import java.io.FileOutputStream;
 import java.io.FilterInputStream;
+import java.io.IOException;
 import java.io.InputStream;
+import java.io.ObjectInputStream;
+import java.io.ObjectOutputStream;
+import java.io.Serializable;
 
-import plugins.WebOfTrust.util.jobs.BackgroundJob;
 import freenet.keys.FreenetURI;
 import freenet.support.CurrentTimeUTC;
+import freenet.support.io.Closer;
+import plugins.WebOfTrust.network.input.IdentityDownloader;
+import plugins.WebOfTrust.util.RingBuffer;
+import plugins.WebOfTrust.util.Pair;
+import plugins.WebOfTrust.util.jobs.BackgroundJob;
 
 
 /**
@@ -97,20 +108,61 @@ public interface IdentityFileQueue {
 	 *     The object is a clone, you may interfere with the contents of the member variables. */
 	public IdentityFileQueueStatistics getStatistics();
 
+	/**
+	 * Same as {@link #getStatistics()}, but returns the statistics of the previous run of WoT.
+	 * The statistics are stored in a file separate to the main WoT db4o database so benchmarks of
+	 * multiple runs with different databases can be compared against one and another.
+	 * 
+	 * @throws IOException
+	 *     If there was no previous session, if the file storing the statistics is corrupted, or
+	 *     the particular IdentityFileQueue implementation does not implement storage. */
+	public IdentityFileQueueStatistics getStatisticsOfLastSession() throws IOException;
 
-	public static final class IdentityFileQueueStatistics implements Cloneable {
+	/** Must be called by WoT upon shutdown. */
+	public void stop();
+
+
+	public static final class IdentityFileQueueStatistics implements Cloneable, Serializable {
 		/**
-		 * Count of files which were passed to {@link #add(IdentityFileStream)}.<br>
-		 * This <b>includes</b> files which:<br>
-		 * - are not queued anymore (see {@link #mFinishedFiles}).<br>
-		 * - are still queued (see {@link #mQueuedFiles}).<br>
-		 * - were deleted due to deduplication (see {@link #mDeduplicatedFiles}).<br>
-		 * - failed en-/dequeuing due to errors (see {@link #mFailedFiles}).<br><br>
+		 * Count of files which were passed to {@link #add(IdentityFileStream)}.
+		 * This is equal to the total number of downloaded Identity files as the contract of
+		 * {@link IdentityDownloader} specifies that strictly all downloaded files are passed to the
+		 * IdentityFileQueue.
+		 * 
+		 * Thus this includes files which:
+		 * - are not queued anymore (see {@link #mFinishedFiles}).
+		 * - are still queued (see {@link #mQueuedFiles}).
+		 * - were deleted due to deduplication (see {@link #mDeduplicatedFiles}).
+		 * - failed en-/dequeuing due to errors (see {@link #mFailedFiles}).
+		 * - were left over from the last session (see {@link #mLeftoverFilesOfLastSession}).
 		 * 
 		 * The lost files are included to ensure that errors can be noticed by the user from
-		 * statistics in the UI. */
+		 * statistics in the UI, and because this variable shall represent the total number of
+		 * downloaded files. */
 		public int mTotalQueuedFiles = 0;
-		
+
+		/**
+		 * Count of files which have been passed to {@link #add(IdentityFileStream)} during the last
+		 * time WoT was run but had not been dequeued by {@link #poll()} yet.
+		 * This value is **not** decremented once the files have been processed! */
+		public int mLeftoverFilesOfLastSession = 0;
+
+		/**
+		 * For each newly enqueued file, a {@link Pair} is added with {@link Pair#x} =
+		 * {@link CurrentTimeUTC#getInMillis()} and {@link Pair#y} =
+		 * {@link #mTotalQueuedFiles} minus {@link #mLeftoverFilesOfLastSession}.
+		 * 
+		 * Thus this contains the X/Y values for a plot of total downloaded Identity files - in the
+		 * current session - across the uptime of WoT.
+		 * 
+		 * Additionally, for allowing external code to work without checks for emptiness, a first
+		 * Pair is added at construction to represent the initial amount of 0 files at time of
+		 * construction. */
+		public RingBuffer<Pair<Long, Integer>> mTimesOfQueuing
+			= new RingBuffer<>(MAX_TIMES_OF_QUEUING_SIZE);
+	
+		public static final int MAX_TIMES_OF_QUEUING_SIZE = 128 * 1024;
+	
 		/**
 		 * Count of files which have been passed to {@link #add(IdentityFileStream)} but have not
 		 * been dequeued by {@link #poll()} yet. */
@@ -157,11 +209,19 @@ public interface IdentityFileQueue {
 
 		/** Value of {@link CurrentTimeUTC#getInMillis()} when this object was created. */
 		public final long mStartupTimeMilliseconds = CurrentTimeUTC.getInMillis();
-
-
+	
+		private static final long serialVersionUID = 1L;
+	
+	
+		IdentityFileQueueStatistics() {
+			mTimesOfQueuing.addLast(new Pair<>(mStartupTimeMilliseconds, 0));
+		}
+	
 		@Override public IdentityFileQueueStatistics clone() {
 			try {
-				return (IdentityFileQueueStatistics)super.clone();
+				IdentityFileQueueStatistics result = (IdentityFileQueueStatistics)super.clone();
+				result.mTimesOfQueuing = result.mTimesOfQueuing.clone();
+				return result;
 			} catch (CloneNotSupportedException e) {
 				throw new RuntimeException(e);
 			}
@@ -179,13 +239,17 @@ public interface IdentityFileQueue {
 			if(uptimeHours == 0) // prevent division by 0
 				return 0;
 			
-			return (float)mTotalQueuedFiles / uptimeHours;		
+			return (float)(mTotalQueuedFiles - mLeftoverFilesOfLastSession) / uptimeHours;
 		}
 
 		boolean checkConsistency() {
 			return (
 					(mTotalQueuedFiles >= 0)
-					
+				
+				 && (mTimesOfQueuing.size() ==
+				      (mTotalQueuedFiles - mLeftoverFilesOfLastSession + 1 /* for initial entry */)
+					|| mTimesOfQueuing.size() == MAX_TIMES_OF_QUEUING_SIZE)
+				
 				 && (mQueuedFiles >= 0)
 				 
 				 && (mProcessingFiles >= 0)
@@ -195,6 +259,8 @@ public interface IdentityFileQueue {
 				 && (mDeduplicatedFiles >= 0)
 				 
 				 && (mFailedFiles == 0)
+				 
+				 && (mLeftoverFilesOfLastSession <= mTotalQueuedFiles)
 				
 				 && (mQueuedFiles <= mTotalQueuedFiles)
 				 
@@ -209,6 +275,51 @@ public interface IdentityFileQueue {
 				 && (mDeduplicatedFiles ==
 						mTotalQueuedFiles - mQueuedFiles - mProcessingFiles - mFinishedFiles)
 			 );
+		}
+	
+		/**
+		 * Uses Java serialization instead of WoT's main db4o database so statistics plots of
+		 * different runs with a blank db4o database each can be compared against one and another as
+		 * a benchmark. */
+		void write(File file) throws IOException {
+			FileOutputStream fos = null;
+			ObjectOutputStream ous = null;
+			
+			try {
+				if(file.exists())
+					throw new IOException("Output file exists already: " + file);
+				
+				fos = new FileOutputStream(file);
+				ous = new ObjectOutputStream(fos);
+				ous.writeObject(this);
+			} finally {
+				Closer.close(ous);
+				Closer.close(fos);
+			}
+		}
+	
+		/** @see #write(File) */
+		static IdentityFileQueueStatistics read(File source) throws IOException {
+			FileInputStream fis = null;
+			ObjectInputStream ois = null;
+			
+			try {
+				fis = new FileInputStream(source);
+				ois = new ObjectInputStream(fis);
+				IdentityFileQueueStatistics deserialized
+					= (IdentityFileQueueStatistics)ois.readObject();
+				if(deserialized == null)
+					throw new IOException("No IdentityFileQueueStatistics in file: " + source);
+				
+				assert(deserialized.checkConsistency());
+				
+				return deserialized;
+			} catch(ClassNotFoundException e) {
+				throw new IOException(e);
+			} finally {
+				Closer.close(ois);
+				Closer.close(fis);
+			}
 		}
 	}
 }

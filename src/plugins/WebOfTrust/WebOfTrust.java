@@ -2330,7 +2330,7 @@ public final class WebOfTrust extends WebOfTrustInterface
             abstract void realRun();
         }
 		
-		final ArrayList<ShutdownThread> shutdownThreads = new ArrayList<ShutdownThread>(8); 
+		final ArrayList<ShutdownThread> shutdownThreads = new ArrayList<>(9);
 		
 		// TODO: Code quality: Most of the things we call stop() etc. upon in the below mini
 		// classes implement interface Daemon nowadays.
@@ -2385,7 +2385,12 @@ public final class WebOfTrust extends WebOfTrustInterface
 				}
 			}
 		}});
-
+		
+		shutdownThreads.add(new ShutdownThread() { @Override public void realRun() {
+			if(mIdentityFileQueue != null)
+				mIdentityFileQueue.stop();
+		}});
+		
 		shutdownThreads.add(new ShutdownThread() { @Override public void realRun() {
 			if(mSubscriptionManager != null)
 				mSubscriptionManager.stop();
