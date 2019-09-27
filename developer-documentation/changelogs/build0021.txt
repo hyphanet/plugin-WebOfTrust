@@ -57,10 +57,9 @@ CHANGELOG - prefixed with the bugtracker issue number
   been shipped as well. The support for using the Cobertura test
   coverage analysis library which I've recently added to WoT is now
   paying off.
-  Overall it will now be very easy to add further plots to WoT of
-  different aspects which are a good idea to measure for performance
-  improvement purposes. I will definitely consider this for future
-  releases.
+  Overall it will now be very easy to add further plots of different
+  aspects which are a good idea to measure for performance improvement
+  purposes. I will definitely consider this for future releases.
 
 - 0006994: [Performance] Fix up to 1.5 hour delay of captcha solution
            download (xor)
