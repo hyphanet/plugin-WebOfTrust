@@ -53,7 +53,7 @@ CHANGELOG - prefixed with the bugtracker issue number
   As XChart provides only rendering, not computation, I wrote lots of
   utility classes to make it easy to gather and preprocess the input
   data for plots.
-  Unit tests to provide full test coverage for them utility classes have
+  Unit tests to provide full test coverage for the utility classes have
   been shipped as well. The support for using the Cobertura test
   coverage analysis library which I've recently added to WoT is now
   paying off.
