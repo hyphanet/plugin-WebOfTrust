@@ -5216,10 +5216,14 @@ public final class WebOfTrust extends WebOfTrustInterface
 				// TODO: Performance: Only recompute the Score tree of the created identity.
 				mFullScoreComputationNeeded = true;
 
-				for(String seedURI : WebOfTrustInterface.SEED_IDENTITIES) {
+				for(String seedURIString : WebOfTrustInterface.SEED_IDENTITIES) {
 					try {
-						setTrustWithoutCommit(identity, getIdentityByURI(seedURI), (byte)100, "Automatically assigned trust to a seed identity.");
-						// FIXME: Use mFetcher.storeNewEditionHintCommandWithoutCommit()
+						FreenetURI seedURI = new FreenetURI(seedURIString);
+						setTrustWithoutCommit(
+							identity, getIdentityByURI(seedURI), seedURI.getEdition(),
+							(byte)100, "Automatically assigned trust to a seed identity.");
+					} catch(MalformedURLException e) {
+						Logger.error(this, "SHOULD NOT HAPPEN: Seed URI is malformed: " + e);
 					} catch(UnknownIdentityException e) {
 						Logger.error(this, "SHOULD NOT HAPPEN: Seed identity not known: " + e);
 					}
