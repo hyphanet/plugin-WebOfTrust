@@ -5219,6 +5219,7 @@ public final class WebOfTrust extends WebOfTrustInterface
 				for(String seedURI : WebOfTrustInterface.SEED_IDENTITIES) {
 					try {
 						setTrustWithoutCommit(identity, getIdentityByURI(seedURI), (byte)100, "Automatically assigned trust to a seed identity.");
+						// FIXME: Use mFetcher.storeNewEditionHintCommandWithoutCommit()
 					} catch(UnknownIdentityException e) {
 						Logger.error(this, "SHOULD NOT HAPPEN: Seed identity not known: " + e);
 					}
