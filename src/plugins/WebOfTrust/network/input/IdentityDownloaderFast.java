@@ -391,7 +391,13 @@ public final class IdentityDownloaderFast implements
 				mDownloadSchedulerThread = new TickerDelayedBackgroundJob(
 					jobRunnable, "WoT IdentityDownloaderFast", QUEUE_BATCHING_DELAY_MS, ticker);
 				
-				mDownloadSchedulerThread.triggerExecution();
+				// Use 0 as delay instead of the QUEUE_BATCHING_DELAY_MS which is > 0 as the UI
+				// isn't active yet and thus the user cannot assign any further trusts which would
+				// make sense to batch-process along with the existing ones.
+				// (Doing triggerExecution() after the above greenlight for stop() isn't a
+				// problem because stop() will use mDownloadSchedulerThread.waitForTermination()
+				// to take account for triggerExecution() maybe being called concurrently.)
+				mDownloadSchedulerThread.triggerExecution(0);
 				
 				Persistent.checkedCommit(mDB, this);
 			} catch(RuntimeException e) {
