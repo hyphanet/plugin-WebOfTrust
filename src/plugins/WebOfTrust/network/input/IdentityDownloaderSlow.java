@@ -376,7 +376,8 @@ public final class IdentityDownloaderSlow implements
 			// start them.
 			if(mTotalQueuedDownloadsInSession > 0) {
 				// Use 0 as delay instead of the QUEUE_BATCHING_DELAY_MS which is > 0 as no network
-				// requests are running yet and thus batching cannot happen.
+				// requests are running yet and thus we cannot download any EditionHints which would
+				// make sense to batch-process along with the existing ones.
 				// (Doing triggerExecution() after the above greenlight for terminate() isn't a
 				// problem because terminate will use mDownloadSchedulerThread.waitForTermination()
 				// to take account for triggerExecution() maybe being called concurrently.)
