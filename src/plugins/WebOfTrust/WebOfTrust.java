@@ -5237,7 +5237,9 @@ public final class WebOfTrust extends WebOfTrustInterface
 				
 	            if(mInserter != null)
 	                mInserter.nextIteration();
-
+				// No need to tell mFetcher to iterate, storeStartFetchCommandWithoutCommit() and
+				// setTrustWithoutCommit() have already done it implicitly.
+				
 				Logger.normal(this, "Successfully created a new OwnIdentity: " + identity);
 				return identity;
 			}
