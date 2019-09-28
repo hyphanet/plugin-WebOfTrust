@@ -335,6 +335,10 @@ public final class IdentityDownloaderSlow implements
 			// delete them once the download is finished. So the running downloads of the previous
 			// session which were aborted during shutdown are not lost, they're still scheduled in
 			// the queue.
+			// FIXME: What we hereby put into it contradicts the naming of the variable. Perhaps fix
+			// this by removing the "InSession" suffix. Optionally introduce a similar separate
+			// variable as IdentityFileQueueStatistics.mLeftoverFilesOfLastSession, if only for
+			// display on the StatisticsPage?
 			mTotalQueuedDownloadsInSession = getQueue().size();
 			
 			PluginRespirator respirator = mWoT.getPluginRespirator();
