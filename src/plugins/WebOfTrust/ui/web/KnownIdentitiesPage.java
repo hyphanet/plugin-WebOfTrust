@@ -370,7 +370,7 @@ public class KnownIdentitiesPage extends WebPageImpl {
 			// TODO: Show in advanced mode only once someone finally fixes the "Switch to advanced mode" link on FProxy to work on ALL pages.
 			
 			long edition = id.getLastFetchedEdition();
-			String editionString = (edition > 0) ? Long.toString(edition) : "";
+			String editionString = (edition != -1) ? Long.toString(edition) : "";
 			row.addChild("td", "align", "center", editionString);
 			
 			row.addChild("td", "align", "center", Long.toString(id.getLatestEditionHint()));
