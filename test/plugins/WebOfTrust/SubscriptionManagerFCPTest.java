@@ -3,6 +3,7 @@
  * any later version). See http://www.gnu.org/ for details of the GPL. */
 package plugins.WebOfTrust;
 
+import static java.util.concurrent.TimeUnit.SECONDS;
 import static org.junit.Assert.*;
 
 import java.io.IOException;
@@ -105,8 +106,9 @@ public final class SubscriptionManagerFCPTest extends AbstractSingleNodeTest {
 	 * You can obtain the result(s) by <code>mReplySender.getNextResult();</code>
 	 */
 	void fcpCall(final SimpleFieldSet params) throws IOException, InterruptedException {
+		// Use a lengthy 60 second timeout because Gradle runs multiple unit tests in parallel.
 	    FCPPluginMessage reply = mConnection.sendSynchronous(
-	        FCPPluginMessage.construct(params, null), TimeUnit.SECONDS.toNanos(10));
+	        FCPPluginMessage.construct(params, null), SECONDS.toNanos(60));
 	    
 	    // In opposite to send(), the reply to sendSynchronous() is NOT passed to the
 	    // FredPluginFCPMessageHandler, so the mReplyReceiver won't have received it, and we have to
