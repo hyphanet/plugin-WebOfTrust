@@ -106,7 +106,7 @@ public final class SubscriptionManagerFCPTest extends AbstractSingleNodeTest {
 	 * You can obtain the result(s) by <code>mReplySender.getNextResult();</code>
 	 */
 	void fcpCall(final SimpleFieldSet params) throws IOException, InterruptedException {
-		// Use a lengthy 60 second timeout because Travis CI runs multiple unit tests in parallel.
+		// Use a lengthy 60 second timeout because Gradle runs multiple unit tests in parallel.
 	    FCPPluginMessage reply = mConnection.sendSynchronous(
 	        FCPPluginMessage.construct(params, null), SECONDS.toNanos(60));
 	    
