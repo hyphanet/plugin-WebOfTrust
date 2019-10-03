@@ -452,7 +452,8 @@ public final class IdentityDownloaderSlow implements
 			// we iterate over it we want to call ClientGetter.cancel() on the entries, but that
 			// will call this.onFailure() on the same thread, which will remove the relevant entries
 			// from mDownloads.
-			ClientGetter[] downloads = (ClientGetter[]) mDownloads.values().toArray();
+			ClientGetter[] downloads
+				= mDownloads.values().toArray(new ClientGetter[mDownloads.size()]);
 			for(ClientGetter download : downloads) {
 				if(logMINOR)
 					Logger.minor(this, "stop(): Cancelling download: " + download.getURI());
