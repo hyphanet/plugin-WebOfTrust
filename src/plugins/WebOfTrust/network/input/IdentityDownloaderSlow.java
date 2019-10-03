@@ -5,6 +5,7 @@ package plugins.WebOfTrust.network.input;
 
 import static java.lang.Math.max;
 import static java.lang.Thread.currentThread;
+import static java.lang.Thread.sleep;
 import static java.util.Collections.sort;
 import static java.util.concurrent.TimeUnit.MINUTES;
 import static plugins.WebOfTrust.util.AssertUtil.assertDidThrow;
@@ -463,8 +464,28 @@ public final class IdentityDownloaderSlow implements
 				// We don't need to store the download in the queue database:
 				// The code for starting downloads doesn't remove them from the queue.
 			}
-			assert(mDownloads.size() == 0);
 		}
+		}
+		
+		// For some downloads onFailure() / onSuccess() may have already been in progress while we
+		// tried to cancel all downloads above.
+		// The functions cannot have returned in the above synchronized{} then because they need
+		// the same locks.
+		// Thus, to ensure no more onFailure() / onSuccess() are running and all downloads are
+		// really gone, we must wait until mDownloads.size() == 0.
+		// FIXME: Fix the lack of this in all other WoT/FT classes which start fetches/inserts, and
+		// also in fred class TransferThread.
+		while(true) {
+			synchronized(mLock) {
+				if(mDownloads.size() == 0)
+					break;
+			}
+			
+			try {
+				sleep(100);
+			} catch (InterruptedException e) {
+				throw new RuntimeException("Interrupting stop() to stop doesn't make sense!", e);
+			}
 		}
 		
 		Logger.normal(this, "stop() finished.");
