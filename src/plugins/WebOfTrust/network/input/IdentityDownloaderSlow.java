@@ -1348,6 +1348,10 @@ public final class IdentityDownloaderSlow implements
 		}
 	}
 
+	@Override public void scheduleImmediateCommandProcessing() {
+		mDownloadSchedulerThread.triggerExecution(0);
+	}
+
 	/** You must synchronize upon {@link #mWoT} and {@link #mLock} when using this! */
 	private ObjectSet<EditionHint> getAllEditionHints() {
 		Query q = mDB.query();

@@ -225,4 +225,8 @@ public final class IdentityDownloaderController implements IdentityDownloader, D
 			d.storePostRestoreOwnIdentityCommand(newIdentity);
 	}
 
+	@Override public void scheduleImmediateCommandProcessing() {
+		for(IdentityDownloader d : mDownloaders)
+			d.scheduleImmediateCommandProcessing();
+	}
 }

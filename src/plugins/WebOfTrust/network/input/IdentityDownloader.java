@@ -468,4 +468,12 @@ public interface IdentityDownloader extends Daemon {
 	 * </code> */
 	void deleteAllCommands();
 
+	/**
+	 * Schedules processing of any commands which have been enqueued using the store...() functions,
+	 * with a delay of 0.
+	 * This is useful because normally commands are enqueued for batch processing with a delay of
+	 * e.g. 1 minute (to ensure multiple commands enqueued in a short timespan get processed at once
+	 * to keep overhead low) but certain actions in the user interface should be processed ASAP. */
+	public void scheduleImmediateCommandProcessing();
+
 }

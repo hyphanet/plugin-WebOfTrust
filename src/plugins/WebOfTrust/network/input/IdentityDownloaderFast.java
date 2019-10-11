@@ -1505,6 +1505,10 @@ public final class IdentityDownloaderFast implements
 			" DownloadSchedulerCommands.");
 	}
 
+	@Override public void scheduleImmediateCommandProcessing() {
+		mDownloadSchedulerThread.triggerExecution(0);
+	}
+
 	/** @see #getQueuedCommand(String) */
 	private DownloadSchedulerCommand getQueuedCommand(Identity identity) {
 		return getQueuedCommand(identity.getID());
