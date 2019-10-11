@@ -182,6 +182,9 @@ public final class IdentityDownloaderSlow implements
 	 * Also see the file "developer-documentation/RequestClient and priority map.txt" */
 	public static final short DOWNLOAD_PRIORITY = RequestStarter.BULK_SPLITFILE_PRIORITY_CLASS;
 
+	/** @see #getMaxRunningDownloadCount() */
+	public static final int DOWNLOAD_AMOUNT= 64;
+
 	/**
 	 * When a download completes new downloads will be started immediately if the number of still
 	 * running downloads is less than {@link #getMaxRunningDownloadCount()} divided by this
@@ -564,29 +567,13 @@ public final class IdentityDownloaderSlow implements
 	 * Number of SSK requests for USK {@link EditionHint}s which this downloader will do in
 	 * parallel.
 	 * 
-	 * Can be configured on the fred web interface in advanced mode at "Configuration" / "Core
-	 * settings" by the value:
-	 * "Maximum number of temporary  USK fetchers: ...
-	 * Maximum number of temporary background fetches for recently visited USKs
-	 * (e.g. freesites). Note that clients and plugins (e.g. WebOfTrust) can subscribe to USKs,
-	 * which does not count towards the limit."
-	 * 
-	 * Defaults to 64 as of 2017-04-14.
-	 * 
 	 * TODO: Performance / Code quality:
 	 * - Instead of using a fixed value ask the fred load management code how many SSK requests
 	 *   it can currently handle.
-	 * - or at least make this configurable on the WoT web interface. */
+	 * - or at least make this configurable on the WoT web interface.
+	 * - or use a dynamic limit as suggested at https://bugs.freenetproject.org/view.php?id=7117 */
 	public int getMaxRunningDownloadCount() {
-		// Valid in unit tests
-		if(mNodeClientCore == null) {
-			Logger.warning(this,
-				"getMaxRunningDownloadCount() called with mNodeClientCore == null, returning 0");
-			// Without a node it is impossible to start downloads so 0 is consistent.
-			return 0;
-		}
-		
-		return mNodeClientCore.maxBackgroundUSKFetchers();
+		return DOWNLOAD_AMOUNT;
 	}
 
 	/** @see #DOWNLOAD_REFILL_THRESHOLD */

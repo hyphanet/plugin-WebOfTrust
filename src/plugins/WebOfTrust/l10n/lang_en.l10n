@@ -150,7 +150,7 @@ StatisticsPage.IdentityDownloaderSlowBox.DataNotFoundDownloads=Permanently faile
 StatisticsPage.IdentityDownloaderSlowBox.FailedPermanentlyDownloads=Permanently failed downloads:
 StatisticsPage.IdentityDownloaderSlowBox.FailedTemporarilyDownloads=Temporarily failed downloads:
 StatisticsPage.IdentityDownloaderSlowBox.Header=Identity downloads by SSK edition hints
-StatisticsPage.IdentityDownloaderSlowBox.MaxRunningDownloads=Maximum running downloads (= "Maximum number of temporary  USK fetchers" Freenet setting):
+StatisticsPage.IdentityDownloaderSlowBox.MaxRunningDownloads=Maximum running downloads:
 StatisticsPage.IdentityDownloaderSlowBox.QueuedDownloads=Queued downloads:
 StatisticsPage.IdentityDownloaderSlowBox.RunningDownloads=Running downloads:
 StatisticsPage.IdentityDownloaderSlowBox.SkippedDownloads=Skipped downloads:
