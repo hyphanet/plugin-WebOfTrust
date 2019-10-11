@@ -5237,8 +5237,12 @@ public final class WebOfTrust extends WebOfTrustInterface
 				
 	            if(mInserter != null)
 	                mInserter.nextIteration();
-				// No need to tell mFetcher to iterate, storeStartFetchCommandWithoutCommit() and
-				// setTrustWithoutCommit() have already done it implicitly.
+	            
+				// If the OwnIdentity we just created was the first one then before we created it
+				// *all* remote Identitys were not eligible for download yet due to a lack of trust.
+				// Now they've become eligible, so there is a lot of them to download and we should
+				// thus start with that immediately.
+				mFetcher.scheduleImmediateCommandProcessing();
 				
 				Logger.normal(this, "Successfully created a new OwnIdentity: " + identity);
 				return identity;
