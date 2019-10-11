@@ -1865,6 +1865,9 @@ public final class SubscriptionManager implements Daemon, PrioRunnable {
 	 * Interface for the core of WOT to queue a {@link TrustChangedNotification} to be deployed to all {@link Client}s subscribed to that type of notification. 
 	 * 
 	 * Typically called when a {@link Trust} is added, deleted or its attributes are modified.
+	 * As a changed Trust usually causes changed {@link Score}s the convention is that this callback
+	 * must be called **before** the resulting {@link #storeScoreChangedNotificationWithoutCommit(
+	 * Score, Score)} to ensure proper cause and effect order of event notifications.
 	 * 
      * <br><br>This function does not store the given objects as real database entries, it
      * only stores a copy of them serialized into a byte[] by {@link Persistent#serialize()},
