@@ -5656,7 +5656,10 @@ public final class WebOfTrust extends WebOfTrustInterface
 				initTrustTreeWithoutCommit(identity);
 				mFetcher.storePostRestoreOwnIdentityCommand(identity);
 			}
-
+			
+			// Start downloading the OwnIdentity immediately so the user does not have to wait much.
+			mFetcher.scheduleImmediateCommandProcessing();
+			
 			// This function messes with the trust graph manually so it is a good idea to check whether it is intact afterwards.
 			assert(computeAllScoresWithoutCommit());
 			
