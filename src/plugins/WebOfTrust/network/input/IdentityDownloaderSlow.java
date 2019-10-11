@@ -180,8 +180,7 @@ public final class IdentityDownloaderSlow implements
 	 * {@link RequestClient} for that downloader and this one.
 	 * 
 	 * Also see the file "developer-documentation/RequestClient and priority map.txt" */
-	public static transient final short DOWNLOAD_PRIORITY
-		= RequestStarter.BULK_SPLITFILE_PRIORITY_CLASS;
+	public static final short DOWNLOAD_PRIORITY = RequestStarter.BULK_SPLITFILE_PRIORITY_CLASS;
 
 	/**
 	 * When a download completes new downloads will be started immediately if the number of still
