@@ -209,9 +209,6 @@ public final class IdentityDownloaderSlow implements
 	private final WebOfTrust mWoT;
 
 	/** Is null in unit tests */
-	private final NodeClientCore mNodeClientCore;
-
-	/** Is null in unit tests */
 	private final ClientContext mClientContext;
 
 	/** Is null in unit tests */
@@ -293,11 +290,9 @@ public final class IdentityDownloaderSlow implements
 		
 		PluginRespirator pr = mWoT.getPluginRespirator();
 		if(pr != null) {
-			mNodeClientCore = pr.getNode().clientCore;
-			mClientContext = mNodeClientCore.clientContext;
+			mClientContext = pr.getNode().clientCore.clientContext;
 			mHighLevelSimpleClient = pr.getHLSimpleClient();
 		} else { // Unit test
-			mNodeClientCore = null;
 			mClientContext = null;
 			mHighLevelSimpleClient = null;
 		}
