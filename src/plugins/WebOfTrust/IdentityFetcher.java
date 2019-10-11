@@ -679,7 +679,11 @@ public final class IdentityFetcher implements
         
         mJob.triggerExecution();
 	}
-	
+
+	@Override public void scheduleImmediateCommandProcessing() {
+		mJob.triggerExecution(0);
+	}
+
 	@Override
 	public int getPriority() {
 		return NativeThread.LOW_PRIORITY;
