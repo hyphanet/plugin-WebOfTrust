@@ -3323,15 +3323,21 @@ public final class WebOfTrust extends WebOfTrustInterface
 			
 			trust.storeWithoutCommit();
 			
-			if(!trust.equals(oldTrust))
+			if(!trust.equals(oldTrust)) {
+				// Must be called before Scores are updated to ensure the event queue of the
+				// SubscriptionManager is in correct temporal order:
+				// Changed Scores are caused by changed Trusts, so the event for the changed Trust
+				// must be stored first.
 				mSubscriptionManager.storeTrustChangedNotificationWithoutCommit(oldTrust, trust);
+			}
 			
 			if(valueChanged) {
 				if(logDEBUG) Logger.debug(this, "Updated trust value ("+ trust +"), now updating Score.");
 				updateScoresWithoutCommit(oldTrust, trust);
 				
 				// In opposite to SubscriptionManager's callback this must be called *after* Scores
-				// are updated, and here only is interested to be called if the value changed.
+				// are updated, as specified by its JavaDoc, and here only is interested to be
+				// called if the value changed.
 				mFetcher.storeTrustChangedCommandWithoutCommit(oldTrust, trust);
 			}
 		} catch (NotTrustedException e) {
