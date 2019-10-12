@@ -421,6 +421,8 @@ public class StatisticsPage extends WebPageImpl {
 			
 			for(EditionHint h : downloader.getQueue()) {
 				HTMLNode r = q.addChild("tr");
+				if(downloader.isDownloadInProgress(h))
+					r.addAttribute("style", "font-weight: bold");
 				r.addChild("td", Integer.toString(index));
 				r.addChild("td", dateFormat.format(h.getDate()));
 				r.addChild("td", Byte.toString(h.getSourceCapacity()));

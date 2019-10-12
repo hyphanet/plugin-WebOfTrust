@@ -584,7 +584,7 @@ public final class IdentityDownloaderSlow implements
 	}
 
 	/** Must be called while synchronized on {@link #mLock}. */
-	private boolean isDownloadInProgress(EditionHint h) {
+	public boolean isDownloadInProgress(EditionHint h) {
 		return mDownloads.containsKey(h.getURI());
 	}
 
