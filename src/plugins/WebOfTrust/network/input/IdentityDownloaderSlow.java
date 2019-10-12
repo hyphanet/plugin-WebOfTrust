@@ -583,7 +583,8 @@ public final class IdentityDownloaderSlow implements
 		return max(1, maxDownloads / DOWNLOAD_REFILL_THRESHOLD);
 	}
 
-	/** Must be called while synchronized on {@link #mLock}. */
+	/** Must be called while synchronized on {@link #mLock}
+	 *  = {@link WebOfTrust#getIdentityDownloaderController()} */
 	public boolean isDownloadInProgress(EditionHint h) {
 		return mDownloads.containsKey(h.getURI());
 	}
@@ -1401,7 +1402,9 @@ public final class IdentityDownloaderSlow implements
 		return new InitializingObjectSet<>(mWoT, q);
 	}
 
-	/** You must synchronize upon {@link #mWoT} and {@link #mLock} when using this! */
+	/** You must synchronize upon {@link #mWoT} and {@link #mLock} =
+	 *  = {@link WebOfTrust#getIdentityDownloaderController()} while calling this and consuming the
+	 *  returned ObjectSet! */
 	public ObjectSet<EditionHint> getQueue() {
 		Query q = mDB.query();
 		q.constrain(EditionHint.class);
