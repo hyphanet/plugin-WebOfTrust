@@ -411,7 +411,7 @@ public class StatisticsPage extends WebPageImpl {
 		q.addChild(new QueueTableHeader());
 		
 		synchronized(mWebOfTrust) {
-		synchronized(downloader) {
+		synchronized(mWebOfTrust.getIdentityDownloaderController()) {
 			// FIXME: Code quality: Paginate instead of having a fixed limit. Also adapt the table
 			// header's l10n then.
 			int index = 1;
