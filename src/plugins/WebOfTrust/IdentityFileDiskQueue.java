@@ -197,6 +197,9 @@ final class IdentityFileDiskQueue implements IdentityFileQueue {
 		Logger.normal(this, "cleanDirectories(): Finished.");
 	}
 
+	// FIXME: This sometimes gets called a long time after WoT has been terminated, which indicates
+	// the new IdentityDownloaderFast/Slow don't terminate properly.
+	// - Caught by then failing in assert(checkDiskConsistency()) in this function.
 	@Override public synchronized void add(IdentityFileStream identityFileStream) {
 		try {
 			// We increment the counter before errors could occur so erroneously dropped files are
