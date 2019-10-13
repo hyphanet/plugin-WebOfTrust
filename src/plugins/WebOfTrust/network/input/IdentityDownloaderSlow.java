@@ -16,6 +16,7 @@ import java.util.ArrayList;
 import java.util.Comparator;
 import java.util.Date;
 import java.util.HashMap;
+import java.util.HashSet;
 import java.util.Map.Entry;
 import java.util.concurrent.Callable;
 
@@ -529,21 +530,43 @@ public final class IdentityDownloaderSlow implements
 			// unexpected exceptions being thrown: Keeping downloads running is important to
 			// ensure WoT keeps working, some defensive programming cannot hurt.
 			try {
-				int downloadsToSchedule = getMaxRunningDownloadCount() - getRunningDownloadCount();
+				int maxDownloads = getMaxRunningDownloadCount();
+				int downloadsToSchedule = maxDownloads - getRunningDownloadCount();
 				// Check whether we actually need to do something before the expensive getQueue().
 				if(downloadsToSchedule <= 0)
 					return;
+				
+				// IDs of the identities for which we have a running download.
+				HashSet<String> identitiesBeingDownloaded = new HashSet<>(maxDownloads * 2);
+				for(FreenetURI u : mDownloads.keySet()) {
+					identitiesBeingDownloaded.add(
+						IdentityID.constructAndValidateFromURI(u).toString());
+				}
+				
 				for(EditionHint h : getQueue()) {
-					if(!isDownloadInProgress(h)) {
+					// Only run one download per identity at once.
+					// This is necessary because:
+					// - it is fair.
+					// - it can easily occur that we have many EditionHints in the queue for the
+					//   same Identity which all have the same EditionHint.getPriority() value
+					//   = will be next to each other in the queue, so we would end up trying to
+					//   download lots of hints for the same Identity at once which:
+					//   - doesn't make sense because the first of them may have a higher edition
+					//     than all the others.
+					//   - blocks the download of other identities.
+					if(identitiesBeingDownloaded.contains(h.getTargetIdentity().getID()))
+						continue;
+					
+					assert(!isDownloadInProgress(h));
 						try {
 							download(h);
+							identitiesBeingDownloaded.add(h.getTargetIdentity().getID());
 							if(--downloadsToSchedule <= 0)
 								break;
 						} catch(FetchException e) {
 							Logger.error(this, "FetchException for: " + h, e);
 						}
-					}
-						
+					
 					if(currentThread().isInterrupted()) {
 						Logger.normal(this, "run(): Received interrupt, aborting.");
 						break;
