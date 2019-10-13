@@ -530,9 +530,9 @@ public final class IdentityDownloaderSlow implements
 			// ensure WoT keeps working, some defensive programming cannot hurt.
 			try {
 				int downloadsToSchedule = getMaxRunningDownloadCount() - getRunningDownloadCount();
-				// Check whether we actually need to do something before the loop, not just inside
-				// it: The getQueue() database query is much more expensive than the duplicate code.
-				if(downloadsToSchedule > 0) {
+				// Check whether we actually need to do something before the expensive getQueue().
+				if(downloadsToSchedule <= 0)
+					return;
 					for(EditionHint h : getQueue()) {
 						if(!isDownloadInProgress(h)) {
 							try {
@@ -549,18 +549,17 @@ public final class IdentityDownloaderSlow implements
 							break;
 						}
 					}
-				}
 			} catch(RuntimeException | Error e) {
 				// Not necessary as we don't write anything to the database
 				/* Persistent.checkedRollback(mDB, this, e); */
 				
 				Logger.error(this, "Error in run()! Retrying later...", e);
 				mDownloadSchedulerThread.triggerExecution(QUEUE_BATCHING_DELAY_MS);
+			} finally {
+				if(logMINOR) Logger.minor(this, "run() finished.");
 			}
 		}
 		}
-		
-		if(logMINOR) Logger.minor(this, "run() finished.");
 	}
 
 	/** You must synchronize upon {@link #mLock} when using this! */
