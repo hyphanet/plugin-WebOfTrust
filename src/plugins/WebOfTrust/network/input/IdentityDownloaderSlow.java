@@ -20,6 +20,7 @@ import java.util.Map.Entry;
 import java.util.concurrent.Callable;
 
 import plugins.WebOfTrust.Identity;
+import plugins.WebOfTrust.Identity.IdentityID;
 import plugins.WebOfTrust.IdentityFetcher;
 import plugins.WebOfTrust.IdentityFile;
 import plugins.WebOfTrust.IdentityFileQueue;
@@ -56,7 +57,6 @@ import freenet.client.async.ClientContext;
 import freenet.client.async.ClientGetCallback;
 import freenet.client.async.ClientGetter;
 import freenet.keys.FreenetURI;
-import freenet.node.NodeClientCore;
 import freenet.node.PrioRunnable;
 import freenet.node.RequestClient;
 import freenet.node.RequestStarter;
