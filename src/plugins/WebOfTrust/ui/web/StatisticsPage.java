@@ -408,6 +408,9 @@ public class StatisticsPage extends WebPageImpl {
 		}
 		
 		HTMLNode q = box.addChild("table", "border", "0");
+		// Necessary so our following <tr> CSS has precedence over fred's top-level CSS for <td>.
+		// (Inlining this into the style attributes of the <tr> tags for some reason does not work.)
+		q.addChild("style").addChild("%", "td { font-weight: inherit }");
 		q.addChild(new QueueTableHeader());
 		
 		synchronized(mWebOfTrust) {
