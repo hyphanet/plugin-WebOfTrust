@@ -175,7 +175,9 @@ public final class IdentityDownloaderFast implements
 	 * locking.
 	 * 
 	 * FIXME: Remove documentation about locking from the rest of the class similar to the one
-	 * removed by the commit which added this FIXME and the above documentation. */
+	 * removed by the commit which added this FIXME and the above documentation.
+	 * Consider a similar approach for IdentityDownloaderSlow as it has a similar JavaDoc at its
+	 * mLock. */
 	private final IdentityDownloaderController mLock;
 
 	private final ExtObjectContainer mDB;

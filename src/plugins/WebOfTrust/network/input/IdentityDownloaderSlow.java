@@ -217,6 +217,16 @@ public final class IdentityDownloaderSlow implements
 	/** @see #getRequestClient() */
 	private final RequestClient mRequestClient;
 
+	/**
+	 * The central lock upon which we use synchronized() during concurrent read/write access of the
+	 * non-constant members of this class and the database entries managed by it, i.e. objects of
+	 * class {@link EditionHint}.
+	 * 
+	 * Is set to the value of {@link WebOfTrust#getIdentityDownloaderController()}.
+	 * Thereby is equal to the lock which is specified in the {@link IdentityDownloader} interface
+	 * as lock for its callbacks. This means we can assume this lock to be held in all
+	 * IdentityDownloader callbacks which are implemented here, and thus there we can safely access
+	 * our EditionHint queue and member variables without further locking. */
 	private final IdentityDownloaderController mLock;
 	
 	private final ExtObjectContainer mDB;
