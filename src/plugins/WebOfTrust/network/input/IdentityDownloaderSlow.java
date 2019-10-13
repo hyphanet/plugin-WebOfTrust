@@ -533,22 +533,22 @@ public final class IdentityDownloaderSlow implements
 				// Check whether we actually need to do something before the expensive getQueue().
 				if(downloadsToSchedule <= 0)
 					return;
-					for(EditionHint h : getQueue()) {
-						if(!isDownloadInProgress(h)) {
-							try {
-								download(h);
-								if(--downloadsToSchedule <= 0)
-									break;
-							} catch(FetchException e) {
-								Logger.error(this, "FetchException for: " + h, e);
-							}
-						}
-						
-						if(currentThread().isInterrupted()) {
-							Logger.normal(this, "run(): Received interrupt, aborting.");
-							break;
+				for(EditionHint h : getQueue()) {
+					if(!isDownloadInProgress(h)) {
+						try {
+							download(h);
+							if(--downloadsToSchedule <= 0)
+								break;
+						} catch(FetchException e) {
+							Logger.error(this, "FetchException for: " + h, e);
 						}
 					}
+						
+					if(currentThread().isInterrupted()) {
+						Logger.normal(this, "run(): Received interrupt, aborting.");
+						break;
+					}
+				}
 			} catch(RuntimeException | Error e) {
 				// Not necessary as we don't write anything to the database
 				/* Persistent.checkedRollback(mDB, this, e); */
