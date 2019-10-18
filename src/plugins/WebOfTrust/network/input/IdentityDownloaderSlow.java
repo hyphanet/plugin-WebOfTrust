@@ -562,8 +562,9 @@ public final class IdentityDownloaderSlow implements
 					// no EditionHints are stored which have almost the same priority as others.
 					// However skipping once here is a lot easier than changing the storage
 					// logic across the whole class, especially considering that we would have to
-					// restore the non-stored hints as soon as the single stored one fails to
-					// download or gets deleted due to a trust change.)
+					// restore the non-stored hints from the Identity's received Trusts as soon as
+					// the single stored one fails to download or gets deleted due to a trust
+					// change.)
 					if(identitiesBeingDownloaded.contains(h.getTargetIdentity().getID()))
 						continue;
 					
