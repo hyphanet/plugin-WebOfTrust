@@ -552,9 +552,9 @@ public final class IdentityDownloaderSlow implements
 					// This is necessary because:
 					// - it is fair.
 					// - it can easily occur that we have many EditionHints in the queue for the
-					//   same Identity which all have the same EditionHint.getPriority() value
-					//   = will be next to each other in the queue, so we would end up trying to
-					//   download lots of hints for the same Identity at once which:
+					//   same Identity which all have almost the same EditionHint.getPriority()
+					//   value = will be next to each other in the queue, so we would end up trying
+					//   to download lots of hints for the same Identity at once which:
 					//   - doesn't make sense because the first of them may have a higher edition
 					//     than all the others.
 					//   - blocks the download of other identities.
