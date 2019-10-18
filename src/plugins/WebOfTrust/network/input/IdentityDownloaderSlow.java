@@ -556,7 +556,7 @@ public final class IdentityDownloaderSlow implements
 					//   value = will be next to each other in the queue, so we would end up trying
 					//   to download lots of hints for the same Identity at once which:
 					//   - doesn't make sense because the first of them may have a higher edition
-					//     than all the others.
+					//     than all the others and we're only interested in the highest edition.
 					//   - blocks the download of other identities.
 					if(identitiesBeingDownloaded.contains(h.getTargetIdentity().getID()))
 						continue;
