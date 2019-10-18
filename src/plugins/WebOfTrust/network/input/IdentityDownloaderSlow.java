@@ -536,7 +536,6 @@ public final class IdentityDownloaderSlow implements
 				if(downloadsToSchedule <= 0)
 					return;
 				
-				// IDs of the identities for which we have a running download.
 				HashSet<String> identitiesBeingDownloaded = new HashSet<>(maxDownloads * 2);
 				for(FreenetURI u : mDownloads.keySet()) {
 					identitiesBeingDownloaded.add(
