@@ -558,6 +558,14 @@ public final class IdentityDownloaderSlow implements
 					//   - doesn't make sense because the first of them may have a higher edition
 					//     than all the others and we're only interested in the highest edition.
 					//   - blocks the download of other identities.
+					// (We could avoid having to skip these via "continue;" by instead ensuring that
+					// no EditionHints are stored which have almost the same priority as others.
+					// However skipping once here is a lot easier than changing the storage
+					// logic across the whole class: If the single remaining EditionHint for a
+					// given priority would get deleted due to a trust change we would have to
+					// figure out a way to determine if we have to restore one of the previously
+					// deleted hints since they might still be eligible for storage - and figuring
+					// that out would probably be difficult.)
 					if(identitiesBeingDownloaded.contains(h.getTargetIdentity().getID()))
 						continue;
 					
