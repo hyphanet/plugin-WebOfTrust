@@ -172,8 +172,8 @@ public final class Trust extends Persistent implements ReallyCloneable<Trust>, E
             mID = trusterID  + "@" + trusteeID;
         }
 
-		private TrustID(String id) {
-			if(id.length() != LENGTH)
+		private TrustID(String id, boolean validate) {
+			if(validate && id.length() != LENGTH)
 				throw new IllegalArgumentException("ID has wrong length: " + id.length());
 
 			mID = id;
@@ -190,11 +190,15 @@ public final class Trust extends Persistent implements ReallyCloneable<Trust>, E
 				throw new IllegalArgumentException("TrustID has too few tokens: " + id);
 			}
 			
-			if(tokenizer.hasMoreTokens())
+			if(validate && tokenizer.hasMoreTokens())
 				throw new IllegalArgumentException("TrustID has too many tokens: " + id);
 			
-			mTrusterID = IdentityID.constructAndValidateFromString(rawTrusterID).toString();
-			mTrusteeID = IdentityID.constructAndValidateFromString(rawTrusteeID).toString();
+			mTrusterID =
+				validate ? IdentityID.constructAndValidateFromString(rawTrusterID).toString()
+				         : rawTrusterID;
+			mTrusteeID =
+				validate ? IdentityID.constructAndValidateFromString(rawTrusteeID).toString()
+				         : rawTrusteeID;
 		}
 
 		/**
@@ -202,7 +206,17 @@ public final class Trust extends Persistent implements ReallyCloneable<Trust>, E
 		 * i.e. a valid {@link Identity#getID()} pair to describe a truster/trustee.
 		 * Does not check whether the database actually contains the given truster/trustee! */
 		public static TrustID constructAndValidate(String id) {
-			return new TrustID(id);
+			return new TrustID(id, true);
+		}
+
+		/** TODO: Performance: Use wherever possible. */
+		public static TrustID constructWithoutValidation(final String id) {
+			AssertUtil.assertDidNotThrow(new Runnable() {
+				@Override public void run() {
+					constructAndValidate(id);
+				}});
+			
+			return new TrustID(id, false);
 		}
 
 		/**
