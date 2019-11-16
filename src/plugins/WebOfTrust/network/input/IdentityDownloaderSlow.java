@@ -570,14 +570,14 @@ public final class IdentityDownloaderSlow implements
 						continue;
 					
 					assert(!isDownloadInProgress(h));
-						try {
-							download(h);
-							identitiesBeingDownloaded.add(targetIdentityID);
-							if(--downloadsToSchedule <= 0)
-								break;
-						} catch(FetchException e) {
-							Logger.error(this, "FetchException for: " + h, e);
-						}
+					try {
+						download(h);
+						identitiesBeingDownloaded.add(targetIdentityID);
+						if(--downloadsToSchedule <= 0)
+							break;
+					} catch(FetchException e) {
+						Logger.error(this, "FetchException for: " + h, e);
+					}
 					
 					if(currentThread().isInterrupted()) {
 						Logger.normal(this, "run(): Received interrupt, aborting.");
