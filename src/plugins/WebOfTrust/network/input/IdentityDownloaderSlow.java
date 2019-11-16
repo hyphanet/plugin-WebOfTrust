@@ -590,6 +590,7 @@ public final class IdentityDownloaderSlow implements
 				Logger.error(this, "Error in run()! Retrying later...", e);
 				mDownloadSchedulerThread.triggerExecution(QUEUE_BATCHING_DELAY_MS);
 			} finally {
+				assert(getRunningDownloadCount() <= getMaxRunningDownloadCount());
 				// TODO: Performance: Remove this after it has not failed for some time.
 				assert(getRunningDownloadCount() <= getQueue().size());
 				
