@@ -592,7 +592,7 @@ public final class EditionHint extends Persistent implements Comparable<EditionH
 
 	@Override public String toString() {
 		activateFully();
-		return "[EditionHint: " + super.toString()
+		return "[" + super.toString()
 		     + "; mID: " + mID
 		     + "; mSourceIdentity ID: " + mSourceIdentity.getID()
 		     + "; mTargetIdentity ID: " + mTargetIdentity.getID()
