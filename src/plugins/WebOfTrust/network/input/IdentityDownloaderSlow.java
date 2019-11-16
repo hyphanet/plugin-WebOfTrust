@@ -1489,6 +1489,7 @@ public final class IdentityDownloaderSlow implements
 			}
 		});
 		
+		// FIXME: This does fail in my test runs, debug the issue behind that!
 		if(!queueSortedWithReferenceImpl.equals(queueSortedByDb4o)) {
 			Logger.error(this, "Sorting EditionHints by mPriority returns wrong order: ");
 			
