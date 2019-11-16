@@ -569,7 +569,6 @@ public final class IdentityDownloaderSlow implements
 					if(identitiesBeingDownloaded.contains(targetIdentityID))
 						continue;
 					
-					assert(!isDownloadInProgress(h));
 					try {
 						download(h);
 						identitiesBeingDownloaded.add(targetIdentityID);
@@ -637,6 +636,8 @@ public final class IdentityDownloaderSlow implements
 	 * Must be called while synchronized on {@link #mLock}.
 	 * Must not be called if {@link #isDownloadInProgress(EditionHint)} == true.*/
 	private void download(EditionHint h) throws FetchException {
+		assert(!isDownloadInProgress(h));
+		
 		FreenetURI fetchURI = h.getURI();
 		assert(fetchURI.isSSK());
 		
