@@ -748,6 +748,14 @@ public final class IdentityDownloaderSlow implements
 			//      deleteEditionHints() upon the hints older than the processed edition.
 			//    - it fixes this function to obey the aforementioned concept of not requiring the
 			//      mLock.
+			//    - Duplicate checking of IdentityDownloaderSlow then also happens against the
+			//      files queued for processing, not just against the hints queued for downloading.
+			//      This prevents usage of outdated hints which could be stored after we've done
+			//      deleteEditionHints() here because the XMLTransformer will import any hints which
+			//      seem fresh as compared to the edition the target Identity has stored in the
+			//      database and it will take some time for its edition in the database to match
+			//      what we've just downloaded because IdentityFile processing usually is much
+			//      slower than downloading.
 			// Thereby I would prefer the latter approach to be implemented.
 			// When doing so please consider recycling this FIXME into documentation: Don't remove
 			// the deleteEditionHints() call but comment it out, with the recycled FIXME explaining
