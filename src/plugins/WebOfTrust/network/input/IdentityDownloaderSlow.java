@@ -1185,6 +1185,7 @@ public final class IdentityDownloaderSlow implements
 		// would only risk a constant amount of bogus fetches if we didn't do this - but this
 		// function is also used for the purpose of handling deletion of an identity so we must
 		// delete all object references to it in the db4o database by deleting all its given hints.
+		// FIXME: Also cancel the downloads of those hints.
 		for(EditionHint h : getEditionHintsBySourceIdentity(identity)) {
 			if(logMINOR)
 				Logger.minor(this, "storeAbortFetchCommandWithoutCommit(): Deleting " + h);
