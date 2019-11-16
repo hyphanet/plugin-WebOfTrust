@@ -565,13 +565,14 @@ public final class IdentityDownloaderSlow implements
 					// restore the non-stored hints from the Identity's received Trusts as soon as
 					// the single stored one fails to download or gets deleted due to a trust
 					// change.)
-					if(identitiesBeingDownloaded.contains(h.getTargetIdentity().getID()))
+					String targetIdentityID = h.getTargetIdentityID();
+					if(identitiesBeingDownloaded.contains(targetIdentityID))
 						continue;
 					
 					assert(!isDownloadInProgress(h));
 						try {
 							download(h);
-							identitiesBeingDownloaded.add(h.getTargetIdentity().getID());
+							identitiesBeingDownloaded.add(targetIdentityID);
 							if(--downloadsToSchedule <= 0)
 								break;
 						} catch(FetchException e) {
