@@ -1492,6 +1492,9 @@ public final class IdentityDownloaderSlow implements
 		if(!queueSortedWithReferenceImpl.equals(queueSortedByDb4o)) {
 			Logger.error(this, "Sorting EditionHints by mPriority returns wrong order: ");
 			
+			// TODO: Performance: Don't re-query this from the database once the issue which caused
+			// this workaround is fixed: https://bugs.freenetproject.org/view.php?id=6646
+			queueSortedByDb4o = getQueue();
 			for(EditionHint h : queueSortedByDb4o)
 				Logger.error(this, h.toString());
 		}
