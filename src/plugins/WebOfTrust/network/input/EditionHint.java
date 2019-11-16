@@ -450,11 +450,23 @@ public final class EditionHint extends Persistent implements Comparable<EditionH
 		return Long.compare(mEdition, o.mEdition);
 	}
 
-	/** Equals: <code>new TrustID(getSourceIdentityID(), getTargetIdentityID()).toString()</code> */
+	/** Equals: <code>new TrustID(getSourceIdentity(), getTargetIdentity()).toString()</code> */
 	@Override public String getID() {
 		// String is a db4o primitive type so 1 is enough even though it is a reference type
 		checkedActivate(1);
 		return mID;
+	}
+
+	/** Faster than getSourceIdentity().getID().
+	 *  TODO: Performance: Use wherever possible. */
+	public String getSourceIdentityID() {
+		return TrustID.constructWithoutValidation(getID()).getTrusterID();
+	}
+
+	/** Faster than getTargetIdentity().getID().
+	 *  TODO: Performance: Use wherever possible. */
+	public String getTargetIdentityID() {
+		return TrustID.constructWithoutValidation(getID()).getTrusteeID();
 	}
 
 	@Override public void startupDatabaseIntegrityTest() throws Exception {
