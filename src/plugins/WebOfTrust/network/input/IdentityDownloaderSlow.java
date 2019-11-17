@@ -926,6 +926,9 @@ public final class IdentityDownloaderSlow implements
 				// The member variables must be changed after the commit() as this class isn't
 				// stored in the database and thus they won't be rolled back upon failure of the
 				// transaction.
+				// FIXME: Some of the statistics counters should be changed by onSuccess() /
+				// onFailure() instead probably, but take the above comment w.r.t. to transactions
+				// into consideration first.
 				if(downloadSucceeded) {
 					++mSucceededDownloads;
 					if(deleted > 1)
