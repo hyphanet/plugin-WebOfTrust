@@ -107,6 +107,12 @@ import freenet.support.io.ResumeFailedException;
  * add his reply here once I have it.
  * 
  * Some of the storage policy of {@link EditionHint} objects:
+ * - An Identity is eligible for download if {@link WebOfTrust#shouldFetchIdentity(Identity)} is
+ *   true. See {@link #shouldDownload(Identity)}.
+ * - Identitys which are not eligible for download will not have their received EditionHints stored.
+ *   I.e. EditionHints can only exist for values of {@link EditionHint#getTargetIdentity()} where
+ *   that Identity is eligible for download. Thereby the set of all EditionHints represents our
+ *   download queue {@link #getQueue()}.
  * - All Identitys which are eligible for download according to
  *   {@link WebOfTrust#shouldFetchIdentity(Identity)} will have their *given* EditionHints (hints
  *   where {@link EditionHint#getSourceIdentity()} == the identity) accepted, i.e. stored, if
@@ -116,11 +122,6 @@ import freenet.support.io.ResumeFailedException;
  *   Identitys. I.e. if {@link WebOfTrust#shouldFetchIdentity(Identity)} is false for an Identity,
  *   then no EditionHint objects will be stored with {@link EditionHint#getSourceIdentity()} ==
  *   the given Identity.
- * - Identitys which are not eligible for download will not have their received EditionHints stored.
- *   I.e. EditionHints can only exist for values of {@link EditionHint#getTargetIdentity()} where
- *   that Identity is eligible for download. Thereby the set of all EditionHints represents our
- *   download queue {@link #getQueue()}.
- *   See {@link #shouldDownload(Identity)}.
  * - For a given pair of an Identity as specified by {@link EditionHint#getSourceIdentity()} and an
  *   Identity as specified by {@link EditionHint#getTargetIdentity()} there can only be a single
  *   EditionHint object stored. This is because there can only be a single latest edition of a given
