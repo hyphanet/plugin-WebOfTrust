@@ -120,6 +120,7 @@ import freenet.support.io.ResumeFailedException;
  *   I.e. EditionHints can only exist for values of {@link EditionHint#getTargetIdentity()} where
  *   that Identity is eligible for download. Thereby the set of all EditionHints represents our
  *   download queue {@link #getQueue()}.
+ *   See {@link #shouldDownload(Identity)}.
  * - For a given pair of an Identity as specified by {@link EditionHint#getSourceIdentity()} and an
  *   Identity as specified by {@link EditionHint#getTargetIdentity()} there can only be a single
  *   EditionHint object stored. This is because there can only be a single latest edition of a given
@@ -634,6 +635,17 @@ public final class IdentityDownloaderSlow implements
 	 *  = {@link WebOfTrust#getIdentityDownloaderController()} */
 	public boolean isDownloadInProgress(EditionHint h) {
 		return mDownloads.containsKey(h.getURI());
+	}
+
+	/** True if this class would accept {@link EditionHint}s which have this Identity as
+	 *  {@link EditionHint#getTargetIdentity()} into its queue of hints to download.
+	 *  
+	 *  TODO: Code quality: Has been added after most of the class had been written already. Its
+	 *  code is thus probably duplicated across the class and should be replaced by calls to this.
+	 *  
+	 *  Must be called while synchronized on {@link #mWoT}. */
+	private boolean shouldDownload(Identity i) {
+		return mWoT.shouldFetchIdentity(i);
 	}
 
 	/**
