@@ -113,8 +113,7 @@ import freenet.support.io.ResumeFailedException;
  *   I.e. EditionHints can only exist for values of {@link EditionHint#getTargetIdentity()} where
  *   that Identity is eligible for download. Thereby the set of all EditionHints represents our
  *   download queue {@link #getQueue()}.
- * - All Identitys which are eligible for download according to
- *   {@link WebOfTrust#shouldFetchIdentity(Identity)} will have their *given* EditionHints (hints
+ * - All Identitys which are eligible for download will have their *given* EditionHints (hints
  *   where {@link EditionHint#getSourceIdentity()} == the identity) accepted, i.e. stored, if
  *   {@link WebOfTrust#getBestCapacity(Identity)} of the Identity is greater or equals to
  *   {@link EditionHint#MIN_CAPACITY}.
