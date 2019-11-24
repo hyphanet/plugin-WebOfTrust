@@ -117,10 +117,12 @@ import freenet.support.io.ResumeFailedException;
  *   where {@link EditionHint#getSourceIdentity()} == the identity) accepted, i.e. stored, if
  *   {@link WebOfTrust#getBestCapacity(Identity)} of the Identity is greater or equals to
  *   {@link EditionHint#MIN_CAPACITY}.
+ *   See {@link #shouldAcceptHintsOf(Identity)}.
  * - An Identity which is not eligible for download is not eligible for giving EditionHints to other
  *   Identitys. I.e. if {@link WebOfTrust#shouldFetchIdentity(Identity)} is false for an Identity,
  *   then no EditionHint objects will be stored with {@link EditionHint#getSourceIdentity()} ==
  *   the given Identity.
+ *   Also see {@link #shouldAcceptHintsOf(Identity)}.
  * - For a given pair of an Identity as specified by {@link EditionHint#getSourceIdentity()} and an
  *   Identity as specified by {@link EditionHint#getTargetIdentity()} there can only be a single
  *   EditionHint object stored. This is because there can only be a single latest edition of a given
@@ -635,6 +637,46 @@ public final class IdentityDownloaderSlow implements
 	 *  = {@link WebOfTrust#getIdentityDownloaderController()} */
 	public boolean isDownloadInProgress(EditionHint h) {
 		return mDownloads.containsKey(h.getURI());
+	}
+
+	/** True if this class would accept {@link EditionHint}s which the given Identity has
+	 *  propagated into the queue of hints to download.
+	 *  Those are hints where:
+	 *  - {@link EditionHint#getSourceIdentity()} == the given Identity
+	 *  - and the given Identity is eligible for download not just by us but in WoT's global terms
+	 *    for all IdentityDownloader implementations according to
+	 *    {@link WebOfTrust#shouldFetchIdentity(Identity)} (if it weren't eligible then its hints
+	 *    should not be possible to be obtain anyway).
+	 *  - and the given Identity has sufficient capacity as compared to
+	 *    {@link EditionHint#MIN_CAPACITY}.
+	 *  
+	 *  TODO: Code quality: Has been added after most of the class had been written already. Its
+	 *  code is thus probably duplicated across the class and should be replaced by calls to this.
+	 *  TODO: Code quality: Add a version of this which only consumes a capacity and use it in
+	 *  XMLTransformer instead of hardcoding the logic there. (It also won't be necessary there to
+	 *  check shouldFetchIdentity() because shouldFetchIdentity() will be true for all identities
+	 *  which XMLTransformer obtains hints of because XML is only downloaded for precisely those
+	 *  Identities for which shouldFetchIdentity() is true.)
+	 *  
+	 *  Must be called while synchronized on {@link #mWoT}. */
+	private boolean shouldAcceptHintsOf(Identity i) {
+		boolean hasEnoughCapacity;
+		try {
+			hasEnoughCapacity = mWoT.getBestCapacity(i) >= EditionHint.MIN_CAPACITY;
+		} catch (NotInTrustTreeException e) {
+			hasEnoughCapacity = false;
+		}
+		
+		if(hasEnoughCapacity) {
+			// No need to check mWoT.shouldFetchIdentity(i) to return false if it is false:
+			// We hereby only return true if the capacity is > 0, and if an Identity has
+			// capacity > 0 then shouldFetchIdentity() will always be true.
+			assert(EditionHint.MIN_CAPACITY > 0);
+			assert(mWoT.shouldFetchIdentity(i));
+			return true;
+		} else
+			return false;
+	
 	}
 
 	/** True if this class would accept {@link EditionHint}s which have this Identity as
