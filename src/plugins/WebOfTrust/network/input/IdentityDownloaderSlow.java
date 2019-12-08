@@ -671,6 +671,10 @@ public final class IdentityDownloaderSlow implements
 			// No need to check mWoT.shouldFetchIdentity(i) to return false if it is false:
 			// We hereby only return true if the capacity is > 0, and if an Identity has
 			// capacity > 0 then shouldFetchIdentity() will always be true.
+			// FIXME: It is dangerous to only assert() that it will stay like this because both the
+			// JavaDoc of this function as well as the related JavaDoc at class level promises that
+			// the function does check shouldFetchIdentity(). Either do check it or remove those
+			// promises.
 			assert(EditionHint.MIN_CAPACITY > 0);
 			assert(mWoT.shouldFetchIdentity(i));
 			return true;
