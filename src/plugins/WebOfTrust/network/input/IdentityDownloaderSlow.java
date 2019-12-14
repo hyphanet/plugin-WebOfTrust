@@ -573,6 +573,15 @@ public final class IdentityDownloaderSlow implements
 					// the single stored one fails to download or gets deleted due to a trust
 					// change.)
 					String targetIdentityID = h.getTargetIdentityID();
+					// FIXME: This doesn't seem to work, I've seen the following two downloads
+					// being in progress on the StatisticsPage:
+					// 65 	2019-11-16 01:00:00 	40 	1 	Not downloaded yet@ABAUB... 	47 	xor@QeTBV...
+					// 66 	2019-11-16 01:00:00 	40 	1 	Not downloaded yet@ABAUB... 	47 	zidel@D3MrA...
+					// I.e. the same edition of the same identity was being downloaded twice.
+					// I had also confirmed that it is indeed the same identity, not just the IDs
+					// both starting with ABAUB.
+					// I didn't have assertions enabled so it wasn't caught by the assert() in
+					// download(), which it probably would have been.
 					if(identitiesBeingDownloaded.contains(targetIdentityID))
 						continue;
 					
