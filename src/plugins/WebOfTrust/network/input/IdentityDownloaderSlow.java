@@ -1350,11 +1350,6 @@ public final class IdentityDownloaderSlow implements
 			Logger.minor(this, "storeNewEditionHintCommandWithoutCommit()...");
 		
 		try {
-		
-		// Class EditionHint should enforce this in theory, but it has a legacy codepath which
-		// doesn't, so we better check whether the enforcement works.
-		assert(newHint.getSourceCapacity() > 0);
-		
 		Identity target = newHint.getTargetIdentity();
 
 		if(target.getLastFetchedEdition() >= newHint.getEdition()) {
@@ -1370,6 +1365,7 @@ public final class IdentityDownloaderSlow implements
 		// whether it should accept input of the Identity which was downloaded - interpreting
 		// the input isn't its job, and deciding whether to download the target is
 		// interpretation.)
+		assert(shouldAcceptHintsOf(newHint.getSourceIdentity()));
 		if(!mWoT.shouldFetchIdentity(target)) {
 			if(logMINOR)
 				Logger.minor(this, "EditionHint has non-trusted target, ignoring: " + newHint);
