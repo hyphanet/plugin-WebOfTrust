@@ -1034,6 +1034,24 @@ public final class IdentityDownloaderSlow implements
 	@Override public void storeStartFetchCommandWithoutCommit(final Identity identity) {
 		Logger.normal(this, "storeStartFetchCommandWithoutCommit(" + identity + ") ...");
 		
+		// FIXME: Performance: Remove these two debug loops, they're covered by assert()s in run().
+		// Keeping them for now as I think I added them to debug a specific bug which I have
+		// encountered but not yet fixed probably.
+		
+		for(EditionHint h : getEditionHintsBySourceIdentity(identity)) {
+			Logger.warning(this, "Hint found for previously untrusted Identity: " + h,
+				new RuntimeException("Exception for stack trace only"));
+			assert(false);
+			h.deleteWithoutCommit();
+		}
+		
+		for(EditionHint h : getEditionHintsByTargetIdentity(identity)) {
+			Logger.warning(this, "Hint found for previously untrusted Identity: " + h,
+				new RuntimeException("Exception for stack trace only"));
+			assert(false);
+			h.deleteWithoutCommit();
+		}
+		
 		for(Trust trust : mWoT.getReceivedTrusts(identity)) {
 			final long editionHint = trust.getTrusteeEdition();
 			if(editionHint < 0 || editionHint <= identity.getLastFetchedEdition())
