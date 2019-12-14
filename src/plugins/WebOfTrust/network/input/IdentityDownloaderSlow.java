@@ -1366,7 +1366,7 @@ public final class IdentityDownloaderSlow implements
 		// the input isn't its job, and deciding whether to download the target is
 		// interpretation.)
 		assert(shouldAcceptHintsOf(newHint.getSourceIdentity()));
-		if(!mWoT.shouldFetchIdentity(target)) {
+		if(!shouldDownload(target)) {
 			if(logMINOR)
 				Logger.minor(this, "EditionHint has non-trusted target, ignoring: " + newHint);
 			return;
