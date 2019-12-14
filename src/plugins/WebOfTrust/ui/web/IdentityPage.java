@@ -236,11 +236,12 @@ public class IdentityPage extends WebPageImpl {
 		HTMLNode link = new HTMLNode("a", "href", uri.toString());
 
 		String name = identity.getNickname();
+		String id = identity.getID().substring(0, 5) + "...";
 		if(name != null)
-			link.addChild("#", name + "@" + identity.getID().substring(0, 5) + "...");
+			link.addChild("#", name + "@" + id);
 		else {
 			String ndy = webInterface.l10n().getString("IdentityPage.NicknameNotDownloadedYet");
-			link.addChild("span", "class", "alert-error").addChild("#", ndy);
+			link.addChild("span", "class", "alert-error").addChild("#", ndy + "@"+ id);
 		}
 		
 		return link;
