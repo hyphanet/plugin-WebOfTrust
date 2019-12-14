@@ -118,6 +118,10 @@ CHANGELOG - prefixed with the bugtracker issue number
     acquired. Without stats, it is impossible to take good guesses which
     random nicknames belong to whom.
 
+- [Usability] Suffix "Not downloaded yet" nickname placeholders with
+  part of the identities' unique identifiers to allow distinguishing the
+  affected identities (xor)
+
 CHANGELOG about stuff only interesting for developers
 
 - 0006804: [Code quality] Unit tests: Recycle fred simulator code to
