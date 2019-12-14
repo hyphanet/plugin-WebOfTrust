@@ -1588,17 +1588,8 @@ public final class IdentityDownloaderSlow implements
 				Logger.error(this, h.toString());
 		}
 		
-		// Check if the download queue only contains eligible hints.
-		for(EditionHint h : getQueue()) {
-			if(!shouldAcceptHintsOf(h.getSourceIdentity()))
-				Logger.error(this, "Hint stored from untrustworthy source Identity: " + h);
-			
-			if(!shouldDownload(h.getTargetIdentity()))
-				Logger.error(this, "Hint stored for Identity which should not be downloaded: " + h);
-			
-			// FIXME: Test the other contents of the EditionHint objects.
-		}
-		
+		// Checking if the download queue only contains eligible hints is not necessary here,
+		// EditionHint.startupDatabaseIntegrityTest() does that.
 		}
 		}
 		
