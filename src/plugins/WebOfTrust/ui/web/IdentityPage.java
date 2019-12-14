@@ -241,7 +241,7 @@ public class IdentityPage extends WebPageImpl {
 			link.addChild("#", name + "@" + id);
 		else {
 			String ndy = webInterface.l10n().getString("IdentityPage.NicknameNotDownloadedYet");
-			link.addChild("span", "class", "alert-error").addChild("#", ndy + "@"+ id);
+			link.addChild("span", "class", "alert-error").addChild("#", ndy + "@" + id);
 		}
 		
 		return link;
