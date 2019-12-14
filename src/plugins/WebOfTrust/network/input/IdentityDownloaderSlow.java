@@ -1039,14 +1039,14 @@ public final class IdentityDownloaderSlow implements
 		// encountered but not yet fixed probably.
 		
 		for(EditionHint h : getEditionHintsBySourceIdentity(identity)) {
-			Logger.warning(this, "Hint found for previously untrusted Identity: " + h,
+			Logger.error(this, "Hint found for previously untrusted Identity: " + h,
 				new RuntimeException("Exception for stack trace only"));
 			assert(false);
 			h.deleteWithoutCommit();
 		}
 		
 		for(EditionHint h : getEditionHintsByTargetIdentity(identity)) {
-			Logger.warning(this, "Hint found for previously untrusted Identity: " + h,
+			Logger.error(this, "Hint found for previously untrusted Identity: " + h,
 				new RuntimeException("Exception for stack trace only"));
 			assert(false);
 			h.deleteWithoutCommit();
