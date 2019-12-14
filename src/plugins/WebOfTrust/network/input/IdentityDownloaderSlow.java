@@ -826,6 +826,8 @@ public final class IdentityDownloaderSlow implements
 			// When doing so please consider recycling this FIXME into documentation: Don't remove
 			// the deleteEditionHints() call but comment it out, with the recycled FIXME explaining
 			// why it is commented out.
+			// Also adapt the class-level JavaDoc "Once an edition of a given targetIdentity is
+			// fetched [...]" then.
 			deleteEditionHints(uri, true, null);
 		} catch (IOException | Error | RuntimeException e) {
 			Logger.error(this, "onSuccess(): Failed for URI: " + uri, e);
