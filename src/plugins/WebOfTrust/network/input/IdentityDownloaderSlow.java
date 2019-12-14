@@ -551,6 +551,10 @@ public final class IdentityDownloaderSlow implements
 				}
 				
 				for(EditionHint h : getQueue()) {
+					// Test if our logic of storing only eligible EditionHints is correct.
+					assert(shouldAcceptHintsOf(h.getSourceIdentity()));
+					assert(shouldDownload(h.getTargetIdentity()));
+					
 					// Only run one download per identity at once.
 					// This is necessary because:
 					// - it is fair.
