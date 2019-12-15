@@ -373,9 +373,6 @@ public class StatisticsPage extends WebPageImpl {
 		
 		final BaseL10n l = l10n();
 		final String p = "StatisticsPage.IdentityDownloaderSlowQueueBox.";
-		// FIXME: The l10n of the header sounds like this only is scheduled downloads, but it also
-		// includes running downloads. Tweak the l10n to reflect that.
-		// Mark running downloads in the table, e.g. by bold or italics.
 		final HTMLNode box = addContentBox(l.getString(p + "Header"));
 		box.addChild("#", l.getString(p + "Text"));
 		
