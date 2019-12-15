@@ -164,6 +164,7 @@ StatisticsPage.IdentityDownloaderSlowQueueBox.Queue.SourceCapacity=Kapazität de
 StatisticsPage.IdentityDownloaderSlowQueueBox.Queue.SourceIdentity=Quellidentität
 StatisticsPage.IdentityDownloaderSlowQueueBox.Queue.SourceScore=Berechnetes Vertrauen der Quelle
 StatisticsPage.IdentityDownloaderSlowQueueBox.Queue.TargetIdentity=Zielidentität
+StatisticsPage.IdentityDownloaderSlowQueueBox.Text=Laufende Downloads sind fett beschriftet. Eine einzelne Identität bekommt nur einen laufenden Download auf einmal.
 StatisticsPage.IdentityFileProcessorBox.AverageProcessingTimeSecs=Durschnittliche Bearbeitungszeit für eine Identitäts-XML-Datei, in Sekunden:
 StatisticsPage.IdentityFileProcessorBox.FailedFiles=Fehlgeschlagene Dateien:
 StatisticsPage.IdentityFileProcessorBox.Header=Bearbeiter für Identitäts-Dateien

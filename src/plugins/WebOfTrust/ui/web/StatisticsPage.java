@@ -377,6 +377,7 @@ public class StatisticsPage extends WebPageImpl {
 		// includes running downloads. Tweak the l10n to reflect that.
 		// Mark running downloads in the table, e.g. by bold or italics.
 		final HTMLNode box = addContentBox(l.getString(p + "Header"));
+		box.addChild("#", l.getString(p + "Text"));
 		
 		class QueueTableHeader extends HTMLNode {
 			QueueTableHeader() {
@@ -407,7 +408,7 @@ public class StatisticsPage extends WebPageImpl {
 			}
 		}
 		
-		HTMLNode q = box.addChild("table", "border", "0");
+		HTMLNode q = box.addChild("p").addChild("table", "border", "0");
 		// Necessary so our following <tr> CSS has precedence over fred's top-level CSS for <td>.
 		// (Inlining this into the style attributes of the <tr> tags for some reason does not work.)
 		q.addChild("style").addChild("%", "td { font-weight: inherit }");

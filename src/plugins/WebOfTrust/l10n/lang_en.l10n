@@ -164,6 +164,7 @@ StatisticsPage.IdentityDownloaderSlowQueueBox.Queue.SourceCapacity=Source capaci
 StatisticsPage.IdentityDownloaderSlowQueueBox.Queue.SourceIdentity=Source identity
 StatisticsPage.IdentityDownloaderSlowQueueBox.Queue.SourceScore=Computed source trust
 StatisticsPage.IdentityDownloaderSlowQueueBox.Queue.TargetIdentity=Target identity
+StatisticsPage.IdentityDownloaderSlowQueueBox.Text=Running downloads are bold. A single identity only gets one running download at once.
 StatisticsPage.IdentityFileProcessorBox.AverageProcessingTimeSecs=Average processing time for one identity XML file, in seconds:
 StatisticsPage.IdentityFileProcessorBox.FailedFiles=Failed files:
 StatisticsPage.IdentityFileProcessorBox.Header=Identity file processor
