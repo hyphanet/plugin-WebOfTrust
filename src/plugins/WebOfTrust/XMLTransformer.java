@@ -581,10 +581,10 @@ public final class XMLTransformer {
 								// This is to guarnatee "stability" of Score computation.
 								// Explanation follows:
 								// At first thought, we would decide that we must only accept the
-								// edition hints if positiveScore == true: The central goal of WoT
-								// is to stop downloading spam, and spam is anything which an
-								// identity with positiveScore == false links. So the edition hints
-								// would be spam as well then.
+								// edition hints if bestScore >= 0: The central goal of WoT is to
+								// stop downloading spam, and spam is anything which an identity
+								// with bestScore < 0 links. So the edition hints would be spam as
+								// well then.
 								// But: There are imaginable situations where an identity has a
 								// negative Score just because we downloaded a single malicious
 								// distruster of it before a much larger network of legitimate
