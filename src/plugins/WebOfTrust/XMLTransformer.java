@@ -597,7 +597,7 @@ public final class XMLTransformer {
 								// Stable means that the results of it should be independent of the
 								// order in which Trust values are obtained as input.
 								// To get a stable Score computation in terms of trust value import,
-								// this class imports identities not only if positiveScore == true,
+								// this class imports identities not only if bestScore >= 0
 								// but also if positiveCapacity == true.
 								// So we apply the same principle upon edition hints: We must not
 								// only accept hints if positiveScore == true, but also if
