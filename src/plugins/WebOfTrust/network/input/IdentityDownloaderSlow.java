@@ -837,6 +837,12 @@ public final class IdentityDownloaderSlow implements
 			// why it is commented out.
 			// Also adapt the class-level JavaDoc "Once an edition of a given targetIdentity is
 			// fetched [...]" then.
+			// It will further be necessary to change IdentityFileStream and/or the
+			// IdentityFileProcessor run() code to ensure the stream is not closed in run() right
+			// when the XML is parsed but is kept open until the XML import is finished:
+			// Closing the stream deletes the IdentityFile on disk, which would cause the upcoming
+			// IdentityFileDiskQueue.contains() to return false - which in turn would cause the XML
+			// to be downloaded by the IdentityDownloaderSlow again while the import is running.
 			deleteEditionHints(uri, true, null);
 		} catch (IOException | Error | RuntimeException e) {
 			Logger.error(this, "onSuccess(): Failed for URI: " + uri, e);
