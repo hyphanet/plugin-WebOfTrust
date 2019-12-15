@@ -39,6 +39,7 @@ public final class PairTest {
 		assertNotEquals(new Pair<>(x, y), new Pair<>(z, y));
 		
 		assertFalse(new Pair<>(x, y).equals(new Object()));
+		assertFalse(new Pair<>(x, x).equals(x));
 		assertFalse(new Pair<>(x, y).equals(null));
 		assertEquals(new Pair<>(null, null), new Pair<>(null, null));
 	}
