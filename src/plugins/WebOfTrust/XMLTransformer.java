@@ -598,7 +598,7 @@ public final class XMLTransformer {
 								// order in which Trust values are obtained as input.
 								// To get a stable Score computation in terms of trust value import,
 								// this class imports identities not only if bestScore >= 0
-								// but also if positiveCapacity == true.
+								// but also if bestCapacity > 0,
 								// So we apply the same principle upon edition hints: We must not
 								// only accept hints if positiveScore == true, but also if
 								// hasCapacity == true.
