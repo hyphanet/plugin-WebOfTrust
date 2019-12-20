@@ -578,7 +578,7 @@ public final class XMLTransformer {
 								// Here would be the place where we decide whether to accept
 								// the edition hints of the identity or discard them in case it is
 								// not trustworthy enough. But we don't, we accept them all.
-								// This is to guarnatee "stability" of Score computation.
+								// This is to guarantee "stability" of Score computation.
 								// Explanation follows:
 								// At first thought, we would decide that we must only accept the
 								// edition hints if bestScore >= 0: The central goal of WoT is to
