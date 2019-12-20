@@ -596,6 +596,9 @@ public final class XMLTransformer {
 								// In other words: Score computation is supposed to be *stable*.
 								// Stable means that the results of it should be independent of the
 								// order in which Trust values are obtained as input.
+								// (See the unit tests with "Stability" in their names in class
+								// WoTTest for examples of orders of import which are susceptible
+								// to instability if we don't do our job properly.)
 								// To get a stable Score computation in terms of trust value import,
 								// this class imports identities not only if bestScore >= 0
 								// but also if bestCapacity > 0,
