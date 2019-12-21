@@ -614,7 +614,7 @@ public final class XMLTransformer {
 								// In our case, one of bestScore >= 0 and bestCapacity > 0 will be
 								// always true, so we don't have to check them at all:
 								// We already only run his function if
-								//     mWebOfTrust.shouldFetchIdentity() == true
+								//     mWebOfTrust.shouldFetchIdentity(identity) == true
 								// which only happens if:
 								assert(bestCapacity > 0 || bestScore >= 0);
 								
