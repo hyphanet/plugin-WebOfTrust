@@ -596,18 +596,20 @@ public final class XMLTransformer {
 								// In other words: Score computation is supposed to be *stable*.
 								// Stable means that the results of it should be independent of the
 								// order in which Trust values are obtained as input.
-								// (See the unit tests with "Stability" in their names in class
-								// WoTTest for examples of orders of import which are susceptible
-								// to instability if we don't do our job properly.)
 								// To get a stable Score computation in terms of trust value import,
 								// this class imports identities not only if bestScore >= 0
-								// but also if bestCapacity > 0,
+								// but also if bestCapacity > 0: A bestCapacity > 0 is the
+								// requirement for having one's given Trust values be included in
+								// the computation of score values and hence we must import all
+								// identities with a bestCapacity > 0 to ensure all Trust values
+								// are included which should be, which is what provides stability.
+								// (See WebOfTrust.shouldFetchIdentity() for more details.
+								// See the unit tests with "Stability" in their names in class
+								// WoTTest for examples of orders of import which are susceptible
+								// to instability if we don't do our job properly.)
 								// So we apply the same principle upon edition hints: We must not
 								// only accept hints if bestScore >= 0, but also if
 								// bestCapacity > 0.
-								// (The deciding thing is the "bestCapacity > 0" check, you
-								// can validate that this helps with pen and paper. Or see the
-								// "testStability" functions in class WoTTest.)
 								// In our case, one of bestScore >= 0 and bestCapacity > 0 will be
 								// always true, so we don't have to check them at all:
 								// We already only run his function if
