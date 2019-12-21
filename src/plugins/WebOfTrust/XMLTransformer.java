@@ -603,16 +603,17 @@ public final class XMLTransformer {
 								// this class imports identities not only if bestScore >= 0
 								// but also if bestCapacity > 0,
 								// So we apply the same principle upon edition hints: We must not
-								// only accept hints if bestScore > 0, but also if bestCapacity > 0.
+								// only accept hints if bestScore >= 0, but also if
+								// bestCapacity > 0.
 								// (The deciding thing is the "bestCapacity > 0" check, you
 								// can validate that this helps with pen and paper. Or see the
 								// "testStability" functions in class WoTTest.)
-								// In our case, one of bestScore > 0 and bestCapacity > 0 will be
+								// In our case, one of bestScore >= 0 and bestCapacity > 0 will be
 								// always true, so we don't have to check them at all:
 								// We already only run his function if
 								//     mWebOfTrust.shouldFetchIdentity() == true
 								// which only happens if:
-								assert(bestCapacity > 0 || bestScore > 0);
+								assert(bestCapacity > 0 || bestScore >= 0);
 								
 								if(editionHint >= 0) {
 									Long previous = editionHints.put(trustee, editionHint);
