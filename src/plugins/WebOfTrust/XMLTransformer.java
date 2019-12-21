@@ -607,8 +607,9 @@ public final class XMLTransformer {
 								// See the unit tests with "Stability" in their names in class
 								// WoTTest for examples of orders of import which are susceptible
 								// to instability if we don't do our job properly.)
-								// So we apply the same principle upon edition hints: We must not
-								// only accept hints if bestScore >= 0, but also if
+								// So we apply the same principle upon edition hints to ensure we
+								// can download all Trust values necessary for stability:
+								// We not only accept hints if bestScore >= 0, but also if
 								// bestCapacity > 0.
 								// In our case, one of bestScore >= 0 and bestCapacity > 0 will be
 								// always true, so we don't have to check them at all:
