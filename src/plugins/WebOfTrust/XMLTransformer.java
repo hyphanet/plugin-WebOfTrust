@@ -575,6 +575,15 @@ public final class XMLTransformer {
 							try {
 								trustee = mWoT.getIdentityByURI(trusteeURI);
 								
+								// FIXME: Code quality: Move the whole following logic of deciding
+								// which EditionHints to accept to the implementations of interface
+								// IdentityDownloader.
+								// Move the following comments which explain the logic to
+								// IdentityDownloader, the implementations of it, class EditionHint,
+								// and WebOfTrust.shouldFetchIdentity().
+								// Program logic and its explanation really doesn't belong into this
+								// parsing-focused class.
+								
 								// Here would be the place where we decide whether to accept
 								// the edition hints of the identity or discard them in case it is
 								// not trustworthy enough. But we don't, we accept them all.
