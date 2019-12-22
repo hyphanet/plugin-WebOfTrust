@@ -627,6 +627,24 @@ public final class XMLTransformer {
 								// which only happens if:
 								assert(bestScore >= 0 || bestCapacity > 0);
 								
+								// There is one exception to the above large comment:
+								// EditionHint.constructSecure() will refuse hints with the
+								// providing identity having less capacity than MIN_CAPACITY.
+								// This is because such identities won't be eligible to have their
+								// trust votes accepted so we don't need to download their peers
+								// and we should not download them because typically identities
+								// with that low capacity will only have received trust from solving
+								// a captcha. Solving a single captcha must not allow introduction
+								// of more than one identity to couple identity creation to work
+								// - so we mustn't download more than one identity from merely
+								// solving a single captcha.
+								// NOTICE: The score computation algorithm ensures the trustees of
+								// such an identity will only be downloaded if they received
+								// sufficient trust from an identity with higher capacity - but
+								// accepting their hints here would still allow low-trust identities
+								// to waste bandwidth by e.g. publishing lots of fake hints for high
+								// capacity identities. So we don't accept their hints.
+								if(bestCapacity >= EditionHint.MIN_CAPACITY) {
 								if(editionHint >= 0) {
 									Long previous = editionHints.put(trustee, editionHint);
 									
@@ -636,6 +654,7 @@ public final class XMLTransformer {
 									// able to download the identity yet and thus we shouldn't
 									// instruct the IdentityDownloader to try - which is why we do
 									// not store a hint.
+								}
 								}
 							}
 							catch(UnknownIdentityException e) {
