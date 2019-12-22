@@ -616,7 +616,7 @@ public final class XMLTransformer {
 								// We already only run his function if
 								//     mWebOfTrust.shouldFetchIdentity(identity) == true
 								// which only happens if:
-								assert(bestCapacity > 0 || bestScore >= 0);
+								assert(bestScore >= 0 || bestCapacity > 0);
 								
 								if(editionHint >= 0) {
 									Long previous = editionHints.put(trustee, editionHint);
