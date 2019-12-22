@@ -627,7 +627,7 @@ public final class XMLTransformer {
 									// able to download the identity yet and thus we shouldn't
 									// instruct the IdentityDownloader to try - which is why we do
 									// not store a hint.
-								}								
+								}
 							}
 							catch(UnknownIdentityException e) {
 								if(hasCapacity) { /* We only create trustees if the truster has capacity to rate them. */
