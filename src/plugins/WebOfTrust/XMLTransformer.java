@@ -645,16 +645,16 @@ public final class XMLTransformer {
 								// to waste bandwidth by e.g. publishing lots of fake hints for high
 								// capacity identities. So we don't accept their hints.
 								if(bestCapacity >= EditionHint.MIN_CAPACITY) {
-								if(editionHint >= 0) {
-									Long previous = editionHints.put(trustee, editionHint);
-									
-									assert(previous == null);
-								} else {
-									// A negative hint is valid, it means that the publisher wasn't
-									// able to download the identity yet and thus we shouldn't
-									// instruct the IdentityDownloader to try - which is why we do
-									// not store a hint.
-								}
+									if(editionHint >= 0) {
+										Long previous = editionHints.put(trustee, editionHint);
+										
+										assert(previous == null);
+									} else {
+										// A negative hint is valid, it means that the publisher
+										// wasn't able to download the identity yet and thus we
+										// shouldn't instruct the IdentityDownloader to try - which
+										// is why we do not store a hint.
+									}
 								}
 							}
 							catch(UnknownIdentityException e) {
