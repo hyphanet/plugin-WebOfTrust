@@ -524,7 +524,16 @@ public final class XMLTransformer {
 							// So we don't need a separate try/catch for the following.
 							bestCapacity = mWoT.getBestCapacity(identity);
 						}
-						catch(NotInTrustTreeException e) { }
+						catch(NotInTrustTreeException e) {
+							throw new RuntimeException(
+								"Impossible: Received NotInTrustTreeException even though Identity "
+								+ "should have a Score because shouldFetchIdentity() == true!", e);
+						}
+						// TODO: Code quality: These cannot be null anymore because we throw in the
+						// above catch() nowadays. So convert them to primitive types and remove all
+						// null checks below.
+						assert(bestScore != null);
+						assert(bestCapacity != null);
 						
 						// TODO: getBestScore/getBestCapacity should always yield a positive result because we store a positive score object for an OwnIdentity
 						// upon creation. The only case where it could not exist might be restoreOwnIdentity() ... check that. If it is created there as well,
@@ -698,7 +707,6 @@ public final class XMLTransformer {
 						// Feed EditionHints to the IdentityDownloaderController
 						IdentityDownloaderController idc = mWoT.getIdentityDownloaderController();
 						assert(bestCapacity != null && bestCapacity > 0) : bestCapacity;
-						assert(bestScore != null) : bestScore;
 						for(Entry<Identity, Long> e : editionHints.entrySet()) {
 							EditionHint h = EditionHint.constructSecure(
 								mWoT,
