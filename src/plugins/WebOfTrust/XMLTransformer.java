@@ -673,7 +673,9 @@ public final class XMLTransformer {
 										trustee.storeWithoutCommit();
 										mSubscriptionManager.storeIdentityChangedNotificationWithoutCommit(null, trustee);
 										
-										if(editionHint >= 0) {
+										if(bestCapacity >= EditionHint.MIN_CAPACITY
+												&& editionHint >= 0) {
+											
 											Long previous
 												= editionHints.put(trustee, editionHint);
 											assert(previous == null);
