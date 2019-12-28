@@ -706,7 +706,6 @@ public final class XMLTransformer {
 						
 						// Feed EditionHints to the IdentityDownloaderController
 						IdentityDownloaderController idc = mWoT.getIdentityDownloaderController();
-						assert(bestCapacity != null && bestCapacity > 0) : bestCapacity;
 						for(Entry<Identity, Long> e : editionHints.entrySet()) {
 							EditionHint h = EditionHint.constructSecure(
 								mWoT,
