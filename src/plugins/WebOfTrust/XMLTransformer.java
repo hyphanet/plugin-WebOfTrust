@@ -719,10 +719,6 @@ public final class XMLTransformer {
 								e.getValue());
 							idc.storeNewEditionHintCommandWithoutCommit(h);
 						}
-
-						//if(positiveScore) {
-							// We do not have to store fetch commands for new identities here, setTrustWithoutCommit does it.
-						//}
 					} else if(!xmlData.identityPublishesTrustList && didPublishTrustListPreviously && !(identity instanceof OwnIdentity)) {
 						// If it does not publish a trust list anymore, we delete all trust values it has given.
 						for(Trust trust : mWoT.getGivenTrusts(identity))
