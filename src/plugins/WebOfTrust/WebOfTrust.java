@@ -3028,6 +3028,9 @@ public final class WebOfTrust extends WebOfTrustInterface
 			// rank graph could be structured completely differently, where the current distrusted
 			// identity has a much lower rank than the current distrusters, and thus its trustees
 			// have higher voting powers than the current distrusters.
+			// See the unit tests with "Stability" in their names in class WoTTest for examples of
+			// orders of download which are susceptible to instability if we don't do our job
+			// properly.
 			if(bestCapacity > 0 || bestScore >= 0)
 				return true;
 		}
