@@ -589,7 +589,8 @@ public final class XMLTransformer {
 								// IdentityDownloader.
 								// Move the following comments which explain the logic to
 								// IdentityDownloader, the implementations of it, class EditionHint,
-								// and WebOfTrust.shouldFetchIdentity().
+								// IdentityDownloaderSlow.shouldAcceptHintsOf() and
+								// WebOfTrust.shouldFetchIdentity().
 								// Program logic and its explanation really doesn't belong into this
 								// parsing-focused class.
 								
