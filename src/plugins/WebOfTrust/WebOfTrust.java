@@ -2954,6 +2954,9 @@ public final class WebOfTrust extends WebOfTrustInterface
 			throw new NotInTrustTreeException(identity);
 		
 		// TODO: Cache the best score of an identity as a member variable.
+		// TODO: Performance: Return early if bestCapacity == 100 because it cannot get any higher
+		// than that. To ensure this doesn't break if the upper limit is changed add a MAX_CAPACITY
+		// constant and use it in the array/enum which defines all capacities.
 		for(final Score score : scores) 
 			bestCapacity  = Math.max(score.getCapacity(), bestCapacity);
 		
