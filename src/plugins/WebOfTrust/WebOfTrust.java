@@ -1526,14 +1526,8 @@ public final class WebOfTrust extends WebOfTrustInterface
 				// We couldn't have set mFullScoreComputationNeeded earlier, that would have caused
 				// failing assert() in callees.
 				mFullScoreComputationNeeded = true;
-				finishTrustListImport();
-			} else {
-				// Emulate finishTrustListImport() by just setting this to false instead of calling
-				// finishTrustListImport(): This avoids finishTrustListImport() doing an
-				// expensive assert(computeAllScoresWithoutCommit()).
-				// - We didn't change anything, so there is no need to do expensive tests.
-				mTrustListImportInProgress = false;
 			}
+			finishTrustListImport();
 			
 			Persistent.checkedCommit(mDB, this);
 		}
