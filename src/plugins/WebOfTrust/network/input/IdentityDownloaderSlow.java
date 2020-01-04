@@ -1003,6 +1003,10 @@ public final class IdentityDownloaderSlow implements
 					h.deleteWithoutCommit();
 					++deleted;
 				}
+				// FIXME: Fails being 0, when called from onSuccess(), with
+				// downloadSucceeded == true, failureReason == null. Perhaps the hint(s) were
+				// deleted due to import of a higher edition which we e.g. obtained from the
+				// IdentityDownloaderFast?
 				assert(deleted >= 1);
 				
 				Persistent.checkedCommit(mDB, this);
