@@ -4715,7 +4715,10 @@ public final class WebOfTrust extends WebOfTrustInterface
 				computeAllScoresWithoutCommit();
 				assert(computeAllScoresWithoutCommit()); // computeAllScoresWithoutCommit is stable
 			} else {
-				assert(computeAllScoresWithoutCommit()); // This function worked correctly.
+				// Check if this incremental Score computation function worked correctly as compared
+				// to a full recomputation.
+				assert(
+					DEBUG_INCREMENTAL_SCORE_COMPUTATION ? computeAllScoresWithoutCommit() : true);
 			}
 		} else { // a trust list import is in progress
 			// We not do the following here because it would cause too much CPU usage during debugging: Trust lists are large and therefore 
