@@ -4413,9 +4413,11 @@ public final class WebOfTrust extends WebOfTrustInterface
 			computeAllScoresWithoutCommit();
 			assert(!mFullScoreComputationNeeded); // It properly clears the flag
 			assert(computeAllScoresWithoutCommit()); // computeAllScoresWithoutCommit() is stable
+		} else {
+			// Check if incremental Score computation yielded correct results as compared to
+			// a full recomputation.
+			assert(DEBUG_INCREMENTAL_SCORE_COMPUTATION ? computeAllScoresWithoutCommit() : true);
 		}
-		else
-			assert(computeAllScoresWithoutCommit()); // Verify whether updateScoresWithoutCommit worked.
 		
 		mTrustListImportInProgress = false;
 	}
