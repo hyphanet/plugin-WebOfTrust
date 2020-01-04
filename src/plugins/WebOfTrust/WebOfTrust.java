@@ -4721,9 +4721,13 @@ public final class WebOfTrust extends WebOfTrustInterface
 					DEBUG_INCREMENTAL_SCORE_COMPUTATION ? computeAllScoresWithoutCommit() : true);
 			}
 		} else { // a trust list import is in progress
-			// We not do the following here because it would cause too much CPU usage during debugging: Trust lists are large and therefore 
-			// updateScoresWithoutCommit is called often during import of a single trust list
-			// assert(computeAllScoresWithoutCommit());
+			// We not do the following here because it would cause too much CPU usage during
+			// debugging: Trust lists are large and therefore updateScoresWithoutCommit() is called
+			// many times during import of a single trust list.
+			// We instead do it once in finishTrustListImport().
+			/*
+			   assert(DEBUG_INCREMENTAL_SCORE_COMPUTATION ? computeAllScoresWithoutCommit() : true);
+			 */
 		}
 	}
 
