@@ -324,6 +324,19 @@ CHANGELOG about stuff only interesting for developers
   As the performance work is currently more important I will refrain
   from renaming all preexisting functions for a while.
 
+- [Code quality] Disable very slow assert()s by default (xor)
+
+  They had been added to test incremental Score computation:
+  After each trust list import they would do a full Score recomputation
+  to see if the incremental one was correct.
+  This slowed down debugging sessions a lot so it is disabled by default
+  now as incremental computation seems to be bugfree.
+  (Non-debug sessions were not affected by this, assertions need to be
+  enabled by hand.)
+
+  Class DebugConfiguration has been added to contain the setting for
+  this and possibly further similar settings to be added in the future.
+
 THANKS TO
 
   - ArneBab
