@@ -582,6 +582,10 @@ public final class IdentityDownloaderSlow implements
 					// both starting with ABAUB.
 					// I didn't have assertions enabled so it wasn't caught by the assert() in
 					// download(), which it probably would have been.
+					// EDIT: This is merely an UI issue of StatisticsPage:
+					// It marks any EditionHint as running download whose target URI is being
+					// downloaded - but multiple EditionHints can point to the same URI if they
+					// point to the same edition of a single Identity.
 					if(identitiesBeingDownloaded.contains(targetIdentityID))
 						continue;
 					
