@@ -7,6 +7,7 @@ import static java.lang.Math.abs;
 import static java.lang.Math.max;
 import static java.util.Arrays.copyOfRange;
 import static java.util.Arrays.sort;
+import static plugins.WebOfTrust.DebugConfiguration.DEBUG_INCREMENTAL_SCORE_COMPUTATION;
 import static plugins.WebOfTrust.XMLTransformer.MAX_IDENTITY_XML_TRUSTEE_AMOUNT;
 
 import java.io.File;
@@ -4319,7 +4320,9 @@ public final class WebOfTrust extends WebOfTrustInterface
 		
 		mTrustListImportInProgress = true;
 		assert(!mFullScoreComputationNeeded);
-		assert(computeAllScoresWithoutCommit()); // The database is intact before the import
+		// Check if the Score database is correct before the import so we can tell if incremental
+		// Score updating during the import is bugfree by doing the same test afterwards.
+		assert(DEBUG_INCREMENTAL_SCORE_COMPUTATION ? computeAllScoresWithoutCommit() : true);
 	}
 	
 	/**
