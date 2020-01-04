@@ -1854,6 +1854,9 @@ public final class WebOfTrust extends WebOfTrustInterface
 	 * }}}}
 	 * </code>
 	 * 
+	 * TODO: Performance: An old comment somewhere said this keeps too much stuff in memory. Review
+	 * to see if this can be optimized.
+	 * 
 	 * @return True if all stored scores were correct. False if there were any errors in stored scores.
 	 */
 	protected boolean computeAllScoresWithoutCommit() {
@@ -4708,10 +4711,11 @@ public final class WebOfTrust extends WebOfTrustInterface
 		}
 		
 		if(!mTrustListImportInProgress) {
+			// We have incremental Score computation nowadays via the above call to
+			// updateScoresAfterDistrustWithoutCommit(), the if()'s first path shouldn't be hit
+			// anymore. TODO: Code quality: Remove it if the assert() doesn't fail.
+			assert(!mFullScoreComputationNeeded);
 			if(mFullScoreComputationNeeded) {
-				// TODO: Optimization: This uses very much CPU and memory. Write a partial computation function...
-				// TODO: Optimization: While we do not have a partial computation function, we could at least optimize computeAllScores to NOT
-				// keep all objects in memory etc.
 				computeAllScoresWithoutCommit();
 				assert(computeAllScoresWithoutCommit()); // computeAllScoresWithoutCommit is stable
 			} else {
