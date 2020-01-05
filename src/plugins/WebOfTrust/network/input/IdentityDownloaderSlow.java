@@ -523,10 +523,10 @@ public final class IdentityDownloaderSlow implements
 	 * Respects {@link Thread#interrupt()} to speed up shutdown, which
 	 * {@link DelayedBackgroundJob#terminate()} will make use of. */
 	@Override public void run() {
-		if(logMINOR) Logger.minor(this, "run()...");
-
 		synchronized(mWoT) {
 		synchronized(mLock) {
+			if(logMINOR) Logger.minor(this, "run()...");
+			
 			// We don't have to take a database transaction lock:
 			// We don't write anything to the database here.
 			// We nevertheless try/catch to re-schedule the thread for execution in case of
