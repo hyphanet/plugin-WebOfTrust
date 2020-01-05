@@ -1076,6 +1076,16 @@ public final class IdentityDownloaderSlow implements
 		}
 		
 		for(EditionHint h : getEditionHintsByTargetIdentity(identity)) {
+			// FIXME: This very likely happens because the Score computation algorithm calls
+			// storeStartFetchCommandWithoutCommit() when it wants to signal the IdentityDownloader
+			// that Identity.markForRefetch() was called for an Identity, i.e. the current edition
+			// of it must be downloaded again (to obtain its trust values which were previously
+			// ignored because the identity wasn't sufficiently trusted to allow their import).
+			// The decision to call this callback for that off-topic purpose happened a long time
+			// ago for the old identity downloading implementation IdentityFetcher and I think I
+			// didn't take it into account at all when writing the new IdentityDownloader*
+			// classes. The proper approach to fixing this is introducing a separate callback for
+			// that purpose.
 			Logger.error(this, "Hint found for previously untrusted Identity: " + h,
 				new RuntimeException("Exception for stack trace only"));
 			assert(false);
