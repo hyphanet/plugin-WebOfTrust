@@ -703,7 +703,6 @@ public final class IdentityDownloaderSlow implements
 			return true;
 		} else
 			return false;
-	
 	}
 
 	/** True if this class would accept {@link EditionHint}s which have this Identity as
