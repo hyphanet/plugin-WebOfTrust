@@ -612,6 +612,12 @@ public final class IdentityDownloaderSlow implements
 			} finally {
 				assert(getRunningDownloadCount() <= getMaxRunningDownloadCount());
 				// TODO: Performance: Remove this after it has not failed for some time.
+				// FIXME: This will fail because onSuccess() removes the download from mDownloads
+				// *after* it calls deleteEditionHints(), and the two actions don't happen in a
+				// single synchronization block. It may be tempting to just remove this assert(),
+				// also because getQueue() is a large query - but onSuccess() won't call
+				// deleteEditionHints() anymore soon (see the FIXME in onSuccess()) - maybe that
+				// will resolve this problem?
 				assert(getRunningDownloadCount() <= getQueue().size());
 				
 				if(logMINOR) Logger.minor(this, "run() finished.");
