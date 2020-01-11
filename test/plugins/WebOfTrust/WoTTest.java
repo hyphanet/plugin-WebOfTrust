@@ -626,7 +626,7 @@ public class WoTTest extends AbstractJUnit3BaseTest {
 		mWoT.setTrustWithoutCommit(s, a, (byte)0, "Minimal trust");
 		mWoT.setTrustWithoutCommit(a, b, (byte)0, "trust");
 		mWoT.setTrustWithoutCommit(b, c, (byte)0, "trust");
-		mWoT.setTrustWithoutCommit(c, a, (byte)0, "distrust");
+		mWoT.setTrustWithoutCommit(c, a, (byte)0, "trust");
 		Persistent.checkedCommit(db, this);
 		flushCaches();
 
