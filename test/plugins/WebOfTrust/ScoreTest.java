@@ -374,7 +374,7 @@ public final class ScoreTest extends AbstractJUnit4BaseTest {
 		Score s1 = new Score(wot, truster, trustee, 100, 2, 16);
 		assertNotEquals(identityHashCode(s1), s1.hashCode());
 		assertEquals(s1.getID().hashCode(), s1.hashCode());
-		assertNotEquals(identityHashCode(s1.getID().hashCode()), s1.getID().hashCode());
+		assertNotEquals(identityHashCode(s1.getID()), s1.getID().hashCode());
 		
 		Score s2 = new Score(wot, truster, trustee, 100, 2, 16);
 		assertEquals(s1.hashCode(), s2.hashCode());
