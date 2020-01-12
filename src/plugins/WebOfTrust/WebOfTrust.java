@@ -1412,7 +1412,6 @@ public final class WebOfTrust extends WebOfTrustInterface
 			for(Identity i : getAllIdentities()) {
 				if(!identitySet.add(i)) {
 					Logger.error(this, "Deleting duplicate Identity: " + i);
-					assert(false) : i;
 					deleteWithoutCommit(i);
 					anythingChanged = true;
 				}
@@ -1427,7 +1426,6 @@ public final class WebOfTrust extends WebOfTrustInterface
 			for(Trust t : getAllTrusts()) {
 				if(!trustSet.add(t)) {
 					Logger.error(this, "Deleting duplicate trust: " + t);
-					assert(false) : t;
 					t.deleteWithoutCommit();
 					anythingChanged = true;
 				}
@@ -1437,7 +1435,6 @@ public final class WebOfTrust extends WebOfTrustInterface
 			for(Score s : getAllScores()) {
 				if(!scoreSet.add(s)) {
 					Logger.error(this, "Deleting duplicate Score: " + s);
-					assert(false) : s;
 					s.deleteWithoutCommit();
 					anythingChanged = true;
 				}
