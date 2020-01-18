@@ -146,7 +146,20 @@ public abstract class Persistent implements Serializable {
 	}
 	
 	/**
-	 * This function has to be implemented by all child classes. It is executed by startup on all persistent objects to test their integrity.
+	 * This function has to be implemented by all child classes. It shall test the integrity of
+	 * objects of them in the state as they've been loaded from the database. As as a technical term
+	 * with regards to databases "integrity" hereby is also meant to include consistency and
+	 * adherence to the database schema.  
+	 * In other words: Check anything which could be damaged in the database if there are bugs in
+	 * your code which store your objects in it.  
+	 * Implementations must throw if anything is wrong with regards to the above.
+	 * 
+	 * If the {@link Logger} is configured to DEBUG log level for class {@link WebOfTrust} this
+	 * function is called by {@link WebOfTrust#verifyDatabaseIntegrity()} for all objects which are
+	 * stored in the database and any thrown exceptions are logged.
+	 * 
+	 * Further, the base classes for all unit tests call this function for any objects remaining
+	 * in the database after each test has finished.
 	 * 
 	 * TODO: Code quality: Provide an implementation here as well to check mCreationDate. We should
 	 * keep this abstract though so people are forced to implement it in child classes. Thus maybe

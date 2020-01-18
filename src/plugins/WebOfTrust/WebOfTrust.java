@@ -1071,7 +1071,12 @@ public final class WebOfTrust extends WebOfTrustInterface
 		
 		return foundLeak;
 	}
-	
+
+	/** Checks {@link Persistent#startupDatabaseIntegrityTest()} upon all {@link Persistent} objects
+	 *  stored in the database.
+	 *  Returns false if any of the objects' startupDatabaseIntegrityTest() threw an exception.
+	 *  
+	 *  Also calls {@link #deleteDuplicateObjects()} and {@link #deleteOrphanObjects()}. */
 	public synchronized boolean verifyDatabaseIntegrity() {
 		// Take locks of all objects which deal with persistent stuff because we act upon ALL persistent objects.
 		synchronized(mPuzzleStore) {
