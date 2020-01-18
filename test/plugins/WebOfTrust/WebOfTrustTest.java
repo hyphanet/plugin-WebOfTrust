@@ -42,7 +42,7 @@ public class WebOfTrustTest extends AbstractJUnit4BaseTest {
 		// to store the original ObjectSet, and repeat the test many times with both the old and
 		// new db4o version, like this:
 		// ant clean ; i=0 ;
-		// while ant -Dtest.skip=false -Dtest.class=plugins.WebOfTrust.WebOfTrustTest junit ; do
+		// while ant -Dtest.skip=false -Dtest.class=plugins.WebOfTrust.WebOfTrustTest ; do
 		//     echo $((++i)) ;
 		// done
 		// Bugtracker entry: https://bugs.freenetproject.org/view.php?id=6819

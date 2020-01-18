@@ -1486,10 +1486,12 @@ public final class WebOfTrust extends WebOfTrustInterface
 					if(trust.getTruster() != null && trust.getTrustee() != null) {
 						// TODO: Remove this workaround for the db4o bug as soon as we are sure that it does not happen anymore.
 						Logger.error(this, "Db4o bug: constrain(null).identity() did not work for " + trust);
+						assert(false) : trust;
 						continue;
 					}
 					
 					Logger.error(trust, "Deleting orphan trust, truster = " + trust.getTruster() + ", trustee = " + trust.getTrustee());
+					assert(false) : trust;
 					orphanTrustFound = true;
 					trust.deleteWithoutCommit();
 					// No need to update subscriptions as the trust is broken anyway.
@@ -1523,10 +1525,12 @@ public final class WebOfTrust extends WebOfTrustInterface
 					if(score.getTruster() != null && score.getTrustee() != null) {
 						// TODO: Remove this workaround for the db4o bug as soon as we are sure that it does not happen anymore.
 						Logger.error(this, "Db4o bug: constrain(null).identity() did not work for " + score);
+						assert(false) : score;
 						continue;
 					}
 					
 					Logger.error(score, "Deleting orphan score, truster = " + score.getTruster() + ", trustee = " + score.getTrustee());
+					assert(false) : score;
 					orphanScoresFound = true;
 					score.deleteWithoutCommit();
 					// No need to update subscriptions as the score is broken anyway.
