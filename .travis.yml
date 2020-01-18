@@ -107,10 +107,13 @@ matrix:
     # our purpose of integration testing.
     # But first we will hereby also test on branch master to ensure WoT works against the latest
     # stable release as well because plugins can be updated without a new Freenet release.
+    # We also test on master before next because we will upload the WoT JAR to Freenet on master
+    # and that will take quite a bit of time so we should do it first to ensure the other faster
+    # build jobs can complete concurrently.
+    # We will upload from this fred and Java version because they are the minimum to guarantee
+    # the resulting fred upload and JAR will work everywhere.
     # We only test against master on a single Java version to keep the matrix small, all the others
     # will be tested against next by the second and following "jdk:" below.
-    # We will also deploy from this Java version and fred version because they are the minimum
-    # so the resulting JAR and fred upload will work everywhere.
     - env: FRED=master BUILDER=gradle DEPLOY=1
       # Travis doesn't support this yet so we will hardcode it:
       ## jdk: openjdk$FREENET_MINIMUM_JAVA_VERSION
