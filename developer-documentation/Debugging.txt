@@ -60,6 +60,7 @@ Those are:
 Useful breakpoints during debug test runs:
 - AssertionError: Will hit on failure of Java assert() statements. There are many useful of those in the WOT code.
 - AssertionFailedError: Will hit on failure of JUnit tests.
+- java.lang.Error and subclasses: Will hit on any further severe problems.
 - NullPointerException: Dereferencing of a pointer which is null shouldn't happen in normal code.
 - UnsupportedOperationException: This exception is typically thrown in WOT-functions which are NOT implemented. Therefore, those functions
   should not be used. If this is thrown it indicates that they ARE being used even though they shouldn't.
