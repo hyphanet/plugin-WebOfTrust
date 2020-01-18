@@ -130,7 +130,9 @@ version `2018-12` for `Linux 64-bit`, which you can get
    for fred.  
    Set its Gradle tasks to `jar`, or `clean jar` if you want to ensure the JAR is always fully
    rebuilt. Not fully rebuilding may cause e.g. deleted classes to persist in the JAR, though
-   I have not tested if this still applies to a build system as modern as Gradle.
+   I have not tested if this still applies to a build system as modern as Gradle.  
+   If you want to run the unit tests through Eclipse's UI for that you also need to add `testJar`
+   to the tasks to ensure the JAR containing the tests gets built.
 
 **Notice**: Building using `Project / Build project` or `Project / Build Automatically` or the
 toolbar buttons does not seem to trigger Gradle with the said Eclipse version!  
