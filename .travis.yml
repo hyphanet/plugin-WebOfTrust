@@ -134,8 +134,8 @@ matrix:
     - jdk: oraclejdk8
     # oraclejdk9: No more updates by Oracle: https://www.oracle.com/technetwork/java/java-se-support-roadmap.html
     # oraclejdk10: Not supported anymore: https://changelog.travis-ci.com/stop-a-job-early-if-a-deprecated-jdk-is-configured-76612
-    - jdk: oraclejdk11
-    - jdk: oraclejdk12
+    # oraclejdk11: Disabled to keep the build matrix small.
+    # oraclejdk12: Disabled to keep the build matrix small.
     - jdk: oraclejdk13
 
 deploy:
