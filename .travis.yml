@@ -110,8 +110,8 @@ matrix:
     # We also test on master before next because we will upload the WoT JAR to Freenet on master
     # and that will take quite a bit of time so we should do it first to ensure the other faster
     # build jobs can complete concurrently.
-    # We will upload from these Java and fred versions because they are the minimum to guarantee
-    # the resulting JAR and fred upload will work everywhere.
+    # We will upload from this fred and Java version because they are the minimum to guarantee
+    # the resulting fred upload and JAR will work everywhere.
     # We only test against master on a single Java version to keep the matrix small, all the others
     # will be tested against next by the second and following "jdk:" below.
     - env: FRED=master BUILDER=gradle DEPLOY=1
