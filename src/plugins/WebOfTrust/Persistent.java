@@ -150,8 +150,8 @@ public abstract class Persistent implements Serializable {
 	 * objects of them in the state as they've been loaded from the database. As as a technical term
 	 * with regards to databases "integrity" hereby is also meant to include consistency and
 	 * adherence to the database schema.  
-	 * In other words: Check anything which could be damaged in the database if there are bugs in
-	 * your code which store your objects in it.  
+	 * In other words: Check anything which could be damaged in the database if there were bugs in
+	 * your code which stores your objects in it.  
 	 * Implementations must throw if anything is wrong with regards to the above.
 	 * 
 	 * If the {@link Logger} is configured to DEBUG log level for class {@link WebOfTrust} this
