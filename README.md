@@ -140,10 +140,11 @@ It seems that this only triggers Eclipse's internal Java builder which is used t
 own features.  
 As a consequence, manually run Gradle using the aforementioned `Run` button in case you need the
 WoT JAR as output, e.g. for the following `Debugging` section.  
-Running the unit tests is also done by that, or by Eclipse's own UI for running tests. The Eclipse
-UI however does not exclude certain slow tests which WoT's Gradle would only run optionally.  
-Ideally you would use Gradle to run all tests, and the Eclipse UI to selectively repeat only single
-failing ones in order to debug them with the Eclipse debugger.
+Running the unit tests is also done by that - using a Gradle run configuration which includes the
+`test` task - or by Eclipse's own UI for running tests.  
+The Eclipse UI however does not exclude certain slow tests which WoT's Gradle would only run
+optionally. So ideally you would use Gradle to run all tests in bulk, and the Eclipse UI to
+selectively repeat only single failing ones in order to debug them with the Eclipse debugger.
 
 **Notice**: Should Eclipse show errors about missing JARs such as `db4o.jar` and say they prevent it
 from building: Notice that the JARs likely have in fact been created by the fred/WoT Gradle
