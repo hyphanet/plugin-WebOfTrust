@@ -26,7 +26,9 @@ public class Version {
 	 * version.
 	 */
 	private static final long version = 20;
-	
+
+	private static final String marketingVersion = "0.4.5";
+
 	/** Published as an identity property if you own a seed identity. */
 	private static final long mandatoryVersion = 1;
 
@@ -35,7 +37,7 @@ public class Version {
 
 
 	public static String getMarketingVersion() {
-		return "0.4.5 "+gitRevision;
+		return marketingVersion + " " + gitRevision;
 	}
 
 	public static long getRealVersion() {
