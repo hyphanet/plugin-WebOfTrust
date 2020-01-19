@@ -353,8 +353,10 @@ CHANGELOG about stuff only interesting for developers
 - [Code quality] Travis CI: Test against most recent Java versions (xor)
 
   The cloud service now runs the unit tests periodically against:
-  - oraclejdk11 (new)
-  - oraclejdk8
+  - oraclejdk14 (new)
+  - oraclejdk13 (new)
+  - openjdk14 (new)
+  - openjdk13 (new)
   - openjdk12 (new)
   - openjdk11 (new)
   - openjdk10 (new)
@@ -363,8 +365,10 @@ CHANGELOG about stuff only interesting for developers
   - openjdk7
 
   This is the maximal set of Java versions which are supported by
-  Freenet, Travis CI and Oracle as of 2019-05-04.
-  (OpenJDK might not provide security updates for all of these.)
+  Freenet, Travis CI and Oracle as of 2020-01-19, with old Oracle ones
+  excluded to not abuse Travis with too much CPU load.
+  Notice that OpenJDK might not provide security updates for all of
+  these!
 
 - [Code quality] Travis CI: Speed up build time from 1 hour to
                  20 minutes (xor)
