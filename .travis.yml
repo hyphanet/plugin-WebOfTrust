@@ -137,6 +137,7 @@ matrix:
     # oraclejdk11: Disabled to keep the build matrix small.
     # oraclejdk12: Disabled to keep the build matrix small.
     - jdk: oraclejdk13
+    - jdk: oraclejdk14
 
 deploy:
   provider: script
