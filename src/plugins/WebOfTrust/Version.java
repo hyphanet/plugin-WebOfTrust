@@ -5,13 +5,12 @@
  */
 package plugins.WebOfTrust;
 
-/**
- * Necessary to be able to use pluginmanager's versions
- * 
- * @author Julien Cornuwel (batosai@freenetproject.org)
- *
- */
+import freenet.pluginmanager.FredPluginRealVersioned;
+import freenet.pluginmanager.FredPluginVersioned;
 
+/** Specifies the version numbers of WoT.  
+ *  Used by class {@link WebOfTrust} to implement {@link FredPluginVersioned} and
+ *  {@link FredPluginRealVersioned}. */
 public final class Version {
 
 	/** This is replaced by the Ant/Gradle build scripts during compilation.
