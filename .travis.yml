@@ -130,6 +130,7 @@ matrix:
     - jdk: openjdk11
     - jdk: openjdk12
     - jdk: openjdk13
+    - jdk: openjdk14
     # oraclejdk7: Not supported anymore: https://github.com/travis-ci/travis-ci/issues/7884#issuecomment-308451879
     - jdk: oraclejdk8
     # oraclejdk9: No more updates by Oracle: https://www.oracle.com/technetwork/java/java-se-support-roadmap.html
