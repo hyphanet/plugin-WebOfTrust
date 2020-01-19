@@ -11,8 +11,8 @@ package plugins.WebOfTrust;
  * @author Julien Cornuwel (batosai@freenetproject.org)
  *
  */
-public class Version {
 
+public final class Version {
 
 	/** This is replaced by the Ant/Gradle build scripts during compilation.
 	 *  It thus must be private and only accessible through a getter function to ensure its
