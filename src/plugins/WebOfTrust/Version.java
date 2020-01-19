@@ -13,7 +13,12 @@ package plugins.WebOfTrust;
  */
 public class Version {
 
-	public static final String gitRevision = "@custom@";
+
+	/** This is replaced by the Ant/Gradle build scripts during compilation.
+	 *  It thus must be private and only accessible through a getter function to ensure its
+	 *  pre-replacement default value does not get inlined into the code of other classes by the
+	 *  compiler! */
+	private static final String gitRevision = "@custom@";
 
 	/** Version number of the plugin for getRealVersion(). Increment this on making
 	 * a major change, a significant bugfix etc. These numbers are used in auto-update 
