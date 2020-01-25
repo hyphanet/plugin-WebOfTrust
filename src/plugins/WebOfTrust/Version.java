@@ -5,6 +5,8 @@
  */
 package plugins.WebOfTrust;
 
+import static java.lang.System.out;
+
 import freenet.pluginmanager.FredPluginRealVersioned;
 import freenet.pluginmanager.FredPluginVersioned;
 
@@ -45,6 +47,20 @@ public final class Version {
 	/** @see #version */
 	public static long getRealVersion() {
 		return version;
+	}
+
+	/** Can be used to obtain the version if WoT is broken and won't load via Freenet's plugins
+	 *  page.
+	 *  On Linux run it via:
+	 *  
+	 *      cd /path/of/Freenet
+	 *      for JAR in plugins/*WebOfTrust*.jar* ; do
+	 *          echo "Versions of $JAR:"
+	 *          java -classpath "$JAR" plugins.WebOfTrust.Version
+	 *      done */
+	public static void main(String[] args) {
+		out.println("Marketing version: " + getMarketingVersion());
+		out.println("Real version: " + getRealVersion());
 	}
 
 }
