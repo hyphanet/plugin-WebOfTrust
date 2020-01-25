@@ -29,10 +29,12 @@ public final class Version {
 	 *  In opposite to {@link #version} this does not have to be changed on every release. */
 	private static final String marketingVersion = "0.4.5";
 
-	/** Published as an identity property if you own a seed identity. */
+	/** Published as an identity property if you own a seed identity.
+	 *  TODO: Not actually implemented yet, do so or remove it. */
 	private static final long mandatoryVersion = 1;
 
-	/** Published as an identity property if you own a seed identity. */
+	/** Published as an identity property if you own a seed identity.
+	 *  TODO: Not actually implemented yet, do so or remove it. */
 	private static final long latestVersion = version;
 
 
