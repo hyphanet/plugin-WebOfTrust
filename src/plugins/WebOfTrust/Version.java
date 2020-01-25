@@ -37,11 +37,12 @@ public final class Version {
 	 *  TODO: Not actually implemented yet, do so or remove it. */
 	private static final long latestVersion = version;
 
-
+	/** The {@link #marketingVersion} concatenated with the {@link #gitRevision}. */
 	public static String getMarketingVersion() {
 		return marketingVersion + " " + gitRevision;
 	}
 
+	/** @see #version */
 	public static long getRealVersion() {
 		return version;
 	}
