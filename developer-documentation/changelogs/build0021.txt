@@ -499,6 +499,14 @@ CHANGELOG about stuff only interesting for developers
   To ensure the number of Travis CI builds doesn't grow excessively the
   test against branch master only happens on a single Java version.
 
+- [Features] Add main() to class Version so the WoT version can be
+  obtained even if WoT is broken (xor)
+
+  Can be used to conveniently request the version from users.
+  For a shell script to run it for all JARs which are present in the
+  user's node see the function's JavaDoc at
+    src/plugins/WebOfTrust/Version.java
+
 THANKS TO
 
   - ArneBab for providing lots and lots of code review!
