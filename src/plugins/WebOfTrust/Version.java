@@ -19,13 +19,14 @@ public final class Version {
 	 *  compiler! */
 	private static final String gitRevision = "@custom@";
 
-	/** Version number of the plugin for getRealVersion(). Increment this on making
-	 * a major change, a significant bugfix etc. These numbers are used in auto-update 
-	 * etc, at a minimum any build inserted into auto-update should have a unique 
-	 * version.
-	 */
+	/** The {@link FredPluginRealVersioned#getRealVersion()} aka build number.
+	 *  NOTICE: This is used by fred's auto-update code to distinguish different versions, so it
+	 *  MUST be incremented on **every** release. */
 	private static final long version = 20;
 
+	/** The version which we tell the user for advertising purposes, e.g. by incrementing the major
+	 *  version on important new features.
+	 *  In opposite to {@link #version} this does not have to be changed on every release. */
 	private static final String marketingVersion = "0.4.5";
 
 	/** Published as an identity property if you own a seed identity. */
