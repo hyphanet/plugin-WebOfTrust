@@ -505,7 +505,7 @@ CHANGELOG about stuff only interesting for developers
   Can be used to conveniently request the version from users.
   For a shell script to run it for all JARs which are present in the
   user's node see the function's JavaDoc at
-    plugins/WebOfTrust/Version.java
+    src/plugins/WebOfTrust/Version.java
 
 THANKS TO
 
