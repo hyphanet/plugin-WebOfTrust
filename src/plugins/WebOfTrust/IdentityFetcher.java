@@ -593,7 +593,7 @@ public final class IdentityFetcher implements
 		// XMLTransformer will nowadays pass edition hints if the giver of the hint has a positive
 		// Score OR positive capacity.
 		// Before this class here was deprecated in favor of the new IdentityDownloader
-		// implementations, XMLTransformer used to only pass edition hints of the giver had a
+		// implementations, XMLTransformer used to only pass edition hints if the giver had a
 		// positive Score - NOT if it merely had a positive capacity.
 		// To ensure this old implementation here keeps its behavior as of before the adaption of 
 		// XMLTransformer to the IdentityDownloader rewrites, it will now check whether the giver of
