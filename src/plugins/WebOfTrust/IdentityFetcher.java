@@ -598,8 +598,9 @@ public final class IdentityFetcher implements
 		// To ensure this old implementation here keeps its behavior as of before the adaption of 
 		// XMLTransformer to the IdentityDownloader rewrites, it will now check whether the giver of
 		// the hint has a positive Score and return if it does not.
-		// Also, XMLTransformer nowadays passes all hints, not just the ones which are higher than
-		// the previously known one. So we also check that to discard non-higher ones.
+		// Also, XMLTransformer nowadays does not check the edition of the hints anymore, it passes
+		// not just the ones which are higher than the highest previouslys known hint, but all of
+		// them. So we also check that to discard non-higher ones.
 		// In other words: The checks in the following scope have been part of XMLTransformer
 		// previously and were moved here as part of its modifications for IdentityDownloader.
 		{
