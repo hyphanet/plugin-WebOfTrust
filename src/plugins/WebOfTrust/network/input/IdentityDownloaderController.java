@@ -8,6 +8,7 @@ import plugins.WebOfTrust.IdentityFetcher;
 import plugins.WebOfTrust.IdentityFetcher.IdentityFetcherCommand;
 import plugins.WebOfTrust.IdentityFileQueue;
 import plugins.WebOfTrust.OwnIdentity;
+import plugins.WebOfTrust.Score;
 import plugins.WebOfTrust.Trust;
 import plugins.WebOfTrust.WebOfTrust;
 import plugins.WebOfTrust.util.Daemon;
@@ -30,6 +31,21 @@ import freenet.pluginmanager.PluginRespirator;
  * synchronize upon whichever specific {@link IdentityDownloader} implementations are being used
  * currently. It can instead just synchronize upon the single IdentityDownloaderController instance.
  * 
+ * TODO: Code quality: The specifications of many of IdentiyDownloader's callbacks require that they
+ * only be called when the {@link Trust} and {@link Score} database is up to date.
+ * Currently importing changed Trusts and updating the Scores from them happens in a single database
+ * transaction, and it is likely that this will be split into two separate transactions in the
+ * future to reduce the time important locks are blocked. This will imply the creation of a
+ * "boolean scoreDatabaseIsOutdated" flag in the database to ensure Scores get updated after Trusts
+ * have been changed - and such a flag will be precisely what we could use to test if the callbacks
+ * are indeed only called if the Score database is OK.  
+ * So once such a flag exists add assert()s in this class here to check it. It is the ideal place
+ * to check the flag because the callbacks to all IdentityDownloader implementations are passed
+ * through this class so we only need the assert()s once here, not everywhere where the callbacks
+ * are called.  
+ * The bugtracker entry for introducing the flag is:
+ * https://bugs.freenetproject.org/view.php?id=6848
+ *
  * @see IdentityDownloaderFast
  * @see IdentityDownloaderSlow
  */
