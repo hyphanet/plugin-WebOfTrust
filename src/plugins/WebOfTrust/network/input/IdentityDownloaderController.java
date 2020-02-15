@@ -162,6 +162,8 @@ public final class IdentityDownloaderController implements IdentityDownloader, D
 		// This could be done by either having a periodic self-test run by their thread like
 		// IdentityDownloaderFast does, or by introducing a "testSelf()" callback which could be
 		// called instead of this function at particularly interesting points of Score computation.
+		// Also see the similar FIXME inside of IdentityDownloaderSlow's implementation of this
+		// function.
 		
 		for(IdentityDownloader d : mDownloaders) {
 			if(d.getShouldFetchState(identity) == true)
