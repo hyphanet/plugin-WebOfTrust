@@ -422,8 +422,8 @@ public interface IdentityDownloader extends Daemon {
 	 * - Implementations MUST also decide on their own whether it is safe to use the given hints
 	 *   with regards to their rules of the required trustworthiness of the hint's provider:  
 	 *   The callers of this callback only check if the provider's
-	 *   {@link WebOfTrust#getBestCapacity(Identity)} is >= EditionHint.MIN_CAPACITY (because the
-	 *   EditionHint constructor would throw otherwise), the
+	 *   {@link WebOfTrust#getBestCapacity(Identity)} is >= {@link EditionHint#MIN_CAPACITY}
+	 *   (because the EditionHint constructor would throw otherwise), the
 	 *   {@link WebOfTrust#getBestScore(Identity)} is not checked, so even hints of distrusted
 	 *   providers are passed.    
 	 *   But it is advisable to stick to accepting all those hints when taking the concept of
