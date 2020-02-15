@@ -14,6 +14,7 @@ import plugins.WebOfTrust.Score;
 import plugins.WebOfTrust.SubscriptionManager;
 import plugins.WebOfTrust.Trust;
 import plugins.WebOfTrust.WebOfTrust;
+import plugins.WebOfTrust.XMLTransformer;
 import plugins.WebOfTrust.network.input.IdentityDownloaderFast.DownloadSchedulerCommand;
 import plugins.WebOfTrust.util.Daemon;
 import freenet.keys.FreenetURI;
@@ -415,8 +416,23 @@ public interface IdentityDownloader extends Daemon {
 	 * lucky - but it may very well be a lie. In that case, to avoid DoS, we must discard it and try
 	 * the next lower hint we received from someone else.
 	 * 
+	 * NOTICE: EditionHints are almost passed as-is without much sanity checking. Thus:
+	 * - Implementations MUST on their own check {@link WebOfTrust#shouldFetchIdentity(Identity)}
+	 *   for the recipient of the hint.
+	 * - Implementations MUST also decide on their own whether it is safe to use the given hints
+	 *   with regards to their rules of the required trustworthiness of the hint's provider:  
+	 *   The callers of this callback only check if the provider's
+	 *   {@link WebOfTrust#getBestCapacity(Identity)} is >= EditionHint.MIN_CAPACITY (because the
+	 *   EditionHint constructor would throw otherwise), the
+	 *   {@link WebOfTrust#getBestScore(Identity)} is not checked, so even hints of distrusted
+	 *   providers are passed.    
+	 *   But it is advisable to stick to accepting all those hints when taking the concept of
+	 *   "stability" of Score computation into consideration. For an explanation of this concept see
+	 *   the documentation inside {@link XMLTransformer#importIdentity(FreenetURI,
+	 *   java.io.InputStream)}.
+	 * 
 	 * The {@link Trust} and {@link Score} database is guaranteed to be up to date when this
-	 * function is called and thus can be used by it.
+	 * function is called and thus can be used by it for the aforementioned purposes.
 	 * 
 	 * Synchronization:
 	 * This function is guaranteed to be called while the following locks are being held in the
