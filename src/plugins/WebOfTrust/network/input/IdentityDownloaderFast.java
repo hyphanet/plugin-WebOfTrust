@@ -1085,7 +1085,10 @@ public final class IdentityDownloaderFast implements
 			     + "]";
 		}
 
-		/** Overriden for visibility only. */
+		/** ATTENTION: Make sure to call {@link DelayedBackgroundJob#triggerExecution()} upon
+		 *  {@link IdentityDownloaderFast#mDownloadSchedulerThread} after using this!  
+		 *  TODO: Code quality: Call it here right away, remove all calls of it next to calls
+		 *  of this function. */
 		@Override protected void storeWithoutCommit() {
 			super.storeWithoutCommit();
 		}
