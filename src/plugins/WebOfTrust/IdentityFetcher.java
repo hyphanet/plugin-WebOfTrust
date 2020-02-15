@@ -591,7 +591,10 @@ public final class IdentityFetcher implements
 		Identity toIdentity = hint.getTargetIdentity();
 		
 		// XMLTransformer will nowadays pass edition hints if the giver of the hint has a positive
-		// Score OR positive capacity.
+		// Score OR positive capacity (or more precisely: always if the giver is eligible for
+		// download, which is the case with Score >= 0 or capacity > 0. Notice that the MIN_CAPACITY
+		// variable it checks w.r.t. the hints is set to 0 instead of 1 if the legacy
+		// IdentityFetcher is enabled, thus allowing identities which merely have a positive Score).
 		// Before this class here was deprecated in favor of the new IdentityDownloader
 		// implementations, XMLTransformer used to only pass edition hints if the giver had a
 		// positive Score - NOT if it merely had a positive capacity.
