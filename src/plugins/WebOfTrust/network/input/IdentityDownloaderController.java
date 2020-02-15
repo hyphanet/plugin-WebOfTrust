@@ -43,7 +43,7 @@ import freenet.pluginmanager.PluginRespirator;
  * to check the flag because the callbacks to all IdentityDownloader implementations are passed
  * through this class so we only need the assert()s once here, not everywhere where the callbacks
  * are called.  
- * The bugtracker entry for introducing the flag is:
+ * The bugtracker entry which will likely result in introduction of the flag is:
  * https://bugs.freenetproject.org/view.php?id=6848
  *
  * @see IdentityDownloaderFast
