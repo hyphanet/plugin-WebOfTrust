@@ -36,7 +36,7 @@ import freenet.pluginmanager.PluginRespirator;
  * Currently importing changed Trusts and updating the Scores from them happens in a single database
  * transaction, and it is likely that this will be split into two separate transactions in the
  * future to reduce the time important locks are blocked. This will imply the creation of a
- * "boolean scoreDatabaseIsOutdated" flag in the database to ensure Scores get updated after Trusts
+ * "boolean mScoreDatabaseIsOutdated" flag in the database to ensure Scores get updated after Trusts
  * have been changed - and such a flag will be precisely what we could use to test if the callbacks
  * are indeed only called if the Score database is OK.  
  * So once such a flag exists add assert()s in this class here to check it. It is the ideal place
