@@ -975,7 +975,7 @@ public final class IdentityDownloaderFast implements
 			}
 		}
 		
-		// As an optimization he value of maybeWouldDownloadNow was for now computed only
+		// As an optimization the value of maybeWouldDownloadNow was for now computed only
 		// considering the single Trust we are looking at here. So even if doesn't justify
 		// downloading the Identity a Trust of another OwnIdentity may justify downloading it, so to
 		// validate the imprecise preliminary value we must now using the more expensive
