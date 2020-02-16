@@ -355,7 +355,7 @@ final class IdentityFileDiskQueue implements IdentityFileQueue {
 				// filename which may happen after we've returned but before our caller has closed
 				// the stream we return:
 				// Moving it ensures InputStreamWithCleanup cannot wrongly delete such concurrently
-				// downloaded newer editions upon close().
+				// downloaded newer editions upon close() just because their filename matches.
 				// It also prevents the file from being returned by the next call to poll() again in
 				// case processing fails fatally - that guarantees a single bogus file cannot
 				// permanently block processing by always being returned by poll().
