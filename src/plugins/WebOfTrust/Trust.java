@@ -298,9 +298,9 @@ public final class Trust extends Persistent implements ReallyCloneable<Trust>, E
 		mLastChangedDate = (Date)mCreationDate.clone();	// Clone it because date is mutable
 		
 		mTrusterTrustListEdition = truster.getRawEdition(); 
-		// FIXME: Populate with the edition hint received by the truster. Or maybe require the
-		// XMLTransformer to call setTrusteeTrustListEdition() so we don't have to adapt all
-		// callers of this constructor?
+		// FIXME: Consume as argument so callers cannot forget to pass it, some already do!
+		// Notice that some current callers have already been changed to call
+		// setTrusteeEdition(), those calls can be removed then.
 		mTrusteeTrustListEdition = -1;
 	}
 	
