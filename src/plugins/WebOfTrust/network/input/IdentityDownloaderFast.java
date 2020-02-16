@@ -1227,21 +1227,31 @@ public final class IdentityDownloaderFast implements
 		/** Must be called while synchronized on {@link #mWoT} and {@link #mLock}. */
 		private boolean testSelf() {
 			// Determine all downloads which should be running
+			
 			IdentifierHashSet<Identity> allToDownload = new IdentifierHashSet<>();
 			for(OwnIdentity i : mWoT.getAllOwnIdentities()) {
-				// OwnIdentitys are always eligible for download for the purpose of
-				// WebOfTrust.restoreOwnIdentity() as demanded by IdentityDownloaderFast's JavaDoc.
-				// We nevertheless do also check shouldFetchIdentity() to allow disabling of USK
-				// subscriptions by that function once restoring is finished (not implemented yet).
-				if(mWoT.shouldFetchIdentity(i))
-					allToDownload.add(i);
-				
 				for(Trust t : mWoT.getGivenTrusts(i)) {
 					if(t.getValue() >= 0)
 						allToDownload.add(t.getTrustee());
 				}
 			}
-
+			
+			for(OwnIdentity i : mWoT.getAllOwnIdentities()) {
+				// OwnIdentitys are always eligible for download for the purpose of
+				// WebOfTrust.restoreOwnIdentity() as demanded by IdentityDownloaderFast's JavaDoc.
+				// We nevertheless do also check shouldFetchIdentity() to allow disabling of USK
+				// subscriptions by that function once restoring is finished (not implemented yet,
+				// bugtracker entry: https://bugs.freenetproject.org/view.php?id=7129)
+				if(mWoT.shouldFetchIdentity(i))
+					allToDownload.add(i);
+				else {
+					// It may have wrongly been marked as eligible for download from the above loop
+					// which checked the Trusts of other OwnIdentitys, so remove it if
+					// shouldFetchIdentity() said that we shouldn't download it anymore.
+					allToDownload.remove(i);
+				}
+			}
+			
 			// Check "mDownloads.keySet().equals(allToDownload.identifierSet()))", i.e. whether we
 			// are downloading what we should be downloading, plus some more stuff.
 
