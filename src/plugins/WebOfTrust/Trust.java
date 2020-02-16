@@ -471,13 +471,12 @@ public final class Trust extends Persistent implements ReallyCloneable<Trust>, E
 
 	/** @see #getTrusteeEdition() */
 	void setTrusteeEdition(long trusteeEdition) {
-		checkedActivate(1);
-		
 		// A negative edition is valid: It may indicate that the truster wasn't able to download
 		// the trustee yet; he merely has been told that the trustee may exist.
 		// We normalize it to -1 though.
 		trusteeEdition = max(-1, trusteeEdition);
 		
+		checkedActivate(1);
 		if(trusteeEdition < mTrusteeTrustListEdition) {
 			// FIXME: Count this event and punish the identity if it happens too often
 			// FIXME: This may in fact happen legally if the trustee was distrusted and then
