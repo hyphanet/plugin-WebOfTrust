@@ -1245,9 +1245,9 @@ public final class IdentityDownloaderFast implements
 				if(mWoT.shouldFetchIdentity(i))
 					allToDownload.add(i);
 				else {
-					// It may have wrongly been marked as eligible for download from the above loop
-					// which checked the Trusts of other OwnIdentitys, so remove it if
-					// shouldFetchIdentity() said that we shouldn't download it anymore.
+					// It may have been marked as eligible for download by the above loop which
+					// checked the Trusts of other OwnIdentitys but shouldFetchIdentity() might say
+					// that we actually shouldn't download it anymore, so remove it then.
 					allToDownload.remove(i);
 				}
 			}
