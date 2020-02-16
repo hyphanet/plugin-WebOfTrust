@@ -1231,8 +1231,8 @@ public final class IdentityDownloaderFast implements
 			for(OwnIdentity i : mWoT.getAllOwnIdentities()) {
 				// OwnIdentitys are always eligible for download for the purpose of
 				// WebOfTrust.restoreOwnIdentity() as demanded by IdentityDownloaderFast's JavaDoc.
-				// We do also check shouldFetchIdentity() to allow disabling of USK subscriptions by
-				// that function once restoring is finished (not implemented yet).
+				// We nevertheless do also check shouldFetchIdentity() to allow disabling of USK
+				// subscriptions by that function once restoring is finished (not implemented yet).
 				if(mWoT.shouldFetchIdentity(i))
 					allToDownload.add(i);
 				
