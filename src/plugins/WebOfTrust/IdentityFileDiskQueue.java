@@ -351,7 +351,14 @@ final class IdentityFileDiskQueue implements IdentityFileQueue {
 				IdentityFile fileData = IdentityFile.read(queuedFile);
 				
 				// Before we can return the file data, we must move the on-disk file from mQueueDir
-				// to mProcessingDir to prevent it from getting poll()ed again.
+				// to mProcessingDir due to potential download of newer editions with the same
+				// filename which may happen after we've returned but before our caller has closed
+				// the stream we return:
+				// Moving it ensures InputStreamWithCleanup cannot wrongly delete such concurrently
+				// downloaded newer editions upon close().
+				// It also prevents the file from being returned by the next call to poll() again in
+				// case processing fails fatally - that guarantees a single bogus file cannot
+				// permanently block processing by always being returned by poll().
 				File dequeuedFile = new File(mProcessingDir, queuedFile.getName());
 				assert(!dequeuedFile.exists());
 				if(!queuedFile.renameTo(dequeuedFile)) {
