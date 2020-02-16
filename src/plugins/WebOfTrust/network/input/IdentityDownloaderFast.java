@@ -951,7 +951,15 @@ public final class IdentityDownloaderFast implements
 		
 		Identity identity = newTrust != null ? newTrust.getTrustee() : oldTrust.getTrustee();
 
-		// OwnIdentitys are always downloaded, independent of whether someone trusts them.
+		// Starting and stopping the download of OwnIdentitys is not decided by Trust values
+		// as they're eligible for download merely if the user wants to restore them from the
+		// network, even if nobody trusts them, so we need not to do anything and let
+		// storePostRestoreOwnIdentityCommandWithoutCommit() handle it instead.
+		// We also *must* not do anything because in the future it shall be possible to disable
+		// the download of OwnIdentitys once restoring is finished, see
+		// https://bugs.freenetproject.org/view.php?id=7129, so if we did not return here then
+		// this function might wrongly start the download if they've received a Trust from another
+		// OwnIdentity.
 		if(identity instanceof OwnIdentity)
 			return;
 		
