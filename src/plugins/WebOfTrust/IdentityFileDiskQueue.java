@@ -459,6 +459,9 @@ final class IdentityFileDiskQueue implements IdentityFileQueue {
 		
 		/** Must be called while synchronized(IdentityFileDiskQueue.this) */
 		private void deleteFile() {
+			if(logMINOR)
+				Logger.minor(this, "deleteFile() started for " + mSourceFile);
+			
 			++mStatistics.mFinishedFiles;
 			
 			if(mSourceFile.delete())
@@ -468,10 +471,16 @@ final class IdentityFileDiskQueue implements IdentityFileQueue {
 			
 			assert(mStatistics.checkConsistency());
 			assert(checkDiskConsistency());
+			
+			if(logMINOR)
+				Logger.minor(this, "deleteFile() finished for " + mSourceFile);
 		}
 
 		/** Must be called while synchronized(IdentityFileDiskQueue.this) */
 		private void archiveFile() {
+			if(logMINOR)
+				Logger.minor(this, "archiveFile() started for " + mSourceFile);
+			
 			File moveTo = getAndReserveFinishedFilename(mSourceURI);
 
 			assert(mSourceFile.exists());
@@ -493,6 +502,9 @@ final class IdentityFileDiskQueue implements IdentityFileQueue {
 			
 			assert(mStatistics.checkConsistency());
 			assert(checkDiskConsistency());
+			
+			if(logMINOR)
+				Logger.minor(this, "archiveFile() finished for " + mSourceFile);
 		}
 	}
 
