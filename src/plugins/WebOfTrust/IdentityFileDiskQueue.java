@@ -197,6 +197,17 @@ final class IdentityFileDiskQueue implements IdentityFileQueue {
 		Logger.normal(this, "cleanDirectories(): Finished.");
 	}
 
+	/** FIXME: This won't work if {@link #mDeduplicationEnabled} is false! Just get rid of the
+	 *  possibility to disable it, the {@link IdentityFetcher#DEBUG__NETWORK_DUMP_MODE} didn't
+	 *  work as intended anyway and IdentityFetcher itself is a legacy class now.
+	 *  FIXME: @Override once the parent interface specifies it. */
+	public synchronized boolean containsAnyEdition(FreenetURI uri) {
+		// TODO: Performance: Avoid computing the filename from the URI twice by replacing
+		// get*Filename() with a single call to compute the filename without the dir, and then
+		// constructing two new File(dir, filename) for the two dirs.
+		return getQueueFilename(uri).exists() || getProcessingDirFilename(uri).exists();
+	}
+
 	// FIXME: This sometimes gets called a long time after WoT has been terminated, which indicates
 	// the new IdentityDownloaderFast/Slow don't terminate properly.
 	// - Caught by then failing in assert(checkDiskConsistency()) in this function.
@@ -323,6 +334,10 @@ final class IdentityFileDiskQueue implements IdentityFileQueue {
 								getEncodedIdentityID(identityFileURI),
 								identityFileURI.getEdition()));	
 		}
+	}
+
+	private File getProcessingDirFilename(FreenetURI identityFileURI) {
+		return new File(mProcessingDir, getQueueFilename(identityFileURI).getName());
 	}
 
 	private String getEncodedIdentityID(FreenetURI identityURI) {
