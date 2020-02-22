@@ -136,6 +136,11 @@ final class IdentityFileMemoryQueue implements IdentityFileQueue {
 		}
 	}
 
+	@Override public synchronized int getSize() {
+		assert(mStatistics.mQueuedFiles == mQueue.size());
+		return mStatistics.mQueuedFiles;
+	}
+
 	@Override public synchronized void registerEventHandler(BackgroundJob handler) {
 		if(mEventHandler != null) {
 			throw new UnsupportedOperationException(
@@ -166,4 +171,5 @@ final class IdentityFileMemoryQueue implements IdentityFileQueue {
 	}
 
 	@Override public void stop() { }
+
 }

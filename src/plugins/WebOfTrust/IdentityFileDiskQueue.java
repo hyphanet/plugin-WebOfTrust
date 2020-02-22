@@ -430,6 +430,11 @@ final class IdentityFileDiskQueue implements IdentityFileQueue {
 		return null; // Queue is empty
 	}
 
+	@Override public synchronized int getSize() {
+		assert(mStatistics.mQueuedFiles == mQueueDir.listFiles().length);
+		return mStatistics.mQueuedFiles;
+	}
+
 	/**
 	 * When we return {@link IdentityFileStream} objects from {@link IdentityFileDiskQueue#poll()},
 	 * we wrap their {@link InputStream} in this wrapper. Its purpose is to hook {@link #close()} to

@@ -92,6 +92,10 @@ public interface IdentityFileQueue {
 	 * closed before you call {@link #poll()} the next time.*/
 	public IdentityFileStream poll();
 
+	/** Gets the number of files available for {@link #poll()}.
+	 *  It is safe to use poll() without checking for the size to be non-zero before. */
+	public int getSize();
+
 	/**
 	 * Registers a {@link BackgroundJob} whose {@link BackgroundJob#triggerExecution()} shall be
 	 * called by the queue once an element is available for the job to {@link #poll()}.<br><br>
