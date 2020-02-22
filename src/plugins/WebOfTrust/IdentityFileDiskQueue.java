@@ -201,7 +201,7 @@ final class IdentityFileDiskQueue implements IdentityFileQueue {
 	 *  possibility to disable it, the {@link IdentityFetcher#DEBUG__NETWORK_DUMP_MODE} didn't
 	 *  work as intended anyway and IdentityFetcher itself is a legacy class now.
 	 *  FIXME: @Override once the parent interface specifies it. */
-	public synchronized boolean containsAnyEdition(FreenetURI uri) {
+	public synchronized boolean containsAnyEditionOf(FreenetURI uri) {
 		// TODO: Performance: Avoid computing the filename from the URI twice by replacing
 		// get*Filename() with a single call to compute the filename without the dir, and then
 		// constructing two new File(dir, filename) for the two dirs.
