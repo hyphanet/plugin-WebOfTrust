@@ -41,6 +41,10 @@ final class IdentityFileMemoryQueue implements IdentityFileQueue {
 			"IdentityFileMemoryQueue.containsAnyEditionOf() is slow, only use it in unit tests! " +
 			"Use IdentityFileDiskQueue in normal operation instead.", new RuntimeException());
 		
+		// FIXME: In opposite to IdentityFileDiksQueue.contains*(), this will NOT return true while
+		// the file is being processed! Determine if this causes any breakage of tests.
+		// Notice that there is a related FIXME at IdentityFileDiskQueue.contains*() which requests
+		// consideration of removal of the check if a file is being processed.
 		for(IdentityFile f : mQueue) {
 			if(f.getURI().equalsKeypair(identityFileURI))
 				return true;
