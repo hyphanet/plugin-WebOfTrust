@@ -7,6 +7,7 @@ import java.io.ByteArrayInputStream;
 import java.io.IOException;
 import java.util.LinkedList;
 
+import freenet.keys.FreenetURI;
 import freenet.support.CurrentTimeUTC;
 import freenet.support.Logger;
 import plugins.WebOfTrust.util.Pair;
@@ -33,6 +34,20 @@ final class IdentityFileMemoryQueue implements IdentityFileQueue {
 
 	private BackgroundJob mEventHandler;
 
+	/** FIXME: Add @Override once the parent interface contains this function. */
+	public synchronized boolean containsAnyEditionOf(FreenetURI uri) {
+		// FIXME: Performance: Investigate the impact upon tests of this.
+		Logger.warning(this,
+			"IdentityFileMemoryQueue.containsAnyEditionOf() is slow, only use it in unit tests! " +
+			"Use IdentityFileDiskQueue in normal operation instead.", new RuntimeException());
+		
+		for(IdentityFile f : mQueue) {
+			if(f.getURI().equalsKeypair(uri))
+				return true;
+		}
+		
+		return false;
+	}
 
 	@Override public synchronized void add(IdentityFileStream file) {
 		try {
