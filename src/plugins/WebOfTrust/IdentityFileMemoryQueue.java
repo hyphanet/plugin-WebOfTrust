@@ -34,8 +34,8 @@ final class IdentityFileMemoryQueue implements IdentityFileQueue {
 
 	private BackgroundJob mEventHandler;
 
-	/** FIXME: Add @Override once the parent interface contains this function. */
-	public synchronized boolean containsAnyEditionOf(FreenetURI identityFileURI) {
+
+	@Override public synchronized boolean containsAnyEditionOf(FreenetURI identityFileURI) {
 		// FIXME: Performance: Investigate the impact upon tests of this.
 		Logger.warning(this,
 			"IdentityFileMemoryQueue.containsAnyEditionOf() is slow, only use it in unit tests! " +
