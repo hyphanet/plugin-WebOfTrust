@@ -201,11 +201,12 @@ final class IdentityFileDiskQueue implements IdentityFileQueue {
 	 *  possibility to disable it, the {@link IdentityFetcher#DEBUG__NETWORK_DUMP_MODE} didn't
 	 *  work as intended anyway and IdentityFetcher itself is a legacy class now.
 	 *  FIXME: @Override once the parent interface specifies it. */
-	public synchronized boolean containsAnyEditionOf(FreenetURI uri) {
+	public synchronized boolean containsAnyEditionOf(FreenetURI identityFileURI) {
 		// TODO: Performance: Avoid computing the filename from the URI twice by replacing
 		// get*Filename() with a single call to compute the filename without the dir, and then
 		// constructing two new File(dir, filename) for the two dirs.
-		return getQueueFilename(uri).exists() || getProcessingDirFilename(uri).exists();
+		return getQueueFilename(identityFileURI).exists()
+		    || getProcessingDirFilename(identityFileURI).exists();
 	}
 
 	// FIXME: This sometimes gets called a long time after WoT has been terminated, which indicates
