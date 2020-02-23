@@ -730,6 +730,7 @@ public final class XMLTransformer {
 						mWoT.finishTrustListImport();
 					
 					mSubscriptionManager.storeIdentityChangedNotificationWithoutCommit(oldIdentity, identity);
+					mWoT.getIdentityDownloaderController().onNewEditionImported(identity);
 					identity.storeAndCommit();
 				}
 				catch(Exception e) { 

@@ -162,6 +162,11 @@ public final class IdentityDownloaderController implements IdentityDownloader, D
 			d.storeNewEditionHintCommandWithoutCommit(hint);
 	}
 
+	@Override public void onNewEditionImported(Identity identity) {
+		for(IdentityDownloader d : mDownloaders)
+			d.onNewEditionImported(identity);
+	}
+
 	@Override public boolean getShouldFetchState(Identity identity) {
 		// FIXME: This being used for the function's intended usage purpose of detecting whether an
 		// Identity is not being downloaded even though it should be is insufficient:
@@ -247,4 +252,5 @@ public final class IdentityDownloaderController implements IdentityDownloader, D
 		for(IdentityDownloader d : mDownloaders)
 			d.scheduleImmediateCommandProcessing();
 	}
+
 }

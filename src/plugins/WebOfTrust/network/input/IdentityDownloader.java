@@ -443,6 +443,23 @@ public interface IdentityDownloader extends Daemon {
 	void storeNewEditionHintCommandWithoutCommit(EditionHint hint);
 
 	/**
+	 * Called by the {@link XMLTransformer} after we've finished importing a new edition of an
+	 * {@link Identity} (which has been downloaded by an IdentityDownloader implementation before
+	 * import).  
+	 * The edition can be obtained from {@link Identity#getLastFetchedEdition()}.
+	 * 
+	 * Typically used by the {@link IdentityDownloaderSlow} to delete {@link EditionHint}s which
+	 * have become obsolete by knowing that the imported edition exists for sure.
+	 * 
+	 * Synchronization:
+	 * This function is guaranteed to be called while the following locks are being held in the
+	 * given order:
+	 * synchronized(Instance of WebOfTrust)
+	 * synchronized(WebOfTrust.getIdentityDownloaderController())
+	 * synchronized(Persistent.transactionLock(WebOfTrust.getDatabase())) */
+	@NeedsTransaction void onNewEditionImported(Identity identity);
+
+	/**
 	 * ATTENTION: For debugging purposes only.
 	 * 
 	 * Returns the effective state of whether the downloader will download an {@link Identity}

@@ -1463,6 +1463,11 @@ public final class IdentityDownloaderFast implements
 		}
 	}
 
+	@Override public void onNewEditionImported(Identity identity) {
+		// This callback is intentionally unused, it was added to the parent interface for the
+		// purposes of IdentityDownloaderSlow.
+	}
+
 	@Override public boolean getShouldFetchState(Identity identity) {
 		// Will implicitly check for contradicting commands, i.e. both StartDownloadCommand
 		// and StopDownloadCommand existing at once, or duplicate commands, and throw upon that.

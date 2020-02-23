@@ -869,6 +869,10 @@ public final class IdentityDownloaderSlow implements
 		}
 	}
 
+	@Override public void onNewEditionImported(Identity identity) {
+		// FIXME: Implement as part of resolving the large FIXME in onSuccess().
+	}
+
 	@Override public void onFailure(FetchException e, ClientGetter state) {
 		FreenetURI uri = null;
 		

@@ -1095,4 +1095,10 @@ public final class IdentityFetcher implements
 			Closer.close(bucket);
 		}
 	}
+
+	@Override public void onNewEditionImported(Identity identity) {
+		// This callback is intentionally unused because it was added after the class was already
+		// deprecated.
+	}
+
 }
