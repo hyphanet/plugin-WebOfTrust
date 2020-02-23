@@ -745,6 +745,8 @@ public final class XMLTransformer {
 		} // synchronized(mWoT)
 		} // try
 		catch(Exception e) {
+			// FIXME: Also call onNewEditionImported() here. Add a synchronized(transactionLock)
+			// block and fix the try/catch to rollback upon exceptions.
 			synchronized(mWoT) {
 			// synchronized(mSubscriptionManager) { // We don't use the SubscriptionManager, see below
 			synchronized(mWoT.getIdentityFetcher()) {
