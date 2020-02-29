@@ -750,6 +750,13 @@ public final class XMLTransformer {
 			synchronized(mWoT) {
 			// synchronized(mSubscriptionManager) { // We don't use the SubscriptionManager, see below
 			synchronized(mWoT.getIdentityFetcher()) {
+				// FIXME: build0020 lacked a try/catch block to rollback the transaction upon error
+				// even though the old version of this code block also did multiple modifications to
+				// the Identity object and thus the database could become inconsistent if something
+				// threw in between!
+				// Do a test run of fetching the whole WoT with the old build and see if it threw
+				// in practice. If yes we'll have to write code to repair old databases. If not we
+				// may choose to neglect that.
 				try {
 					final Identity identity = mWoT.getIdentityByURI(identityURI);
 					final long newEdition = identityURI.getEdition();
@@ -771,11 +778,12 @@ public final class XMLTransformer {
 						  + "edition: " + newEdition + "; " + identity);
 					}
 					Logger.warning(this, "Parsing identity XML failed gracefully for " + identityURI, e);
+				} catch(RuntimeException | Error | UnknownIdentityException doubleFault) {
+					Logger.error(this,
+						"Parsing identity XML failed and marking the edition as ParsingFailed " +
+						"also failed! URI: " + identityURI, doubleFault);
+					Persistent.checkedRollback(mDB, this, doubleFault);
 				}
-				catch(UnknownIdentityException uie) {
-					Logger.error(this, "Parsing identity XML failed and marking the edition as ParsingFailed also did not work - UnknownIdentityException for: "
-							+ identityURI, e);
-				}	
 			}
 			}
 		}
