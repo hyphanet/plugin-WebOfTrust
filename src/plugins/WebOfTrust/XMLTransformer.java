@@ -750,6 +750,7 @@ public final class XMLTransformer {
 			synchronized(mWoT) {
 			// synchronized(mSubscriptionManager) { // We don't use the SubscriptionManager, see below
 			synchronized(mWoT.getIdentityFetcher()) {
+			synchronized(Persistent.transactionLock(mDB) ) {
 				// FIXME: build0020 lacked a try/catch block to rollback the transaction upon error
 				// even though the old version of this code block also did multiple modifications to
 				// the Identity object and thus the database could become inconsistent if something
@@ -757,6 +758,14 @@ public final class XMLTransformer {
 				// Do a test run of fetching the whole WoT with the old build and see if it threw
 				// in practice. If yes we'll have to write code to repair old databases. If not we
 				// may choose to neglect that.
+				// build0020 also lacked the synchronized(Persistent.transactionLock(mDB)), probably
+				// because Identity.storeAndCommit() contains one. Think about whether that was
+				// sufficient - though the random havoc this could have caused if it weren't
+				// probably isn't fixable by database repair code because it would be too random.
+				// It's likely that the lack of locking wasn't a big issue anyway because IIRC the
+				// only thread of build0020 which isn't synchronized(mWoT) during transactions is
+				// the SubscriptionManager, and AFAIK there are no client apps using it yet so its
+				// thread typically doesn't do anything.
 				try {
 					final Identity identity = mWoT.getIdentityByURI(identityURI);
 					final long newEdition = identityURI.getEdition();
@@ -784,6 +793,7 @@ public final class XMLTransformer {
 						"also failed! URI: " + identityURI, doubleFault);
 					Persistent.checkedRollback(mDB, this, doubleFault);
 				}
+			}
 			}
 			}
 		}
