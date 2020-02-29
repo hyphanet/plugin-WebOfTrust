@@ -746,8 +746,8 @@ public final class XMLTransformer {
 		} // try
 		catch(Exception e) {
 			synchronized(mWoT) {
-			// synchronized(mSubscriptionManager) { // We don't use the SubscriptionManager, see below
 			synchronized(mWoT.getIdentityDownloaderController()) {
+			// synchronized(mSubscriptionManager) { // We don't use the SubscriptionManager, see below
 			synchronized(Persistent.transactionLock(mDB) ) {
 				// FIXME: build0020 lacked a try/catch block to rollback the transaction upon error
 				// even though the old version of this code block also did multiple modifications to
