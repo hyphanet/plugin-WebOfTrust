@@ -745,8 +745,6 @@ public final class XMLTransformer {
 		} // synchronized(mWoT)
 		} // try
 		catch(Exception e) {
-			// FIXME: Also call onNewEditionImported() here. Add a synchronized(transactionLock)
-			// block and fix the try/catch to rollback upon exceptions.
 			synchronized(mWoT) {
 			// synchronized(mSubscriptionManager) { // We don't use the SubscriptionManager, see below
 			synchronized(mWoT.getIdentityFetcher()) {
@@ -769,10 +767,17 @@ public final class XMLTransformer {
 				try {
 					final Identity identity = mWoT.getIdentityByURI(identityURI);
 					final long newEdition = identityURI.getEdition();
+					// TODO: Code quality: We can likely remove the if/else and just run the code
+					// inside the if-block because IIRC onFetchedAndParsingFailed() throws if the
+					// edition is higher.
 					if(newEdition > identity.getLastFetchedEdition()) {
 						Logger.normal(this, "Marking edition as parsing failed: " + identityURI);
 						identity.onFetchedAndParsingFailed(newEdition);
+						
 						// We don't notify the SubscriptionManager here since there is not really any new information about the identity because parsing failed.
+						
+						mWoT.getIdentityDownloaderController().onNewEditionImported(identity);
+						
 						identity.storeAndCommit();
 					} else {
 						// This is bad:
