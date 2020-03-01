@@ -885,7 +885,7 @@ public final class IdentityDownloaderSlow implements
 				
 				// Someone gave us a fake EditionHint to an edition which doesn't actually exist
 				// -> Doesn't make sense to retry.
-				deleteEditionHints(uri, false, e);
+				dequeueNotDownloadableEdition(uri, e);
 				
 				// FIXME: Punish the publisher of the bogus hint
 			} else if(e.getMode() == FetchExceptionMode.CANCELLED) {
@@ -899,7 +899,7 @@ public final class IdentityDownloaderSlow implements
 				
 				// isDefinitelyFatal() includes post-download problems such as errors in the archive
 				// metadata so we must delete the hint to ensure it doesn't clog the download queue.
-				deleteEditionHints(uri, false, e);
+				dequeueNotDownloadableEdition(uri, e);
 			} else if(e.isFatal()) {
 				Logger.error(this, "Download failed fatally: " + uri, e);
 				
@@ -936,6 +936,10 @@ public final class IdentityDownloaderSlow implements
 					mDownloadSchedulerThread.triggerExecution(0);
 			}
 		}
+	}
+
+	private void dequeueNotDownloadableEdition(FreenetURI uri, FetchException e) {
+		deleteEditionHints(uri, false, e);
 	}
 
 	/**
