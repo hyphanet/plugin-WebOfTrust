@@ -127,6 +127,14 @@ public abstract class Persistent implements Serializable {
 	 *     }
 	 * }}
 	 * 
+	 * NOTICE:  
+	 * Implementations of functions which have this annotation **must not** commit the transaction.  
+	 * They are allowed to rollback the transaction as long as they do throw an exception as
+	 * part of that, e.g. using {@link Persistent#checkedRollbackAndThrow(ExtObjectContainer,
+	 * Object, RuntimeException)}, although only throwing is the recommended approach.  
+	 * These requirements ensure the functions don't wrongly commit/rollback only parts of the
+	 * externally managed transaction which would break consistency of the database.
+	 * 
 	 * NOTICE: This annotation was only recently introduced to prepare replacing the "WithoutCommit"
 	 * suffix on many functions with it. Many functions will still have the suffix instead of
 	 * this annotation, and some may have neither the annotation nor the suffix.
