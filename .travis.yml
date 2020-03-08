@@ -9,7 +9,7 @@ sudo: false
 env:
   global:
     # NOTICE: A hardcoded copy of this value exists at "matrix:", when updating also change that!
-    - FREENET_MINIMUM_JAVA_VERSION=7
+    - FREENET_MINIMUM_JAVA_VERSION=8
 
 addons:
   apt:
@@ -55,11 +55,6 @@ install:
 before_script: |
   if [ "$FRED_UPDATED" = 1 ] ; then
     cd "$TRAVIS_BUILD_DIR"/../fred &&
-    # The gradlew binary which fred ships doesn't work on OpenJDK 7, need to use Travis' gradle there.
-    if [ "$TRAVIS_JDK_VERSION" = "openjdk7" ] ; then
-      rm ./gradlew &&
-      ln -s "$(which gradle)" ./gradlew
-    fi &&
     # TODO: freenet.jar won't contain class Version if we don't run the
     # clean task in a separate execution of Gradle. I.e. this wouldn't work:
     #   $ gradle clean jar
@@ -117,9 +112,8 @@ matrix:
     - env: FRED=master BUILDER=gradle DEPLOY=1
       # Travis doesn't support this yet so we will hardcode it:
       ## jdk: openjdk$FREENET_MINIMUM_JAVA_VERSION
-      jdk: openjdk7
+      jdk: openjdk8
 
-    # jdk: openjdk7: Java 7 is not supported on fred branch next anymore.
     - jdk: openjdk8
       # Still use Ant on one Java version to ensure it keeps working.
       # Don't use it on the above job because deployment happens there which is slow, just like Ant
@@ -131,7 +125,6 @@ matrix:
     - jdk: openjdk12
     - jdk: openjdk13
     - jdk: openjdk14
-    # oraclejdk7: Not supported anymore: https://github.com/travis-ci/travis-ci/issues/7884#issuecomment-308451879
     # oraclejdk8: Disabled to keep the build matrix small.
     # oraclejdk9: No more updates by Oracle: https://www.oracle.com/technetwork/java/java-se-support-roadmap.html
     # oraclejdk10: Not supported anymore: https://changelog.travis-ci.com/stop-a-job-early-if-a-deprecated-jdk-is-configured-76612
