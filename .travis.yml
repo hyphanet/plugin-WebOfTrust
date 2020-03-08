@@ -9,7 +9,7 @@ sudo: false
 env:
   global:
     # NOTICE: A hardcoded copy of this value exists at "matrix:", when updating also change that!
-    - FREENET_MINIMUM_JAVA_VERSION=7
+    - FREENET_MINIMUM_JAVA_VERSION=8
 
 addons:
   apt:
@@ -117,7 +117,7 @@ matrix:
     - env: FRED=master BUILDER=gradle DEPLOY=1
       # Travis doesn't support this yet so we will hardcode it:
       ## jdk: openjdk$FREENET_MINIMUM_JAVA_VERSION
-      jdk: openjdk7
+      jdk: openjdk8
 
     # jdk: openjdk7: Java 7 is not supported on fred branch next anymore.
     - jdk: openjdk8
