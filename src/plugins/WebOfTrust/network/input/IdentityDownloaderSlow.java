@@ -756,6 +756,10 @@ public final class IdentityDownloaderSlow implements
 	}
 
 	@Override public void onSuccess(FetchResult result, ClientGetter state) {
+		// Count it before doing anything else to ensure breakage in the processing is apparent in
+		// mismatching numbers on the web interface.
+		++mSucceededDownloads;
+		
 		FreenetURI uri = null;
 		Bucket bucket = null;
 		InputStream inputStream = null;
@@ -1030,7 +1034,6 @@ public final class IdentityDownloaderSlow implements
 				// onFailure() instead probably, but take the above comment w.r.t. to transactions
 				// into consideration first.
 				if(downloadSucceeded) {
-					++mSucceededDownloads;
 					if(deleted > 1)
 						mSkippedDownloads += deleted - 1;
 				} else {
