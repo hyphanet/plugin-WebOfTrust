@@ -756,7 +756,7 @@ public final class IdentityDownloaderSlow implements
 	}
 
 	@Override public void onSuccess(FetchResult result, ClientGetter state) {
-		// Count it before doing anything else to ensure breakage in the processing is apparent in
+		// Count it before doing anything else to ensure breakage in the processing is apparent by
 		// mismatching numbers on the web interface.
 		++mSucceededDownloads;
 		
@@ -957,8 +957,7 @@ public final class IdentityDownloaderSlow implements
 	 * If downloadSucceeded == true, deletes all {@link EditionHint}s with:
 	 *      EditionHint.getTargetIdentity() == WebOfTrust.getIdentityByURI(uri)
 	 *   && EditionHint.getEdition() <= uri.getEdition() 
-	 * and increments {@link #mSucceededDownloads} and increases {@link #mSkippedDownloads}
-	 * accordingly.
+	 * and increases {@link #mSkippedDownloads} accordingly.
 	 */
 	private void deleteEditionHints(
 			FreenetURI uri, boolean downloadSucceeded, FetchException failureReason) {
@@ -981,16 +980,8 @@ public final class IdentityDownloaderSlow implements
 					
 					// The Identity having been deleted means it was distrusted which means we don't
 					// want to download it anymore so there's no point in counting the attempt.
-					// However that only applies to failed attempts:
-					// Succeeded attempts will already have resulted in our caller onSuccess()
-					// having enqueued an IdentityFile for processing at the IdentityFileQueue.
-					// It would be confusing for readers of its statistics if there were more files
-					// enqueued than the IdentityDownloaderSlow statistics report as having been
-					// downloaded.
-					if(downloadSucceeded)
-						++mSucceededDownloads;
 					/*
-					else {
+					if(!downloadSucceeded) {
 						++mFailedPermanentlyDownloads;
 						if(failureReason.isDNF())
 							++mDataNotFoundDownloads;
