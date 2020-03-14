@@ -758,7 +758,9 @@ public final class IdentityDownloaderSlow implements
 	@Override public void onSuccess(FetchResult result, ClientGetter state) {
 		// Count it before doing anything else to ensure breakage in the processing is apparent by
 		// mismatching numbers on the web interface.
-		++mSucceededDownloads;
+		synchronized(mLock) {
+			++mSucceededDownloads;
+		}
 		
 		FreenetURI uri = null;
 		Bucket bucket = null;
