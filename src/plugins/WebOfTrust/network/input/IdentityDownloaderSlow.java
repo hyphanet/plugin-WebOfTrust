@@ -891,6 +891,10 @@ public final class IdentityDownloaderSlow implements
 				
 				// Someone gave us a fake EditionHint to an edition which doesn't actually exist
 				// -> Doesn't make sense to retry.
+				synchronized(mLock) {
+					++mFailedPermanentlyDownloads;
+					++mDataNotFoundDownloads;
+				}
 				dequeueNotDownloadableEdition(uri, e);
 				
 				// FIXME: Punish the publisher of the bogus hint
@@ -905,6 +909,9 @@ public final class IdentityDownloaderSlow implements
 				
 				// isDefinitelyFatal() includes post-download problems such as errors in the archive
 				// metadata so we must delete the hint to ensure it doesn't clog the download queue.
+				synchronized(mLock) {
+					++mFailedPermanentlyDownloads;
+				}
 				dequeueNotDownloadableEdition(uri, e);
 			} else if(e.isFatal()) {
 				Logger.error(this, "Download failed fatally: " + uri, e);
@@ -982,16 +989,6 @@ public final class IdentityDownloaderSlow implements
 					// No need to delete anything or throw an exception:
 					// The hints will already have been deleted when the Identity was deleted.
 					
-					// The Identity having been deleted means it was distrusted which means we don't
-					// want to download it anymore so there's no point in counting the attempt.
-					/*
-					if(!downloadSucceeded) {
-						++mFailedPermanentlyDownloads;
-						if(failureReason.isDNF())
-							++mDataNotFoundDownloads;
-					}
-					*/
-					
 					return;
 				}
 				
@@ -1031,10 +1028,6 @@ public final class IdentityDownloaderSlow implements
 				if(downloadSucceeded) {
 					if(deleted > 1)
 						mSkippedDownloads += deleted - 1;
-				} else {
-					++mFailedPermanentlyDownloads;
-					if(failureReason.isDNF())
-						++mDataNotFoundDownloads;
 				}
 			} catch(RuntimeException e) {
 				Persistent.checkedRollbackAndThrow(mDB, this, e);
