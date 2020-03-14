@@ -1010,9 +1010,20 @@ public final class IdentityDownloaderSlow implements
 					++deleted;
 				}
 				// FIXME: Fails being 0, when called from onSuccess(), with
-				// downloadSucceeded == true, failureReason == null. Perhaps the hint(s) were
-				// deleted due to import of a higher edition which we e.g. obtained from the
-				// IdentityDownloaderFast?
+				// downloadSucceeded == true, failureReason == null.
+				// The most likely explanation is that our caller onSuccess() was already running
+				// for the affected edition while the IdentityFileProcessor thread concurrently
+				// started to import a XML which resulted in the deletion of the hint(s) via
+				// e.g. storeNewEditionHintCommandWithoutCommit() or
+				// storeAbortFetchCommandWithoutCommit().
+				// The proper fix is to remove the assert and to replace it with
+				//     assert(h.getEdition() > h.getTargetIdentity().getLastFetchedEdition());
+				// in the download scheduler loop so we have some level of checking if the stored
+				// hints are eligible.
+				// However for that assert to not fail the implementation of onNewEditionImported()
+				// needs to be done first to ensure that hints are always deleted once they become
+				// obsolete. Specifically we currently don't delete them if the
+				// IdentityDownloaderFast fetches an edition.
 				assert(deleted >= 1);
 				
 				Persistent.checkedCommit(mDB, this);
