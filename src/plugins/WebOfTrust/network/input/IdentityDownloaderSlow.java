@@ -938,6 +938,8 @@ public final class IdentityDownloaderSlow implements
 				// so we don't need to introduce additional check here which would get executed
 				// during the whole uptime only for being useful for a finite amount of executions
 				// during shutdown.
+				// FIXME: Use a 60 second delay if the download failed temporarily due to e.g.
+				// no disk space to ensure the download scheduler doesn't busy-loop.
 				if(mDownloads.size() < getMinRunningDownloadCount())
 					mDownloadSchedulerThread.triggerExecution(0);
 			}
