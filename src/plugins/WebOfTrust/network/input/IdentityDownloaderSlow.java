@@ -961,9 +961,6 @@ public final class IdentityDownloaderSlow implements
 	 * If downloadSucceeded == false, deletes all {@link EditionHint}s with:
 	 *      EditionHint.getTargetIdentity() == WebOfTrust.getIdentityByURI(uri)
 	 *   && EditionHint.getEdition() == uri.getEdition()
-	 * and increments {@link #mFailedPermanentlyDownloads}.
-	 * If {@link FetchException#isDNF()} applies to failureReason, {@link #mDataNotFoundDownloads}
-	 * is also incremented.
 	 * 
 	 * If downloadSucceeded == true, deletes all {@link EditionHint}s with:
 	 *      EditionHint.getTargetIdentity() == WebOfTrust.getIdentityByURI(uri)
