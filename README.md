@@ -95,6 +95,10 @@ ant -Dtest.skip=true # With Ant
 gradle -x test       # With Gradle
 # Run a single unit test.
 ant -Dtest.class=plugins.WebOfTrust.CLASSNAME
+# Show test stdout/stderr with Gradle to debug failures, especially by obtaining the test's PRNG
+# seed which can be used to reproduce a run by hardcoding it into the AbstractJUnit3/4BaseTest
+# classes. Ant will show the output by default.
+WOT__SHOW_GRADLE_TEST_OUTPUT=1 gradle test
 # Benchmark all unit tests and produce sorted output to figure out the slowest ones
 tools/benchmark-unit-tests
 # Benchmark a single unit test and produce average runtime to improve it
