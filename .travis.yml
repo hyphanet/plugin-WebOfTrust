@@ -87,7 +87,9 @@ script:
     if [ "$BUILDER" = "ant" ] ; then
         ant clean && ant
     elif [ "$BUILDER" = "gradle" ] ; then
-        ./gradlew clean test jar
+        # NOTICE: "clean" is both necessary to ensure the JAR is clean as well as for the
+        # showStandardStreams to show up to date output!
+        ./gradlew -Doverride.test.testLogging.info.showStandardStreams=true clean test jar
     else false ; fi
   # To test the Ant and Gradle builders against each other uncomment the following.
   ## - tools/compare-gradle-jars-with-ant-jars
