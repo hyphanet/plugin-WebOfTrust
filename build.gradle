@@ -100,9 +100,12 @@ test {
 		
 		// Allow enabling stdout/stderr so developers can obtain random seeds to reproduce failed
 		// test runs.
-		// TODO: Code quality: Have the .travis.yml do this on the command line without requiring
-		// this code here once Travis CI contains a sufficiently recent Gradle for the reverted
-		// commit a095bdf0ccb4dd6fa7b4bed955b46a1773e0b587 to work.
+		// TODO: Code quality: Have developers and .travis.yml do this on the command line without
+		// requiring this code here once Travis CI contains a sufficiently recent Gradle for
+		// "-Doverride.test.testLogging.info.showStandardStreams=true" to work.
+		// Notice that the ".info" may be a typo from the person who posted this to
+		// stackoverflow.com as the working code below does not contain ".info", so you may have to
+		// remove that string.
 		//
 		// Enabling stdout/stderr requires us to tell Gradle to assume that the outputs are
 		// outdated to ensure they are updated even if the user doesn't run the 'clean' target.
