@@ -98,7 +98,8 @@ test {
 		events "passed", "skipped", "failed"
 		exceptionFormat "full"
 		
-		// Allow enabling stdout/stderr to ensure Travis CI's 10 minute build timeout won't hit.
+		// Allow enabling stdout/stderr so developers can obtain random seeds to reproduce failed
+		// test runs.
 		// TODO: Code quality: Have the .travis.yml do this on the command line without requiring
 		// this code here once Travis CI contains a sufficiently recent Gradle for the reverted
 		// commit a095bdf0ccb4dd6fa7b4bed955b46a1773e0b587 to work.

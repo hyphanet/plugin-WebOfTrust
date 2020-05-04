@@ -87,7 +87,8 @@ script:
     if [ "$BUILDER" = "ant" ] ; then
         ant clean && ant
     elif [ "$BUILDER" = "gradle" ] ; then
-        # Show stdout/stderr to prevent 10 minute build timeout from hitting.
+        # Show stdout/stderr so random seeds of failed tests can be obtained by developers to
+        # reproduce failed test runs. Also prevents the 10 minute build timeout.
         WOT__SHOW_GRADLE_TEST_OUTPUT=1 ./gradlew clean test jar
     else false ; fi
   # To test the Ant and Gradle builders against each other uncomment the following.
