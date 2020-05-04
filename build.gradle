@@ -93,7 +93,21 @@ test {
 	]
 	workingDir = "${buildDir}/tmp/testsWorkingDir"
 	doFirst { delete workingDir ; mkdir workingDir }
-	testLogging { events "passed", "skipped", "failed" ; exceptionFormat "full" }
+	
+	testLogging {
+		events "passed", "skipped", "failed"
+		exceptionFormat "full"
+		
+		// Allow enabling stdout/stderr to ensure Travis CI's 10 minute build timeout won't hit.
+		// TODO: Code quality: Have the .travis.yml do this on the command line without requiring
+		// this code here once Travis CI contains a sufficiently recent Gradle for the reverted
+		// commit a095bdf0ccb4dd6fa7b4bed955b46a1773e0b587 to work.
+		//
+		// Enabling stdout/stderr requires us to tell Gradle to assume that the outputs are
+		// outdated to ensure they are updated even if the user doesn't run the 'clean' target.
+		outputs.upToDateWhen { false }
+		testLogging.showStandardStreams = (System.getenv('WOT__SHOW_GRADLE_TEST_OUTPUT') == '1')
+	}
 }
 
 clean {
