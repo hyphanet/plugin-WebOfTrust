@@ -111,7 +111,7 @@ test {
 		// Enabling stdout/stderr requires us to tell Gradle to assume that the outputs are
 		// outdated to ensure they are updated even if the user doesn't run the 'clean' target.
 		outputs.upToDateWhen { false }
-		testLogging.showStandardStreams = (System.getenv('WOT__SHOW_GRADLE_TEST_OUTPUT') == '1')
+		showStandardStreams = (System.getenv('WOT__SHOW_GRADLE_TEST_OUTPUT') == '1')
 	}
 }
 
