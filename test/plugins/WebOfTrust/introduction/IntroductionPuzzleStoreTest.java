@@ -175,10 +175,12 @@ public final class IntroductionPuzzleStoreTest extends AbstractJUnit3BaseTest {
 
 		final List<OwnIntroductionPuzzle> notDeletedPuzzles = generateNewPuzzles(mOwnIdentity);
 		
-		while(CurrentTimeUTC.get().before(expirationDate)) {
+		// deleteExpiredPuzzles() requires the current time to be strictly greater than the
+		// expirationDate for deletion to happen, it must not be merely equal to the expirationDate.
+		// Hence use !after() instead of before() to avoid equality.
+		while(!CurrentTimeUTC.get().after(expirationDate))
 		    Thread.sleep(500);
-		}
-
+		
 		mPuzzleStore.deleteExpiredPuzzles();
 	
 		flushCaches();
