@@ -53,10 +53,15 @@ before_install:
 script: ant
 
 jdk:
-  - oraclejdk9
-  - oraclejdk8
   - openjdk8
-  # openjdk9: As of 2018-05-12 isn't available on Travis yet.
+  - openjdk9
+  - openjdk10
+  - openjdk11
+  - openjdk12
+  - openjdk13
+  - openjdk14
+  - oraclejdk13
+  - oraclejdk14
 
 deploy:
   provider: script
