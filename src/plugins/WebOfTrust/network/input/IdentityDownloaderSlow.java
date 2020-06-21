@@ -858,7 +858,12 @@ public final class IdentityDownloaderSlow implements
 			// Closing the stream deletes the IdentityFile on disk, which would cause the upcoming
 			// IdentityFileDiskQueue.contains() to return false - which in turn would cause the XML
 			// to be downloaded by the IdentityDownloaderSlow again while the import is running.
-			deleteEditionHints(uri, true, null);
+			int deletedHints = deleteEditionHints(uri, true, null);
+			if(deletedHints > 1) {
+				synchronized(mLock) {
+					mSkippedDownloads += deletedHints - 1;
+				}
+			}
 		} catch (IOException | Error | RuntimeException e) {
 			Logger.error(this, "onSuccess(): Failed for URI: " + uri, e);
 		} finally {
@@ -966,8 +971,9 @@ public final class IdentityDownloaderSlow implements
 	 *      EditionHint.getTargetIdentity() == WebOfTrust.getIdentityByURI(uri)
 	 *   && EditionHint.getEdition() <= uri.getEdition() 
 	 * and increases {@link #mSkippedDownloads} accordingly.
-	 */
-	private void deleteEditionHints(
+	 * 
+	 * @return The number of deleted hints. */
+	private int deleteEditionHints(
 			FreenetURI uri, boolean downloadSucceeded, FetchException failureReason) {
 		
 		assert(downloadSucceeded ? failureReason == null : failureReason != null);
@@ -985,8 +991,7 @@ public final class IdentityDownloaderSlow implements
 					
 					// No need to delete anything or throw an exception:
 					// The hints will already have been deleted when the Identity was deleted.
-					
-					return;
+					return 0;
 				}
 				
 				long edition = uri.getEdition();
@@ -1027,18 +1032,11 @@ public final class IdentityDownloaderSlow implements
 				assert(deleted >= 1);
 				
 				Persistent.checkedCommit(mDB, this);
-				// The member variables must be changed after the commit() as this class isn't
-				// stored in the database and thus they won't be rolled back upon failure of the
-				// transaction.
-				// FIXME: Some of the statistics counters should be changed by onSuccess() /
-				// onFailure() instead probably, but take the above comment w.r.t. to transactions
-				// into consideration first.
-				if(downloadSucceeded) {
-					if(deleted > 1)
-						mSkippedDownloads += deleted - 1;
-				}
+				
+				return deleted;
 			} catch(RuntimeException e) {
 				Persistent.checkedRollbackAndThrow(mDB, this, e);
+				return 0; // Won't be executed, only to prevent compiler from asking for a return.
 			} finally {
 				if(logMINOR)
 					Logger.minor(this, "deleteEditionHints() finished.");
