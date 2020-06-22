@@ -29,6 +29,7 @@ import plugins.WebOfTrust.IdentityFileQueue.IdentityFileStream;
 import plugins.WebOfTrust.OwnIdentity;
 import plugins.WebOfTrust.Persistent;
 import plugins.WebOfTrust.Persistent.InitializingObjectSet;
+import plugins.WebOfTrust.Persistent.NeedsTransaction;
 import plugins.WebOfTrust.Score;
 import plugins.WebOfTrust.SubscriptionManager;
 import plugins.WebOfTrust.Trust;
@@ -858,7 +859,7 @@ public final class IdentityDownloaderSlow implements
 			// Closing the stream deletes the IdentityFile on disk, which would cause the upcoming
 			// IdentityFileDiskQueue.contains() to return false - which in turn would cause the XML
 			// to be downloaded by the IdentityDownloaderSlow again while the import is running.
-			int deletedHints = deleteEditionHints(uri, true, null);
+			int deletedHints = deleteEditionHintsAndCommit(uri, true, null);
 			if(deletedHints > 1) {
 				synchronized(mLock) {
 					mSkippedDownloads += deletedHints - 1;
@@ -959,7 +960,30 @@ public final class IdentityDownloaderSlow implements
 	}
 
 	private void dequeueNotDownloadableEdition(FreenetURI uri, FetchException e) {
-		deleteEditionHints(uri, false, e);
+		deleteEditionHintsAndCommit(uri, false, e);
+	}
+
+	/** @see #deleteEditionHints(FreenetURI, boolean, FetchException) */
+	private int deleteEditionHintsAndCommit(
+			FreenetURI uri, boolean downloadSucceeded, FetchException failureReason) {
+		
+		synchronized(mWoT) {
+		synchronized(mLock) {
+		synchronized(Persistent.transactionLock(mDB)) {
+			try {
+				Logger.minor(this, "deleteEditionHintsAndCommit()...");
+				
+				int deletedHints = deleteEditionHints(uri, downloadSucceeded, failureReason);
+				Persistent.checkedCommit(mDB, this);
+				return deletedHints;
+			} catch(RuntimeException e) {
+				Persistent.checkedRollbackAndThrow(mDB, this, e);
+				return 0; // Won't be executed, only to prevent compiler from asking for a return.
+			} finally {
+				if(logMINOR)
+					Logger.minor(this, "deleteEditionHintsAndCommit() finished.");
+			}
+		}}}
 	}
 
 	/**
@@ -972,15 +996,12 @@ public final class IdentityDownloaderSlow implements
 	 *   && EditionHint.getEdition() <= uri.getEdition() 
 	 * 
 	 * @return The number of deleted hints. */
+	@NeedsTransaction
 	private int deleteEditionHints(
 			FreenetURI uri, boolean downloadSucceeded, FetchException failureReason) {
 		
 		assert(downloadSucceeded ? failureReason == null : failureReason != null);
-		
-		synchronized(mWoT) {
-		synchronized(mLock) {
-		synchronized(Persistent.transactionLock(mDB)) {
-			try {
+			
 				Identity i = null;
 				try {
 					i = mWoT.getIdentityByURI(uri);
@@ -1048,19 +1069,8 @@ public final class IdentityDownloaderSlow implements
 				// IdentityDownloaderFast fetches an edition.
 				assert(deleted >= 1);
 				
-				Persistent.checkedCommit(mDB, this);
-				
+				Logger.minor(this, "deleteEditionHints() finished.");
 				return deleted;
-			} catch(RuntimeException e) {
-				Persistent.checkedRollbackAndThrow(mDB, this, e);
-				return 0; // Won't be executed, only to prevent compiler from asking for a return.
-			} finally {
-				if(logMINOR)
-					Logger.minor(this, "deleteEditionHints() finished.");
-			}
-		}
-		}
-		}
 	}
 
 	@Override public void onResume(ClientContext context) throws ResumeFailedException {
