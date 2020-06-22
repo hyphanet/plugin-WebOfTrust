@@ -1007,6 +1007,23 @@ public final class IdentityDownloaderSlow implements
 				// Even if we store multiple hints for an edition we will only try downloading it
 				// once as on the first successful download this function here will delete the
 				// other hints pointing to it. Thus exclude the duplicates in this counter.
+				// EDIT: Our goal behind counting skipped downloads is to judge the efficiency of
+				// IdentityDownloaderSlow. Maybe just use a different, more easy to compute metric
+				// for that:
+				// Inefficiency = (Total number of downloads and download attempts)
+				//              / (Total number of identities for which we have downloaded at least
+				//                 one XML)
+				//              = Number of downloads&attempts we need for each identity
+				// Both numbers involved in that calculation can trivially be calculated:
+				// - Number of download attempts can be counted by the download scheduler.
+				// - Number of IDs is a database query
+				// The only downside of this metric is that it is only accurate for fresh
+				// databases / bootstrapping: As the database grows older pre-existing identities
+				// will continue to publish new editions which we obviously have to download to stay
+				// up-to-date, but they will increase the ineffciency anyway.
+				// But we can explain this on the StatisticsPage more easily than the issue with
+				// mSkippedDownloads.
+				// Perhaps just provide both metrics anyway though.
 				int deleted = 0;
 				for(EditionHint h: getEditionHints(i, edition, downloadSucceeded)) {
 					if(logMINOR)
