@@ -1023,7 +1023,8 @@ public final class IdentityDownloaderSlow implements
 				// up-to-date, but they will increase the ineffciency anyway.
 				// But we can explain this on the StatisticsPage more easily than the issue with
 				// mSkippedDownloads.
-				// Perhaps just provide both metrics anyway though.
+				// Perhaps just provide both metrics anyway though and add "Notice: Includes
+				// duplicates" to the skip counter.
 				int deleted = 0;
 				for(EditionHint h: getEditionHints(i, edition, downloadSucceeded)) {
 					if(logMINOR)
