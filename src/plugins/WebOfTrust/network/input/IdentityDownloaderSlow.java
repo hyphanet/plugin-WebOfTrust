@@ -970,7 +970,6 @@ public final class IdentityDownloaderSlow implements
 	 * If downloadSucceeded == true, deletes all {@link EditionHint}s with:
 	 *      EditionHint.getTargetIdentity() == WebOfTrust.getIdentityByURI(uri)
 	 *   && EditionHint.getEdition() <= uri.getEdition() 
-	 * and increases {@link #mSkippedDownloads} accordingly.
 	 * 
 	 * @return The number of deleted hints. */
 	private int deleteEditionHints(
