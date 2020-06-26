@@ -971,7 +971,8 @@ public final class IdentityDownloaderSlow implements
 		synchronized(mLock) {
 		synchronized(Persistent.transactionLock(mDB)) {
 			try {
-				Logger.minor(this, "deleteEditionHintsAndCommit()...");
+				if(logMINOR)
+					Logger.minor(this, "deleteEditionHintsAndCommit()...");
 				
 				int deletedHints = deleteEditionHints(uri, downloadSucceeded, failureReason);
 				Persistent.checkedCommit(mDB, this);
@@ -1069,7 +1070,8 @@ public final class IdentityDownloaderSlow implements
 				// IdentityDownloaderFast fetches an edition.
 				assert(deleted >= 1);
 				
-				Logger.minor(this, "deleteEditionHints() finished.");
+				if(logMINOR)
+					Logger.minor(this, "deleteEditionHints() finished.");
 				return deleted;
 	}
 
