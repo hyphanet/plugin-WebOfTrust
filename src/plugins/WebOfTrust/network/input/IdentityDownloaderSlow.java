@@ -1017,77 +1017,77 @@ public final class IdentityDownloaderSlow implements
 		// TODO: failureReason isn't used for anything yet but could be used for punishing the
 		// publishers of wrong hints if they do it too often.
 		assert(downloadSucceeded ? failureReason == null : failureReason != null);
+		
+		Identity i = null;
+		try {
+			i = mWoT.getIdentityByURI(uri);
+		} catch (UnknownIdentityException e) {
+			Logger.warning(this,
+				"deleteEditionHints() called for Identity which doesn't exist anymore!", e);
 			
-				Identity i = null;
-				try {
-					i = mWoT.getIdentityByURI(uri);
-				} catch (UnknownIdentityException e) {
-					Logger.warning(this,
-						"deleteEditionHints() called for Identity which doesn't exist anymore!", e);
-					
-					// No need to delete anything or throw an exception:
-					// The hints will already have been deleted when the Identity was deleted.
-					return 0;
-				}
-				
-				long edition = uri.getEdition();
-				
-				if(logMINOR) {
-					Logger.minor(this,
-						"deleteEditionHints() for edition" + (downloadSucceeded ? " <= " : " == ") 
-						+ edition + " of " + i + " ...");
-				}
-				
-				// FIXME: We potentially store multiple EditionHints for each edition, thus this
-				// counter is a wrong input for our purpose of increasing mSkippedDownloads:
-				// Even if we store multiple hints for an edition we will only try downloading it
-				// once as on the first successful download this function here will delete the
-				// other hints pointing to it. Thus exclude the duplicates in this counter.
-				// EDIT: Our goal behind counting skipped downloads is to judge the efficiency of
-				// IdentityDownloaderSlow. Maybe just use a different, more easy to compute metric
-				// for that:
-				// Inefficiency = (Total number of downloads and download attempts)
-				//              / (Total number of identities for which we have downloaded at least
-				//                 one XML)
-				//              = Number of downloads&attempts we need for each identity
-				// Both numbers involved in that calculation can trivially be calculated:
-				// - Number of download attempts can be counted by the download scheduler.
-				// - Number of IDs is a database query
-				// The only downside of this metric is that it is only accurate for fresh
-				// databases / bootstrapping: As the database grows older pre-existing identities
-				// will continue to publish new editions which we obviously have to download to stay
-				// up-to-date, but they will increase the ineffciency anyway.
-				// But we can explain this on the StatisticsPage more easily than the issue with
-				// mSkippedDownloads.
-				// Perhaps just provide both metrics anyway though and add "Notice: Includes
-				// duplicates" to the skip counter.
-				int deleted = 0;
-				for(EditionHint h: getEditionHints(i, edition, downloadSucceeded)) {
-					if(logMINOR)
-						Logger.minor(this, "deleteEditionHints(): Deleting " + h);
-					h.deleteWithoutCommit();
-					++deleted;
-				}
-				// FIXME: Fails being 0, when called from onSuccess(), with
-				// downloadSucceeded == true, failureReason == null.
-				// The most likely explanation is that our caller onSuccess() was already running
-				// for the affected edition while the IdentityFileProcessor thread concurrently
-				// started to import a XML which resulted in the deletion of the hint(s) via
-				// e.g. storeNewEditionHintCommandWithoutCommit() or
-				// storeAbortFetchCommandWithoutCommit().
-				// The proper fix is to remove the assert and to replace it with
-				//     assert(h.getEdition() > h.getTargetIdentity().getLastFetchedEdition());
-				// in the download scheduler loop so we have some level of checking if the stored
-				// hints are eligible.
-				// However for that assert to not fail the implementation of onNewEditionImported()
-				// needs to be done first to ensure that hints are always deleted once they become
-				// obsolete. Specifically we currently don't delete them if the
-				// IdentityDownloaderFast fetches an edition.
-				assert(deleted >= 1);
-				
-				if(logMINOR)
-					Logger.minor(this, "deleteEditionHints() finished.");
-				return deleted;
+			// No need to delete anything or throw an exception:
+			// The hints will already have been deleted when the Identity was deleted.
+			return 0;
+		}
+		
+		long edition = uri.getEdition();
+		
+		if(logMINOR) {
+			Logger.minor(this,
+				"deleteEditionHints() for edition" + (downloadSucceeded ? " <= " : " == ") 
+				+ edition + " of " + i + " ...");
+		}
+		
+		// FIXME: We potentially store multiple EditionHints for each edition, thus this
+		// counter is a wrong input for our purpose of increasing mSkippedDownloads:
+		// Even if we store multiple hints for an edition we will only try downloading it
+		// once as on the first successful download this function here will delete the
+		// other hints pointing to it. Thus exclude the duplicates in this counter.
+		// EDIT: Our goal behind counting skipped downloads is to judge the efficiency of
+		// IdentityDownloaderSlow. Maybe just use a different, more easy to compute metric
+		// for that:
+		// Inefficiency = (Total number of downloads and download attempts)
+		//              / (Total number of identities for which we have downloaded at least
+		//                 one XML)
+		//              = Number of downloads&attempts we need for each identity
+		// Both numbers involved in that calculation can trivially be calculated:
+		// - Number of download attempts can be counted by the download scheduler.
+		// - Number of IDs is a database query
+		// The only downside of this metric is that it is only accurate for fresh
+		// databases / bootstrapping: As the database grows older pre-existing identities
+		// will continue to publish new editions which we obviously have to download to stay
+		// up-to-date, but they will increase the ineffciency anyway.
+		// But we can explain this on the StatisticsPage more easily than the issue with
+		// mSkippedDownloads.
+		// Perhaps just provide both metrics anyway though and add "Notice: Includes
+		// duplicates" to the skip counter.
+		int deleted = 0;
+		for(EditionHint h: getEditionHints(i, edition, downloadSucceeded)) {
+			if(logMINOR)
+				Logger.minor(this, "deleteEditionHints(): Deleting " + h);
+			h.deleteWithoutCommit();
+			++deleted;
+		}
+		// FIXME: Fails being 0, when called from onSuccess(), with
+		// downloadSucceeded == true, failureReason == null.
+		// The most likely explanation is that our caller onSuccess() was already running
+		// for the affected edition while the IdentityFileProcessor thread concurrently
+		// started to import a XML which resulted in the deletion of the hint(s) via
+		// e.g. storeNewEditionHintCommandWithoutCommit() or
+		// storeAbortFetchCommandWithoutCommit().
+		// The proper fix is to remove the assert and to replace it with
+		//     assert(h.getEdition() > h.getTargetIdentity().getLastFetchedEdition());
+		// in the download scheduler loop so we have some level of checking if the stored
+		// hints are eligible.
+		// However for that assert to not fail the implementation of onNewEditionImported()
+		// needs to be done first to ensure that hints are always deleted once they become
+		// obsolete. Specifically we currently don't delete them if the
+		// IdentityDownloaderFast fetches an edition.
+		assert(deleted >= 1);
+		
+		if(logMINOR)
+			Logger.minor(this, "deleteEditionHints() finished.");
+		return deleted;
 	}
 
 	@Override public void onResume(ClientContext context) throws ResumeFailedException {
