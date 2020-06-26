@@ -197,7 +197,15 @@ final class IdentityFileDiskQueue implements IdentityFileQueue {
 		Logger.normal(this, "cleanDirectories(): Finished.");
 	}
 
-	/** FIXME: This won't work if {@link #mDeduplicationEnabled} is false! Just get rid of the
+	/** FIXME: This doesn't seem to need to be synchronized based on what it does! I.e. computing
+	 *  a filename from the URI and checking if that file exists should be independent upon any
+	 *  state of this object.
+	 *  Removing the synchronization would be a good idea because:
+	 * - IdentityDownloaderSlow calls it while having taken other locks so that is prone to
+	 *   deadlocking.
+	 * - IdentityDownloaderSlow calls it frequently and thus it should be fast.
+	 *
+	 *  FIXME: This won't work if {@link #mDeduplicationEnabled} is false! Just get rid of the
 	 *  possibility to disable it, the {@link IdentityFetcher#DEBUG__NETWORK_DUMP_MODE} didn't
 	 *  work as intended anyway and IdentityFetcher itself is a legacy class now. */
 	@Override public synchronized boolean containsAnyEditionOf(FreenetURI identityFileURI) {
