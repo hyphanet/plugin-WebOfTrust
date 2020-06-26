@@ -79,7 +79,10 @@ public interface IdentityFileQueue {
 
 	/** NOTICE: The behavior of this function currently is different among
 	 *  {@link IdentityFileDiskQueue} and {@link IdentityFileMemoryQueue}! See the FIXME at
-	 *  the *MemoryQueue. */
+	 *  the *MemoryQueue.
+	 *  
+	 *  NOTICE: In the case of {@link IdentityFileDiskQueue} this accesses the filesystem and thus
+	 *  might be rather slow! */
 	public boolean containsAnyEditionOf(FreenetURI identityFileURI);
 
 	public void add(IdentityFileStream file);
