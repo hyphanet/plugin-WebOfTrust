@@ -541,7 +541,6 @@ public final class IdentityDownloaderSlow implements
 					return;
 				
 				// Key = Identity.getID()
-				// TODO: Performance: Use ArraySet here once we have one, is small enough.
 				HashSet<String> identitiesToIgnore = new HashSet<>(maxDownloads * 2);
 				
 				// Only run one download per Identity at once by adding all existing downloads to
@@ -592,6 +591,32 @@ public final class IdentityDownloaderSlow implements
 					// point to the same edition of a single Identity.
 					if(identitiesToIgnore.contains(targetIdentityID))
 						continue;
+					
+					// Don't start another download for an Identity for which we already downloaded
+					// an edition to disk but merely not imported it yet.
+					// This is strictly necessary to avoid downloading the same edition over and
+					// over again while it is pending import:
+					// When a download finishes we cannot delete the EditionHint which triggered it
+					// from the download queue right away (see onSuccess() and the documentation
+					// there).
+					// Instead the hint will stay in the queue until the IdentityFileProcessor
+					// imports the edition from disk - and it delays that for 1 minute for batch
+					// processing typically, so much re-downloading could happen during that time.
+					if(mOutputQueue.containsAnyEditionOf(h.getURI())) {
+						// Opportunistically cache `containsAnyEditionOf() == true` via our
+						// identitiesToIgnore HashSet so we can skip further EditionHints for the
+						// same Identity without using mOutputQueue.containsAnyEditionOf().
+						// This is good because containsAnyEditionOf() possibly accesses the
+						// filesystem and thereby may be rather slow as compared to HashSet.
+						// (containsAnyEditionOf() == false needs not to be cached because we'll
+						// start downloading such Identitys below and then add them to
+						// identitiesToIgnore to only run one download per Identity. So the next
+						// iteration of this loop won't even reach the point of checking
+						// containsAnyEditionOf().)
+						identitiesToIgnore.add(targetIdentityID);
+						
+						continue;
+					}
 					
 					try {
 						download(h);
