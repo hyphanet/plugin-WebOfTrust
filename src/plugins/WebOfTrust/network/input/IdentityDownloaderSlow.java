@@ -614,11 +614,11 @@ public final class IdentityDownloaderSlow implements
 				assert(getRunningDownloadCount() <= getMaxRunningDownloadCount());
 				// TODO: Performance: Remove this after it has not failed for some time.
 				// FIXME: This will fail because onSuccess() removes the download from mDownloads
-				// *after* it calls deleteEditionHints(), and the two actions don't happen in a
-				// single synchronization block. It may be tempting to just remove this assert(),
-				// also because getQueue() is a large query - but onSuccess() won't call
-				// deleteEditionHints() anymore soon (see the FIXME in onSuccess()) - maybe that
-				// will resolve this problem?
+				// *after* it calls deleteEditionHintsAndCommit(), and the two actions don't happen
+				// in a single synchronization block. It may be tempting to just remove this
+				// assert(), also because getQueue() is a large query - but onSuccess() won't call
+				// deleteEditionHintsAndCommit() anymore soon (see the FIXME in onSuccess()) - maybe
+				// that will resolve this problem?
 				assert(getRunningDownloadCount() <= getQueue().size());
 				
 				if(logMINOR) Logger.minor(this, "run() finished.");
@@ -791,9 +791,9 @@ public final class IdentityDownloaderSlow implements
 			// need closure, just close it here anyway.
 			mOutputQueue.add(new IdentityFileStream(uri, inputStream));
 			
-			// FIXME: This deleteEditionHints() breaks the convention of not relying on any disk
-			// storage to be reliable except the database in order to keep the database consistent
-			// = it breaks the ACID properties of the database:
+			// FIXME: This deleteEditionHintsAndCommit() breaks the convention of not relying on any
+			// disk storage to be reliable except the database in order to keep the database
+			// consistent = it breaks the ACID properties of the database:
 			// If the IdentityFileDiskQueue gets its files deleted after the call (e.g. by the user
 			// or power loss) then we won't try downloading the hints again even though we should
 			// because the files aren't available for import anymore. This also causes
@@ -812,7 +812,7 @@ public final class IdentityDownloaderSlow implements
 			//    visible to the database code cannot be guarded by the database code.)
 			//    It also wouldn't work with IdentityFileMemoryQueue.
 			//    Further fsync is an expensive operation as it prevents write caching.
-			// 2. Don't do the deleteEditionHints() here but when actually importing the
+			// 2. Don't do the deleteEditionHintsAndCommit() here but when actually importing the
 			//    IdentityFile from the IdentityFileQueue. This can be done by adding a new callback
 			//    onIdentityEditionChanged() to IdentityDownloader which is called by WoT upon
 			//    import and whose implementation in this class then looks at the new value of
@@ -849,8 +849,8 @@ public final class IdentityDownloaderSlow implements
 			//      slower than downloading.
 			// Thereby I would prefer the latter approach to be implemented.
 			// When doing so please consider recycling this FIXME into documentation: Don't remove
-			// the deleteEditionHints() call but comment it out, with the recycled FIXME explaining
-			// why it is commented out.
+			// the deleteEditionHintsAndCommit() call but comment it out, with the recycled FIXME
+			// explaining why it is commented out.
 			// Also adapt the class-level JavaDoc "Once an edition of a given targetIdentity is
 			// fetched [...]" then.
 			// It will further be necessary to change IdentityFileStream and/or the
