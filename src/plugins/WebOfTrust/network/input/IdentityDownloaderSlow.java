@@ -540,8 +540,28 @@ public final class IdentityDownloaderSlow implements
 				if(downloadsToSchedule <= 0)
 					return;
 				
+				// Key = Identity.getID()
 				// TODO: Performance: Use ArraySet here once we have one, is small enough.
 				HashSet<String> identitiesToIgnore = new HashSet<>(maxDownloads * 2);
+				
+				// Only run one download per Identity at once by adding all existing downloads to
+				// identitiesToIgnore.
+				// This is necessary because:
+				// - it is fair.
+				// - it can easily occur that we have many EditionHints in the queue for the
+				//   same Identity which all have almost the same EditionHint.getPriority()
+				//   value = will be next to each other in the queue, so we would end up trying
+				//   to download lots of hints for the same Identity at once which:
+				//   - doesn't make sense because the first of them may have a higher edition
+				//     than all the others and we're only interested in the highest edition.
+				//   - blocks the download of other identities.
+				// (We could avoid having to ignore the Identitys here by instead ensuring that
+				// no EditionHints are stored which have almost the same priority as others.
+				// However ignoring them here is a lot easier than changing the storage
+				// logic across the whole class, especially considering that we would have to
+				// restore the non-stored hints from the Identity's received Trusts as soon as
+				// the single stored one fails to download or gets deleted due to a trust
+				// change.)
 				// TODO: Performance: Key mDownloads by the ID of the Identity, not the URI of
 				// the specific edition being downloaded, so we can get rid of this loop because
 				// mDownloads' keyset is equal to the hereby populated HashSet then.
@@ -556,23 +576,6 @@ public final class IdentityDownloaderSlow implements
 					assert(shouldAcceptHintsOf(h.getSourceIdentity()));
 					assert(shouldDownload(h.getTargetIdentity()));
 					
-					// Only run one download per identity at once.
-					// This is necessary because:
-					// - it is fair.
-					// - it can easily occur that we have many EditionHints in the queue for the
-					//   same Identity which all have almost the same EditionHint.getPriority()
-					//   value = will be next to each other in the queue, so we would end up trying
-					//   to download lots of hints for the same Identity at once which:
-					//   - doesn't make sense because the first of them may have a higher edition
-					//     than all the others and we're only interested in the highest edition.
-					//   - blocks the download of other identities.
-					// (We could avoid having to skip these via "continue;" by instead ensuring that
-					// no EditionHints are stored which have almost the same priority as others.
-					// However skipping once here is a lot easier than changing the storage
-					// logic across the whole class, especially considering that we would have to
-					// restore the non-stored hints from the Identity's received Trusts as soon as
-					// the single stored one fails to download or gets deleted due to a trust
-					// change.)
 					String targetIdentityID = h.getTargetIdentityID();
 					// FIXME: This doesn't seem to work, I've seen the following two downloads
 					// being in progress on the StatisticsPage:
