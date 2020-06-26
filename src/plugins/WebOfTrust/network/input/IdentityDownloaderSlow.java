@@ -978,8 +978,8 @@ public final class IdentityDownloaderSlow implements
 				Persistent.checkedCommit(mDB, this);
 				return deletedHints;
 			} catch(RuntimeException e) {
-				Persistent.checkedRollbackAndThrow(mDB, this, e);
-				return 0; // Won't be executed, only to prevent compiler from asking for a return.
+				Persistent.checkedRollback(mDB, this, e);
+				throw e;
 			} finally {
 				if(logMINOR)
 					Logger.minor(this, "deleteEditionHintsAndCommit() finished.");
