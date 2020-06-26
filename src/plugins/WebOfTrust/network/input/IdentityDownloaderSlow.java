@@ -1014,6 +1014,8 @@ public final class IdentityDownloaderSlow implements
 	private int deleteEditionHints(
 			FreenetURI uri, boolean downloadSucceeded, FetchException failureReason) {
 		
+		// TODO: failureReason isn't used for anything yet but could be used for punishing the
+		// publishers of wrong hints if they do it too often.
 		assert(downloadSucceeded ? failureReason == null : failureReason != null);
 			
 				Identity i = null;
