@@ -977,7 +977,7 @@ public final class IdentityDownloaderSlow implements
 				int deletedHints = deleteEditionHints(uri, downloadSucceeded, failureReason);
 				Persistent.checkedCommit(mDB, this);
 				return deletedHints;
-			} catch(RuntimeException e) {
+			} catch(RuntimeException | Error e) {
 				Persistent.checkedRollback(mDB, this, e);
 				throw e;
 			} finally {
