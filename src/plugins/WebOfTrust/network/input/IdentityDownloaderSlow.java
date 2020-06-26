@@ -563,8 +563,8 @@ public final class IdentityDownloaderSlow implements
 				// the single stored one fails to download or gets deleted due to a trust
 				// change.)
 				// TODO: Performance: Key mDownloads by the ID of the Identity, not the URI of
-				// the specific edition being downloaded, so we can get rid of this loop because
-				// mDownloads' keyset is equal to the hereby populated HashSet then.
+				// the specific edition being downloaded, so we can replace this loop with
+				// identitiesToIgnore.addAll(mDownloads.keySet()).
 				for(FreenetURI u : mDownloads.keySet()) {
 					// FIXME: Performance: We don't need URI validation here.
 					identitiesToIgnore.add(
