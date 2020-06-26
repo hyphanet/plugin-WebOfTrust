@@ -541,13 +541,13 @@ public final class IdentityDownloaderSlow implements
 					return;
 				
 				// TODO: Performance: Use ArraySet here once we have one, is small enough.
-				HashSet<String> identitiesBeingDownloaded = new HashSet<>(maxDownloads * 2);
+				HashSet<String> identitiesToIgnore = new HashSet<>(maxDownloads * 2);
 				// TODO: Performance: Key mDownloads by the ID of the Identity, not the URI of
 				// the specific edition being downloaded, so we can get rid of this loop because
 				// mDownloads' keyset is equal to the hereby populated HashSet then.
 				for(FreenetURI u : mDownloads.keySet()) {
 					// FIXME: Performance: We don't need URI validation here.
-					identitiesBeingDownloaded.add(
+					identitiesToIgnore.add(
 						IdentityID.constructAndValidateFromURI(u).toString());
 				}
 				
@@ -587,12 +587,12 @@ public final class IdentityDownloaderSlow implements
 					// It marks any EditionHint as running download whose target URI is being
 					// downloaded - but multiple EditionHints can point to the same URI if they
 					// point to the same edition of a single Identity.
-					if(identitiesBeingDownloaded.contains(targetIdentityID))
+					if(identitiesToIgnore.contains(targetIdentityID))
 						continue;
 					
 					try {
 						download(h);
-						identitiesBeingDownloaded.add(targetIdentityID);
+						identitiesToIgnore.add(targetIdentityID);
 						if(--downloadsToSchedule <= 0)
 							break;
 					} catch(FetchException e) {
