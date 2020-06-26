@@ -612,7 +612,7 @@ public final class IdentityDownloaderSlow implements
 						// start downloading such Identitys below and then add them to
 						// identitiesToIgnore to only run one download per Identity. So the next
 						// iteration of this loop won't even reach the point of checking
-						// containsAnyEditionOf().)
+						// containsAnyEditionOf() for those Identitys.)
 						identitiesToIgnore.add(targetIdentityID);
 						
 						continue;
