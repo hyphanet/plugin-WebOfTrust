@@ -814,8 +814,8 @@ public final class IdentityDownloaderSlow implements
 			//    Further fsync is an expensive operation as it prevents write caching.
 			// 2. Don't do the deleteEditionHintsAndCommit() here but when actually importing the
 			//    IdentityFile from the IdentityFileQueue. This can be done by adding a new callback
-			//    onIdentityEditionChanged() to IdentityDownloader which is called by WoT upon
-			//    import and whose implementation in this class then looks at the new value of
+			//    onNewEditionImported() to IdentityDownloader which is called by WoT upon import
+			//    and whose implementation in this class then looks at the new value of
 			//    Identity.getLastFetchedEdition() to call deleteEditionHints() accordingly (make
 			//    sure to add and use a special version of it which it doesn't commit(), the
 			//    callback will likely be part of a transaction which is started by
@@ -834,7 +834,7 @@ public final class IdentityDownloaderSlow implements
 			//      class already anyway: We must implement this somehow so the other downloader
 			//      doesn't unnecessarily duplicate our efforts.
 			//    - it allows the same in reverse: Processing of editions which the
-			//      IdentityDownloaderFast has downloaded will cause the onIdentityEdtionChanged()
+			//      IdentityDownloaderFast has downloaded will cause the onNewEditionImported()
 			//      callback to be called upon this class here which allows it to
 			//      deleteEditionHints() upon the hints older than the processed edition.
 			//    - it fixes this function to obey the aforementioned concept of not requiring the
