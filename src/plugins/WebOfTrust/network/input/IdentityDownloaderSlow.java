@@ -960,7 +960,16 @@ public final class IdentityDownloaderSlow implements
 	}
 
 	private void dequeueNotDownloadableEdition(FreenetURI uri, FetchException e) {
-		deleteEditionHintsAndCommit(uri, false, e);
+		int deletedHints = deleteEditionHintsAndCommit(uri, false, e);
+		// Asserting deletedHints to be not more than 1 ensures the above function did not wrongly
+		// hit its codepath for deleting all hints below the given edition.
+		// That codepath is meant to only be executed when the download succeeded:
+		// Having downloaded a certain edition means we need not try downloading any of them below
+		// it because they're outdated.
+		// But since our download attempt failed we haven't acquired an edition and thus *must* try
+		// the ones below it.
+		assert(deletedHints == 1
+		    || deletedHints == 0 /* See Javadoc of the deleteEditionHints() return value. */);
 	}
 
 	/** @see #deleteEditionHints(FreenetURI, boolean, FetchException) */
@@ -996,7 +1005,11 @@ public final class IdentityDownloaderSlow implements
 	 *      EditionHint.getTargetIdentity() == WebOfTrust.getIdentityByURI(uri)
 	 *   && EditionHint.getEdition() <= uri.getEdition() 
 	 * 
-	 * @return The number of deleted hints. */
+	 * @return The number of deleted hints.  
+	 *     Notice that this can be == 0 even if there was a running download:
+	 *     - A new XML of the Identity which provided the hint may have been imported concurrently
+	 *       and could have made the hint obsolete.
+	 *     - The Identity might become distrusted while we were already downloading it. */
 	@NeedsTransaction
 	private int deleteEditionHints(
 			FreenetURI uri, boolean downloadSucceeded, FetchException failureReason) {
