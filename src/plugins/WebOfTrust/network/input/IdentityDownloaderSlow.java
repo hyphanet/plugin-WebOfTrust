@@ -570,6 +570,8 @@ public final class IdentityDownloaderSlow implements
 						IdentityID.constructAndValidateFromURI(u).toString());
 				}
 				
+				int ignoredHints = 0;
+				int ignoredIdentitysDueToOutputQueue = 0;
 				for(EditionHint h : getQueue()) {
 					// Test if our logic of storing only eligible EditionHints is correct.
 					assert(shouldAcceptHintsOf(h.getSourceIdentity()));
@@ -589,8 +591,10 @@ public final class IdentityDownloaderSlow implements
 					// It marks any EditionHint as running download whose target URI is being
 					// downloaded - but multiple EditionHints can point to the same URI if they
 					// point to the same edition of a single Identity.
-					if(identitiesToIgnore.contains(targetIdentityID))
+					if(identitiesToIgnore.contains(targetIdentityID)) {
+						++ignoredHints;
 						continue;
+					}
 					
 					// Don't start another download for an Identity for which we already downloaded
 					// an edition to disk but merely not imported it yet.
@@ -614,7 +618,9 @@ public final class IdentityDownloaderSlow implements
 						// iteration of this loop won't even reach the point of checking
 						// containsAnyEditionOf() for those Identitys.)
 						identitiesToIgnore.add(targetIdentityID);
+						++ignoredIdentitysDueToOutputQueue;
 						
+						++ignoredHints;
 						continue;
 					}
 					
@@ -631,6 +637,20 @@ public final class IdentityDownloaderSlow implements
 						Logger.normal(this, "run(): Received interrupt, aborting.");
 						break;
 					}
+				}
+				
+				if(logMINOR) {
+					// If this gets too large as compared to the number of started downloads we're
+					// doing excessive I/O:
+					// Then we're querying very many hints from the database for getting little
+					// useful ones.
+					// FIXME: Limit the mOutputQueue size to avoid this. Do so by stopping
+					// downloading when it grows too large and resuming when the queue gets smaller.
+					Logger.minor(this, "run(): Ignored hints: " + ignoredHints);
+					
+					Logger.minor(this,
+						"run(): Ignored Identitys due to IdentityFileQueue.containsAnyEditionOf(): "
+						+ ignoredIdentitysDueToOutputQueue);
 				}
 			} catch(RuntimeException | Error e) {
 				// Not necessary as we don't write anything to the database
