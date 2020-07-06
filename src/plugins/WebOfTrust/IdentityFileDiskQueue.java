@@ -400,6 +400,17 @@ final class IdentityFileDiskQueue implements IdentityFileQueue {
 				// Not critical to fix: The streams do not lock any resources. Also, closing the
 				// InputStreamWithCleanup would delete the file even though we haven't returned it
 				// for processing yet.
+				// FIXME: Instead of wrapping the InputStreamWithCleanup in the IdentityFileStream,
+				// return the InputStreamWithCleanup and have the callers obtain the
+				// IdentityFileStream from it with a getter.
+				// This allows callers to separately close each stream, which is necessary so the
+				// XMLTransformer's XML parser won't close the InputStreamWithCleanup before
+				// importing the data is finished which currently causes the IdentityFile to be
+				// deleted too early from the queue.
+				// Not deleting it before the import is finished is needed so containsAnyEditionOf()
+				// keeps returning true until the import is finished, which is needed to allow the
+				// IdentityDownloaderSlow to not re-download the edition again while it is being
+				// imported.
 				IdentityFileStream result = new IdentityFileStream(fileData.getURI(),
 					new InputStreamWithCleanup(dequeuedFile, fileData,
 						new ByteArrayInputStream(fileData.mXML)));
