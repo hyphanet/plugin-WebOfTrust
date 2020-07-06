@@ -910,7 +910,37 @@ public final class IdentityDownloaderSlow implements
 	}
 
 	@Override public void onNewEditionImported(Identity identity) {
-		// FIXME: Implement as part of resolving the large FIXME in onSuccess().
+		if(logMINOR)
+			Logger.minor(this, "onNewEditionImported() for " + identity + " ...");
+		
+		FreenetURI uri = identity.getRequestURI();
+		assert(uri.getEdition() == identity.getLastFetchedEdition());
+		
+		int deletedHints = deleteEditionHints(uri, true, null);
+		assert(deletedHints > 0
+		    || deletedHints == 0 /* A different IdentityDownloader downloaded it. */);
+		
+		// We don't have to try to cancel a potentially running download because that happens in
+		// onSuccess() right after the downloads finish, and the download scheduler must not start
+		// any new download for the Identity until the last one was imported (see the documentation
+		// in onSuccess() for why that is the case).
+		
+		// Given that it would be tempting to add code similar to:
+			/* assert(!mDownloads.containsAnyDownloadForTheGivenIdentity()); */
+		// But that assert() would not be valid:
+		// A different IdentityDownloader implementation might start a download for the Identity
+		// while we are already running one, and that download might yield a new edition being
+		// imported concurrently and hence this function here being called in a state where the
+		// assert would fail because we do have a running download for the Identity.
+		// Still we don't try to cancel such downloads because the set of Identitys which the
+		// current only other IdentityDownloader implementation - IdentityDownloaderFast - downloads
+		// is small so the probability of this condition occurring is too low to justify checking
+		// mDownloads at every call to this function.
+		// Instead the unnecessarily re-downloaded edition will be discarded by the XMLTransformer
+		// during import.
+		
+		if(logMINOR)
+			Logger.minor(this, "onNewEditionImported() finished.");
 	}
 
 	@Override public void onFailure(FetchException e, ClientGetter state) {
