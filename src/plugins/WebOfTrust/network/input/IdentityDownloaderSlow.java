@@ -1144,7 +1144,7 @@ public final class IdentityDownloaderSlow implements
 		assert(deleted >= 1);
 		
 		if(logMINOR)
-			Logger.minor(this, "deleteEditionHints() finished.");
+			Logger.minor(this, "deleteEditionHints() finished, deleted hints: " + deleted);
 		return deleted;
 	}
 
