@@ -463,6 +463,8 @@ public final class XMLTransformer {
 				// the issue if it happens too frequently so just removing the logging may not be
 				// a good idea. On the other hand keeping it also isn't good because the WARNING
 				// loglevel does sound too bad.
+				// Perhaps replace the logging with a counter of how often this happens, visible
+				// on the StatisticsPage?
 				
 				if(identity.getCurrentEditionFetchState() == FetchState.ParsingFailed) {
 					Logger.warning(this,
