@@ -1,7 +1,7 @@
 # FIXME: Re-enable once the branch is finished
 branches:
   except:
-    - issue-0003816-IdentityFetcher-rewrite
+    - /^issue-0003816-IdentityFetcher-rewrite(.*)$/
 
 language: java
 
