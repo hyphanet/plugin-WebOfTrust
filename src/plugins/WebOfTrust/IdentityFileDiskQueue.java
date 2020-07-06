@@ -355,6 +355,7 @@ final class IdentityFileDiskQueue implements IdentityFileQueue {
 	private static String getEncodedIdentityID(FreenetURI identityURI) {
 		// Encode the ID with Base32 to ensure maximal filesystem compatibility.
 		// ([a-z] and [A-Z] cannot both be used since Windows filenames are case-insensitive.)
+		// TODO: Performance: Do we really need to use the fully validating version here?
 		return IdentityID.constructAndValidateFromURI(identityURI).toStringBase32();
 	}
 
