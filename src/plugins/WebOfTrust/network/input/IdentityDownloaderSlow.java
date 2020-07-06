@@ -1046,6 +1046,14 @@ public final class IdentityDownloaderSlow implements
 		// it because they're outdated.
 		// But since our download attempt failed we haven't acquired an edition and thus *must* try
 		// the ones below it.
+		// FIXME: In my test runs the assert failed with deletedHints == 2.
+		// This is likely because the reasoning behind the assert is wrong:
+		// I think there can be multiple EditionHint objects stored for the same edition because
+		// multiple different remote Identitys may each provide a hint for the same target Identity.
+		// That is necessary because the hint providers each may have a different trustworthiness
+		// and thus different download priority for their hints.
+		// I don't have time to look up the storage logic behind that now, do check it and if yes
+		// replace the assert & documentation with proper ones.
 		assert(deletedHints == 1
 		    || deletedHints == 0 /* See Javadoc of the deleteEditionHints() return value. */);
 	}
