@@ -382,8 +382,9 @@ final class IdentityFileDiskQueue implements IdentityFileQueue {
 				// to mProcessingDir due to potential download of newer editions with the same
 				// filename which may happen after we've returned but before our caller has closed
 				// the stream we return:
-				// Moving it ensures InputStreamWithCleanup cannot wrongly delete such concurrently
-				// downloaded newer editions upon close() just because their filename matches.
+				// Moving it ensures IdentityFileStreamWrapperImpl cannot wrongly delete such
+				// concurrently downloaded newer editions upon close() just because their filename
+				// matches.
 				// It also prevents the file from being returned by the next call to poll() again in
 				// case processing fails fatally - that guarantees a single bogus file cannot
 				// permanently block processing by always being returned by poll().
@@ -394,17 +395,17 @@ final class IdentityFileDiskQueue implements IdentityFileQueue {
 			                                 + "; dest: " + dequeuedFile);
 				}
 				
-				// The InputStreamWithCleanup wrapper will remove the file from mProcessingDir once
-				// the stream is close()d.
+				// The IdentityFileStreamWrapperImpl wrapper will remove the file from
+				// mProcessingDir once the stream is close()d.
 				// TODO: Code quality: Close inner streams upon construction failure of outer ones.
 				// Not critical to fix: The streams do not lock any resources. Also, closing the
-				// InputStreamWithCleanup would delete the file even though we haven't returned it
-				// for processing yet.
-				// FIXME: Instead of wrapping the InputStreamWithCleanup in the IdentityFileStream,
-				// return the InputStreamWithCleanup and have the callers obtain the
-				// IdentityFileStream from it with a getter.
+				// IdentityFileStreamWrapperImpl would delete the file even though we haven't
+				// returned it for processing yet.
+				// FIXME: Instead of wrapping the IdentityFileStreamWrapperImpl in the
+				// IdentityFileStream, return the IdentityFileStreamWrapperImpl and have the callers
+				// obtain the IdentityFileStream from it with a getter.
 				// This allows callers to separately close each stream, which is necessary so the
-				// XMLTransformer's XML parser won't close the InputStreamWithCleanup before
+				// XMLTransformer's XML parser won't close the IdentityFileStreamWrapperImpl before
 				// importing the data is finished which currently causes the IdentityFile to be
 				// deleted too early from the queue.
 				// Not deleting it before the import is finished is needed so containsAnyEditionOf()
@@ -412,7 +413,7 @@ final class IdentityFileDiskQueue implements IdentityFileQueue {
 				// IdentityDownloaderSlow to not re-download the edition again while it is being
 				// imported.
 				IdentityFileStream result = new IdentityFileStream(fileData.getURI(),
-					new InputStreamWithCleanup(dequeuedFile, fileData,
+					new IdentityFileStreamWrapperImpl(dequeuedFile, fileData,
 						new ByteArrayInputStream(fileData.mXML)));
 				
 				++mStatistics.mProcessingFiles;
@@ -459,7 +460,7 @@ final class IdentityFileDiskQueue implements IdentityFileQueue {
 	 * When we return {@link IdentityFileStream} objects from {@link IdentityFileDiskQueue#poll()},
 	 * we wrap their {@link InputStream} in this wrapper. Its purpose is to hook {@link #close()} to
 	 * implement cleanup of our disk directories. */
-	private final class InputStreamWithCleanup extends FilterInputStream {
+	private final class IdentityFileStreamWrapperImpl extends FilterInputStream {
 		/**
 		 * The backend file in {@link IdentityFileDiskQueue#mProcessingDir}.<br>
 		 * On {@link #close()} we delete it; or archive it for debugging purposes if
@@ -476,7 +477,7 @@ final class IdentityFileDiskQueue implements IdentityFileQueue {
 		private boolean mClosedAlready = false;
 
 
-		public InputStreamWithCleanup(File fileName, IdentityFile fileData,
+		public IdentityFileStreamWrapperImpl(File fileName, IdentityFile fileData,
 				InputStream fileStream) {
 			super(fileStream);
 			mSourceFile = fileName;
