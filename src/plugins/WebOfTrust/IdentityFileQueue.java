@@ -93,7 +93,7 @@ public interface IdentityFileQueue {
 	 *  That in turn ensures {@link IdentityFileQueue#containsAnyEditionOf(FreenetURI)} will keep
 	 *  returning true while the file is being processed.
 	 *  
-	 *  In practice this guarantees the {@link IdentityDownloader} won't download the same
+	 *  In practice this guarantees the {@link IdentityDownloaderSlow} won't download the same
 	 *  IdentityFile again while it is being processed. */
 	public static interface IdentityFileStreamWrapper extends Closeable {
 		/** See {@link IdentityFileStreamWrapper}.
