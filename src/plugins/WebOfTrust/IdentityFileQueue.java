@@ -3,6 +3,7 @@
  * any later version). See http://www.gnu.org/ for details of the GPL. */
 package plugins.WebOfTrust;
 
+import java.io.Closeable;
 import java.io.File;
 import java.io.FileInputStream;
 import java.io.FileOutputStream;
@@ -75,6 +76,35 @@ public interface IdentityFileQueue {
 			mURI = uri;
 			mXMLInputStream = xmlInputStream;
 		}
+	}
+
+	/** Wraps an {@link IdentityFileStream} in order to be able to call {@link InputStream#close()}
+	 *  upon the IdentityFileStream **before** closing the IdentityFileStreamWrapper itself.  
+	 *  I.e. calling close() upon the stream returned by
+	 *  {@link IdentityFileStreamWrapper#getIdentityFileStream()} will **not** call
+	 *  {@link IdentityFileStreamWrapper#close()}.
+	 *  
+	 *  Calling {@link IdentityFileStreamWrapper#close()} afterwards removes the file from the
+	 *  {@link IdentityFileQueue}'s temporary dir for files which are being processed currently.
+	 *  
+	 *  This ensures users of {@link IdentityFileQueue#poll()} can read the file from the
+	 *  {@link IdentityFileStream} and then keep it in the IdentityFileQueue while processing the
+	 *  data; to remove it from the queue only **after** processing is finished.  
+	 *  That in turn ensures {@link IdentityFileQueue#containsAnyEditionOf(FreenetURI)} will keep
+	 *  returning true while the file is being processed.
+	 *  
+	 *  In practice this guarantees the {@link IdentityDownloader} won't download the same
+	 *  IdentityFile again while it is being processed. */
+	public static interface IdentityFileStreamWrapper extends Closeable {
+		/** See {@link IdentityFileStreamWrapper}.
+		 *   
+		 *  NOTICE: Calling {@link InputStream#close()} upon the returned stream will **not**
+		 *  implicitly call {@link IdentityFileStreamWrapper#close()}!  
+		 *  You **must** call the latter separately afterwards! */
+		public IdentityFileStream getIdentityFileStream();
+		
+		/** See {@link IdentityFileStreamWrapper}. */
+		@Override public void close() throws IOException;
 	}
 
 	/** NOTICE: The behavior of this function currently is different among
