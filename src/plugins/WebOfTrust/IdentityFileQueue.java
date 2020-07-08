@@ -124,9 +124,16 @@ public interface IdentityFileQueue {
 	 * Removes and returns element from the queue. Returns null if the queue is empty.<br><br>
 	 * 
 	 * ATTENTION: Concurrent processing of multiple elements from the queue is not supported.
-	 * This means that the {@link InputStream} of a returned {@link IdentityFileStream} must be
-	 * closed before you call {@link #poll()} the next time.*/
-	public IdentityFileStream poll();
+	 * This means that the returned {@link IdentityFileStreamWrapper} must be closed before you call
+	 * {@link #poll()} the next time!
+	 * 
+	 * ATTENTION: You must only call {@link IdentityFileStreamWrapper#close()} **after**
+	 * processing the returned data is completely finished and committed to the database!
+	 * This is typically trivial to ensure by handing the
+	 * {@link IdentityFileStreamWrapper#getIdentityFileStream()} to the XML parser instead of
+	 * handing the whole {@link IdentityFileStreamWrapper} itself out.
+	 * See the JavaDoc of {@link IdentityFileStreamWrapper} for details. */
+	public IdentityFileStreamWrapper poll();
 
 	/** Gets the number of files available for {@link #poll()}.
 	 *  It is safe to use poll() without checking for the size to be non-zero before. */
