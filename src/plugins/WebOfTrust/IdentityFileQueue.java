@@ -103,7 +103,10 @@ public interface IdentityFileQueue {
 		 *  You **must** call the latter separately afterwards! */
 		public IdentityFileStream getIdentityFileStream();
 		
-		/** See {@link IdentityFileStreamWrapper}. */
+		/** See {@link IdentityFileStreamWrapper}.
+		 *  
+		 *  NOTICE: Implementations of this must also call close() upon the stream returned by
+		 *  {@link #getIdentityFileStream()}! */
 		@Override public void close() throws IOException;
 	}
 
