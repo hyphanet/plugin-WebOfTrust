@@ -18,6 +18,7 @@ import freenet.keys.FreenetURI;
 import freenet.support.CurrentTimeUTC;
 import freenet.support.io.Closer;
 import plugins.WebOfTrust.network.input.IdentityDownloader;
+import plugins.WebOfTrust.network.input.IdentityDownloaderSlow;
 import plugins.WebOfTrust.util.RingBuffer;
 import plugins.WebOfTrust.util.Pair;
 import plugins.WebOfTrust.util.jobs.BackgroundJob;
@@ -225,8 +226,8 @@ public interface IdentityFileQueue {
 		/**
 		 * Count of files which are currently in processing.<br>
 		 * A file is considered to be in processing when it has been dequeued using
-		 * {@link IdentityFileQueue#poll()}, but the {@link InputStream} of the
-		 * {@link IdentityFileStream} has not been closed yet.<br>
+		 * {@link IdentityFileQueue#poll()}, but the returned {@link IdentityFileStreamWrapper} has
+		 * not been closed yet.<br>
 		 * This number should only ever be 0 or 1 as required by {@link IdentityFileQueue#poll()}.
 		 * (Concurrent processing is not supported because the filenames could collide).<br><br>
 		 * 
@@ -238,16 +239,16 @@ public interface IdentityFileQueue {
 		/**
 		 * Count of files for which processing is finished.<br>
 		 * A file is considered to be finished when it has been dequeued using
-		 * {@link IdentityFileQueue#poll()} and the {@link InputStream} of the
-		 * {@link IdentityFileStream} has been closed.<br>
+		 * {@link IdentityFileQueue#poll()} and the returned {@link IdentityFileStreamWrapper} has
+		 * been closed.  
 		 * This number can be less than the files passed to {@link #add(IdentityFileStream)}:
 		 * Files can be dropped due to deduplication (or errors).<br><br>
 		 * 
 		 * Notice: Queue implementations are free to increment this number even before the stream
-		 * has been closed.<br>
+		 * wrapper has been closed.<br>
 		 * Without warranty it can be said that {@link IdentityFileDiskQueue} does wait for the
-		 * stream to be closed, but {@link IdentityFileMemoryQueue} does not and rather increments
-		 * immediately in {@link IdentityFileMemoryQueue#poll()}. */
+		 * stream wrapper to be closed, but {@link IdentityFileMemoryQueue} does not and rather
+		 * increments immediately in {@link IdentityFileMemoryQueue#poll()}. */
 		public int mFinishedFiles = 0;
 	
 		/**
