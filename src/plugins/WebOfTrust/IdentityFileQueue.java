@@ -131,7 +131,9 @@ public interface IdentityFileQueue {
 	 * processing the returned data is completely finished and committed to the database!
 	 * This is typically trivial to ensure by handing the
 	 * {@link IdentityFileStreamWrapper#getIdentityFileStream()} to the XML parser instead of
-	 * handing the whole {@link IdentityFileStreamWrapper} itself out.
+	 * handing the whole {@link IdentityFileStreamWrapper} itself out. That prevents the XML parser
+	 * from closing the wrapper right after parsing and before the output of the parser has been
+	 * processed by its user.
 	 * See the JavaDoc of {@link IdentityFileStreamWrapper} for details. */
 	public IdentityFileStreamWrapper poll();
 
