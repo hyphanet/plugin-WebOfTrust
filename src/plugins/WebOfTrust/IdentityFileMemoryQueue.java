@@ -43,8 +43,6 @@ final class IdentityFileMemoryQueue implements IdentityFileQueue {
 		
 		// FIXME: In opposite to IdentityFileDiksQueue.contains*(), this will NOT return true while
 		// the file is being processed! Determine if this causes any breakage of tests.
-		// Notice that there is a related FIXME at IdentityFileDiskQueue.contains*() which requests
-		// consideration of removal of the check if a file is being processed.
 		// EDIT: Recently IdentityFileStreamWrapper has been added to IdentityFileQueue, and poll()
 		// has been changed to return an instance of that. This will allow us to fix the issue
 		// easily because the goal behind IdentityFileStreamWrapper **is** to allow contains*() to

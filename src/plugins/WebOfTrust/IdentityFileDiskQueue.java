@@ -212,10 +212,6 @@ final class IdentityFileDiskQueue implements IdentityFileQueue {
 		// TODO: Performance: Avoid computing the filename from the URI twice by replacing
 		// get*Filename() with a single call to compute the filename without the dir, and then
 		// constructing two new File(dir, filename) for the two dirs.
-		// FIXME: Investigate if it would be possible to not additionally check the processing dir
-		// without causing IdentityDownloaderSlow to download the same file again while it is
-		// being processed. If we do remove the additional check then the FIXME related to files
-		// which are being processed at IdentityFileMemoryQueue.contains*() can be removed.
 		return getQueueFilename(identityFileURI).exists()
 		    || getProcessingDirFilename(identityFileURI).exists();
 	}
