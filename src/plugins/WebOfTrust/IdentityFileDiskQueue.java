@@ -359,7 +359,7 @@ final class IdentityFileDiskQueue implements IdentityFileQueue {
 		return IdentityID.constructAndValidateFromURI(identityURI).toStringBase32();
 	}
 
-	@Override public synchronized IdentityFileStream poll() {
+	@Override public synchronized IdentityFileStreamWrapper poll() {
 		File[] queue = mQueueDir.listFiles();
 		assert(queue.length == mStatistics.mQueuedFiles);
 		
@@ -398,22 +398,9 @@ final class IdentityFileDiskQueue implements IdentityFileQueue {
 				// The IdentityFileStreamWrapperImpl wrapper will remove the file from
 				// mProcessingDir once the stream is close()d.
 				// TODO: Code quality: Close inner streams upon construction failure of outer ones.
-				// Not critical to fix: The streams do not lock any resources. Also, closing the
-				// IdentityFileStreamWrapperImpl would delete the file even though we haven't
-				// returned it for processing yet.
-				// FIXME: Instead of wrapping the IdentityFileStreamWrapperImpl in the
-				// IdentityFileStream, return the IdentityFileStreamWrapperImpl and have the callers
-				// obtain the IdentityFileStream from it with a getter.
-				// This allows callers to separately close each stream, which is necessary so the
-				// XMLTransformer's XML parser won't close the IdentityFileStreamWrapperImpl before
-				// importing the data is finished which currently causes the IdentityFile to be
-				// deleted too early from the queue.
-				// Not deleting it before the import is finished is needed so containsAnyEditionOf()
-				// keeps returning true until the import is finished, which is needed to allow the
-				// IdentityDownloaderSlow to not re-download the edition again while it is being
-				// imported.
-				IdentityFileStream result = new IdentityFileStream(fileData.getURI(),
-					new IdentityFileStreamWrapperImpl(dequeuedFile, fileData,
+				// Not critical to fix: The streams do not lock any resources.
+				IdentityFileStreamWrapper result =  new IdentityFileStreamWrapperImpl(
+					dequeuedFile, fileData, new IdentityFileStream(fileData.getURI(),
 						new ByteArrayInputStream(fileData.mXML)));
 				
 				++mStatistics.mProcessingFiles;
@@ -456,11 +443,7 @@ final class IdentityFileDiskQueue implements IdentityFileQueue {
 		return mStatistics.mQueuedFiles;
 	}
 
-	/**
-	 * When we return {@link IdentityFileStream} objects from {@link IdentityFileDiskQueue#poll()},
-	 * we wrap their {@link InputStream} in this wrapper. Its purpose is to hook {@link #close()} to
-	 * implement cleanup of our disk directories. */
-	private final class IdentityFileStreamWrapperImpl extends FilterInputStream {
+	private final class IdentityFileStreamWrapperImpl implements IdentityFileStreamWrapper {
 		/**
 		 * The backend file in {@link IdentityFileDiskQueue#mProcessingDir}.<br>
 		 * On {@link #close()} we delete it; or archive it for debugging purposes if
@@ -473,21 +456,27 @@ final class IdentityFileDiskQueue implements IdentityFileQueue {
 		 * a new filename for archival. */
 		private final FreenetURI mSourceURI;
 
+		private final IdentityFileStream mStream;
+
 		/** Used to prevent {@link #close()} from executing twice */
 		private boolean mClosedAlready = false;
 
 
 		public IdentityFileStreamWrapperImpl(File fileName, IdentityFile fileData,
-				InputStream fileStream) {
-			super(fileStream);
+				IdentityFileStream fileStream) {
 			mSourceFile = fileName;
 			mSourceURI = fileData.getURI();
+			mStream = fileStream;
+		}
+
+		@Override public IdentityFileStream getIdentityFileStream() {
+			return mStream;
 		}
 
 		@Override
 		public void close() throws IOException {
 			try {
-				super.close();
+				mStream.mXMLInputStream.close();
 			} finally {
 				synchronized(IdentityFileDiskQueue.this) {
 					// Prevent wrong value of mProcessingFiles by multiple calls to close(), which
