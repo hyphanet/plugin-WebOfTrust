@@ -45,6 +45,14 @@ final class IdentityFileMemoryQueue implements IdentityFileQueue {
 		// the file is being processed! Determine if this causes any breakage of tests.
 		// Notice that there is a related FIXME at IdentityFileDiskQueue.contains*() which requests
 		// consideration of removal of the check if a file is being processed.
+		// EDIT: Recently IdentityFileStreamWrapper has been added to IdentityFileQueue, and poll()
+		// has been changed to return an instance of that. This will allow us to fix the issue
+		// easily because the goal behind IdentityFileStreamWrapper **is** to allow contains*() to
+		// keep returning true while the file is being processed.
+		// To implement this we merely have to change the mock IdentityFileStreamWrapper
+		// implementation we return in poll() to actually do its job.
+		// This also allows us to fix the different behavior among *DiskQueue and *MemoryQueue which
+		// the JavaDoc of IdentityFileQueueStatistics talks about.
 		for(IdentityFile f : mQueue) {
 			if(f.getURI().equalsKeypair(identityFileURI))
 				return true;
@@ -104,14 +112,24 @@ final class IdentityFileMemoryQueue implements IdentityFileQueue {
 		}
 	}
 
-	@Override public synchronized IdentityFileStream poll() {
+	@Override public synchronized IdentityFileStreamWrapper poll() {
 		try {
 			IdentityFile file;
 			
 			while((file = mQueue.pollFirst()) != null) {
 				try {
-					IdentityFileStream result = new IdentityFileStream(
+					final IdentityFileStream ifs = new IdentityFileStream(
 						file.getURI(), new ByteArrayInputStream(file.mXML));
+
+					IdentityFileStreamWrapper result = new IdentityFileStreamWrapper() {
+						@Override public IdentityFileStream getIdentityFileStream() {
+							return ifs;
+						}
+
+						@Override public void close() throws IOException {
+							ifs.mXMLInputStream.close();
+						}
+					};
 					
 					++mStatistics.mFinishedFiles;
 					
