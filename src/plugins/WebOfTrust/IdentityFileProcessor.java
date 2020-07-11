@@ -8,6 +8,7 @@ import static freenet.support.TimeUtil.formatTime;
 import java.util.concurrent.TimeUnit;
 
 import plugins.WebOfTrust.IdentityFileQueue.IdentityFileStream;
+import plugins.WebOfTrust.IdentityFileQueue.IdentityFileStreamWrapper;
 import plugins.WebOfTrust.util.Daemon;
 import plugins.WebOfTrust.util.jobs.BackgroundJob;
 import plugins.WebOfTrust.util.jobs.DelayedBackgroundJob;
@@ -178,16 +179,24 @@ public final class IdentityFileProcessor implements Daemon, DelayedBackgroundJob
 			// it does multiple calls to triggerExecution(), that will only cause one execution of
 			// run().
 			while(true) {
+				IdentityFileStreamWrapper streamWrapper = null;
 				IdentityFileStream stream = null;
 				
 				try {
-					stream = mQueue.poll();
-					if(stream == null)
+					streamWrapper = mQueue.poll();
+					if(streamWrapper == null)
 						break;
 					
+					// The real stream is wrapped in an IdentityFileStreamWrapper to ensure the
+					// XML parser close()ing the real stream won't close the wrapper and thereby
+					// delete the file from the IdentityFileQueue while it is still being processed,
+					// which prevents the IdentityDownloader from downloading it again meanwhile.
+					// See JavaDoc of IdentityFileStreamWrapper for details.
+					stream = streamWrapper.getIdentityFileStream();
+					assert(stream != null);
+					
 					Logger.normal(this, "run(): Processing: " + stream.mURI);
-
-
+					
 					// FIXME: Improve accuracy: importIdentity() first takes a lot of locks, which
 					// might take some time if other daemons (CAPTCHAs, UI, SubscriptionManager)
 					// are running. Thus, it should do the measurement itself to exclude that, and
@@ -214,8 +223,8 @@ public final class IdentityFileProcessor implements Daemon, DelayedBackgroundJob
 						++mStatistics.mFailedFiles;
 					}
 				} finally {
-					if(stream != null)
-						Closer.close(stream.mXMLInputStream);
+					if(streamWrapper != null)
+						Closer.close(streamWrapper); // Also closes the wrapped stream.
 				}
 				
 				if(Thread.interrupted()) {
