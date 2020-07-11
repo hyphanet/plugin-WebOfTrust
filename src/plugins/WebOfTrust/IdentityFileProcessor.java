@@ -233,8 +233,7 @@ public final class IdentityFileProcessor implements Daemon, DelayedBackgroundJob
 						break;
 					}
 				} finally {
-					if(streamWrapper != null)
-						Closer.close(streamWrapper); // Also closes the wrapped stream.
+					Closer.close(streamWrapper); // Also closes the wrapped stream.
 				}
 				
 				if(Thread.interrupted()) {
