@@ -211,7 +211,7 @@ public final class IdentityFileProcessor implements Daemon, DelayedBackgroundJob
 						++mStatistics.mProcessedFiles;
 						mStatistics.mProcessingTimeNanoseconds +=  endTime - startTime;
 					}
-				} catch(RuntimeException e) {
+				} catch(RuntimeException | Error e) {
 					if(stream != null && stream.mURI != null) {
 						Logger.error(this,
 						    "Parsing identity XML failed severely - edition probably could NOT be "
@@ -221,6 +221,16 @@ public final class IdentityFileProcessor implements Daemon, DelayedBackgroundJob
 					
 					synchronized(IdentityFileProcessor.this) {
 						++mStatistics.mFailedFiles;
+					}
+					
+					if(e instanceof OutOfMemoryError) {
+						// Importing Identitys and all the Score computation resulting from it
+						// probably is one of the most memory-heavy parts of WoT.
+						// So if it causes OOM we better wait for some time to give memory pressure
+						// a chance to relax before trying again.
+						triggerExecution(60 * 1000);
+						Logger.error(this, "Delaying processing due to OutOfMemoryError!", e);
+						break;
 					}
 				} finally {
 					if(streamWrapper != null)
