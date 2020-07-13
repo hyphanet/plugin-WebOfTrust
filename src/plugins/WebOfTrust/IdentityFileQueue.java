@@ -126,7 +126,11 @@ public interface IdentityFileQueue {
 	 * 
 	 * ATTENTION: Concurrent processing of multiple elements from the queue is not supported.
 	 * This means that the returned {@link IdentityFileStreamWrapper} must be closed before you call
-	 * {@link #poll()} the next time!
+	 * {@link #poll()} the next time!  
+	 * (It is not supported because in an {@link IdentityFileDiskQueue} the names of
+	 * {@link IdentityFile}s could collide inside the temporary directory for files in processing.  
+	 * Further the core of WoT does not support concurrent trust list import anyway so there's no
+	 * need for this feature.)
 	 * 
 	 * ATTENTION: You must only call {@link IdentityFileStreamWrapper#close()} **after**
 	 * processing the returned data is completely finished and committed to the database!
@@ -228,8 +232,8 @@ public interface IdentityFileQueue {
 		 * A file is considered to be in processing when it has been dequeued using
 		 * {@link IdentityFileQueue#poll()}, but the returned {@link IdentityFileStreamWrapper} has
 		 * not been closed yet.<br>
-		 * This number should only ever be 0 or 1 as required by {@link IdentityFileQueue#poll()}.
-		 * (Concurrent processing is not supported because the filenames could collide).<br><br>
+		 * This number should only ever be 0 or 1 as required by {@link IdentityFileQueue#poll()}'s
+		 * specification.
 		 * 
 		 * Notice: Queue implementations are free to not track this number, i.e. keep it at 0.<br>
 		 * Without warranty it can be said that {@link IdentityFileDiskQueue} does track this
