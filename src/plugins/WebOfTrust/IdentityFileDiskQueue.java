@@ -22,6 +22,15 @@ import freenet.support.Logger.LogLevel;
  * {@link IdentityFileQueue} implementation which writes the files to disk instead of keeping them
  * in memory.<br><br>
  * 
+ * NOTICE: While this implementation does preserve some files across restarts of WoT, it does not
+ * preserve all of them!  
+ * E.g. if a file had been {@link #poll()}ed during shutdown but processing of it had not been
+ * marked as finished by {@link IdentityFileStreamWrapper#close()} the file will be lost.  
+ * Thus users of this implementation must be safe against complete loss of the queue across
+ * restarts.  
+ * This is also demanded by the JavaDoc of the interface {@link IdentityFileQueue} for sophisticated
+ * reasons.
+ * 
  * Deduplicating queue: Only the latest edition of each file is returned; see
  * {@link IdentityFileQueue} for details.<br>
  * The order of files is not preserved.<br>
@@ -139,6 +148,8 @@ final class IdentityFileDiskQueue implements IdentityFileQueue {
 		// Since there should only be 1 file at a time in processing, and lost files will
 		// automatically be downloaded again, we just delete it to avoid the hassle of writing code
 		// for moving it back.
+		// We are allowed to delete it by the parent interface IdentityFileQueue, it specifies that
+		// any queue content may be lost upon restart of WoT.
 		for(File file : mProcessingDir.listFiles()) {
 			if(!file.getName().endsWith(IdentityFile.FILE_EXTENSION)) {
 				Logger.warning(this, "cleanDirectories(): Unexpected file type: " + file);
