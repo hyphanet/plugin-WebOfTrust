@@ -25,10 +25,10 @@ import plugins.WebOfTrust.util.jobs.BackgroundJob;
 
 
 /**
- * The {@link IdentityFetcher} fetches the data files of all known identities, which the
+ * The {@link IdentityDownloader} downloads the data files of all known identities, which the
  * {@link IdentityFileProcessor} then imports into the database. Since the network usually delivers
  * the files faster than they can be processed, this queue is responsible for storing the files in
- * between fetching and processing.<br><br>
+ * between downloading and processing.<br><br>
  * 
  * The primary key of each data file is the combination of the {@link Identity} which published it,
  * and the {@link Identity#getRawEdition() edition} (= version) of the file (Notice: These are
@@ -45,10 +45,17 @@ import plugins.WebOfTrust.util.jobs.BackgroundJob;
  *    {@link IdentityFileProcessor}, even if this means that outdated editions will be processed.
  *    The order of the output of the queue is the same as the one of the input.
  *    This is suitable for the debugging purpose of deterministic repetition of sessions.<br><br>
- *    
- * Notice: Implementations do not necessarily have to be disk-based, the word "file" is only used
- * to name the data set of an {@link Identity} in an easy to understand way.
- */
+ * 
+ * NOTICE: Implementations are allowed to and do lose some of their contents upon restart of WoT,
+ * even the disk-based one! The word "file" is only used to name the data set of an {@link Identity}
+ * in an easy to understand way, it does not imply permanent storage!  
+ * Thus {@link IdentityDownloader} implementations must be safe against loss of queue contents upon
+ * restart!  
+ * This behavior is justified because we do not want queues to try to guarantee full ACID-behavior
+ * anyway as that would subvert the ACID-guarantees of the main WoT database.  
+ * See the large documentation with regards to the queue and ACID in
+ * {@link IdentityDownloaderSlow#onSuccess(freenet.client.FetchResult,
+ * freenet.client.async.ClientGetter)}. */
 public interface IdentityFileQueue {
 	/**
 	 * TODO: Code quality: This should be a {@link FilterInputStream} to allow replacing
@@ -119,6 +126,8 @@ public interface IdentityFileQueue {
 	 *  might be rather slow! */
 	public boolean containsAnyEditionOf(FreenetURI identityFileURI);
 
+	/** NOTICE: Added files may be lost across restarts of WoT, even for disk-based implementations!
+	 *  See the JavaDoc of {@link IdentityFileQueue} for details. */
 	public void add(IdentityFileStream file);
 
 	/**
