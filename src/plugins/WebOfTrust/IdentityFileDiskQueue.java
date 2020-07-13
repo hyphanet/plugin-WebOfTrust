@@ -145,11 +145,9 @@ final class IdentityFileDiskQueue implements IdentityFileQueue {
 		// Processing dir policy:
 		// In theory we could move the files back to the queue. But its possible that a colliding
 		// filename exists there, which would need special code to handle.
-		// Since there should only be 1 file at a time in processing, and lost files will
-		// automatically be downloaded again, we just delete it to avoid the hassle of writing code
-		// for moving it back.
-		// We are allowed to delete it by the parent interface IdentityFileQueue, it specifies that
-		// any queue content may be lost upon restart of WoT.
+		// Since there should only be 1 file at a time in processing, and the parent interface's
+		// JavaDoc allows us to delete queue contents during restarts of WoT, we just delete it to
+		// avoid the hassle of writing code for moving it back.
 		for(File file : mProcessingDir.listFiles()) {
 			if(!file.getName().endsWith(IdentityFile.FILE_EXTENSION)) {
 				Logger.warning(this, "cleanDirectories(): Unexpected file type: " + file);
