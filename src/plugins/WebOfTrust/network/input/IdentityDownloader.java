@@ -24,6 +24,10 @@ import freenet.keys.FreenetURI;
  * Strictly all of them are then fed as {@link IdentityFile} to the {@link IdentityFileQueue}, which
  * is consumed by the {@link IdentityFileProcessor}.
  * 
+ * Implementations must tolerate loss of the output {@link IdentityFileQueue} across restarts of
+ * WoT as required by the JavaDoc of that interface!  
+ * For how to ensure this see {@link #onNewEditionImported(Identity)}.
+ * 
  * Implementations are allowed to and do store pointers to {@link Identity} and {@link OwnIdentity}
  * objects in their database, e.g. as part of {@link EditionHint} objects and
  * {@link DownloadSchedulerCommand}s.
@@ -448,8 +452,26 @@ public interface IdentityDownloader extends Daemon {
 	 * import).  
 	 * The edition can be obtained from {@link Identity#getLastFetchedEdition()}.
 	 * 
-	 * Typically used by the {@link IdentityDownloaderSlow} to delete {@link EditionHint}s which
-	 * have become obsolete by knowing that the imported edition exists for sure.
+	 * The {@link IdentityDownloader} interface JavaDoc requires IdentityDownloader implementations
+	 * as a whole to be safe against loss of the output {@link IdentityFileQueue} upon restarts of
+	 * WoT. This callback here exists to guarantee that as follows:  
+	 * IdentityDownloader implementations should **not** change the
+	 * {@link Identity#getLastFetchedEdition()} (and/or their own database which keep track of it)
+	 * in the "onSuccess()" callbacks of fred (which are called when a download finishes, they then
+	 * typically hand it to the IdentityFileQueue).  
+	 * Instead, onSuccess() shall only be used to store the IdentityFile to the IdentityFileQueue,
+	 * and the database update to mark an edition as downloaded shall be deferred to this callback
+	 * here.  
+	 * Then loss of the queue contents will keep the {@link Identity#getLastFetchedEdition()}
+	 * (and/or the downloader's database) in a state which shows that the edition wasn't downloaded
+	 * yet and thus the IdentityDownloader will download it again.
+	 * To ensure already downloaded editions are not downloaded again in between onSuccess() and
+	 * onNewEditionImported() implementations should use
+	 * {@link IdentityFileQueue#containsAnyEditionOf(FreenetURI)} in their download scheduler to not
+	 * start a download for an Identity if that function returns true.   
+	 * See the large documentation inside of {@link IdentityDownloaderSlow#onSuccess(
+	 * freenet.client.FetchResult, freenet.client.async.ClientGetter)} for why this whole design
+	 * pattern is a good idea.
 	 * 
 	 * Synchronization:
 	 * This function is guaranteed to be called while the following locks are being held in the
