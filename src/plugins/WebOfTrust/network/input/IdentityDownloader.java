@@ -22,7 +22,7 @@ import freenet.keys.FreenetURI;
 /**
  * Downloads {@link Identity} objects from the P2P network.
  * Strictly all of them are then fed as {@link IdentityFile} to the {@link IdentityFileQueue}, which
- * is consumed by the {@link IdentityFileProcessor}.
+ * the {@link IdentityFileProcessor} polls and feeds into the {@link XMLTransformer}.
  * 
  * Implementations must tolerate loss of the output {@link IdentityFileQueue} across restarts of
  * WoT as required by the JavaDoc of that interface!  
