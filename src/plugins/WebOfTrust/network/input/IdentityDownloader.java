@@ -448,8 +448,8 @@ public interface IdentityDownloader extends Daemon {
 
 	/**
 	 * Called by the {@link XMLTransformer} after we've finished importing a new edition of an
-	 * {@link Identity} (which has been downloaded by an IdentityDownloader implementation before
-	 * import).  
+	 * {@link Identity} from the {@link IdentityFileQueue} (which has been added to it by an
+	 * IdentityDownloader before).  
 	 * The edition can be obtained from {@link Identity#getLastFetchedEdition()}.
 	 * 
 	 * The {@link IdentityDownloader} interface JavaDoc requires IdentityDownloader implementations
