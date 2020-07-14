@@ -447,8 +447,8 @@ public interface IdentityDownloader extends Daemon {
 	void storeNewEditionHintCommandWithoutCommit(EditionHint hint);
 
 	/**
-	 * Called by the {@link XMLTransformer} after we've finished importing a new edition of an
-	 * {@link Identity} from the {@link IdentityFileQueue} (which has been added to it by an
+	 * Called by the {@link XMLTransformer} after it has imported a new edition of an
+	 * {@link Identity} from the {@link IdentityFileQueue} (which has been added to the queue by an
 	 * IdentityDownloader before).  
 	 * The edition can be obtained from {@link Identity#getLastFetchedEdition()}.
 	 * 
