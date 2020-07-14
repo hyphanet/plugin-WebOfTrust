@@ -788,9 +788,7 @@ public final class XMLTransformer {
 						
 						// We don't notify the SubscriptionManager here since there is not really any new information about the identity because parsing failed.
 						
-						mWoT.getIdentityDownloaderController().onNewEditionImported(identity);
-						
-						identity.storeAndCommit();
+						identity.storeWithoutCommit();
 					} else {
 						// This is bad:
 						// - Editions we already fetched shouldn't be fetched again, that is most
@@ -803,6 +801,17 @@ public final class XMLTransformer {
 						  + "We should neither download nor parse already processed editions! "
 						  + "edition: " + newEdition + "; " + identity);
 					}
+					
+					// It's a good idea to always call this, even if the edition was already
+					// downloaded previously, i.e. <= getLastFetchedEdition():
+					// IdentityDownloaders won't stop downloading an edition if the callback isn't
+					// called. So we better call it too often instead of not often enough to avoid
+					// infinite re-downloading of the same edition upon bugs which might have
+					// prevented calling it when the edition was fetched the first time.
+					mWoT.getIdentityDownloaderController().onNewEditionImported(identity);
+					
+					Persistent.checkedCommit(mDB, this);
+					
 					Logger.warning(this, "Parsing identity XML failed gracefully for " + identityURI, e);
 				} catch(RuntimeException | Error | UnknownIdentityException doubleFault) {
 					Logger.error(this,
