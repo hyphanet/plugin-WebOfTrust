@@ -847,6 +847,8 @@ public final class IdentityDownloaderSlow implements
 			// because the files aren't available for import anymore. This also causes
 			// WebOfTrust.db4o to not be self-contained anymore, our defrag code and users would
 			// also have to copy the queue directory for backup purposes.
+			// EDIT: Actually the IdentityFileDiskQueue even by design deletes files in its
+			// temporary directory mProcessingDir after WoT has been restarted!
 			// There are two potential fixes:
 			// 1. Ensure the IdentityFileDiskQueue does fsync before returning from the above add().
 			//    This doesn't fix the backup code though and is still not 100% theoretically
