@@ -468,10 +468,14 @@ public interface IdentityDownloader extends Daemon {
 	 * To ensure already downloaded editions are not downloaded again in between onSuccess() and
 	 * onNewEditionImported() implementations should use
 	 * {@link IdentityFileQueue#containsAnyEditionOf(FreenetURI)} in their download scheduler to not
-	 * start a download for an Identity if that function returns true.   
+	 * start a download for an Identity if that function returns true and thereby indicates that
+	 * they've already downloaded an edition of that Identity.   
 	 * See the large documentation inside of {@link IdentityDownloaderSlow#onSuccess(
 	 * freenet.client.FetchResult, freenet.client.async.ClientGetter)} for why this whole design
 	 * pattern is a good idea.
+	 * As a side effect this design pattern also ensures collaboration among IdentityDownloaders:  
+	 * If one implementation downloads an edition, other implementations running in parallel may
+	 * avoid trying to download the same edition again.
 	 * 
 	 * Synchronization:
 	 * This function is guaranteed to be called while the following locks are being held in the
