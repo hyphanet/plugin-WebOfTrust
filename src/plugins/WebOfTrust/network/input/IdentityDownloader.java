@@ -451,6 +451,8 @@ public interface IdentityDownloader extends Daemon {
 	 * {@link Identity} from the {@link IdentityFileQueue} (which has been added to the queue by an
 	 * IdentityDownloader before).  
 	 * The edition can be obtained from {@link Identity#getLastFetchedEdition()}.
+	 * FIXME: What about OwnIdentitys, should the IdentityInserter call it so we don't download
+	 * their editions after upload?
 	 * 
 	 * The {@link IdentityDownloader} interface JavaDoc requires IdentityDownloader implementations
 	 * as a whole to be safe against loss of the output {@link IdentityFileQueue} upon restarts of
