@@ -420,8 +420,10 @@ public final class XMLTransformer {
 	 * - The trust list of the identity, if it has published one in the XML.
 	 * 
 	 * @param xmlInputStream The input stream containing the XML.
-	 */
-	public void importIdentity(FreenetURI identityURI, InputStream xmlInputStream) {
+	 * @throws OutOfMemoryError To indicate you should stop calling this function for a while. */
+	public void importIdentity(FreenetURI identityURI, InputStream xmlInputStream)
+			throws OutOfMemoryError {
+		
 		try { // Catch import problems so we can mark the edition as parsing failed
 		// We first parse the XML without synchronization, then do the synchronized import into the WebOfTrust		
 		final ParsedIdentityXML xmlData = parseIdentityXML(xmlInputStream);
