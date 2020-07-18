@@ -761,6 +761,9 @@ public final class XMLTransformer {
 		} // synchronized(mWoT)
 		} // try
 		catch(Exception | Error e) {
+			OutOfMemoryError outOfMemoryError
+				= e instanceof OutOfMemoryError ? (OutOfMemoryError)e : null;
+			
 			synchronized(mWoT) {
 			synchronized(mWoT.getIdentityDownloaderController()) {
 			// synchronized(mSubscriptionManager) { // We don't use the SubscriptionManager, see below
@@ -818,6 +821,9 @@ public final class XMLTransformer {
 					
 					Logger.warning(this, "Parsing identity XML failed gracefully for " + identityURI, e);
 				} catch(RuntimeException | Error | UnknownIdentityException doubleFault) {
+					if(doubleFault instanceof OutOfMemoryError)
+						outOfMemoryError = (OutOfMemoryError)doubleFault;
+					
 					Logger.error(this,
 						"Parsing identity XML failed and marking the edition as ParsingFailed " +
 						"also failed! URI: " + identityURI, doubleFault);
@@ -826,6 +832,14 @@ public final class XMLTransformer {
 			}
 			}
 			}
+			
+			// We've gracefully handled the throwable so we can return instead of throwing it out.
+			// However we must throw out OutOfMemoryErrors to signal our caller, the
+			// IdentityFileProcessor, to stop trying to import further IdentityFiles for some time:
+			// Importing an Identity and the resulting Score computations from that is probably
+			// among the most heavy memory users in WoT so it's a good idea to take a break from it.
+			if(outOfMemoryError != null)
+				throw outOfMemoryError;
 		}
 	}
 
