@@ -745,8 +745,12 @@ public final class XMLTransformer {
 					mWoT.getIdentityDownloaderController().onNewEditionImported(identity);
 					identity.storeAndCommit();
 				}
-				catch(Exception e) { 
+				catch(Exception | Error e) {
 					mWoT.abortTrustListImport(e, Logger.LogLevel.WARNING); // Does the rollback
+					
+					// It is critically important to throw the throwable out: This makes the outer
+					// catch() mark the edition as ParsingFailed so it won't be downloaded again and
+					// again and thereby cause the same problems forever.
 					throw e;
 				} // try
 			} // synchronized(Persistent.transactionLock(db))
@@ -756,7 +760,7 @@ public final class XMLTransformer {
 		} // synchronized(mWoT.getIdentityFetcher())
 		} // synchronized(mWoT)
 		} // try
-		catch(Exception e) {
+		catch(Exception | Error e) {
 			synchronized(mWoT) {
 			synchronized(mWoT.getIdentityDownloaderController()) {
 			// synchronized(mSubscriptionManager) { // We don't use the SubscriptionManager, see below
