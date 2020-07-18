@@ -4341,16 +4341,16 @@ public final class WebOfTrust extends WebOfTrustInterface
 	 * }}}}
 	 * </code>
 	 * 
-	 * @param e The exception which triggered the abort. Will be logged to the Freenet log file.
+	 * @param t The throwable which triggered the abort. Will be logged to the Freenet log file.
 	 * @param logLevel The {@link LogLevel} to use when logging the abort to the Freenet log file.
 	 */
-	protected void abortTrustListImport(Exception e, LogLevel logLevel) {
+	protected void abortTrustListImport(Throwable t, LogLevel logLevel) {
 		if(logMINOR) Logger.minor(this, "abortTrustListImport()");
 		
 		assert(mTrustListImportInProgress);
 		mTrustListImportInProgress = false;
 		mFullScoreComputationNeeded = false;
-		Persistent.checkedRollback(mDB, this, e, logLevel);
+		Persistent.checkedRollback(mDB, this, t, logLevel);
 		assert(computeAllScoresWithoutCommit()); // Test rollback.
 	}
 	
