@@ -747,7 +747,7 @@ public final class XMLTransformer {
 					mWoT.getIdentityDownloaderController().onNewEditionImported(identity);
 					identity.storeAndCommit();
 				}
-				catch(Exception | Error e) {
+				catch(RuntimeException | Error e) {
 					mWoT.abortTrustListImport(e, Logger.LogLevel.WARNING); // Does the rollback
 					
 					// It is critically important to throw the throwable out: This makes the outer
@@ -762,7 +762,7 @@ public final class XMLTransformer {
 		} // synchronized(mWoT.getIdentityFetcher())
 		} // synchronized(mWoT)
 		} // try
-		catch(Exception | Error e) {
+		catch(RuntimeException | Error e) {
 			OutOfMemoryError outOfMemoryError
 				= e instanceof OutOfMemoryError ? (OutOfMemoryError)e : null;
 			
