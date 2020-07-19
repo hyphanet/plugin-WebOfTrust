@@ -487,8 +487,15 @@ public final class XMLTransformer {
 			if(xmlData.parseError != null) {
 				String message = "XML parsing failed for " + identityURI;
 				Logger.warning(this, message, xmlData.parseError);
-				// TODO: Code quality: Use a class which can consume the causing exception.
-				throw new ParseException(message, -1);
+				
+				if(xmlData.parseError instanceof OutOfMemoryError) {
+					// We have special code for handling OOM at the end of the function so pass it
+					// to that.
+					throw (OutOfMemoryError)xmlData.parseError;
+				} else {
+					// TODO: Code quality: Use a class which can consume the causing exception.
+					throw new ParseException(message, -1);
+				}
 			}
 			
 			synchronized(Persistent.transactionLock(mDB)) {
