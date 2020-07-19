@@ -508,6 +508,7 @@ public final class XMLTransformer {
 					throw (OutOfMemoryError)xmlData.parseError;
 				} else {
 					// TODO: Code quality: Use a class which can consume the causing exception.
+					// Also applies to further usages of this class in this function.
 					throw new ParseException(message, -1);
 				}
 			}
@@ -723,8 +724,9 @@ public final class XMLTransformer {
 										Logger.normal(this, "New identity received via trust list: " + identity);
 									} catch(MalformedURLException urlEx) {
 										// Logging the exception does NOT log the actual malformed URL so we do it manually.
-										Logger.warning(this, "Received malformed identity URL: " + trusteeURI, urlEx);
-										throw urlEx;
+										String message = "Received malformed identity URL: " + trusteeURI;
+										Logger.warning(this, message, urlEx);
+										throw new ParseException(message, -1);
 									} catch (InvalidParameterException ipEx) {
 										// This is likely impossible as currently the Identity
 										// constructor only throws this upon an invalid nickname,
