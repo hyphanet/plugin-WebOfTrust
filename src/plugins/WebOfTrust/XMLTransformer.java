@@ -725,6 +725,15 @@ public final class XMLTransformer {
 										// Logging the exception does NOT log the actual malformed URL so we do it manually.
 										Logger.warning(this, "Received malformed identity URL: " + trusteeURI, urlEx);
 										throw urlEx;
+									} catch (InvalidParameterException ipEx) {
+										// This is likely impossible as currently the Identity
+										// constructor only throws this upon an invalid nickname,
+										// but we passed null for the nickname.
+										// TODO: Code quality: Add Identity constructor which
+										// doesn't require a nickname.
+										Logger.error(this, "Creating trustee failed for URI: "
+											+ trusteeURI, ipEx);
+										throw new RuntimeException(ipEx);
 									}
 								}
 							}
