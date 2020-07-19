@@ -345,7 +345,7 @@ public final class XMLTransformer {
 			}
 		}
 		
-		Exception parseError = null;
+		Throwable parseError = null;
 		
 		String identityName = null;
 		Boolean identityPublishesTrustList = null;
@@ -405,8 +405,8 @@ public final class XMLTransformer {
 							));
 				}
 			}
-		} catch(Exception e) {
-			result.parseError = e;
+		} catch(Throwable t) {
+			result.parseError = t;
 		}
 		
 		Logger.normal(this, "Finished parsing identity XML.");
@@ -484,9 +484,12 @@ public final class XMLTransformer {
 			}
 			
 			// We throw parse errors AFTER checking the edition number: If this XML was outdated anyway, we don't have to throw.
-			if(xmlData.parseError != null)
-				throw xmlData.parseError;
-				
+			if(xmlData.parseError != null) {
+				String message = "XML parsing failed for " + identityURI;
+				Logger.warning(this, message, xmlData.parseError);
+				// TODO: Code quality: Use a class which can consume the causing exception.
+				throw new ParseException(message, -1);
+			}
 			
 			synchronized(Persistent.transactionLock(mDB)) {
 				try { // Transaction rollback block
@@ -762,7 +765,7 @@ public final class XMLTransformer {
 		} // synchronized(mWoT.getIdentityFetcher())
 		} // synchronized(mWoT)
 		} // try
-		catch(RuntimeException | Error e) {
+		catch(ParseException | RuntimeException | Error e) {
 			OutOfMemoryError outOfMemoryError
 				= e instanceof OutOfMemoryError ? (OutOfMemoryError)e : null;
 			
