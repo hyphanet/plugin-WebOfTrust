@@ -439,7 +439,13 @@ public final class XMLTransformer {
 		synchronized(mWoT) {
 		synchronized(mWoT.getIdentityFetcher()) {
 		synchronized(mSubscriptionManager) {
-			final Identity identity = mWoT.getIdentityByURI(identityURI);
+			final Identity identity;
+			try {
+				identity = mWoT.getIdentityByURI(identityURI);
+			} catch(UnknownIdentityException e) {
+				throw new RuntimeException(
+					"Downloaded XML for Identity which doesn't exist!? URI: " + identityURI, e);
+			}
 			final Identity oldIdentity = identity.clone(); // For the SubscriptionManager
 			
 			Logger.normal(this, "Importing parsed XML for " + identity);
