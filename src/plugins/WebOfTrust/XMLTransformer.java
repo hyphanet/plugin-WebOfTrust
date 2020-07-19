@@ -407,6 +407,14 @@ public final class XMLTransformer {
 			}
 		} catch(Throwable t) {
 			result.parseError = t;
+		} finally {
+			// Close the stream here already instead of expecting the callers to do it so we can
+			// alleviate potential OutOfMemoryErrors which large XML may cause.
+			try {
+				xmlInputStream.close();
+			} catch(Throwable t) {
+				Logger.warning(this, "xmlInputStream.close() failed!", t);
+			}
 		}
 		
 		Logger.normal(this, "Finished parsing identity XML.");
