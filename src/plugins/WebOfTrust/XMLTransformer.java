@@ -741,9 +741,13 @@ public final class XMLTransformer {
 							}
 
 							if(trustee != null) {
-								// Also takes care of notifying the SubscriptionManager
-								mWoT.setTrustWithoutCommit(
-									identity, trustee, editionHint, trustValue, trustComment);
+								try {
+									// Also takes care of notifying the SubscriptionManager
+									mWoT.setTrustWithoutCommit(
+										identity, trustee, editionHint, trustValue, trustComment);
+								} catch(InvalidParameterException e) {
+									throw new ParseException("Received invalid trust: " + e, -1);
+								}
 							}
 						}
 
