@@ -357,7 +357,7 @@ public final class XMLTransformer {
 	/**
 	 * @param xmlInputStream An InputStream which must not return more than {@link MAX_IDENTITY_XML_BYTE_SIZE} bytes.
 	 */
-	private ParsedIdentityXML parseIdentityXML(InputStream xmlInputStream) throws IOException {
+	private ParsedIdentityXML parseIdentityXML(InputStream xmlInputStream) {
 		Logger.normal(this, "Parsing identity XML...");
 		
 		final ParsedIdentityXML result = new ParsedIdentityXML();
