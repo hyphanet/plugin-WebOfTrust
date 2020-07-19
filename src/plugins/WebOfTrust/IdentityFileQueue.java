@@ -59,16 +59,8 @@ import plugins.WebOfTrust.util.jobs.BackgroundJob;
  * freenet.client.async.ClientGetter)}. */
 public interface IdentityFileQueue {
 	/**
-	 * TODO: Code quality: This should be a {@link FilterInputStream} to allow replacing
-	 * 
-	 *     if(identityFileStream != null)
-	 *         Closer.close(identityFileStream.mXMLInputStream);
-	 * 
-	 * with
-	 * 
-	 *     Closer.close(identityFileStream);
-	 *     
-	 * in class IdentityFileQueue (variables are named differently there, search for Closer).
+	 * TODO: Code quality: This should be a child class of {@link FilterInputStream} as that is the
+	 * standard way to add functionality to streams in Java.
 	 * 
 	 * TODO: Performance: {@link #mXMLInputStream} typically is a {@link ByteArrayInputStream}
 	 * (see {@link IdentityFileDiskQueue#poll()})), and the close() of that does NOT null the byte
