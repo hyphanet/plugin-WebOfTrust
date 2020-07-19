@@ -67,7 +67,17 @@ public interface IdentityFileQueue {
 	 * 
 	 *     Closer.close(identityFileStream);
 	 *     
-	 * in class IdentityFileQueue (variables are named differently there, search for Closer). */
+	 * in class IdentityFileQueue (variables are named differently there, search for Closer).
+	 * 
+	 * TODO: Performance: {@link #mXMLInputStream} typically is a {@link ByteArrayInputStream}
+	 * (see {@link IdentityFileDiskQueue#poll()})), and the close() of that does NOT null the byte
+	 * array to allow garbage collection of it.  
+	 * But XMLTransformer.parseIdentityXML() calls close() very early, before importIdentity() even
+	 * tries to wait for the database transaction locks, so it would potentially free 1 MiB of
+	 * memory (max XML size) for quite a few seconds if close() DID free the array.  
+	 * Figure out a way to implement that. It seems possible to achieve by creating a subclass of
+	 * ByteArrayInputStream: That class doesn't declare its member variables private so we can
+	 * null them at will. */
 	public static final class IdentityFileStream {
 		public final FreenetURI mURI;
 
