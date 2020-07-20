@@ -36,6 +36,14 @@ import freenet.support.Logger.LogLevel;
  * The order of files is not preserved.<br>
  */
 final class IdentityFileDiskQueue implements IdentityFileQueue {
+
+	/** This number of files is calculated to result in at most ~ 1 GiB of disk usage considering
+	 *  the maximum size of each file.  
+	 *  The overhead for file headers was excluded from that for simplicity.
+	 *  @see IdentityFileQueue#getSizeSoftLimit() */
+	private static final int SIZE_SOFT_LIMIT_FILES
+		= (1024*1024*1024) / XMLTransformer.MAX_IDENTITY_XML_BYTE_SIZE;
+
 	/** Subdirectory of WOT data directory where we put our data dirs. */
 	private final File mDataDir;
 
@@ -446,6 +454,10 @@ final class IdentityFileDiskQueue implements IdentityFileQueue {
 	@Override public synchronized int getSize() {
 		assert(mStatistics.mQueuedFiles == mQueueDir.listFiles().length);
 		return mStatistics.mQueuedFiles;
+	}
+
+	@Override public int getSizeSoftLimit() {
+		return SIZE_SOFT_LIMIT_FILES;
 	}
 
 	private final class IdentityFileStreamWrapperImpl implements IdentityFileStreamWrapper {
