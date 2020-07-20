@@ -179,8 +179,8 @@ public interface IdentityFileQueue {
 	 *  - IdentityDownloader implementations may use up to O(N), with N = getSize(), calls to
 	 *    {@link #containsAnyEditionOf(FreenetURI)} to avoid starting downloads for Identitys for
 	 *    which we currently have an IdentityFile in the queue pending import.  
-	 *    If the queue was allowed to become very large then the N calls to that function would take
-	 *    too much time.  
+	 *    If the queue was allowed to become very large then the O(N) calls to that function would
+	 *    take too much time.  
 	 *    See {@link IdentityDownloaderSlow#run()} for details. */
 	public int getSizeSoftLimit();
 
