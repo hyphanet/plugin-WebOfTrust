@@ -163,7 +163,8 @@ public interface IdentityFileQueue {
 	public int getSize();
 
 	/** If {@link #getSize()} exceeds this limit {@link IdentityDownloader} implementations should
-	 *  not start any further downloads for {@link IdentityFile}s to add to the queue.
+	 *  not start any further downloads for {@link IdentityFile}s to
+	 *  {@link #add(IdentityFileStream)} to the queue.
 	 *  
 	 *  To ensure pending downloads can keep running it is a soft-limit, i.e. adding files to the
 	 *  queue will still succeed even if {@link #getSize()} is above the limit.
@@ -175,10 +176,12 @@ public interface IdentityFileQueue {
 	 *  - Currently an IdentityFile can be up to 1 MiB large (according to
 	 *    {@link XMLTransformer#MAX_IDENTITY_XML_BYTE_SIZE}) so we should not queue too many of them
 	 *    on disk / in memory.
-	 *  - IdentityDownloader implementations will typically use
-	 *    {@link #containsAnyEditionOf(FreenetURI)} to not start download for Identitys which are
-	 *    currently pending import - and if the queue becomes very large then all the calls to that
-	 *    function would take too much time. */
+	 *  - IdentityDownloader implementations may use up to O(N), with N = getSize(), calls to
+	 *    {@link #containsAnyEditionOf(FreenetURI)} to avoid starting downloads for Identitys for
+	 *    which we currently have an IdentityFile in the queue pending import.  
+	 *    If the queue was allowed to become very large then the N calls to that function would take
+	 *    too much time.  
+	 *    See {@link IdentityDownloaderSlow#run()} for details. */
 	public int getSizeSoftLimit();
 
 	/**
