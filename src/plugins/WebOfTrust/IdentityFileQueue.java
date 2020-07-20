@@ -129,7 +129,11 @@ public interface IdentityFileQueue {
 	 *  might be rather slow! */
 	public boolean containsAnyEditionOf(FreenetURI identityFileURI);
 
-	/** NOTICE: Added files may be lost across restarts of WoT, even for disk-based implementations!
+	/** NOTICE: While add() will always succeed even if {@link #getSizeSoftLimit()} is violated you
+	 *  should nevertheless try to control the amount of files you add() as specified at
+	 *  getSizeSoftLimit().
+	 *  
+	 *  NOTICE: Added files may be lost across restarts of WoT, even for disk-based implementations!
 	 *  See the JavaDoc of {@link IdentityFileQueue} for details. */
 	public void add(IdentityFileStream file);
 
@@ -157,6 +161,25 @@ public interface IdentityFileQueue {
 	/** Gets the number of files available for {@link #poll()}.
 	 *  It is safe to use poll() without checking for the size to be non-zero before. */
 	public int getSize();
+
+	/** If {@link #getSize()} exceeds this limit {@link IdentityDownloader} implementations should
+	 *  not start any further downloads for {@link IdentityFile}s to add to the queue.
+	 *  
+	 *  To ensure pending downloads can keep running it is a soft-limit, i.e. adding files to the
+	 *  queue will still succeed even if {@link #getSize()} is above the limit.
+	 *  
+	 *  By convention IdentityDownloaderFast is allowed to completely ignore the limit to ensure
+	 *  Identitys trusted by the user will always be downloaded in a timely fashion.
+	 *  
+	 *  Having this size limit ensures two things:
+	 *  - Currently an IdentityFile can be up to 1 MiB large (according to
+	 *    {@link XMLTransformer#MAX_IDENTITY_XML_BYTE_SIZE}) so we should not queue too many of them
+	 *    on disk / in memory.
+	 *  - IdentityDownloader implementations will typically use
+	 *    {@link #containsAnyEditionOf(FreenetURI)} to not start download for Identitys which are
+	 *    currently pending import - and if the queue becomes very large then all the calls to that
+	 *    function would take too much time. */
+	public int getSizeSoftLimit();
 
 	/**
 	 * Registers a {@link BackgroundJob} whose {@link BackgroundJob#triggerExecution()} shall be
