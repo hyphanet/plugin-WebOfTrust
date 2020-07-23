@@ -39,7 +39,10 @@ final class IdentityFileDiskQueue implements IdentityFileQueue {
 
 	/** This number of files is calculated to result in at most ~ 1 GiB of disk usage considering
 	 *  the maximum size of each file.  
-	 *  The overhead for file headers was excluded from that for simplicity.
+	 *  The overhead for file headers was excluded from that for simplicity.  
+	 *  TODO: Make configurable through web interface. Also apply this to IdentityFileMemoryQueue
+	 *  (which is currently only used in tests, but perhaps some day someone adds an option to
+	 *  use it in production, so better have it correct now already).
 	 *  @see IdentityFileQueue#getSizeSoftLimit() */
 	private static final int SIZE_SOFT_LIMIT_FILES
 		= (1024*1024*1024) / XMLTransformer.MAX_IDENTITY_XML_BYTE_SIZE;
