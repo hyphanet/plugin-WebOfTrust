@@ -28,6 +28,12 @@ import plugins.WebOfTrust.util.jobs.BackgroundJob;
  * and to warn users that they only should use it if they have lots of memory. */
 final class IdentityFileMemoryQueue implements IdentityFileQueue {
 
+	/** This number of files is calculated to result in at most ~ 128 MiB of memory usage
+	 *  considering the maximum size of each file.  
+	 *  @see IdentityFileQueue#getSizeSoftLimit() */
+	private static final int SIZE_SOFT_LIMIT_FILES
+		= (128*1024*1024) / XMLTransformer.MAX_IDENTITY_XML_BYTE_SIZE;
+
 	private final LinkedList<IdentityFile> mQueue = new LinkedList<IdentityFile>();
 
 	private final IdentityFileQueueStatistics mStatistics = new IdentityFileQueueStatistics();
@@ -155,6 +161,10 @@ final class IdentityFileMemoryQueue implements IdentityFileQueue {
 	@Override public synchronized int getSize() {
 		assert(mStatistics.mQueuedFiles == mQueue.size());
 		return mStatistics.mQueuedFiles;
+	}
+
+	@Override public int getSizeSoftLimit() {
+		return SIZE_SOFT_LIMIT_FILES;
 	}
 
 	@Override public synchronized void registerEventHandler(BackgroundJob handler) {
