@@ -8,6 +8,7 @@ import static java.lang.Thread.currentThread;
 import static java.lang.Thread.sleep;
 import static java.util.Collections.sort;
 import static java.util.concurrent.TimeUnit.MINUTES;
+import static java.util.concurrent.TimeUnit.SECONDS;
 import static plugins.WebOfTrust.util.AssertUtil.assertDidThrow;
 
 import java.io.IOException;
@@ -40,6 +41,7 @@ import plugins.WebOfTrust.exceptions.DuplicateObjectException;
 import plugins.WebOfTrust.exceptions.NotInTrustTreeException;
 import plugins.WebOfTrust.exceptions.UnknownEditionHintException;
 import plugins.WebOfTrust.exceptions.UnknownIdentityException;
+import plugins.WebOfTrust.ui.web.StatisticsPage;
 import plugins.WebOfTrust.util.AssertUtil;
 import plugins.WebOfTrust.util.Daemon;
 import plugins.WebOfTrust.util.jobs.DelayedBackgroundJob;
@@ -179,6 +181,13 @@ public final class IdentityDownloaderSlow implements
 	 * mDownloads.size() == 0.
 	 * TODO: Code quality: Make configurable. */
 	public static final long QUEUE_BATCHING_DELAY_MS = MINUTES.toMillis(1);
+
+	/** If {@link #mOutputQueue}'s {@link IdentityFileQueue#getSize()} is above
+	 *  {@link IdentityFileQueue#getSizeSoftLimit()} we will delay scheduling further downloads for
+	 *  this delay of milliseconds.  
+	 *  FIXME: Adjust to a reasonable value before release, based on the time it takes to process
+	 *  the queue as measured on the {@link StatisticsPage}. */
+	public static final long OUTPUT_QUEUE_FULL_DELAY_MS = SECONDS.toMillis(30);
 
 	/**
 	 * Priority of network requests, relative to {@link IdentityDownloaderFast} as we use a single
@@ -524,6 +533,46 @@ public final class IdentityDownloaderSlow implements
 	 * Respects {@link Thread#interrupt()} to speed up shutdown, which
 	 * {@link DelayedBackgroundJob#terminate()} will make use of. */
 	@Override public void run() {
+		// Defer scheduling more downloads for a delay of OUTPUT_QUEUE_FULL_DELAY_MS if the output
+		// queue contains many files.
+		// This is important because when processing our EditionHint database below to look for
+		// downloads to start we will skip over any EditionHints about Identitys for which
+		// mOutputQueue.containsAnyEditionOf() == true.
+		// So the loop will query O(N) useless objects from the database where N is the size of the
+		// output queue.
+		// To justify that we must keep the N sufficiently small.
+		// As a side effect this also keeps disk / memory usage of the queue small.
+		//
+		// Notice: This is intentionally done *outside* of the below synchronized() blocks even
+		// though the size of the queue may be different until we acquire the locks. That is
+		// necessary because mOutputQueue.getSizeSoftLimit() takes the lock of the queue and for
+		// that WoT currently has no locking order convention (to avoid deadlocks) in relation to
+		// the locks taken below.
+		// The queue potentially growing meanwhile is not an issue because the "Soft" part of the
+		// queue size limit is to allow some leeway for running downloads.
+		if(mOutputQueue.getSize() > mOutputQueue.getSizeSoftLimit()) {
+			if(logMINOR) {
+				Logger.minor(this, "mOutputQueue too full, not starting new downloads, getSize(): "
+					+ mOutputQueue.getSize());
+			}
+			// FIXME: Use a more intelligent delay, e.g.:
+			// - IdentityFileProcessor computes the average time it takes to process a file.
+			//   Divide the queue size by that to get the time until it will be empty, and use that
+			//   as delay.
+			// - Refine the above by computing the time until only a small amount of files is left
+			//   in the queue and use that as delay. Once the delay is over, and we run here and
+			//   see that the queue size is that small, sleep for only 1 second, check if it is
+			//   empty now, and if not again sleep 1 second, etc.
+			// - Don't do delay-based polling of the queue size but use an event-driven mechanism
+			//   where the queue triggers our execution once it is empty enough.
+			//   Should be implemented similar to IdentityFileQueue.registerEventHandler() - rename
+			//   that function to be more descriptive and thus distinguish the both then.
+			mDownloadSchedulerThread.triggerExecution(OUTPUT_QUEUE_FULL_DELAY_MS);
+			// FIXME: Trigger immediate execution of the IdentityFileProcessor so the files in the
+			// queue go away instead of sitting there for the whole of its batching delay.
+			return;
+		}
+		
 		synchronized(mWoT) {
 		synchronized(mLock) {
 			if(logMINOR) Logger.minor(this, "run()...");
@@ -644,8 +693,6 @@ public final class IdentityDownloaderSlow implements
 					// doing excessive I/O:
 					// Then we're querying very many hints from the database for getting little
 					// useful ones.
-					// FIXME: Limit the mOutputQueue size to avoid this. Do so by stopping
-					// downloading when it grows too large and resuming when the queue gets smaller.
 					Logger.minor(this, "run(): Ignored hints: " + ignoredHints);
 					
 					Logger.minor(this,
