@@ -694,6 +694,8 @@ public final class IdentityDownloaderSlow implements
 					// doing excessive I/O:
 					// Then we're querying very many hints from the database for getting little
 					// useful ones.
+					// This issue is what we're trying to limit by obeying
+					// mOutputQueue.getSizeSoftLimit() at the beginning of the function.
 					Logger.minor(this, "run(): Ignored hints: " + ignoredHints);
 					
 					Logger.minor(this,
