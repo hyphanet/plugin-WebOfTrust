@@ -553,7 +553,8 @@ public final class IdentityDownloaderSlow implements
 		// complete after the queue is full already.
 		if(mOutputQueue.getSize() > mOutputQueue.getSizeSoftLimit()) {
 			if(logMINOR) {
-				Logger.minor(this, "mOutputQueue too full, not starting new downloads, getSize(): "
+				Logger.minor(this,
+					"run(): mOutputQueue too full, not starting new downloads, getSize(): "
 					+ mOutputQueue.getSize());
 			}
 			// FIXME: Use an intelligent delay instead of a fixed one, e.g.:
@@ -680,7 +681,7 @@ public final class IdentityDownloaderSlow implements
 						if(--downloadsToSchedule <= 0)
 							break;
 					} catch(FetchException e) {
-						Logger.error(this, "FetchException for: " + h, e);
+						Logger.error(this, "run(): FetchException for: " + h, e);
 					}
 					
 					if(currentThread().isInterrupted()) {
