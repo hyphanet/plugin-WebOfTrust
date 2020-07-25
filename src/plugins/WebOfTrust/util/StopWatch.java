@@ -23,6 +23,10 @@ public final class StopWatch {
 		mStopTime = System.nanoTime();
 	}
 
+	public boolean wasStopped() {
+		return mStopTime != null;
+	}
+
 	public long getNanos() {
 		if(mStopTime == null)
 			stop();
