@@ -545,20 +545,21 @@ public final class IdentityDownloaderSlow implements
 		//
 		// Notice: This is intentionally done *outside* of the below synchronized() blocks even
 		// though the size of the queue may be different until we acquire the locks. That is
-		// necessary because mOutputQueue.getSizeSoftLimit() takes the lock of the queue and for
-		// that WoT currently has no locking order convention (to avoid deadlocks) in relation to
-		// the locks taken below.
+		// necessary because mOutputQueue.getSize() takes the lock of the queue and for that WoT
+		// currently has no locking order convention (to avoid deadlocks) in relation to the locks
+		// taken below.
 		// The queue potentially growing meanwhile is not an issue because the "Soft" part of the
-		// queue size limit is to allow some leeway for running downloads.
+		// queue size limit is to allow some leeway for already running downloads which may
+		// complete after the queue is full already.
 		if(mOutputQueue.getSize() > mOutputQueue.getSizeSoftLimit()) {
 			if(logMINOR) {
 				Logger.minor(this, "mOutputQueue too full, not starting new downloads, getSize(): "
 					+ mOutputQueue.getSize());
 			}
-			// FIXME: Use a more intelligent delay, e.g.:
+			// FIXME: Use an intelligent delay instead of a fixed one, e.g.:
 			// - IdentityFileProcessor computes the average time it takes to process a file.
-			//   Divide the queue size by that to get the time until it will be empty, and use that
-			//   as delay.
+			//   Multiply the queue size by that to get the time until it will be empty, and use
+			//   that as delay.
 			// - Refine the above by computing the time until only a small amount of files is left
 			//   in the queue and use that as delay. Once the delay is over, and we run here and
 			//   see that the queue size is that small, sleep for only 1 second, check if it is
