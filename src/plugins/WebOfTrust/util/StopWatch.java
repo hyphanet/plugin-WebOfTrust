@@ -33,9 +33,7 @@ public final class StopWatch {
 	}
 
 	public long getNanos() {
-		if(mStopTime == null)
-			stop();
-		
+		stopIfNotStoppedYet();
 		return mStopTime - mStartTime;
 	}
 
@@ -44,9 +42,7 @@ public final class StopWatch {
 	}
 
 	public String toString() {
-		if(mStopTime == null)
-			stop();
-		
+		stopIfNotStoppedYet();
 		return TimeUtil.formatTime(TimeUnit.NANOSECONDS.toMillis(mStopTime - mStartTime), 3, true);
 	}
 
