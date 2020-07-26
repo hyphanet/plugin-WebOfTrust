@@ -46,6 +46,7 @@ import plugins.WebOfTrust.exceptions.UnknownIdentityException;
 import plugins.WebOfTrust.introduction.IntroductionPuzzle;
 import plugins.WebOfTrust.network.input.EditionHint;
 import plugins.WebOfTrust.network.input.IdentityDownloaderController;
+import plugins.WebOfTrust.util.StopWatch;
 
 import com.db4o.ext.ExtObjectContainer;
 
