@@ -421,7 +421,22 @@ public final class XMLTransformer {
 		
 		return result;
 	}
-	
+
+	/** Measurements of execution time of {@link XMLTransformer#importIdentity(FreenetURI,
+	 *  InputStream)}.
+	 * 
+	 *  These notably do **not** include the time we wait to acquire the necessary database locks:  
+	 *  How long that takes does not measure the efficiency of our code, the locks will be blocked
+	 *  by other subsystems which are beyond our control. */
+	public static final class ImportIdentityStatistics {
+		/** Time it took to parse the XML, without any further processing.
+		 *  Null if parsing failed. */
+		public StopWatch mXMLParsingTime;
+		/** Time it took to import the data from the already parsed XML into the WoT database.
+		 *  Null if importing failed. */
+		public StopWatch mImportTime;
+	}
+
 	/**
 	 * Imports a identity XML file into the given web of trust. This includes:
 	 * - The identity itself and its attributes
