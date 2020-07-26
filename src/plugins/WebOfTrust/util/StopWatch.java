@@ -3,9 +3,8 @@
  * any later version). See http://www.gnu.org/ for details of the GPL. */
 package plugins.WebOfTrust.util;
 
-import java.util.concurrent.TimeUnit;
-
-import freenet.support.TimeUtil;
+import static freenet.support.TimeUtil.formatTime;
+import static java.util.concurrent.TimeUnit.NANOSECONDS;
 
 /** Utility class for measuring execution time of code. */
 public final class StopWatch {
@@ -43,7 +42,7 @@ public final class StopWatch {
 	}
 
 	public String toString() {
-		return TimeUtil.formatTime(TimeUnit.NANOSECONDS.toMillis(getNanos()), 3, true);
+		return formatTime(NANOSECONDS.toMillis(getNanos()), 3, true);
 	}
 
 }
