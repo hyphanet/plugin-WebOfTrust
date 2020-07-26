@@ -433,6 +433,7 @@ public final class XMLTransformer {
 		/** Time it took to parse the XML, without any further processing.
 		 *  Null if parsing failed. */
 		public StopWatch mXMLParsingTime;
+
 		/** Time it took to import the data from the already parsed XML into the WoT database.
 		 *  Null if importing failed. */
 		public StopWatch mImportTime;
