@@ -38,6 +38,7 @@ public final class StopWatch {
 	}
 
 	public void divideNanosBy(long divisor) {
+		stopIfNotStoppedYet();
 		mStopTime = mStartTime + (mStopTime - mStartTime) / divisor;
 	}
 
