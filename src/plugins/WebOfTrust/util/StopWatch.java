@@ -45,4 +45,9 @@ public final class StopWatch {
 		return formatTime(NANOSECONDS.toMillis(getNanos()), 3, true);
 	}
 
+	public void add(StopWatch other) {
+		stopIfNotStoppedYet();
+		mStopTime += other.getNanos();
+	}
+
 }
