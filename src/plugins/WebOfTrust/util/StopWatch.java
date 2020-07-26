@@ -42,8 +42,7 @@ public final class StopWatch {
 	}
 
 	public String toString() {
-		stopIfNotStoppedYet();
-		return TimeUtil.formatTime(TimeUnit.NANOSECONDS.toMillis(mStopTime - mStartTime), 3, true);
+		return TimeUtil.formatTime(TimeUnit.NANOSECONDS.toMillis(getNanos()), 3, true);
 	}
 
 }
