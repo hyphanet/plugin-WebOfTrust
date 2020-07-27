@@ -826,6 +826,9 @@ public final class XMLTransformer {
 			OutOfMemoryError outOfMemoryError
 				= e instanceof OutOfMemoryError ? (OutOfMemoryError)e : null;
 			
+			if(stats.mXMLParsingTime != null)
+				stats.mXMLParsingTime.stopIfNotStoppedYet();
+			
 			synchronized(mWoT) {
 			synchronized(mWoT.getIdentityDownloaderController()) {
 			// synchronized(mSubscriptionManager) { // We don't use the SubscriptionManager, see below
