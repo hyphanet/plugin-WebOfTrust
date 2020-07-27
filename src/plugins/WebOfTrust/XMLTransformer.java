@@ -449,9 +449,13 @@ public final class XMLTransformer {
 	public void importIdentity(FreenetURI identityURI, InputStream xmlInputStream)
 			throws OutOfMemoryError {
 		
+		final ImportIdentityStatistics stats = new ImportIdentityStatistics();
+		
 		try { // Catch import problems so we can mark the edition as parsing failed
 		// We first parse the XML without synchronization, then do the synchronized import into the WebOfTrust		
+		stats.mXMLParsingTime = new StopWatch();
 		final ParsedIdentityXML xmlData = parseIdentityXML(xmlInputStream);
+		stats.mXMLParsingTime.stop();
 		
 		synchronized(mWoT) {
 		synchronized(mWoT.getIdentityFetcher()) {
