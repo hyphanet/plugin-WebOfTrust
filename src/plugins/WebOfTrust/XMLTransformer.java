@@ -446,8 +446,8 @@ public final class XMLTransformer {
 	 * 
 	 * @param xmlInputStream The input stream containing the XML.
 	 * @throws OutOfMemoryError To indicate you should stop calling this function for a while. */
-	public void importIdentity(FreenetURI identityURI, InputStream xmlInputStream)
-			throws OutOfMemoryError {
+	public ImportIdentityStatistics importIdentity(FreenetURI identityURI,
+			InputStream xmlInputStream) throws OutOfMemoryError {
 		
 		final ImportIdentityStatistics stats = new ImportIdentityStatistics();
 		
@@ -490,7 +490,7 @@ public final class XMLTransformer {
                   + identity);
                 
                 stats.mImportTime = null;
-                return;
+                return stats;
             }
 			
 			final long newEdition = identityURI.getEdition();
@@ -519,7 +519,7 @@ public final class XMLTransformer {
 					Logger.warning(this,
 						"Fetched obsolete edition! Edition: " + newEdition + "; " + identity);
 					stats.mImportTime = null;
-					return;
+					return stats;
 				}
 			}
 			
@@ -923,6 +923,10 @@ public final class XMLTransformer {
 			if(outOfMemoryError != null)
 				throw outOfMemoryError;
 		}
+		
+		assert(stats.mXMLParsingTime != null ? stats.mXMLParsingTime.wasStopped() : true);
+		assert(stats.mImportTime     != null ?     stats.mImportTime.wasStopped() : true);
+		return stats;
 	}
 
 	public void exportIntroduction(OwnIdentity identity, OutputStream os) throws TransformerException {
