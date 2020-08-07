@@ -558,7 +558,8 @@ public final class IdentityDownloaderSlow implements
 					+ mOutputQueue.getSize());
 			}
 			// FIXME: Use an intelligent delay instead of a fixed one, e.g.:
-			// - IdentityFileProcessor computes the average time it takes to process a file.
+			// - IdentityFileProcessor computes the average time it takes to process a file, see
+			//   IdentityFileProcessor.Statistics.getAverageXMLImportTime().
 			//   Multiply the queue size by that to get the time until it will be empty, and use
 			//   that as delay.
 			// - Refine the above by computing the time until only a small amount of files is left
