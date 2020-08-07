@@ -4,6 +4,7 @@
 package plugins.WebOfTrust;
 
 import static freenet.support.TimeUtil.formatTime;
+import static java.util.concurrent.TimeUnit.SECONDS;
 
 import java.util.concurrent.TimeUnit;
 
@@ -94,8 +95,8 @@ public final class IdentityFileProcessor implements Daemon, DelayedBackgroundJob
 		public double getAverageXMLImportTime() {
 			if (mProcessedFiles == 0) // prevent division by 0
 				return 0;
-
-			return ((double) mProcessingTimeNanoseconds / (1000 * 1000 * 1000))
+			
+			return ((double) mProcessingTimeNanoseconds / (double) SECONDS.toNanos(1))
 				/ (double) mProcessedFiles;
 		}
 
