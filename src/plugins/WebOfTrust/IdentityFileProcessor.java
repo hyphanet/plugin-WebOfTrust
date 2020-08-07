@@ -9,6 +9,7 @@ import java.util.concurrent.TimeUnit;
 
 import plugins.WebOfTrust.IdentityFileQueue.IdentityFileStream;
 import plugins.WebOfTrust.IdentityFileQueue.IdentityFileStreamWrapper;
+import plugins.WebOfTrust.XMLTransformer.ImportIdentityStatistics;
 import plugins.WebOfTrust.util.Daemon;
 import plugins.WebOfTrust.util.jobs.BackgroundJob;
 import plugins.WebOfTrust.util.jobs.DelayedBackgroundJob;
@@ -197,19 +198,18 @@ public final class IdentityFileProcessor implements Daemon, DelayedBackgroundJob
 					
 					Logger.normal(this, "run(): Processing: " + stream.mURI);
 					
-					// FIXME: Improve accuracy: importIdentity() first takes a lot of locks, which
-					// might take some time if other daemons (CAPTCHAs, UI, SubscriptionManager)
-					// are running. Thus, it should do the measurement itself to exclude that, and
-					// return the measured value.
-					// When implementing that, also do separate measurement of XML processing time
-					// so we get an idea how slow it is (I suspect it to be rather slow).
-					final long startTime = System.nanoTime();
-					mXMLTransformer.importIdentity(stream.mURI, stream.mXMLInputStream);
-					final long endTime = System.nanoTime();
-
+					ImportIdentityStatistics stats
+						= mXMLTransformer.importIdentity(stream.mURI, stream.mXMLInputStream);
+					
+					long processingTime =
+					    (stats.mXMLParsingTime != null ? stats.mXMLParsingTime.getNanos() : 0)
+					  + (stats.mImportTime     != null ?     stats.mImportTime.getNanos() : 0);
+					
 					synchronized(IdentityFileProcessor.this) {
 						++mStatistics.mProcessedFiles;
-						mStatistics.mProcessingTimeNanoseconds +=  endTime - startTime;
+						// FIXME: Add two members to mStatistics to expose the two separate
+						// measurements which are added up to "time" currently. Show them in the UI.
+						mStatistics.mProcessingTimeNanoseconds +=  processingTime;
 					}
 				} catch(RuntimeException | Error e) {
 					if(stream != null && stream.mURI != null) {
