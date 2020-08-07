@@ -460,6 +460,8 @@ public final class XMLTransformer {
 		synchronized(mWoT) {
 		synchronized(mWoT.getIdentityFetcher()) {
 		synchronized(mSubscriptionManager) {
+			stats.mImportTime = new StopWatch();
+			
 			final Identity identity;
 			try {
 				identity = mWoT.getIdentityByURI(identityURI);
@@ -486,6 +488,8 @@ public final class XMLTransformer {
                   + "IdentityFetcher has not processed the AbortFetchCommand yet or the "
                   + "file was in the IdentityFileQueue for some time, not importing: "
                   + identity);
+                
+                stats.mImportTime = null;
                 return;
             }
 			
@@ -514,6 +518,7 @@ public final class XMLTransformer {
 				} else {
 					Logger.warning(this,
 						"Fetched obsolete edition! Edition: " + newEdition + "; " + identity);
+					stats.mImportTime = null;
 					return;
 				}
 			}
@@ -816,7 +821,8 @@ public final class XMLTransformer {
 					throw e;
 				} // try
 			} // synchronized(Persistent.transactionLock(db))
-				
+			
+			stats.mImportTime.stop();
 			Logger.normal(this, "Finished XML import for " + identity);
 		} // synchronized(mSubscriptionManager)
 		} // synchronized(mWoT.getIdentityFetcher())
@@ -828,6 +834,9 @@ public final class XMLTransformer {
 			
 			if(stats.mXMLParsingTime != null)
 				stats.mXMLParsingTime.stopIfNotStoppedYet();
+			
+			if(stats.mImportTime != null)
+				stats.mImportTime.stopIfNotStoppedYet();
 			
 			synchronized(mWoT) {
 			synchronized(mWoT.getIdentityDownloaderController()) {
