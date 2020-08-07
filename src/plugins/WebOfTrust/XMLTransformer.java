@@ -842,6 +842,8 @@ public final class XMLTransformer {
 			synchronized(mWoT.getIdentityDownloaderController()) {
 			// synchronized(mSubscriptionManager) { // We don't use the SubscriptionManager, see below
 			synchronized(Persistent.transactionLock(mDB) ) {
+				StopWatch markAsParsingFailedTime = new StopWatch();
+				
 				// FIXME: build0020 lacked a try/catch block to rollback the transaction upon error
 				// even though the old version of this code block also did multiple modifications to
 				// the Identity object and thus the database could become inconsistent if something
@@ -903,6 +905,12 @@ public final class XMLTransformer {
 						"also failed! URI: " + identityURI, doubleFault);
 					Persistent.checkedRollback(mDB, this, doubleFault);
 				}
+				
+				markAsParsingFailedTime.stop();
+				if(stats.mImportTime == null)
+					stats.mImportTime = markAsParsingFailedTime;
+				else
+					stats.mImportTime.add(markAsParsingFailedTime);
 			}
 			}
 			}
