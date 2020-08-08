@@ -961,12 +961,17 @@ public final class IdentityDownloaderSlow implements
 			// Closing the stream deletes the IdentityFile on disk, which would cause the upcoming
 			// IdentityFileDiskQueue.contains() to return false - which in turn would cause the XML
 			// to be downloaded by the IdentityDownloaderSlow again while the import is running.
+			//
+			// FIXME: This is now fully handled by onNewEditionImported(), so the above FIXME
+			// can now be recycled into documentation as requested.
+			/*
 			int deletedHints = deleteEditionHintsAndCommit(uri, true, null);
 			if(deletedHints > 1) {
 				synchronized(mLock) {
 					mSkippedDownloads += deletedHints - 1;
 				}
 			}
+			*/
 		} catch (IOException | Error | RuntimeException e) {
 			Logger.error(this, "onSuccess(): Failed for URI: " + uri, e);
 		} finally {
@@ -993,6 +998,9 @@ public final class IdentityDownloaderSlow implements
 		int deletedHints = deleteEditionHints(uri, true, null);
 		assert(deletedHints > 0
 		    || deletedHints == 0 /* A different IdentityDownloader downloaded it. */);
+		
+		if(deletedHints > 1)
+			mSkippedDownloads += deletedHints - 1;
 		
 		// We don't have to try to cancel a potentially running download because that happens in
 		// onSuccess() right after the downloads finish, and the download scheduler must not start
