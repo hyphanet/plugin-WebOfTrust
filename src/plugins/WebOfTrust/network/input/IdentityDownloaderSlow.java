@@ -290,6 +290,7 @@ public final class IdentityDownloaderSlow implements
 
 	private int mSucceededDownloads = 0;
 
+	/** @see IdentityDownloaderSlowStatistics#mSkippedDownloads */
 	private int mSkippedDownloads = 0;
 
 	private int mFailedTemporarilyDownloads = 0;
@@ -1851,7 +1852,11 @@ public final class IdentityDownloaderSlow implements
 		 * order (see {@link EditionHint#compareTo(EditionHint)}) to hopefully download the latest
 		 * editions first so we don't need to try to download many old editions. Once we download an
 		 * edition of an Identity which is newer than some pending queued hints they will be
-		 * deleted. Deleting each thus spares us a single download which is nice. */
+		 * deleted. Deleting each thus spares us a single download which is nice.
+		 * 
+		 * Notice that this value may be inaccurate if a database transaction which called
+		 * {@link IdentityDownloaderSlow#onNewEditionImported(Identity)} is rolled back due to
+		 * errors. */
 		public final int mSkippedDownloads;
 
 		/** E.g. lack of network connection */
