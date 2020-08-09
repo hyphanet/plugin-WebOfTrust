@@ -919,6 +919,10 @@ public final class IdentityDownloaderSlow implements
 			// Copying a whole directory hierachy instead of just a database file is a non-trivial
 			// operation which can also be interrupted at an arbitrary incompleteness so then
 			// validating if a backup is valid would also be more complex.
+			// And then we still haven't even dealt with the implications of perhaps someday
+			// IdentityFileDiskQueue being replaced with IdentityFileMemoryQueue for some users
+			// (e.g. those without a SSD or with a cheap SSD which mustn't be written to much) - it
+			// would lose **all** of its contents upon power loss.
 			// 
 			// There are two potential fixes:
 			// 1. Ensure the IdentityFileDiskQueue does fsync before returning from the above add().
