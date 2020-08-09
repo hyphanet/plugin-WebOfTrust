@@ -917,8 +917,8 @@ public final class IdentityDownloaderSlow implements
 			// cause our backup and defrag code and users to also have to copy the queue directory
 			// for backup purposes, not just the database.
 			// Copying a whole directory hierachy instead of just a database file is a non-trivial
-			// operation which can also be interrupted so then validating if a backup is valid would
-			// also be more complex.
+			// operation which can also be interrupted at an arbitrary incompleteness so then
+			// validating if a backup is valid would also be more complex.
 			// 
 			// There are two potential fixes:
 			// 1. Ensure the IdentityFileDiskQueue does fsync before returning from the above add().
