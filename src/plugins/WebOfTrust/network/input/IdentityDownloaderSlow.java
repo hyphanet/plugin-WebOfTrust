@@ -908,7 +908,7 @@ public final class IdentityDownloaderSlow implements
 			// 
 			// Doing deleteEditionHintsAndCommit() here would break the convention of not relying on
 			// any disk storage to be reliable except the database in order to keep the database
-			// consistent = it would break the ACID properties of the database:
+			// consistent, which would break the ACID properties of the database:
 			// If the mOutputQueue would get its files deleted after the call (which not only the
 			// user or power loss could cause, but also normal operation of IdentityFileQueue
 			// implementations! - see its JavaDoc) then we wouldn't try downloading the the
