@@ -892,8 +892,22 @@ public final class IdentityDownloaderSlow implements
 			// need closure, just close it here anyway.
 			mOutputQueue.add(new IdentityFileStream(uri, inputStream));
 			
-			// FIXME: This deleteEditionHintsAndCommit() breaks the convention of not relying on any
-			// disk storage to be reliable except the database in order to keep the database
+			// Naively we now would delete any EditionHints from the download queue which are lower
+			// than or equal to the edition we've just downloaded:
+			/*
+				int deletedHints = deleteEditionHintsAndCommit(uri, true, null);
+				if(deletedHints > 1) {
+					synchronized(mLock) {
+						mSkippedDownloads += deletedHints - 1;
+					}
+				}
+			*/
+			// But we instead defer this to onNewEditionImported(), which is called when the
+			// downloaded edition is imported by the IdentityFileProcessor.
+			// This is well justified:
+			// 
+			// Doing deleteEditionHintsAndCommit() here would break the convention of not relying on
+			// any disk storage to be reliable except the database in order to keep the database
 			// consistent = it breaks the ACID properties of the database:
 			// If the IdentityFileDiskQueue gets its files deleted after the call (e.g. by the user
 			// or power loss) then we won't try downloading the hints again even though we should
@@ -965,14 +979,6 @@ public final class IdentityDownloaderSlow implements
 			//
 			// FIXME: This is now fully handled by onNewEditionImported(), so the above FIXME
 			// can now be recycled into documentation as requested.
-			/*
-			int deletedHints = deleteEditionHintsAndCommit(uri, true, null);
-			if(deletedHints > 1) {
-				synchronized(mLock) {
-					mSkippedDownloads += deletedHints - 1;
-				}
-			}
-			*/
 		} catch (IOException | Error | RuntimeException e) {
 			Logger.error(this, "onSuccess(): Failed for URI: " + uri, e);
 		} finally {
