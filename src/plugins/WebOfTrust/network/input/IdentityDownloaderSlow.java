@@ -945,7 +945,7 @@ public final class IdentityDownloaderSlow implements
 			//    implementation in this class then looks at the new value of
 			//    Identity.getLastFetchedEdition() to call deleteEditionHints() accordingly (it
 			//    uses the non-*AndCommit() version because the callback is part of a transaction
-			//    which is started by IdentityFileProcessor and ought to be committed by it).
+			//    which is started by XMLTransformer and ought to be committed by it).
 			//    To prevent the mDownloadSchedulerThread from starting a download for the same
 			//    edition again while it is still queued for processing you must add code to it
 			//    which before starting a download checks the mOutputQueue for whether the edition
