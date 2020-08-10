@@ -925,7 +925,7 @@ public final class IdentityDownloaderSlow implements
 			// would lose **all** of its contents upon power loss.
 			// 
 			// There are two potential fixes:
-			// 1. Ensure the IdentityFileDiskQueue does fsync before returning from the above add().
+			// 1. Ensure the above mOutputQueue.add() does fsync before returning.
 			//    This doesn't fix the backup code though and is still not 100% theoretically
 			//    precise because it doesn't take account for other types of transactional
 			//    decoherence between the database and the IdentityFileQueue besides the already
