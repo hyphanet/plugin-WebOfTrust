@@ -127,6 +127,7 @@ matrix:
     - jdk: openjdk12
     - jdk: openjdk13
     - jdk: openjdk14
+    - jdk: openjdk15
     # oraclejdk8: Disabled to keep the build matrix small.
     # oraclejdk9: No more updates by Oracle: https://www.oracle.com/technetwork/java/java-se-support-roadmap.html
     # oraclejdk10: Not supported anymore: https://changelog.travis-ci.com/stop-a-job-early-if-a-deprecated-jdk-is-configured-76612
@@ -134,6 +135,7 @@ matrix:
     # oraclejdk12: Disabled to keep the build matrix small.
     - jdk: oraclejdk13
     - jdk: oraclejdk14
+    - jdk: oraclejdk15
 
 deploy:
   provider: script
