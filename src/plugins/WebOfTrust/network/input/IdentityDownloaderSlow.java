@@ -938,13 +938,14 @@ public final class IdentityDownloaderSlow implements
 			//    It also wouldn't work with IdentityFileMemoryQueue.
 			//    Further fsync is an expensive operation as it prevents write caching.
 			// 2. Don't do the deleteEditionHintsAndCommit() here but when actually importing the
-			//    IdentityFile from the IdentityFileQueue. This can be done by adding a new callback
-			//    onNewEditionImported() to IdentityDownloader which is called by WoT upon import
-			//    and whose implementation in this class then looks at the new value of
-			//    Identity.getLastFetchedEdition() to call deleteEditionHints() accordingly (make
-			//    sure to add and use a special version of it which it doesn't commit(), the
-			//    callback will likely be part of a transaction which is started by
-			//    IdentityFileProcessor and ought to be committed by it!).
+			//    IdentityFile from the IdentityFileQueue mOutputQueue - which is the fix I've
+			//    decided to use via the new onNewEditionImported() callback of our interface
+			//    IdentityDownloader.
+			//    It is called by WoT upon import of the IdentityFile from the queue and its
+			//    implementation in this class then looks at the new value of
+			//    Identity.getLastFetchedEdition() to call deleteEditionHints() accordingly (it
+			//    uses the non-*AndCommit() version because the callback is part of a transaction
+			//    which is started by IdentityFileProcessor and ought to be committed by it).
 			//    To prevent the mDownloadSchedulerThread from starting a download for the same
 			//    edition again while it is still queued for processing you must add code to it
 			//    which before starting a download checks the mOutputQueue for whether the edition
