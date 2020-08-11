@@ -960,8 +960,9 @@ public final class IdentityDownloaderSlow implements
 			//      duplicate each other's efforts.
 			//      E.g. if IdentityDownloaderFast downloads an edition, our onNewEditionImported()
 			//      will deleteEditionHints() upon the hints older than that edition.
-			//    - it fixes this function to obey the aforementioned concept of not requiring the
-			//      mLock.
+			//    - it allows onSuccess() to keep obeying the concept of not taking the mLock
+			//      which was explained earlier in the function. That prevent hundreds of threads
+			//      from potentially stalling in onSuccess().
 			//    - Duplicate checking of IdentityDownloaderSlow then also happens against the
 			//      files queued for processing, not just against the hints queued for downloading.
 			//      This prevents usage of outdated hints which could be stored after we've done
