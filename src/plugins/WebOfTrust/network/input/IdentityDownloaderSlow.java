@@ -98,7 +98,11 @@ import freenet.support.io.ResumeFailedException;
  * {@link #onSuccess(FetchResult, ClientGetter)} and
  * {@link #onFailure(FetchException, ClientGetter)} to the {@link IdentityDownloaderFast}, and
  * also have that one do the same for us - this avoids both class trying to download the same stuff
- * twice. Notice: An *invalid* approach for handling a downloaded or failed to download edition in
+ * twice.  
+ * EDIT: {@link #onNewEditionImported(Identity)} implements onSuccess()-communication from
+ * IdentityDownloaderFast to *Slow; the reverse isn't implemented at
+ * {@link IdentityDownloaderFast#onNewEditionImported(Identity)} yet.
+ * Notice: An *invalid* approach for handling a downloaded or failed to download edition in
  * IdentityDownloaderFast would be to call fred's function for passing an edition hint to its USK
  * code with edition = fetchedOrFailedEdition + 1: fred considers edition hints as non-mandatory so
  * it would continue trying to fetch lower editions if downloading the hint fails, which it may do
@@ -950,15 +954,12 @@ public final class IdentityDownloaderSlow implements
 			//    edition again while it is still queued for processing code was added to it which
 			//    before starting a download checks the mOutputQueue for whether an edition of
 			//    the particular Identity is queued there already.
-			//    Further advantages beyond ACID of this approach would be:
-			//    - it will also allow the IdentityDownloaderFast to notice when the
-			//      IdentityDownloaderSlow has found a new edition, which is a pending FIXME of this
-			//      class already anyway: We must implement this somehow so the other downloader
-			//      doesn't unnecessarily duplicate our efforts.
-			//    - it allows the same in reverse: Processing of editions which the
-			//      IdentityDownloaderFast has downloaded will cause the onNewEditionImported()
-			//      callback to be called upon this class here which allows it to
-			//      deleteEditionHints() upon the hints older than the processed edition.
+			//    Further advantages beyond ACID of this approach are:
+			//    - it also allows IdentityDownloader implementations to tell each other when one of
+			//      them has found a new edition, which is necessary anyway to ensure they don't
+			//      duplicate each other's efforts.
+			//      E.g. if IdentityDownloaderFast downloads an edition, our onNewEditionImported()
+			//      will deleteEditionHints() upon the hints older than that edition.
 			//    - it fixes this function to obey the aforementioned concept of not requiring the
 			//      mLock.
 			//    - Duplicate checking of IdentityDownloaderSlow then also happens against the
