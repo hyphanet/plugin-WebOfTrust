@@ -947,13 +947,9 @@ public final class IdentityDownloaderSlow implements
 			//    uses the non-*AndCommit() version because the callback is part of a transaction
 			//    which is started by XMLTransformer and ought to be committed by it).
 			//    To prevent the mDownloadSchedulerThread from starting a download for the same
-			//    edition again while it is still queued for processing you must add code to it
-			//    which before starting a download checks the mOutputQueue for whether the edition
-			//    (or a higher one!) is queue there already. (Alternatively the delay for which
-			//    IdentityFileProcessor waits after mOutputQueue.add() before processing the queue
-			//    could be made sufficiently smaller as compared to the delay of the below
-			//    mDownloadSchedulerThread.triggerExecution() but in practice that race condition
-			//    could very often result in duplicate downloads.)
+			//    edition again while it is still queued for processing code was added to it which
+			//    before starting a download checks the mOutputQueue for whether an edition of
+			//    the particular Identity is queued there already.
 			//    Further advantages beyond ACID of this approach would be:
 			//    - it will also allow the IdentityDownloaderFast to notice when the
 			//      IdentityDownloaderSlow has found a new edition, which is a pending FIXME of this
