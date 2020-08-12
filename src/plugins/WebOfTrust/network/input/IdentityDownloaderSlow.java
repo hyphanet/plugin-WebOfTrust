@@ -963,14 +963,15 @@ public final class IdentityDownloaderSlow implements
 			//    - it allows onSuccess() to keep obeying the concept of not taking the mLock
 			//      which was explained earlier in the function. That prevents the potential issue
 			//      of hundreds of threads stalling in onSuccess() due to contention of the lock.
-			//    - Duplicate checking of IdentityDownloaderSlow then also happens against the
-			//      files queued for processing, not just against the hints queued for downloading.
-			//      This prevents usage of outdated hints which could be stored after we've done
-			//      deleteEditionHintsAndCommit() here because the XMLTransformer will import any
-			//      hints which seem fresh as compared to the edition the target Identity has stored
-			//      in the database and it will take some time for its edition in the database to
-			//      match what we've just downloaded because IdentityFile processing usually is much
-			//      slower than downloading.
+			//    - With this approach ensuring fresh, valid EditionHints are used first instead of
+			//      potentially obsolete ones also happens as compared to the files queued for
+			//      processing, not just as compared to the hints queued for downloading currently.
+			//      This prevents usage of outdated hints which could be stored after we would've
+			//      called deleteEditionHintsAndCommit() here:
+			//      The XMLTransformer will make use import any hints which seem fresh as compared
+			//      to the edition the target Identity has stored in the database. But it will take
+			//      some time for its edition in the database to match what we've just downloaded
+			//      because importing downloads usually is much slower than downloading.
 			// Thereby I would prefer the latter approach to be implemented.
 			// When doing so please consider recycling this FIXME into documentation: Don't remove
 			// the deleteEditionHintsAndCommit() call but comment it out, with the recycled FIXME
