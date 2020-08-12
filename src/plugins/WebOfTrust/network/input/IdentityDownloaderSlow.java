@@ -952,8 +952,10 @@ public final class IdentityDownloaderSlow implements
 			//    which is started by XMLTransformer and ought to be committed by it).
 			//    To prevent the mDownloadSchedulerThread from starting a download for the same
 			//    edition again while it is still queued for processing code was added to it which
-			//    before starting a download checks the mOutputQueue for whether an edition of
-			//    the particular Identity is queued there already.
+			//    before starting a download checks mOutputQueue.containsAnyEditionOf() for whether
+			//    any edition of the particular Identity was downloaded but not processed yet.
+			//    New downloads are not started for Identitys of which an edition is pending
+			//    processing.
 			//    Further advantages beyond ACID of this approach are:
 			//    - it also allows IdentityDownloader implementations to tell each other when one of
 			//      them has found a new edition, which is necessary anyway to ensure they don't
@@ -963,7 +965,10 @@ public final class IdentityDownloaderSlow implements
 			//    - it allows onSuccess() to keep obeying the concept of not taking the mLock
 			//      which was explained earlier in the function. That prevents the potential issue
 			//      of hundreds of threads stalling in onSuccess() due to contention of the lock.
-			//    - This approach prevents downloading the same editions over and over again:
+			//    - Checking mOutputQueue.containsAnyEditionOf() before starting a download and
+			//      not starting downloads for which it is true would be necessary to prevent
+			//      downloading the same editions over and over again **even if** onSuccess() still
+			//      did deleteEditionHintsAndCommit():
 			//      Once an edition was downloaded and we would've deleted the EditionHints to it
 			//      with deleteEditionHintsAndCommit() here, the hints for the edition could be
 			//      stored again and thus downloaded again if we meanwhile imported the trust list
