@@ -963,15 +963,16 @@ public final class IdentityDownloaderSlow implements
 			//    - it allows onSuccess() to keep obeying the concept of not taking the mLock
 			//      which was explained earlier in the function. That prevents the potential issue
 			//      of hundreds of threads stalling in onSuccess() due to contention of the lock.
-			//    - With this approach ensuring fresh, valid EditionHints are used first instead of
-			//      potentially obsolete ones also happens as compared to the files queued for
-			//      processing, not just as compared to the hints queued for downloading currently.
-			//      This prevents usage of outdated hints which could be stored after we would've
-			//      called deleteEditionHintsAndCommit() here:
-			//      The XMLTransformer will make use import any hints which seem fresh as compared
-			//      to the edition the target Identity has stored in the database. But it will take
-			//      some time for its edition in the database to match what we've just downloaded
-			//      because importing downloads usually is much slower than downloading.
+			//    - This approach prevents downloading the same editions over and over again:
+			//      Once an edition was downloaded and we would've deleted the EditionHints to it
+			//      with deleteEditionHintsAndCommit() here, the hints for the edition could be
+			//      stored again and thus downloaded again if we meanwhile imported the trust list
+			//      of a different Identity and obtained the affected hints from it:
+			//      storeNewEditionHintCommandWithoutCommit() will accept any hints which are newer
+			//      than the Identity.getLastFetchedEdition() as stored in the database.
+			//      But it will take some time for its edition in the database to match what we've
+			//      just downloaded because importing new editions usually is much slower than
+			//      downloading them (due to the resulting Trust/Score computations).
 			// Thereby I would prefer the latter approach to be implemented.
 			// When doing so please consider recycling this FIXME into documentation: Don't remove
 			// the deleteEditionHintsAndCommit() call but comment it out, with the recycled FIXME
