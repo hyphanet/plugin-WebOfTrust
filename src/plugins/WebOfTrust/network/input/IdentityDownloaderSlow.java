@@ -158,15 +158,13 @@ import freenet.support.io.ResumeFailedException;
  *     - so if we didn't keep all EditionHint objects for the same edition we would have to figure
  *     out if there was a different sourceIdentity providing a hint for that edition to store
  *     an EditionHint object for it. And we would have to do that for all trustees of the distrusted
- *     Identity by iterating over all their received trusts - so that would be an
- *     O(number_of_trustees_of_distrusted_identity * number_of_trusters_of_each_trustee) = O(N*N)
- *     = O(N^2) operation.
+ *     Identity by iterating over all their received trusts - so that would be an operation of cost
+ *     O(number_of_trustees_of_distrusted_identity * number_of_trusters_of_each_trustee) = O(N*M)
  *     TODO: Performance:
  *     The complexity of this actually wouldn't be that bad so a possible future revision of this
  *     class may implement it to save the disk space of having multiple EditionHint objects for the
- *     same edition: One of the factors N, the number of trustees, is actually limited to a constant
- *     value ({@link XMLTransformer#MAX_IDENTITY_XML_TRUSTEE_AMOUNT}), so the complexity may be
- *     bearable.
+ *     same edition: N, the number of trustees, is actually limited to a constant value
+ *     ({@link XMLTransformer#MAX_IDENTITY_XML_TRUSTEE_AMOUNT}), so the complexity may be bearable.
  *     It may also be worthy to trade this time for the disk space as someone becoming distrusted
  *     should hopefully not happen very often - but the disk usage we currently have is taken all
  *     the time, and it is in fact also O(N*512): Each truster/trustee pair constitutes an
