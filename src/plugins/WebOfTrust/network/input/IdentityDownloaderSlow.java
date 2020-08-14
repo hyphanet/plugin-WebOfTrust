@@ -136,7 +136,8 @@ import freenet.support.io.ResumeFailedException;
  *   targetIdentity, and the sourceIdentity thus cannot say that there are multiple.
  * - Once an edition of a given targetIdentity was imported, {@link #onNewEditionImported(Identity)}
  *   will delete all EditionHints of that edition or lower ones.  
- *   In other words: EditionHint objects are only stored for new editions.  
+ *   In other words: EditionHint objects are only stored for editions which we haven't acquired yet,
+ *   they are our download queue.  
  *   Notice that {@link #onNewEditionImported(Identity)} is not called right when the edition is
  *   downloaded but deferred until its import, see the large documentation inside
  *   {@link #onSuccess(FetchResult, ClientGetter)}.
