@@ -989,8 +989,6 @@ public final class IdentityDownloaderSlow implements
 			// When doing so please consider recycling this FIXME into documentation: Don't remove
 			// the deleteEditionHintsAndCommit() call but comment it out, with the recycled FIXME
 			// explaining why it is commented out.
-			// Also adapt the class-level JavaDoc "Once an edition of a given targetIdentity is
-			// fetched [...]" then.
 			// It will further be necessary to change IdentityFileStream and/or the
 			// IdentityFileProcessor run() code to ensure the stream is not closed in run() right
 			// when the XML is parsed but is kept open until the XML import is finished:
