@@ -140,7 +140,8 @@ import freenet.support.io.ResumeFailedException;
  *   they are our download queue.  
  *   NOTICE: {@link #onNewEditionImported(Identity)} is not called right when the edition was
  *   downloaded but deferred until its import, which can happen many minutes later!  
- *   The obsolete hints will continue to exist meanwhile.  
+ *   The obsolete hints will continue to exist meanwhile and the download scheduler must use
+ *   appropriate means to ignore them.  
  *   See the large documentation inside {@link #onSuccess(FetchResult, ClientGetter)} for why we
  *   don't delete the hints right after their download.
  * - For a given targetIdentity, there *CAN* be multiple EditionHint objects stored for the same
