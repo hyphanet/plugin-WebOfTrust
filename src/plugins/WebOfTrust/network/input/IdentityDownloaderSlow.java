@@ -168,7 +168,8 @@ import freenet.support.io.ResumeFailedException;
  *     It may also be worthy to trade this time for the disk space as someone becoming distrusted
  *     should hopefully not happen very often - but the disk usage we currently have is taken all
  *     the time, and it is in fact also O(N*512): Each truster/trustee pair constitutes an
- *     EditionHint.
+ *     EditionHint.  
+ *     However IMHO it is not worth the additional complexity of the code to change this.
  * More details about the EditionHint storage policy can be seen at:
  * - {@link #storeStartFetchCommandWithoutCommit(Identity)}
  * - {@link #storeAbortFetchCommandWithoutCommit(Identity)}
