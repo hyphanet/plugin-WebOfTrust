@@ -138,9 +138,11 @@ import freenet.support.io.ResumeFailedException;
  *   will delete all EditionHints of that edition or lower ones.  
  *   In other words: EditionHint objects are only stored for editions which we haven't acquired yet,
  *   they are our download queue.  
- *   Notice that {@link #onNewEditionImported(Identity)} is not called right when the edition is
- *   downloaded but deferred until its import, see the large documentation inside
- *   {@link #onSuccess(FetchResult, ClientGetter)}.
+ *   NOTICE: {@link #onNewEditionImported(Identity)} is not called right when the edition was
+ *   downloaded but deferred until its import, which can happen many minutes later!  
+ *   The obsolete hints will continue to exist meanwhile.  
+ *   See the large documentation inside {@link #onSuccess(FetchResult, ClientGetter)} for why we
+ *   don't delete the hints right after their download.
  * - For a given targetIdentity, there *CAN* be multiple EditionHint objects stored for the same
  *   edition! This is because:
  *   * The priority/position in the download queue of all hints is affected by lots of attributes
