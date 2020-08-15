@@ -989,12 +989,6 @@ public final class IdentityDownloaderSlow implements
 			// When doing so please consider recycling this FIXME into documentation: Don't remove
 			// the deleteEditionHintsAndCommit() call but comment it out, with the recycled FIXME
 			// explaining why it is commented out.
-			// It will further be necessary to change IdentityFileStream and/or the
-			// IdentityFileProcessor run() code to ensure the stream is not closed in run() right
-			// when the XML is parsed but is kept open until the XML import is finished:
-			// Closing the stream deletes the IdentityFile on disk, which would cause the upcoming
-			// IdentityFileDiskQueue.contains() to return false - which in turn would cause the XML
-			// to be downloaded by the IdentityDownloaderSlow again while the import is running.
 			//
 			// FIXME: This is now fully handled by onNewEditionImported(), so the above FIXME
 			// can now be recycled into documentation as requested.
