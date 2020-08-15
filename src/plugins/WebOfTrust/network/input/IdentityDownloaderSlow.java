@@ -985,13 +985,8 @@ public final class IdentityDownloaderSlow implements
 			//      But it will take some time for its edition in the database to match what we've
 			//      just downloaded because importing new editions usually is much slower than
 			//      downloading them (due to the resulting Trust/Score computations).
-			// Thereby I would prefer the latter approach to be implemented.
-			// When doing so please consider recycling this FIXME into documentation: Don't remove
-			// the deleteEditionHintsAndCommit() call but comment it out, with the recycled FIXME
-			// explaining why it is commented out.
 			//
-			// FIXME: This is now fully handled by onNewEditionImported(), so the above FIXME
-			// can now be recycled into documentation as requested.
+			// Thereby I strongly prefer approach 2 and have implemented it.
 		} catch (IOException | Error | RuntimeException e) {
 			Logger.error(this, "onSuccess(): Failed for URI: " + uri, e);
 		} finally {
