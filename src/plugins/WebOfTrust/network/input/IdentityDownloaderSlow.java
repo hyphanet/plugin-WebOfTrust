@@ -296,7 +296,11 @@ public final class IdentityDownloaderSlow implements
 	 * downloads are rolled back before they are processed that will show up by the other numbers
 	 * not adding up to this, which allows users to notice rollbacks. Perhaps a tradeoff would
 	 * be to show the difference in the UI.
-	 * The same issue may or may not apply to the other statistics. */
+	 * The same issue may or may not apply to the other statistics.
+	 * 
+	 * TODO: Code quality: Move the documentation to {@link IdentityDownloaderSlowStatistics} as
+	 * that's what external users of the class will run into first, add "@see" here instead.
+	 * Also add "@see" to all the other statistics variables below. */
 	private int mTotalQueuedDownloadsInSession = 0;
 
 	private int mSucceededDownloads = 0;
