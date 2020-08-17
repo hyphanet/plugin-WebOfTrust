@@ -353,8 +353,9 @@ CHANGELOG about stuff only interesting for developers
 - [Code quality] Travis CI: Test against most recent Java versions (xor)
 
   The cloud service now runs the unit tests periodically against:
+  - oraclejdk15 (new)
   - oraclejdk14 (new)
-  - oraclejdk13 (new)
+  - openjdk15 (new)
   - openjdk14 (new)
   - openjdk13 (new)
   - openjdk12 (new)
