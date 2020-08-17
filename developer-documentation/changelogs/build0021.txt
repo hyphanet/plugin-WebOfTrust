@@ -363,10 +363,9 @@ CHANGELOG about stuff only interesting for developers
   - openjdk10 (new)
   - openjdk9 (new)
   - openjdk8
-  - openjdk7
 
   This is the maximal set of Java versions which are supported by
-  Freenet, Travis CI and Oracle as of 2020-01-19, with old Oracle ones
+  Freenet, Travis CI and Oracle as of 2020-08-17, with old Oracle ones
   excluded to not abuse Travis with too much CPU load.
   Notice that OpenJDK might not provide security updates for all of
   these!
