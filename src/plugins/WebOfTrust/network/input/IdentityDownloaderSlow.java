@@ -539,7 +539,8 @@ public final class IdentityDownloaderSlow implements
 	 * e.g. {@link IdentityDownloaderFast.DownloadScheduler}. Update the documentation of
 	 * {@link #mDownloadSchedulerThread} to reflect that.
 	 * 
-	 * The actual downloader. Starts fetches for the head of {@link #getQueue()}.
+	 * The actual downloader, also called "download scheduler" in documentation.  
+	 * Starts fetches for the head of {@link #getQueue()}.
 	 * 
 	 * Executed on an own thread after {@link DelayedBackgroundJob#triggerExecution()} was called
 	 * on {@link #mDownloadSchedulerThread}. That function is called by this class whenever the
