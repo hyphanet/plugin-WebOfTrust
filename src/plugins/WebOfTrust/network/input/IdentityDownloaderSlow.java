@@ -605,6 +605,14 @@ public final class IdentityDownloaderSlow implements
 				int maxDownloads = getMaxRunningDownloadCount();
 				int downloadsToSchedule = maxDownloads - getRunningDownloadCount();
 				// Check whether we actually need to do something before the expensive getQueue().
+				// TODO: Performance: Measure how many downloads we schedule on average to see if
+				// only scheduling new downloads if downloadsToSchedule is significantly above 0
+				// would make sense, e.g. if it is > 50% of getMaxRunningDownloadCount().
+				// That may make sense because mDownloadSchedulerThread.triggerExecution() is called
+				// every time a single new EditionHint stored to the database, and there are many
+				// new ones during bootstrapping of WoT.
+				// So the scheduler might be woken up much more often than is necessary and thus do
+				// the getQueue() database query too often to justify the overhead.
 				if(downloadsToSchedule <= 0)
 					return;
 				
