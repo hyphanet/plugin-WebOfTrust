@@ -623,7 +623,6 @@ public final class IdentityDownloaderSlow implements
 				// Only run one download per Identity at once by adding all existing downloads to
 				// identitiesToIgnore.
 				// This is necessary because:
-				// - it is fair.
 				// - it can easily occur that we have many EditionHints in the queue for the
 				//   same Identity which all have almost the same EditionHint.getPriority()
 				//   value = will be next to each other in the queue, so we would end up trying
@@ -631,6 +630,8 @@ public final class IdentityDownloaderSlow implements
 				//   - doesn't make sense because the first of them may have a higher edition
 				//     than all the others and we're only interested in the highest edition.
 				//   - blocks the download of other identities.
+				//   So by ignoring identities which already are being downloaded, identities are
+				//   approximately downloaded in a round-robin and thus more fair fashion.
 				// (We could avoid having to ignore the Identitys here by instead ensuring that
 				// no EditionHints are stored which have almost the same priority as others.
 				// However ignoring them here is a lot easier than changing the storage
