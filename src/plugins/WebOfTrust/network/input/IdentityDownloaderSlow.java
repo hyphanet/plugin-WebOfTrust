@@ -632,6 +632,12 @@ public final class IdentityDownloaderSlow implements
 				//   - blocks the download of other identities.
 				//   So by ignoring identities which already are being downloaded, identities are
 				//   approximately downloaded in a round-robin and thus more fair fashion.
+				// - A single identity will have a rather constant trust list probably, downloading
+				//   different versions of it won't yield many different trustees.
+				//   So for the round-robin fashion it is imaginable that for new users this yields
+				//   a faster discovery of all remote identities because the more trust lists we
+				//   download from different identities the higher the chance of discovering new
+				//   ones in them.
 				// (We could avoid having to ignore the Identitys here by instead ensuring that
 				// no EditionHints are stored which have almost the same priority as others.
 				// However ignoring them here is a lot easier than changing the storage
