@@ -1907,8 +1907,14 @@ public final class IdentityDownloaderSlow implements
 
 
 		public IdentityDownloaderSlowStatistics() {
+			// WebOfTrust lock: Necessary as we access its database table via getQueue(): The
+			//                  EditionHints it returns contain references to Identity objects.
+			// mLock:           Necessary because we access IdentityDownloaderSlow's database table
+			//                  via getQueue(). Also because we access its member variables.
+			// transactionLock: Necessary because we access the database.
 			synchronized(IdentityDownloaderSlow.this.mWoT) {
 			synchronized(IdentityDownloaderSlow.this.mLock) {
+			synchronized(Persistent.transactionLock(IdentityDownloaderSlow.this.mDB)) {
 				mQueuedDownloads = getQueue().size();
 				this.mTotalQueuedDownloadsInSession
 					= IdentityDownloaderSlow.this.mTotalQueuedDownloadsInSession;
@@ -1921,8 +1927,7 @@ public final class IdentityDownloaderSlow implements
 				this.mFailedPermanentlyDownloads
 					= IdentityDownloaderSlow.this.mFailedPermanentlyDownloads;
 				this.mDataNotFoundDownloads = IdentityDownloaderSlow.this.mDataNotFoundDownloads;
-			}
-			}
+			}}}
 		}
 	}
 }
