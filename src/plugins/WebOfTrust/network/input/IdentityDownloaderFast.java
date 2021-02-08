@@ -1606,6 +1606,8 @@ public final class IdentityDownloaderFast implements
 	
 	
 		public IdentityDownloaderFastStatistics() {
+			// FIXME: Fix and document locking the same way as it was done at
+			// IdentityDownloaderSlowStatistics() by the previous commit.
 			synchronized(IdentityDownloaderFast.this.mWoT) { // For getQueuedCommands()
 			synchronized(IdentityDownloaderFast.this) {
 				mRunningDownloads = IdentityDownloaderFast.this
