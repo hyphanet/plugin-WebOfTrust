@@ -1907,8 +1907,8 @@ public final class IdentityDownloaderSlow implements
 
 
 		public IdentityDownloaderSlowStatistics() {
-			// WebOfTrust lock: Necessary as we access its database table via getQueue(): The
-			//                  EditionHints it returns contain references to Identity objects.
+			// WebOfTrust lock: Necessary as we access one of its database tables via getQueue():
+			//                  The EditionHints it returns contain references to Identity objects.
 			// mLock:           Necessary because we access IdentityDownloaderSlow's database table
 			//                  via getQueue(). Also because we access its member variables.
 			// transactionLock: Necessary because we access the database.
