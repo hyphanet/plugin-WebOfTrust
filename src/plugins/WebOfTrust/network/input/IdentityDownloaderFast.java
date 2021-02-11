@@ -1050,6 +1050,18 @@ public final class IdentityDownloaderFast implements
 	 * of this class). */
 	@SuppressWarnings("serial")
 	public static abstract class DownloadSchedulerCommand extends Persistent {
+		/** The {@link Identity#getID()} of the associated {@link Identity}.
+		 * 
+		 *  We do not store a reference to the {@link Identity} object itself due to our child class
+		 *  {@link StopDownloadCommand}:  
+		 *  If the download is to be stopped because the {@link Identity} was deleted from the
+		 *  database then that reference would be nulled on the StopDownloadCommand objects in the
+		 *  database by db4o before the StopDownloadCommand could be processed.
+		 * 
+		 *  NOTICE: The child class {@link StartDownloadCommand} **does** include a pointer to the
+		 *  Identity object!  
+		 *  Thereby database transactions which query DownloadSchedulerCommand objects from the
+		 *  database must acquire the WebOfTrust lock. */
 		@IndexedField private final String mIdentityID;
 
 		DownloadSchedulerCommand(WebOfTrust wot, final String identityID) {
