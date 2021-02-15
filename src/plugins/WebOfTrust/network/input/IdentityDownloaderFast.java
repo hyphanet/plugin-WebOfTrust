@@ -1618,17 +1618,24 @@ public final class IdentityDownloaderFast implements
 	
 	
 		public IdentityDownloaderFastStatistics() {
-			// FIXME: Fix and document locking the same way as it was done at
-			// IdentityDownloaderSlowStatistics() by the previous commit.
-			synchronized(IdentityDownloaderFast.this.mWoT) { // For getQueuedCommands()
+			// WebOfTrust lock: Necessary as we access one of its database tables via
+			//                  getQueuedCommands(): The DownloadSchedulerCommand objects which it
+			//                  returns can contain references to Identity objects.
+			// mLock:           Necessary because we access IdentityDownloaderFast's database table
+			//                  via getQueuedCommands(). Also because we access its member
+			//                  variables.
+			// transactionLock: Necessary because we access the database.
+			synchronized(IdentityDownloaderFast.this.mWoT) {
 			synchronized(IdentityDownloaderFast.this.mLock) {
+			synchronized(Persistent.transactionLock(IdentityDownloaderFast.this.mDB)) {
 				mRunningDownloads = IdentityDownloaderFast.this
 					.mDownloads.size();
 				mScheduledForStartingDownloads = IdentityDownloaderFast.this
 					.getQueuedCommands(StartDownloadCommand.class).size();
 				mScheduledForStoppingDownloads = IdentityDownloaderFast.this
 					.getQueuedCommands(StopDownloadCommand.class).size();
-			}}
+			}}}
+			// AtomicIntegers can be accessed without locking.
 			mDownloadedEditions = IdentityDownloaderFast.this
 				.mDownloadedEditions.get();
 			mDownloadProcessingFailures = IdentityDownloaderFast.this
