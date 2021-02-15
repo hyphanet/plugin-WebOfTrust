@@ -891,6 +891,14 @@ public final class IdentityDownloaderSlow implements
 	@Override public void onSuccess(FetchResult result, ClientGetter state) {
 		// Count it before doing anything else to ensure breakage in the processing is apparent by
 		// mismatching numbers on the web interface.
+		// FIXME: This causes downloads to stall in memory while the IdentityFileProcessor is busy
+		// holding the lock for a long time. Avoiding that was the whole purpose of implementing
+		// the IdentityFile(Disk)Queue, its idiotic that I am voiding that whole large piece of work
+		// for the trivial purpose of counting this number!
+		// Instead do it after storing the download to the IdentityFileQueue, or use an
+		// AtomicInteger like IdentityDownloaderFast does in onFound() so we don't need a lock.
+		// And anyway: The proper approach to counting failures as well is to use the finally{}
+		// block!
 		synchronized(mLock) {
 			++mSucceededDownloads;
 		}
