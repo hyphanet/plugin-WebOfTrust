@@ -20,7 +20,7 @@ public final class StopWatch {
 	 * `mStopTime - {@link #mStartTime}` as a means to compute the runtime of the StopWatch.  
 	 * See {@link #add(StopWatch)} for the reason.
 	 * 
-	 * We use Long so we can flag as "empty" using a value of null.
+	 * We use Long so we can flag the StopWatch as "empty" using a value of null.  
 	 * We do not use long and "-1" instead of null because {@link System#nanoTime()} does not
 	 * specify whether the return value is always positive. */
 	private Long mStopTime = null;
