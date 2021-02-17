@@ -11,18 +11,17 @@ public final class StopWatch {
 
 	private final long mStartTime = System.nanoTime();
 
-	/**
-	 * {@link #mStartTime} plus the runtime of the StopWatch.  
-	 * Null if {@link #stop()} was not called yet.
+	/** {@link #mStartTime} plus the runtime of the StopWatch.  
+	 *  Null if {@link #stop()} was not called yet.
 	 * 
-	 * NOTICE: This does NOT accurately represent the absolute point in time at which the
-	 * StopWatch was stopped! It merely can be used to accurately compute the delta
-	 * `mStopTime - {@link #mStartTime}` as a means to compute the runtime of the StopWatch.  
-	 * See {@link #add(StopWatch)} for the reason.
+	 *  NOTICE: This does NOT accurately represent the absolute point in time at which the
+	 *  StopWatch was stopped! It merely can be used to accurately compute the delta
+	 *  `mStopTime - {@link #mStartTime}` as a means to compute the runtime of the StopWatch.  
+	 *  See {@link #add(StopWatch)} for the reason.
 	 * 
-	 * We use Long so we can flag the StopWatch as "empty" using a value of null.  
-	 * We do not use long and "-1" instead of null because {@link System#nanoTime()} does not
-	 * specify whether the return value is always positive. */
+	 *  We use Long so we can flag the StopWatch as "empty" using a value of null.  
+	 *  We do not use long and "-1" instead of null because {@link System#nanoTime()} does not
+	 *  specify whether the return value is always positive. */
 	private Long mStopTime = null;
 
 
