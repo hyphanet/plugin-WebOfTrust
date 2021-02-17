@@ -12,6 +12,9 @@ public final class StopWatch {
 	private final long mStartTime = System.nanoTime();
 
 	/**
+	 * {@link #mStartTime} plus the runtime of the StopWatch.  
+	 * Null if {@link #stop()} was not called yet.
+	 * 
 	 * NOTICE: This does NOT accurately represent the absolute point in time at which the
 	 * StopWatch was stopped! It merely can be used to accurately compute the delta
 	 * `mStopTime - {@link #mStartTime}` as a means to compute the runtime of the StopWatch.  
