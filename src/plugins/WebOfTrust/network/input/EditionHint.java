@@ -197,6 +197,7 @@ public final class EditionHint extends Persistent implements Comparable<EditionH
 	 * (The most efficient storage for this would be byte[], but IIRC db4o does not handle that as
 	 * well as String.)
 	 * 
+	 * @see #computePriority(WebOfTrust, Date, byte, int, String, long)
 	 * @see #compareTo_ReferenceImplementation(EditionHint)
 	 * @see #compareTo(EditionHint) */
 	@IndexedField
@@ -309,6 +310,7 @@ public final class EditionHint extends Persistent implements Comparable<EditionH
 		return mTargetIdentity.getRequestURI().setSuggestedEdition(mEdition).sskForUSK();
 	}
 
+	/** @see #mPriority */
 	private static String computePriority(WebOfTrust wot, Date roundedDate, byte capacity,
 			int roundedScore, String targetID, long edition) {
 		
@@ -366,6 +368,7 @@ public final class EditionHint extends Persistent implements Comparable<EditionH
 		return encryptIdentityID(keyProvider, id);
 	}
 
+	/** @see #mPriority */
 	private String getPriority() {
 		// String is a db4o primitive type so 1 is enough even though it is a reference type
 		checkedActivate(1);
