@@ -642,12 +642,15 @@ public final class IdentityDownloaderSlow implements
 				//   from the more various Identitys we download and thus a higher chance of
 				//   avoiding usage of obsolete edition hints, i.e. hints for editions which
 				//   are lower than the actual most recent edition of an Identity.
-				//   (This is a weak conclusion though, EditionHint.getPriority(), which sorts our
-				//   download queue, uses their date as the first sorting key. And while this
-				//   currently is the date when they were gathered from trust lists and thus is
-				//   mostly the same for new databases, in a near update remote Identitys will be
-				//   allowed to propagate the date on which they observed a hint to defer usage of
-				//   old hints. Nevertheless lets document this here for future consideration.)
+				//   (This is a weak conclusion though because EditionHint.getPriority(), which
+				//   sorts our download queue, uses the hint's date as the first sorting key so old
+				//   hints will be deferred anyway.
+				//   Notice that even though currently this is the date when they were gathered from
+				//   trust lists and thus is mostly the same for new databases and thereby the
+				//   deferring is voided, in a near update remote Identitys will be allowed to
+				//   propagate the date on which they observed a hint to ensure usage of old hints
+				//   is indeed deferred. Nevertheless lets document this here for future
+				//   considerations.)
 				// (We could avoid having to ignore the Identitys here by instead ensuring that
 				// no EditionHints are stored which have almost the same priority as others.
 				// However ignoring them here is a lot easier than changing the storage
