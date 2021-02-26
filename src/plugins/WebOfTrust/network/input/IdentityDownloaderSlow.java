@@ -703,6 +703,10 @@ public final class IdentityDownloaderSlow implements
 					// Instead the hint will stay in the queue until the IdentityFileProcessor
 					// imports the edition from disk - and it delays that for 1 minute for batch
 					// processing typically, so much re-downloading could happen during that time.
+					//
+					// In addition this has the same positive effects as those of ignoring Identitys
+					// for which there is a running download, they had been explained in a long
+					// comment some lines above.
 					if(mOutputQueue.containsAnyEditionOf(h.getURI())) {
 						// Opportunistically cache `containsAnyEditionOf() == true` via our
 						// identitiesToIgnore HashSet so we can skip further EditionHints for the
