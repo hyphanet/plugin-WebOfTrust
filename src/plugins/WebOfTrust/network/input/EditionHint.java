@@ -344,6 +344,11 @@ public final class EditionHint extends Persistent implements Comparable<EditionH
 		return sb.toString();
 	}
 
+	/** WARNING: This is not a real encryption! It merely aims to sufficiently randomize the ID to
+	 *  ensure it would be difficult to guess by observing our network traffic!  
+	 *  See the comment inside {@link #computePriority(WebOfTrust, Date, byte, int, String, long)}
+	 *  for an explanation.  
+	 *  TODO: Code quality: Rename to obfuscate*() to make this more apparent. */
 	static String encryptIdentityID(WebOfTrust keyProvider, String id) {
 		byte[] idBytes;
 		try {
@@ -364,6 +369,7 @@ public final class EditionHint extends Persistent implements Comparable<EditionH
 		return Base64.encode(idBytes);
 	}
 
+	/** @see #encryptIdentityID(WebOfTrust, String) */
 	static String decryptIdentityID(WebOfTrust keyProvider, String id) {
 		return encryptIdentityID(keyProvider, id);
 	}
