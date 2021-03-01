@@ -328,6 +328,14 @@ public final class EditionHint extends Persistent implements Comparable<EditionH
 		// bruteforce public-key generation to get an ID of "aaaa..." in order to maliciously get
 		// a higher priority.
 		// To prevent that, we encrypt the ID with a local, non-public random pad.
+		// IMHO we don't need a good encryption here and thus don't use one because:
+		// - the only thing which an outsider can use to guess the key is the order in which we
+		//   download Identitys. But it is randomized by the network delays of Freenet yielding
+		//   different times at which we download IdentityFiles and thus can start download of the
+		//   EditionHints they contain. The random noise of that will overlay the deterministic
+		//   download order of computePriority().
+		// - Freenet is supposed to make our downloading anonymous so it's already difficult enough
+		//   to observe what we download in the first place.
 		targetID = encryptIdentityID(wot, targetID);
 		
 		int length = 8 + 3 + 1 + IdentityID.LENGTH + 19;
