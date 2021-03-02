@@ -349,10 +349,9 @@ public final class EditionHint extends Persistent implements Comparable<EditionH
 	}
 
 	/** WARNING: This is not a real encryption: The random pad it uses is re-used for each input.  
-	 *  It merely aims to sufficiently randomize the ID to ensure it would be difficult to guess by
-	 *  observing our network traffic!  
-	 *  See the comment inside {@link #computePriority(WebOfTrust, Date, byte, int, String, long)}
-	 *  for an explanation.  
+	 *  It merely aims to sufficiently randomize the ID to ensure the low security constraints of
+	 *  {@link #computePriority(WebOfTrust, Date, byte, int, String, long)} are met.  
+	 *  See the comment inside that function for an explanation.  
 	 *  TODO: Code quality: Rename to obfuscate*() to make this more apparent. */
 	static String encryptIdentityID(WebOfTrust keyProvider, String id) {
 		byte[] idBytes;
