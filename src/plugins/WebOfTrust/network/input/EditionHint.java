@@ -348,8 +348,9 @@ public final class EditionHint extends Persistent implements Comparable<EditionH
 		return sb.toString();
 	}
 
-	/** WARNING: This is not a real encryption! It merely aims to sufficiently randomize the ID to
-	 *  ensure it would be difficult to guess by observing our network traffic!  
+	/** WARNING: This is not a real encryption: The random pad it uses is re-used for each input.  
+	 *  It merely aims to sufficiently randomize the ID to ensure it would be difficult to guess by
+	 *  observing our network traffic!  
 	 *  See the comment inside {@link #computePriority(WebOfTrust, Date, byte, int, String, long)}
 	 *  for an explanation.  
 	 *  TODO: Code quality: Rename to obfuscate*() to make this more apparent. */
