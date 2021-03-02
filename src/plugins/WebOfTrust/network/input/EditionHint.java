@@ -336,7 +336,9 @@ public final class EditionHint extends Persistent implements Comparable<EditionH
 		//   craft their Identity ID so their Identity would be downloaded more quickly by a single
 		//   target Identity. But that is a rather weak incentive because it only affects a single
 		//   target *and* that target would already download the malicious Identity anyway if it is
-		//   trusted, which is required for the attack to work.
+		//   eligible to have its EditionHints queued for download, and that eligibility is required
+		//   for the attack to work. So the attacker really only would get downloaded more quickly,
+		//   notably the decision of whether to download them at all is not affected.
 		targetID = encryptIdentityID(wot, targetID);
 		
 		int length = 8 + 3 + 1 + IdentityID.LENGTH + 19;
