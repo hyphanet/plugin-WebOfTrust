@@ -332,6 +332,11 @@ public final class EditionHint extends Persistent implements Comparable<EditionH
 		// - the only thing which an outsider can use to guess the key is the order in which we
 		//   download Identitys. But Freenet is supposed to make our downloading anonymous so it's
 		//   already difficult enough to observe what we download in the first place.
+		// - the only incentive for cracking the key is that it would allow an attacker to specially
+		//   craft their Identity ID so their Identity would be downloaded more quickly by a single
+		//   target Identity. But that is a rather weak incentive because it only affects a single
+		//   target *and* that target would already download the malicious Identity anyway if it is
+		//   trusted, which is required for the attack to work.
 		targetID = encryptIdentityID(wot, targetID);
 		
 		int length = 8 + 3 + 1 + IdentityID.LENGTH + 19;
