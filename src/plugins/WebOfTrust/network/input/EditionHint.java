@@ -339,6 +339,18 @@ public final class EditionHint extends Persistent implements Comparable<EditionH
 		//   eligible to have its EditionHints queued for download, and that eligibility is required
 		//   for the attack to work. So the attacker really only would get downloaded more quickly,
 		//   notably the decision of whether to download them at all is not affected.
+		// - Gaining priority in terms being downloaded more quickly also is useless because it does
+		//   *not* allow a malicious Identity to block the download of another Identitiy by
+		//   distrusting them faster than positive Trusts for them can be downloaded from elsewhere,
+		//   the mechanism of capacity was specifically designed to prevent such "which Trust do we
+		//   download first?" race conditions:
+		//   Identitys can inherit positive capacity by receiving positive Trust from at least one
+		//   other Identity which has a positive capacity of its own.
+		//   Add no matter how many negative Trusts an Identity has received, i.e. even if its Score
+		//   is negative, if it has a positive capacity it will be downloaded eventually.
+		//   It merely may take longer for it to be downloaded if it has a low capacity.
+		//   So thereby it is ensured that the order in which we download Identitys does not affect
+		//   the result of Score computation, this concept is named "stability" in its terms.
 		targetID = encryptIdentityID(wot, targetID);
 		
 		int length = 8 + 3 + 1 + IdentityID.LENGTH + 19;
