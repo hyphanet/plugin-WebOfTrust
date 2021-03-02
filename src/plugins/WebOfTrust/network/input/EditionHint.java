@@ -343,14 +343,10 @@ public final class EditionHint extends Persistent implements Comparable<EditionH
 		//   *not* allow a malicious Identity to block the download of another Identitiy by
 		//   distrusting them faster than positive Trusts for them can be downloaded from elsewhere,
 		//   the mechanism of capacity was specifically designed to prevent such "which Trust do we
-		//   download first?" race conditions:
-		//   Identitys can inherit positive capacity by receiving positive Trust from at least one
-		//   other Identity which has a positive capacity of its own.
-		//   Add no matter how many negative Trusts an Identity has received, i.e. even if its Score
-		//   is negative, if it has a positive capacity it will be downloaded eventually.
-		//   It merely may take longer for it to be downloaded if it has a low capacity.
-		//   So thereby it is ensured that the order in which we download Identitys does not affect
-		//   the result of Score computation, this concept is named "stability" in its terms.
+		//   download first?" race conditions. It ensures that the order in which we download
+		//   Identitys does not affect the result of Score computation, this concept is named
+		//   "stability" in its terms. See the comments inside of WebOfTrust.shouldFetchIdentity()
+		//   for a detailed explanation of that concept.
 		targetID = encryptIdentityID(wot, targetID);
 		
 		int length = 8 + 3 + 1 + IdentityID.LENGTH + 19;
