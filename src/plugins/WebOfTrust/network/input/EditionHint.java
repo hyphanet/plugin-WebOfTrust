@@ -350,6 +350,10 @@ public final class EditionHint extends Persistent implements Comparable<EditionH
 		//   "stability" in its terms. See the comments inside of WebOfTrust.shouldFetchIdentity()
 		//   for a detailed explanation of that concept. Also see the JavaDoc of mSourceCapacity for
 		//   why we must use it as a top sorting key here to ensure the mechanism works.
+		// NOTICE: The poor encryption here isn't the only such race condition, using a better one
+		// will *not* void the need for capacity as priority! Instead, the very nature of network
+		// traffic is that we will download Identitys and thereby Trust values in random order, so
+		// a mechanism to prevent race conditions must always exist.
 		targetID = encryptIdentityID(wot, targetID);
 		
 		int length = 8 + 3 + 1 + IdentityID.LENGTH + 19;
