@@ -142,7 +142,9 @@ public final class EditionHint extends Persistent implements Comparable<EditionH
 	 * The higher the capacity of an Identity, the more voting power it has in {@link Score}
 	 * computation. As identities with higher capacity can give higher capacity = voting power to
 	 * their trustees, by preferring to download hints with higher capacity, we prefer to download
-	 * the identities with the highest potential voting power first.
+	 * the identities with the highest potential voting power first.  
+	 * See the comments inside of {@link WebOfTrust#shouldFetchIdentity(Identity)} for a detailed
+	 * explanation of the concept of stability.
 	 * 
 	 * The next fallback sorting key after this one is {@link #mSourceScore}.
 	 * It is also ensured that fallback will actually happen:
@@ -346,7 +348,8 @@ public final class EditionHint extends Persistent implements Comparable<EditionH
 		//   download first?" race conditions. It ensures that the order in which we download
 		//   Identitys does not affect the result of Score computation, this concept is named
 		//   "stability" in its terms. See the comments inside of WebOfTrust.shouldFetchIdentity()
-		//   for a detailed explanation of that concept.
+		//   for a detailed explanation of that concept. Also see the JavaDoc of mSourceCapacity for
+		//   why we must use it as a top sorting key here to ensure the mechanism works.
 		targetID = encryptIdentityID(wot, targetID);
 		
 		int length = 8 + 3 + 1 + IdentityID.LENGTH + 19;
