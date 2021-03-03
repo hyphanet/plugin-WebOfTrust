@@ -340,7 +340,7 @@ public final class EditionHint extends Persistent implements Comparable<EditionH
 		//   for the attack to work. So the attacker really only would get downloaded more quickly,
 		//   notably the decision of whether to download them at all is not affected.
 		// - Gaining priority in terms being downloaded more quickly also is useless because it does
-		//   *not* allow a malicious Identity to block the download of another Identitiy by
+		//   *not* allow a malicious Identity to block the download of another Identity by
 		//   distrusting them faster than positive Trusts for them can be downloaded from elsewhere,
 		//   the mechanism of capacity was specifically designed to prevent such "which Trust do we
 		//   download first?" race conditions. It ensures that the order in which we download
