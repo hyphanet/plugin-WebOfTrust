@@ -426,6 +426,11 @@ public final class EditionHint extends Persistent implements Comparable<EditionH
 		if(dateCompared != 0)
 			return dateCompared;
 		
+		// Compare capacity before the Score because better capacity *must* gain higher download
+		// priority than the Score to ensure Score computation has the property of being independent
+		// of the order of downloading Identitys = the order of obtaining Trust values, a concept
+		// called "stability" in its context.  
+		// See the JavaDoc of mSourceCapacity for an explanation.
 		int capacityCompared = Byte.compare(mSourceCapacity, o.mSourceCapacity);
 		if(capacityCompared != 0)
 			return capacityCompared;
