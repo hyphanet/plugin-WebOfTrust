@@ -136,8 +136,8 @@ public final class EditionHint extends Persistent implements Comparable<EditionH
 	 * valuable due to the USK subscriptions of {@link IdentityDownloaderFast} - which is why
 	 * we sort by capacity first as aforementioned.
 	 * 
-	 * Furthermore, sorting by capacity is critical to ensure the "stable" behavior of WoT
-	 * - where "stable" means that the results of {@link Score} computation should not depend on
+	 * Furthermore, sorting by capacity is critical to ensure the "stable" behavior of {@link Score}
+	 * computation - where "stable" means that the results of Score computation should not depend on
 	 * order of download:
 	 * The higher the capacity of an Identity, the more voting power it has in {@link Score}
 	 * computation. As identities with higher capacity can give higher capacity = voting power to
