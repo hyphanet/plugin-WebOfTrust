@@ -316,6 +316,11 @@ public final class EditionHint extends Persistent implements Comparable<EditionH
 	private static String computePriority(WebOfTrust wot, Date roundedDate, byte capacity,
 			int roundedScore, String targetID, long edition) {
 		
+		// For detailed explanations of the reasons behind the order in which we put things into the
+		// resulting priority, see the JavaDoc of the member variables of class EditionHint.
+		// TODO: Code quality: Perhaps it should be copied/moved to
+		// compareTo_ReferenceImplementation(). Also see the related TODO there.
+		
 		assert(roundedDate.equals(roundToNearestDay(roundedDate)));
 		assert(capacity >= MIN_CAPACITY && capacity <= 100);
 		assert(roundedScore == -1 || roundedScore == 1);
@@ -425,6 +430,11 @@ public final class EditionHint extends Persistent implements Comparable<EditionH
 	int compareTo_ReferenceImplementation(EditionHint o) {
 		this.activateFully();
 		o.activateFully();
+		
+		// For detailed explanations of the reasons behind the order in which we compare things, see
+		// the JavaDoc of the member variables which are being compared.
+		// TODO: Code quality: Perhaps it should be copied/moved here? Also see the related TODO in
+		// computePriority().
 		
 		int dateCompared = mDate.compareTo(o.mDate);
 		if(dateCompared != 0)
