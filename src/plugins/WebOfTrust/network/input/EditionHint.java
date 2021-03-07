@@ -319,8 +319,9 @@ public final class EditionHint extends Persistent implements Comparable<EditionH
 		// For detailed explanations of the reasons behind the order in which we put things into the
 		// resulting priority, see the JavaDoc of the member variables of class EditionHint.
 		// TODO: Code quality: Rename our parameters to match their naming more closely.
-		// TODO: Code quality: Perhaps it should be copied/moved to
-		// compareTo_ReferenceImplementation(). Also see the related TODO there.
+		// TODO: Code quality: Perhaps the JavaDoc should be copied/moved to
+		// compareTo_ReferenceImplementation(), and we should point to that function for
+		// documentation instead. Also see the related TODO there.
 		
 		assert(roundedDate.equals(roundToNearestDay(roundedDate)));
 		assert(capacity >= MIN_CAPACITY && capacity <= 100);
