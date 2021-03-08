@@ -145,6 +145,8 @@ public final class EditionHint extends Persistent implements Comparable<EditionH
 	 * the identities with the highest potential voting power first.  
 	 * See the comments inside of {@link WebOfTrust#shouldFetchIdentity(Identity)} for a detailed
 	 * explanation of the concept of stability.
+	 * FIXME: I'm hopefully capable of explaining the issue with stability in a more easy to
+	 * understand fashion. Do so!
 	 * 
 	 * The next fallback sorting key after this one is {@link #mSourceScore}.
 	 * It is also ensured that fallback will actually happen:
