@@ -482,9 +482,11 @@ public final class EditionHint extends Persistent implements Comparable<EditionH
 		// it will return the result of comparing the ID substrings
 		// - so overall we must do that here in the non-optimized (= non-String based) sorting
 		// function as well.
-		// Notice: We don't use the actual ID but encrypt it with a persistent, random key to
+		// Notice: We don't use the actual ID but pseudo-encrypt it with a persistent, random key to
 		// to prevent attackers from maliciously brute forcing pubkey generation to get a hash with
 		// prefix "aaaa..." to boost priority of their identity.
+		// See the large comment in computePriority() for why the poor encryption we use is good
+		// enough for this usecase.
 		
 		/*
 		if(mTargetIdentity.getID().equals(o.mTargetIdentity.getID()))
