@@ -29,7 +29,9 @@ import freenet.support.Logger.LogLevel;
  * Thus users of this implementation must be safe against complete loss of the queue across
  * restarts.  
  * This is also demanded by the JavaDoc of the interface {@link IdentityFileQueue} for sophisticated
- * reasons.
+ * reasons.  
+ * TODO: Usability: Write a text file to the root dir of the queue which tells the users that it is
+ * safe to delete.
  * 
  * Deduplicating queue: Only the latest edition of each file is returned; see
  * {@link IdentityFileQueue} for details.<br>
