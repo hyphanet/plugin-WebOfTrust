@@ -28,8 +28,9 @@ import freenet.support.Logger.LogLevel;
  * marked as finished by {@link IdentityFileStreamWrapper#close()} the file will be lost.  
  * Thus users of this implementation must be safe against complete loss of the queue across
  * restarts.  
- * This is also demanded by the JavaDoc of the interface {@link IdentityFileQueue} for sophisticated
- * reasons.  
+ * This is also demanded by the JavaDoc of the interface {@link IdentityFileQueue} for other, more
+ * sophisticated reasons which are NOT merely an implementation detail, it thus **must stay as
+ * is**!  
  * TODO: Usability: Write a text file to the root dir of the queue which tells the users that it is
  * safe to delete.
  * 
