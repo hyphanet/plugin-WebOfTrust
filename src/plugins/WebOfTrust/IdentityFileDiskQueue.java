@@ -31,8 +31,8 @@ import freenet.support.Logger.LogLevel;
  * This is also demanded by the JavaDoc of the interface {@link IdentityFileQueue} for other, more
  * sophisticated reasons which are NOT merely an implementation detail, it thus **must stay as
  * is**!  
- * TODO: Usability: Write a text file to the root dir of the queue which tells the users that it is
- * safe to delete.
+ * TODO: Usability: Write a text file to the root dir of the queue which tells the user that it
+ * is safe to delete the queue and it thus does not have to be included in backups.
  * 
  * Deduplicating queue: Only the latest edition of each file is returned; see
  * {@link IdentityFileQueue} for details.<br>
