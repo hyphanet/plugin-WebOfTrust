@@ -379,6 +379,11 @@ final class IdentityFileDiskQueue implements IdentityFileQueue {
 	}
 
 	@Override public synchronized IdentityFileStreamWrapper poll() {
+		// Concurrent processing of files returned by poll() is not allowed, as specified in the
+		// parent interface. So mProcessingFiles should be 0 here unless the user violated that, or
+		// forgot to call close() upon a previously returned IdentityFileStreamWrapper.
+		assert(mStatistics.mProcessingFiles == 0);
+		
 		File[] queue = mQueueDir.listFiles();
 		assert(queue.length == mStatistics.mQueuedFiles);
 		
