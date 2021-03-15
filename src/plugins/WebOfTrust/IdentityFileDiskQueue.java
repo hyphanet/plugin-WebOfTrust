@@ -525,7 +525,11 @@ final class IdentityFileDiskQueue implements IdentityFileQueue {
 				}
 			}
 		}
-		
+
+		@Override protected void finalize() {
+			assert(mClosedAlready) : "Error: close() was not called!";
+		}
+
 		/** Must be called while synchronized(IdentityFileDiskQueue.this) */
 		private void deleteFile() {
 			if(logMINOR)
