@@ -424,6 +424,15 @@ public final class OwnIdentity extends Identity implements Cloneable, Serializab
 	@Override
 	public final OwnIdentity clone() {
 		try {
+			// FIXME: Performance: Add constructor which consumes an OwnIdentity so the constructor
+			// doesn't have to validate the passed data anymore. IIRC that slows down clone() a lot
+			// according to my profiling.
+			// IIRC the reason is the constructor's usage of deriveRequestURIFromInsertURI(), though
+			// you might have to profile clone() again, I don't remember the details precisely.
+			// I think the context where I spotted the slowness was profiling of bootstrapping using
+			// the IdentityDownloaderFast/Slow.
+			// Also check if classes Identity, Trust and Score could be improved in the same
+			// fashion.
 			OwnIdentity clone = new OwnIdentity(mWebOfTrust, getInsertURI(), getNickname(), doesPublishTrustList());
 			
 			activateFully(); // For performance only
