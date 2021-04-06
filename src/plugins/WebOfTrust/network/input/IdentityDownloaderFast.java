@@ -1464,6 +1464,20 @@ public final class IdentityDownloaderFast implements
 			// need closure, just close it here anyway.
 			mOutputQueue.add(new IdentityFileStream(realURI, inputStream));
 			
+			// FIXME: Usability / Performance: mOutputQueue will schedule the IdentityFileProcessor
+			// to process the file we just added with a batching delay of typically 1 minute.
+			// Instead schedule immediate processing of the queue at IdentityFileProcessor:
+			// Batch processing makes no sense for USK subscriptions as editions there typically
+			// aren't downloaded in batches from different Identitys like the IdentityDownloaderSlow
+			// does. Instead, we download editions piece by piece when an Identity uploads a new
+			// one.
+			// And even when first subscribing to an Identity and thus downloading pre-existing
+			// editions, the USKManager will try to only ship us the latest edition, not
+			// intermediate ones (I had specifically requested toad_ to make it do so, which he did
+			// implement IIRC), so batch processing then also makes no sense.
+			// So doing immediate processing will speed up the time it takes for newbie WoT
+			// instances to show remote Identitys beyond the seeds by up to 1 minute.
+			
 			mDownloadedEditions.incrementAndGet();
 		} catch(IOException | RuntimeException | Error e) {
 			mDownloadProcessingFailures.incrementAndGet();
