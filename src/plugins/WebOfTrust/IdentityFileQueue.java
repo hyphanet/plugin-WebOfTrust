@@ -190,7 +190,7 @@ public interface IdentityFileQueue {
 
 	/**
 	 * Registers a {@link BackgroundJob} whose {@link BackgroundJob#triggerExecution()} shall be
-	 * called by the queue once an element is available for the job to {@link #poll()}.<br><br>
+	 * called by the queue once at least one element is available for the job to {@link #poll()}.  
 	 * 
 	 * Will also trigger the execution of the handler if the queue already contains files. This
 	 * can happen if the queue is capable of preserving files across restarts, or if this function
