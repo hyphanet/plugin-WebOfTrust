@@ -644,6 +644,17 @@ public class Identity extends Persistent implements ReallyCloneable<Identity>, E
 		if (mCurrentEditionFetchState == FetchState.Fetched) {
 			mCurrentEditionFetchState = FetchState.NotFetched;
 		} else {
+			// The current edition won't be eligible for refetching because it is either not
+			// fetchable or not parseable, so try the previous one.
+			
+			assert(mCurrentEditionFetchState == FetchState.NotFetched
+			    || mCurrentEditionFetchState == FetchState.ParsingFailed);
+			
+			// FIXME: build0020 did not handle ParsingFailed. Investigate if database upgrade code
+			// is needed to fix this.
+			if(mCurrentEditionFetchState == FetchState.ParsingFailed)
+				mCurrentEditionFetchState = FetchState.NotFetched;
+			
 			decreaseEdition();
 		}
 	}
