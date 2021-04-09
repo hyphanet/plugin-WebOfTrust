@@ -641,6 +641,8 @@ public class Identity extends Persistent implements ReallyCloneable<Identity>, E
 		checkedActivate(1);
 		// checkedActivate(mCurrentEditionFetchState, 1); not needed, it has no members
 		
+		// TODO: Code quality: Replace the below with switch() statement.
+		
 		if (mCurrentEditionFetchState == FetchState.Fetched) {
 			mCurrentEditionFetchState = FetchState.NotFetched;
 		} else {
