@@ -648,6 +648,14 @@ public class Identity extends Persistent implements ReallyCloneable<Identity>, E
 		} else {
 			// The current edition won't be eligible for refetching because it is either not
 			// fetchable or not parseable, so try the previous one.
+			// TODO: Is the NotFetched meaning it is not fetchable actually possible? We don't set
+			// it on DataNotFound for sure so it could only happen if something increments the
+			// edition after a previous one was fetched. But isn't done anywhere either I think.
+			// Still it's probably better to just assume it is not fetchable: The worst which can
+			// happen is that we download two editions instead of one, which doesn't hurt given
+			// that markForRefetch() won't be used a lot. And in turn the code is more robust
+			// against further changes of how mCurrentEditionFetchState is populated by outside
+			// code.
 			
 			assert(mCurrentEditionFetchState == FetchState.NotFetched
 			    || mCurrentEditionFetchState == FetchState.ParsingFailed);
