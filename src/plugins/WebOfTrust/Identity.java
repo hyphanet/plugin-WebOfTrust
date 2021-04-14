@@ -655,8 +655,7 @@ public class Identity extends Persistent implements ReallyCloneable<Identity>, E
 			// Still it's probably better to just assume it is not fetchable: The worst which can
 			// happen is that we download two editions instead of one, which doesn't hurt given
 			// that markForRefetch() won't be used a lot. And in turn the code is more robust
-			// against further changes of how mCurrentEditionFetchState is populated by outside
-			// code.
+			// against changes of how mCurrentEditionFetchState is populated by outside code.
 			
 			assert(mCurrentEditionFetchState == FetchState.NotFetched
 			    || mCurrentEditionFetchState == FetchState.ParsingFailed);
