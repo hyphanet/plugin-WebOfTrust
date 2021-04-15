@@ -620,6 +620,13 @@ public class Identity extends Persistent implements ReallyCloneable<Identity>, E
         mRequestURIString = requestURI.toString();
 
 		// TODO: I decided that we should not decrease the edition hint here. Think about that again.
+		// FIXME: This needs to be reconsidered for the new IdentityDownloader API since it uses
+		// external EditionHint objects which are stored in the database to track hints.
+		// It will likely be dealt with by adding a callback to the interface IdentityDownloader
+		// which is called by any code which calls markForRefetch() and thus decreaseEdition(), so
+		// decreaseEdition() needs not do anything with the new API either. And it mustn't do
+		// anything even since the EditionHint object database is managed by the
+		// IdentityDownloaderSlow, outside classes must not interfere with it.
 	}
 	
 	/**
