@@ -307,7 +307,8 @@ public class Identity extends Persistent implements ReallyCloneable<Identity>, E
 		
 		try {
 			// We only use the passed edition number as a hint to prevent attackers from spreading bogus very-high edition numbers.
-			// FIXME: mLatestEditionHint is deprecated in favor of the new IdentityDownloader API.
+			// FIXME: mLatestEditionHint is ignored by the new IdentityDownloader API, EditionHint
+			// objects have to be created instead.
 			// Review all callers of this constructor for whether they store an EditionHint object
 			// when they should and pass it to the IdentityDownloaderController then.
 			mLatestEditionHint = Math.max(newRequestURI.getEdition(), 0);
