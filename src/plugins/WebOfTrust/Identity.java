@@ -293,13 +293,16 @@ public class Identity extends Persistent implements ReallyCloneable<Identity>, E
 	 * 
 	 * @param newRequestURI A {@link FreenetURI} to fetch this Identity.  
 	 *    **NOTICE:** The edition of it is NOT used to initialize the edition of this Identity!  
-	 *    It will always initialized to 0.
+	 *    It will always be initialized to 0.  
 	 *    You must manually take care of passing the edition as {@link EditionHint} to the
 	 *    {@link IdentityDownloaderController}!
 	 *    
 	 *    The reason for initializing to 0 is security: It prevents remote peers from maliciously
 	 *    causing an Identity to never be downloaded by publishing a very high, non-existent edition
 	 *    in their trust list.
+	 *    
+	 *    TODO: Code quality: Throw {@link IllegalArgumentException} when edition is non-zero so
+	 *    we're guarded against the issue by code, not merely documentation.
 	 * @param newNickname The nickname of this identity
 	 * @param doesPublishTrustList Whether this identity publishes its trustList or not
 	 * @throws InvalidParameterException if a supplied parameter is invalid
