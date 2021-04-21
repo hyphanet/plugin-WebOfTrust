@@ -303,7 +303,7 @@ public class Identity extends Persistent implements ReallyCloneable<Identity>, E
 	 *    
 	 *    TODO: Code quality: Throw {@link IllegalArgumentException} when edition is non-zero so
 	 *    we're guarded against the issue by code, not merely documentation.
-	 * @param newNickname The nickname of this identity
+	 * @param newNickname The nickname of this identity. Can be null if not known yet.
 	 * @param doesPublishTrustList Whether this identity publishes its trustList or not
 	 * @throws InvalidParameterException if a supplied parameter is invalid
 	 * @throws MalformedURLException if newRequestURI isn't a valid request URI
