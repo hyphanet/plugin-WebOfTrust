@@ -344,15 +344,7 @@ public class Identity extends Persistent implements ReallyCloneable<Identity>, E
 		mProperties = new HashMap<String, String>();
 	}	
 
-	/**
-	 * Creates an Identity. Only for being used by the WoT package and unit tests, not for user interfaces!
-	 * 
-	 * @param newRequestURI A String that will be converted to {@link FreenetURI} before creating the identity
-	 * @param newNickname The nickname of this identity
-	 * @param doesPublishTrustList Whether this identity publishes its trustList or not
-	 * @throws InvalidParameterException if a supplied parameter is invalid
-	 * @throws MalformedURLException if the supplied requestURI isn't a valid request URI
-	 */
+	/** @see #Identity(WebOfTrustInterface, FreenetURI, String, boolean) */
 	public Identity(WebOfTrustInterface myWoT, String newRequestURI, String newNickname, boolean doesPublishTrustList)
 		throws InvalidParameterException, MalformedURLException {
 		
