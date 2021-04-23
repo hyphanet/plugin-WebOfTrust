@@ -99,8 +99,8 @@ public class Identity extends Persistent implements ReallyCloneable<Identity>, E
 	/** When obtaining identities through other people's trust lists instead of identity introduction, we store the edition number they have
 	 * specified and pass it as a hint to the USKManager.
 	 * 
-	 * @deprecated
-	 *     Use {@link IdentityDownloader#storeNewEditionHintCommandWithoutCommit(EditionHint)} */
+	 * @deprecated **NOTICE:** Ignored by the new IdentityDownloader API! You **must** instead use
+	 *     {@link IdentityDownloader#storeNewEditionHintCommandWithoutCommit(EditionHint)}. */
 	@Deprecated
 	protected long mLatestEditionHint;
 	
