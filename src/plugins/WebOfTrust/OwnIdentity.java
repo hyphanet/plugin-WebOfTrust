@@ -51,7 +51,7 @@ public final class OwnIdentity extends Identity implements Cloneable, Serializab
 	 * @param nickName The nickName of this OwnIdentity
 	 * @param publishTrustList Whether this OwnIdentity publishes its trustList or not 
 	 * @throws InvalidParameterException If a given parameter is invalid
-	 * @throws MalformedURLException If insertURI isn't a valid insert URI.
+	 * @throws MalformedURLException If insertURI isn't a valid insert URI or a request URI instead of an insert URI.
 	 */
 	public OwnIdentity (WebOfTrustInterface myWoT, FreenetURI insertURI, String nickName, boolean publishTrustList) throws InvalidParameterException, MalformedURLException {	
 		super(myWoT,
@@ -96,21 +96,12 @@ public final class OwnIdentity extends Identity implements Cloneable, Serializab
 		
 		// Don't check for mNickname == null to allow restoring of own identities
 	}
-	
-	/**
-	 * Creates a new OwnIdentity with the given parameters.
-	 * insertURI and requestURI are converted from String to {@link FreenetURI}
-	 * 
-	 * @param insertURI A String representing the key needed to insert this OwnIdentity in Freenet
-	 * @param nickName The nickName of this OwnIdentity
-	 * @param publishTrustList Whether this OwnIdentity publishes its trustList or not 
-	 * @throws InvalidParameterException If a given parameter is invalid
-	 * @throws MalformedURLException If insertURI is not a valid FreenetURI or a request URI instead of an insert URI.
-	 */
+
+	/** @see #OwnIdentity(WebOfTrustInterface, FreenetURI, String, boolean) */
 	public OwnIdentity(WebOfTrustInterface myWoT, String insertURI, String nickName, boolean publishTrustList) throws InvalidParameterException, MalformedURLException {
 		this(myWoT, new FreenetURI(insertURI), nickName, publishTrustList);
 	}
-	
+
 	/**
 	 * NOTICE: When changing this function, please also take care of {@link WebOfTrust.restoreOwnIdentity()}
 	 * 
