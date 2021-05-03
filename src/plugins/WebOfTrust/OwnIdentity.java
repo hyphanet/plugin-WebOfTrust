@@ -48,7 +48,8 @@ public final class OwnIdentity extends Identity implements Cloneable, Serializab
 	 * Creates a new OwnIdentity with the given parameters.
 	 * 
 	 * @param insertURI A {@link FreenetURI} used to insert this OwnIdentity in Freenet
-	 * @param nickName The nickName of this OwnIdentity
+	 * @param nickName The nickName of this OwnIdentity. Can be null if not known yet, i.e. when
+	 *     restoring an OwnIdentity from the network.
 	 * @param publishTrustList Whether this OwnIdentity publishes its trustList or not 
 	 * @throws InvalidParameterException If a given parameter is invalid
 	 * @throws MalformedURLException If insertURI isn't a valid insert URI or a request URI instead of an insert URI.
