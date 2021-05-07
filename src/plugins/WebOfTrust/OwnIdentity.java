@@ -10,6 +10,8 @@ import java.net.MalformedURLException;
 import java.util.Date;
 
 import plugins.WebOfTrust.exceptions.InvalidParameterException;
+import plugins.WebOfTrust.network.input.EditionHint;
+import plugins.WebOfTrust.network.input.IdentityDownloaderController;
 import freenet.keys.FreenetURI;
 import freenet.support.CurrentTimeUTC;
 import freenet.support.Logger;
@@ -47,7 +49,18 @@ public final class OwnIdentity extends Identity implements Cloneable, Serializab
 	/**
 	 * Creates a new OwnIdentity with the given parameters.
 	 * 
-	 * @param insertURI A {@link FreenetURI} used to insert this OwnIdentity in Freenet
+	 * @param insertURI A {@link FreenetURI} used to insert this OwnIdentity in Freenet.  
+	 *    **NOTICE:** The edition of it is NOT used to initialize the edition of this Identity!  
+	 *    It will always be initialized to 0.  
+	 *    You must manually take care of passing the edition as {@link EditionHint} to the
+	 *    {@link IdentityDownloaderController}!
+	 *    
+	 *    The reason for initializing to 0 is security: It prevents remote peers from maliciously
+	 *    causing an Identity to never be downloaded by publishing a very high, non-existent edition
+	 *    in their trust list.
+	 *    
+	 *    TODO: Code quality: Throw {@link IllegalArgumentException} when edition is non-zero so
+	 *    we're guarded against the issue by code, not merely documentation.
 	 * @param nickName The nickname of this OwnIdentity. Can be null if not known yet, i.e. when
 	 *     restoring an OwnIdentity from the network.
 	 * @param publishTrustList Whether this OwnIdentity publishes its trustList or not 
