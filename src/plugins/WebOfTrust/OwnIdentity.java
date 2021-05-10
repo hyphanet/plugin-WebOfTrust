@@ -52,8 +52,11 @@ public final class OwnIdentity extends Identity implements Cloneable, Serializab
 	 * @param insertURI A {@link FreenetURI} used to insert this OwnIdentity in Freenet.  
 	 *    **NOTICE:** The edition of it is NOT used to initialize the edition of this Identity!  
 	 *    It will always be initialized to 0.  
-	 *    You must manually take care of passing the edition as {@link EditionHint} to the
-	 *    {@link IdentityDownloaderController}!
+	 *    You must manually take care of:
+	 *    - using {@link #restoreEdition(long, Date)} if a pre-existing OwnIdentity is being
+	 *      restored from the network and it can be guaranteed that the edition exists, e.g. if it
+	 *      has been downloaded previously or provided by the user.
+	 *    - passing the edition as {@link EditionHint} to the {@link IdentityDownloaderController}.
 	 *    
 	 *    The reason for initializing to 0 is security: It prevents remote peers from maliciously
 	 *    causing an Identity to never be downloaded by publishing a very high, non-existent edition
