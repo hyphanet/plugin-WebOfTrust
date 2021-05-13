@@ -60,7 +60,14 @@ public final class OwnIdentity extends Identity implements Cloneable, Serializab
 	 *    
 	 *    The reason for initializing to 0 is security: It prevents remote peers from maliciously
 	 *    causing an Identity to never be downloaded by publishing a very high, non-existent edition
-	 *    in their trust list.
+	 *    in their trust list.  
+	 *    Yes, OwnIdentitys technically cannot be created by receiving a remote Trust value, but
+	 *    only by user action instead.  But the user can use
+	 *    {@link WebOfTrust#restoreOwnIdentity(FreenetURI)} which **will** typically run into
+	 *    pre-existing non-own versions of the Identity in the database which we've obtained
+	 *    from the network. And it **will** re-use the remote URI's edition as a hint, so it might
+	 *    be wrongly passed to this constructor and therefore the constructor must be safe against
+	 *    that mistake.
 	 *    
 	 *    TODO: Code quality: Throw {@link IllegalArgumentException} when edition is non-zero so
 	 *    we're guarded against the issue by code, not merely documentation.
