@@ -110,8 +110,8 @@ public class OwnIdentityTest extends AbstractJUnit3BaseTest {
 		FreenetURI rawInsertURI  = new FreenetURI(insertURIStringUSK);
 		FreenetURI rawRequestURI = new FreenetURI(requestURIStringUSK);
 		
-		// The editions of the URIs we provide to the constructor should be ignored, see the
-		// JavaDoc of the constructor for why this is the case.
+		// The editions of the URIs we provide to the constructor must be ignored for security
+		// reasons, see the JavaDoc of the constructor for why this is the case.
 		assert(rawInsertURI.getEdition()  == 23);
 		assert(rawRequestURI.getEdition() == 23);
 		FreenetURI expectedInsertURI  = rawInsertURI.setSuggestedEdition(0);
