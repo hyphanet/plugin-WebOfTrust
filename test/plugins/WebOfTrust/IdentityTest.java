@@ -128,7 +128,7 @@ public final class IdentityTest extends AbstractJUnit3BaseTest {
 		
 		assertEquals(true, identity.doesPublishTrustList());
 		
-		// TODO: Code quality: Test the other constructor(s), currently only tested implicitely by
+		// TODO: Code quality: Test the other constructor(s), currently only tested implicitly by
 		// being called by the one we just tested.
 		// TODO: Code quality: Test with different / invalid parameters
 		// TODO: Code quality: Test handling of a negative edition being passed in the FreenetURI.
