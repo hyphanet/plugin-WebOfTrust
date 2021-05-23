@@ -302,7 +302,7 @@ public class Identity extends Persistent implements ReallyCloneable<Identity>, E
 	 *    in their trust list.
 	 *    
 	 *    TODO: Code quality: Throw {@link IllegalArgumentException} when edition is non-zero so
-	 *    we're guarded against the issue by code, not merely documentation.
+	 *    we're guarded against callers having wrong assumptions by code, not merely documentation.
 	 * @param newNickname Can be null if not known yet. */
 	protected Identity(WebOfTrustInterface myWoT, FreenetURI newRequestURI, String newNickname, boolean doesPublishTrustList) throws InvalidParameterException, MalformedURLException {
 		initializeTransient(myWoT);

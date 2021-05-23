@@ -70,7 +70,7 @@ public final class OwnIdentity extends Identity implements Cloneable, Serializab
 	 *    that mistake.
 	 *    
 	 *    TODO: Code quality: Throw {@link IllegalArgumentException} when edition is non-zero so
-	 *    we're guarded against the issue by code, not merely documentation.
+	 *    we're guarded against callers having wrong assumptions by code, not merely documentation.
 	 * @param nickName Can be null if not known yet, i.e. when restoring an OwnIdentity from the
 	 *     network.
 	 * @throws MalformedURLException If insertURI isn't a valid insert URI or a request URI instead of an insert URI.
