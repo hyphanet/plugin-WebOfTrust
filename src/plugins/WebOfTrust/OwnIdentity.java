@@ -96,6 +96,10 @@ public final class OwnIdentity extends Identity implements Cloneable, Serializab
 
         // We need this.getEdition() but initializeTransient() was not called yet so it won't work.
         // So instead, we manually obtain the edition from the request URI.
+        // TODO: Code quality: super() does call initializeTransient(), it ought to work? Check the
+        // git history if it was added after the above comment - if it was added before then there
+        // is maybe another issue involved, e.g. some things passing myWoT == null to this
+        // constructor.
         final FreenetURI requestURI;
         try {
             requestURI = new FreenetURI(mRequestURIString);
