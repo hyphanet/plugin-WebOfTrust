@@ -110,7 +110,7 @@ public final class OwnIdentity extends Identity implements Cloneable, Serializab
         // Ensure the edition of the insert URI is the same as the one of the request URI which is
         // stored in the parent class.
         // Technically we could just set it to 0 because the parent constructor will always set the
-        // request URI's edition 0 (see their and our JavaDoc) - but to be more robust against
+        // request URI's edition to 0 (see their and our JavaDoc) - but to be more robust against
         // future changes it is better to blindly copy the edition without assumptions about its
         // value.
         normalizedInsertURI = normalizedInsertURI.setSuggestedEdition(requestURI.getEdition());
