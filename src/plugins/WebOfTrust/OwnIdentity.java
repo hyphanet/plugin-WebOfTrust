@@ -65,7 +65,7 @@ public final class OwnIdentity extends Identity implements Cloneable, Serializab
 	 *    only by user action instead. But the user can use
 	 *    {@link WebOfTrust#restoreOwnIdentity(FreenetURI)} which *will* typically run into
 	 *    pre-existing non-own versions of the Identity in the database which we've obtained
-	 *    from the network. And it *will* re-use the remote URI's edition as a hint, so it might
+	 *    from the network. And it *will* re-use their URI's edition as a hint, so it might
 	 *    be wrongly passed to this constructor and therefore the constructor must be safe against
 	 *    that mistake.
 	 *    
