@@ -115,7 +115,9 @@ public final class IdentityTest extends AbstractJUnit3BaseTest {
 		assertSame(mWoT, identity.getWebOfTrust());
 		
 		// The edition of the URI we provide to the constructor must be ignored for security
-		// reasons, see the JavaDoc of the constructor for why this is the case.
+		// reasons: The URI may have been obtained from a remote peer, and they might maliciously
+		// hand out a very high edition number which does not actually exist in order to block the
+		// download of the target Identity indefinitely.
 		assertEquals(new FreenetURI(uri).setSuggestedEdition(0), identity.getRequestURI());
 		
 		assertEquals(FetchState.NotFetched, identity.getCurrentEditionFetchState());
