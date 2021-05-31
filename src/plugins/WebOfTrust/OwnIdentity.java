@@ -56,7 +56,8 @@ public final class OwnIdentity extends Identity implements Cloneable, Serializab
 	 *    - using {@link #restoreEdition(long, Date)} if a pre-existing OwnIdentity is being
 	 *      restored from the network and it can be guaranteed that the edition exists, e.g. if it
 	 *      has been downloaded previously or provided by the user.
-	 *    - passing the edition as {@link EditionHint} to the {@link IdentityDownloaderController}.
+	 *    - notifying the {@link IdentityDownloaderController} about the restored edition via
+	 *      {@link IdentityDownloaderController#storePostRestoreOwnIdentityCommand(OwnIdentity)}.
 	 *    
 	 *    The reason for initializing to 0 is security: It prevents remote peers from maliciously
 	 *    causing an Identity to never be downloaded by publishing a very high, non-existent edition
