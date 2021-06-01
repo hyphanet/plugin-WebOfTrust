@@ -55,7 +55,9 @@ public final class OwnIdentity extends Identity implements Cloneable, Serializab
 	 *    You must manually take care of:
 	 *    - using {@link #restoreEdition(long, Date)} if a pre-existing OwnIdentity is being
 	 *      restored from the network and it can be guaranteed that the edition exists, e.g. if it
-	 *      has been downloaded previously or provided by the user.
+	 *      has been downloaded previously or provided by the user.  
+	 *      Pass edition 0 to restoreEdition() if you don't know for sure which edition is
+	 *      guaranteed to exist.
 	 *    - notifying the {@link IdentityDownloaderController} about the restored edition via
 	 *      {@link IdentityDownloaderController#storePostRestoreOwnIdentityCommand(OwnIdentity)}.
 	 *    
