@@ -78,7 +78,7 @@ public final class OwnIdentity extends Identity implements Cloneable, Serializab
 	 *     network.
 	 * @throws MalformedURLException If insertURI isn't a valid insert URI or a request URI instead of an insert URI.
 	 */
-	public OwnIdentity (WebOfTrustInterface myWoT, FreenetURI insertURI, String nickName, boolean publishTrustList) throws InvalidParameterException, MalformedURLException {	
+	public OwnIdentity(WebOfTrustInterface myWoT, FreenetURI insertURI, String nickName, boolean publishTrustList) throws InvalidParameterException, MalformedURLException {
 		super(myWoT,
 				// If we don't set a document name, we will get "java.net.MalformedURLException: SSK URIs must have a document name (to avoid ambiguity)"
 				// when calling  FreenetURI.deriveRequestURIFromInsertURI().
