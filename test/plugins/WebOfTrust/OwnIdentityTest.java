@@ -111,7 +111,10 @@ public class OwnIdentityTest extends AbstractJUnit3BaseTest {
 		FreenetURI rawRequestURI = new FreenetURI(requestURIStringUSK);
 		
 		// The editions of the URIs we provide to the constructor must be ignored for security
-		// reasons, see the JavaDoc of the constructor for why this is the case.
+		// reasons: An URI's edition may have been obtained from a remote peer (in the case of
+		// WebOfTrust.restoreOwnIdentity()), and they might maliciously hand out a very high edition
+		// number which does not actually exist in order to block the download of the target
+		// OwnIdentity indefinitely.
 		assert(rawInsertURI.getEdition()  == 23);
 		assert(rawRequestURI.getEdition() == 23);
 		FreenetURI expectedInsertURI  = rawInsertURI.setSuggestedEdition(0);
