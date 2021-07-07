@@ -1045,6 +1045,19 @@ public final class WebOfTrust extends WebOfTrustInterface
 		// FIXME: Schedule defragmentation of the database as new fields were added to classes
 		mConfig.storeWithoutCommit();
 		
+		for(Identity i : getAllIdentities()) {
+			if(i.getCurrentEditionFetchState() == FetchState.ParsingFailed) {
+				// Fix for bug in previous version of Identity.markForRefetch():
+				// It would not trigger a refetch upon ParsingFailed.
+				// See commit fb04bb371ad82ddfa786891936ee04b8922d7a48
+				// (Calling markForRefetch() again instead of manually correcting the FetchState
+				// will refetch one more edition than necessary, though that doesn't hurt because
+				// very few Identitys will be affected.)
+				i.markForRefetch();
+				i.storeWithoutCommit();
+			}
+		}
+		
 		// FIXME: Cause re-download of all Identities to bootstrap the database with objects of the
 		// new class EditionHint.
 		// Our existing data isn't sufficient for that: We previously only stored the highest known
