@@ -1045,6 +1045,7 @@ public final class WebOfTrust extends WebOfTrustInterface
 		// FIXME: Schedule defragmentation of the database as new fields were added to classes
 		mConfig.storeWithoutCommit();
 		
+		Logger.normal(this, "Fixing leftovers from markForRefetch() bug ...");
 		for(Identity i : getAllIdentities()) {
 			if(i.getCurrentEditionFetchState() == FetchState.ParsingFailed) {
 				// Fix for bug in previous version of Identity.markForRefetch():
@@ -1053,10 +1054,12 @@ public final class WebOfTrust extends WebOfTrustInterface
 				// (Calling markForRefetch() again instead of manually correcting the FetchState
 				// will refetch one more edition than necessary, though that doesn't hurt because
 				// very few Identitys will be affected.)
+				Logger.normal(this, "Calling markForRefetch() upon: " + i);
 				i.markForRefetch();
 				i.storeWithoutCommit();
 			}
 		}
+		Logger.normal(this, "Finished fixing leftovers from markForRefetch() bug.");
 		
 		// FIXME: Cause re-download of all Identities to bootstrap the database with objects of the
 		// new class EditionHint.
