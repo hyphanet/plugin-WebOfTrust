@@ -143,3 +143,6 @@ deploy:
   on:
     all_branches: true
     condition: $DEPLOY = 1
+
+git:
+  depth: 1
