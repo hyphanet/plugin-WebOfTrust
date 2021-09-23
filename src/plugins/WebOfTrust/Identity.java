@@ -671,10 +671,8 @@ public class Identity extends Persistent implements ReallyCloneable<Identity>, E
 			assert(mCurrentEditionFetchState == FetchState.NotFetched
 			    || mCurrentEditionFetchState == FetchState.ParsingFailed);
 			
-			if(mCurrentEditionFetchState == FetchState.ParsingFailed)
-				mCurrentEditionFetchState = FetchState.NotFetched;
-			
 			decreaseEdition();
+			mCurrentEditionFetchState = FetchState.NotFetched;
 		}
 	}
 	
