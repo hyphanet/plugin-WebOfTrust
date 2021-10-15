@@ -37,11 +37,7 @@ import freenet.support.codeshortification.IfNull;
  * 
  * It has a nickname and as many custom properties as needed (set by the user).
  * 
- * TODO: Code quality: Trim visibility of member variables.
- * 
- * @author xor (xor@freenetproject.org)
- * @author Julien Cornuwel (batosai@freenetproject.org)
- */
+ * TODO: Code quality: Trim visibility of member variables. */
 public class Identity extends Persistent implements ReallyCloneable<Identity>, EventSource {
 
 	/** @see Serializable */
