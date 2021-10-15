@@ -500,27 +500,18 @@ public final class XMLTransformer {
 				// Different implementations of IdentityDownloader may concurrently start a download
 				// for the same edition which can cause it to be downloaded twice.
 				// See the comments in IdentityDownloaderSlow.onNewEditionImported().
-				// TODO: Decide what to do about this logging, we shouldn't completely ignore
+				// FIXME: Decide what to do about this logging, we shouldn't completely ignore
 				// the issue if it happens too frequently so just removing the logging may not be
 				// a good idea. On the other hand keeping it also isn't good because the WARNING
 				// loglevel does sound too bad.
 				// Perhaps replace the logging with a counter of how often this happens, visible
 				// on the StatisticsPage?
 				
-				if(identity.getCurrentEditionFetchState() == FetchState.ParsingFailed) {
-					Logger.warning(this,
-						  "Fetched obsolete edition! Allowing import nevertheless because "
-						+ "current one is marked as ParsingFailed: This may not be a bug if you "
-						+ "intentionally cause re-fetching for cleanup after parser bugfixes! "
-						+ "edition: " + newEdition + "; " + identity);
-					
-					// Don't return, proceed to import it, maybe parsing works now.
-				} else {
-					Logger.warning(this,
-						"Fetched obsolete edition! Edition: " + newEdition + "; " + identity);
-					stats.mImportTime = null;
-					return stats;
-				}
+				
+				Logger.warning(this,
+					"Fetched obsolete edition! Edition: " + newEdition + "; " + identity);
+				stats.mImportTime = null;
+				return stats;
 			}
 			
 			// We throw parse errors AFTER checking the edition number: If this XML was outdated anyway, we don't have to throw.
