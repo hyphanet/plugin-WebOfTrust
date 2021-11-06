@@ -501,9 +501,10 @@ public final class XMLTransformer {
 				// for the same edition which can cause it to be downloaded twice.
 				// See the comments in IdentityDownloaderSlow.onNewEditionImported().
 				// FIXME: Decide what to do about this logging, we shouldn't completely ignore
-				// the issue if it happens too frequently so just removing the logging may not be
-				// a good idea. On the other hand keeping it also isn't good because the WARNING
-				// loglevel does sound too bad.
+				// the issue if it happens too frequently - old editions being downloaded might also
+				// be due to bugs - so just removing the logging may not be a good idea.
+				// On the other hand keeping it also isn't good because the WARNING loglevel does
+				// sound too bad.
 				// Perhaps replace the logging with a counter of how often this happens, visible
 				// on the StatisticsPage?
 				
