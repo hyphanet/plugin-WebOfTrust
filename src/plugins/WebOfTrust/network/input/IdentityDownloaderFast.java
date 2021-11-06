@@ -1309,6 +1309,7 @@ public final class IdentityDownloaderFast implements
 	 * Must be called while synchronized on {@link #mWoT} and {@link #mLock}. */
 	private void startDownload(Identity i) {
 		Logger.normal(this, "startDownload() called for: " + i);
+		assert(mWoT.shouldFetchIdentity(i));
 		
 		if(mUSKManager == null) {
 			Logger.warning(this,
