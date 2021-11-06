@@ -508,7 +508,6 @@ public final class XMLTransformer {
 				// Perhaps replace the logging with a counter of how often this happens, visible
 				// on the StatisticsPage?
 				
-				
 				Logger.warning(this,
 					"Fetched obsolete edition! Edition: " + newEdition + "; " + identity);
 				stats.mImportTime = null;
@@ -557,7 +556,7 @@ public final class XMLTransformer {
 					catch(Exception e) {
 						Logger.warning(this, "setProperties() failed", e);
 					}
-				
+					
 					// Must be called before importing Trust values because that will cause calls to
 					// Trust.trusterEditionUpdated() which needs to know the newEdition.
 					identity.onFetchedAndParsedSuccessfully(newEdition);
