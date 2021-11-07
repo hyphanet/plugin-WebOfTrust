@@ -673,6 +673,7 @@ public final class IdentityDownloaderSlow implements
 					// Test if our logic of storing only eligible EditionHints is correct.
 					assert(shouldAcceptHintsOf(h.getSourceIdentity()));
 					assert(shouldDownload(h.getTargetIdentity()));
+					assert(h.getEdition() > h.getTargetIdentity().getLastFetchedEdition());
 					
 					String targetIdentityID = h.getTargetIdentityID();
 					// FIXME: This doesn't seem to work, I've seen the following two downloads
