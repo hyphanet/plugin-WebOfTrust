@@ -1,3 +1,8 @@
+# FIXME: This currently is the old Travis CI script, NOT a GitHub Actions script!
+# It has been moved to the GitHub Actions path to preserve git history when converting it to a GHA
+# script. So convert it to the GHA syntax and then remove this FIXME.
+# See: https://docs.github.com/en/actions/guides/building-and-testing-java-with-gradle
+
 language: java
 
 # We need Ubuntu 14.04 due to very new JUnit API which WoT needs
