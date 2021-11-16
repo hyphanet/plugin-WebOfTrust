@@ -4,6 +4,7 @@
 # See: https://docs.github.com/en/actions/guides/building-and-testing-java-with-gradle
 
 name: CI
+# FIXME: Add cronjob
 on: [push, pull_request]
 
 language: java
