@@ -1063,12 +1063,12 @@ public final class IdentityDownloaderSlow implements
 		if(deletedHints > 1)
 			mSkippedDownloads += deletedHints - 1;
 		
-		// We don't have to try to cancel a potentially running download because in theory tere can
-		// be no other running download for this Identity at this point: While there is a succeeded
-		// download for an Identity in the IdentityFileQueue waiting for processing - which there
-		// was, as we're processing it here - the IdentityDownloaderSlow must not start any further
-		// downloads for the Identity. (See the documentation in onSuccess() for why that is the
-		// case).
+		// We don't have to try to cancel a potentially running download for e.g. a less recent
+		// edition because in theory there can be no other running download of this Identity at
+		// this point: While there is a succeeded download of an Identity in the IdentityFileQueue
+		// waiting for processing - which there was, as we're processing it here - the
+		// IdentityDownloaderSlow must not start any further downloads for the Identity. (See the
+		// documentation in onSuccess() for why that is the case).
 		//
 		// Given that it would be tempting to add code similar to:
 			/* assert(!mDownloads.containsAnyDownloadForTheGivenIdentity()); */
