@@ -12,10 +12,6 @@ jobs:
     # FIXME: Use ubuntu-latest once we've finished converting from Travis to GHA syntax
     runs-on: ubuntu-14.04
 
-# Disabling sudo routes the build to a Docker container instead of a VM
-# which speeds up the build.
-sudo: false
-
 env:
   global:
     # NOTICE: A hardcoded copy of this value exists at "matrix:", when updating also change that!
