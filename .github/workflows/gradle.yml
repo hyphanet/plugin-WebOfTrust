@@ -36,10 +36,6 @@ addons:
     - libhamcrest-java
     # For .travis.upload-jar-to-freenet.sh
     - python3-pip
-  # TODO: Code quality: Remove this workaround for https://github.com/travis-ci/travis-ci/issues/5227
-  hosts:
-    - freenet-plugin-WebOfTrust
-  hostname: freenet-plugin-WebOfTrust
 
 before_cache:
   - rm -f  $HOME/.gradle/caches/modules-2/modules-2.lock
