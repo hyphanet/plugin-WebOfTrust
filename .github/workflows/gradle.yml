@@ -19,13 +19,14 @@ jobs:
     - name: Install apt packages
       # python3-pip is for .travis.upload-jar-to-freenet.sh
       run: apt-get --assume-yes install ant ant-optional junit4 libhamcrest-java python3-pip
-
+    
     - name: Checkout Freenet git repository
       uses: actions/checkout@v2
       with:
         repository: freenet/fred
         ref: ${{env.FRED}}  # Branch as specified by $FRED environment variable.
         path: fred
+    
     - name: Checkout WoT git repository
       uses: actions/checkout@v2
       with:
