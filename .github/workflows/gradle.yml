@@ -16,6 +16,10 @@ jobs:
     # FIXME: Use ubuntu-latest once we've finished converting from Travis to GHA syntax
     runs-on: ubuntu-14.04
     steps:
+    - name: Install apt packages
+      # python3-pip is for .travis.upload-jar-to-freenet.sh
+      run: apt-get --assume-yes install ant ant-optional junit4 libhamcrest-java python3-pip
+
     - name: Checkout Freenet git repository
       uses: actions/checkout@v2
       with:
@@ -26,16 +30,6 @@ jobs:
       uses: actions/checkout@v2
       with:
         path: main
-
-addons:
-  apt:
-    packages:
-    - ant
-    - ant-optional
-    - junit4
-    - libhamcrest-java
-    # For .travis.upload-jar-to-freenet.sh
-    - python3-pip
 
 before_cache:
   - rm -f  $HOME/.gradle/caches/modules-2/modules-2.lock
