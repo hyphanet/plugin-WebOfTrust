@@ -21,7 +21,7 @@ jobs:
     - name: Checkout WoT git repository
       uses: actions/checkout@v2
       with:
-        path: plugin-WebOfTrust
+        path: main
 
 env:
   global:
