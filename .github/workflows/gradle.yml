@@ -32,18 +32,20 @@ jobs:
       with:
         path: main
 
-before_cache:
-  - rm -f  $HOME/.gradle/caches/modules-2/modules-2.lock
-  - rm -f  $HOME/.gradle/caches/jars-2/jars-2.lock
-  - rm -fr $HOME/.gradle/caches/*/plugin-resolution/
-
-cache:
-  apt: true
-  directories:
-  - $TRAVIS_BUILD_DIR/../fred/
-  - $HOME/.m2
-  - $HOME/.gradle/caches/
-  - $HOME/.gradle/wrapper/
+# FIXME: Convert the below caching code from its Travis CI syntax to the GitHub Actions syntax.
+#
+## before_cache:
+##   - rm -f  $HOME/.gradle/caches/modules-2/modules-2.lock
+##   - rm -f  $HOME/.gradle/caches/jars-2/jars-2.lock
+##   - rm -fr $HOME/.gradle/caches/*/plugin-resolution/
+## 
+## cache:
+##   apt: true
+##   directories:
+##   - $TRAVIS_BUILD_DIR/../fred/
+##   - $HOME/.m2
+##   - $HOME/.gradle/caches/
+##   - $HOME/.gradle/wrapper/
 
 # Compile Freenet Git repository, start a node
 before_script: |
