@@ -32,28 +32,29 @@ jobs:
       with:
         path: main
 
-# Compile Freenet Git repository, start a node
-before_script: |
-  # FIXME: $FRED_UPDATED is not populated by GitHub Actions yet
-  if [ "$FRED_UPDATED" = 1 ] ; then
-    cd "$TRAVIS_BUILD_DIR"/../fred &&
-    # TODO: freenet.jar won't contain class Version if we don't run the
-    # clean task in a separate execution of Gradle. I.e. this wouldn't work:
-    #   $ gradle clean jar
-    # This is due to a bug in fred's Gradle script which could be fixed
-    # like this WoT commit did: 06c007204f40c712a398f0b58671f77fd9aeffd1
-    ./gradlew clean &&
-    # "copyRuntimeLibs" copies the JAR *and* dependencies - which WoT also
-    # needs - to build/output/
-    ./gradlew jar copyRuntimeLibs -x test &&
-    cd "$TRAVIS_BUILD_DIR"
-  else
-    echo "No changes at fred, not recompiling."
-  fi &&
-  if [ "$DEPLOY" = 1 ] ; then
-    echo "Starting a Freenet node already to establish connectivity far before deploy stage..."
-    "$TRAVIS_BUILD_DIR"/.travis.start-freenet.sh
-  fi
+    - name: Compile Freenet Git repository, start a node
+      run: |
+        # FIXME: $FRED_UPDATED is not populated by GitHub Actions yet
+        FRED_UPDATED=1 &&
+        if [ "$FRED_UPDATED" = 1 ] ; then
+          pushd "$GITHUB_WORKSPACE"/fred &&
+          # TODO: freenet.jar won't contain class Version if we don't run the
+          # clean task in a separate execution of Gradle. I.e. this wouldn't work:
+          #   $ gradle clean jar
+          # This is due to a bug in fred's Gradle script which could be fixed
+          # like this WoT commit did: 06c007204f40c712a398f0b58671f77fd9aeffd1
+          ./gradlew clean &&
+          # "copyRuntimeLibs" copies the JAR *and* dependencies - which WoT also
+          # needs - to build/output/
+          ./gradlew jar copyRuntimeLibs -x test &&
+          popd
+        else
+          echo "No changes at fred, not recompiling."
+        fi &&
+        if [ "$DEPLOY" = 1 ] ; then
+          echo "Starting a Freenet node already to connect to network far before deploy stage..." &&
+          ./.travis.start-freenet.sh
+        fi
 
 # Compile and test WoT
 script:
