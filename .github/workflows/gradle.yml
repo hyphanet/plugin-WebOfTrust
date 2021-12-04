@@ -51,6 +51,7 @@ jobs:
         else
           echo "No changes at fred, not recompiling."
         fi &&
+        # FIXME: Move the below to separate step
         if [ "$DEPLOY" = 1 ] ; then
           echo "Starting a Freenet node already to connect to network far before deploy stage..." &&
           ./.travis.start-freenet.sh
