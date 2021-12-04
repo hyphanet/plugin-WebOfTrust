@@ -56,29 +56,32 @@ jobs:
           echo "Starting a Freenet node already to connect to network far before deploy stage..." &&
           ./.travis.start-freenet.sh
         fi
-
-# Compile and test WoT
-script:
-  - set -o errexit
-  - echo 'Checksums of dependencies:' ; sha256sum ../fred/build/output/*
-  # Don't allow Travis to override the low memory limit which our builder sets with a higher one.
-  - unset _JAVA_OPTIONS
-  - echo 'fred version:' ; java -classpath '../fred/build/output/freenet.jar' 'freenet.node.Version'
-  # Use the same Gradle as fred to re-use the fixes we applied to it above and because Travis'
-  # Gradle version is too old for Java >= 9.
-  - ln -sf "$TRAVIS_BUILD_DIR/../fred/gradlew"
-  - |
-    if [ "$BUILDER" = "ant" ] ; then
-        ant clean && ant
-    elif [ "$BUILDER" = "gradle" ] ; then
-        # Show stdout/stderr so random seeds of failed tests can be obtained by developers to
-        # reproduce failed test runs. Also prevents the 10 minute build timeout.
-        WOT__SHOW_GRADLE_TEST_OUTPUT=1 ./gradlew clean test jar
-    else false ; fi
-  # To test the Ant and Gradle builders against each other uncomment the following.
-  ## - tools/compare-gradle-jars-with-ant-jars
-  ## - tools/compare-gradle-tests-with-ant-tests
-
+    
+    - name: Compile and test WoT
+      run: |
+        set -o errexit
+        echo 'Checksums of dependencies:' ; sha256sum ../fred/build/output/*
+        # Don't allow Travis to override the low memory limit which our builder sets with a higher one.
+        # FIXME: Inspect printf output to see if we even need to do this on GitHub Actions.
+        printf "%s\n" "$_JAVA_OPTIONS"
+        unset _JAVA_OPTIONS
+        echo 'fred version:'
+        java -classpath '../fred/build/output/freenet.jar' 'freenet.node.Version'
+        # Use the same Gradle as fred to re-use the fixes we applied to it above and because Travis'
+        # Gradle version is too old for Java >= 9.
+        # FIXME: Reconsider the above for GitHub Actions.
+        ln -sf "$GITHUB_WORKSPACE/fred/gradlew"
+        if [ "$BUILDER" = "ant" ] ; then
+            ant clean && ant
+        elif [ "$BUILDER" = "gradle" ] ; then
+            # Show stdout/stderr so random seeds of failed tests can be obtained by developers to
+            # reproduce failed test runs. Also prevents the 10 minute build timeout.
+            # FIXME: The 10 minute timeout was a Travis CI thing. Does GHA have one?
+            WOT__SHOW_GRADLE_TEST_OUTPUT=1 ./gradlew clean test jar
+        else false ; fi
+        # To test the Ant and Gradle builders against each other uncomment the following.
+        ## - tools/compare-gradle-jars-with-ant-jars
+        ## - tools/compare-gradle-tests-with-ant-tests
 
 # Use Gradle instead of Ant as it supports using multiple CPU cores on the unit tests.
 env: FRED=next BUILDER=gradle
