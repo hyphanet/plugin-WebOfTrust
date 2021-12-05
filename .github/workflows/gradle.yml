@@ -60,13 +60,13 @@ jobs:
     - name: Compile and test WoT
       run: |
         set -o errexit
-        echo 'Checksums of dependencies:' ; sha256sum "$GITHUB_WORKSPACE"/fred/build/output/*
+        echo 'Checksums of dependencies:' ; sha256sum ../fred/build/output/*
         # Don't allow Travis to override the low memory limit which our builder sets with a higher one.
         # FIXME: Inspect printf output to see if we even need to do this on GitHub Actions.
         printf "%s\n" "$_JAVA_OPTIONS"
         unset _JAVA_OPTIONS
         echo 'fred version:'
-        java -classpath "$GITHUB_WORKSPACE/fred/build/output/freenet.jar" 'freenet.node.Version'
+        java -classpath '../fred/build/output/freenet.jar' 'freenet.node.Version'
         # Use the same Gradle as fred to re-use the fixes we applied to it above and because Travis'
         # Gradle version is too old for Java >= 9.
         # FIXME: Reconsider the above for GitHub Actions.
