@@ -8,17 +8,40 @@ name: CI
 on: [push, pull_request]
 
 env:
-  # NOTICE: A hardcoded copy of this value exists at "matrix:", when updating also change that!
+  FRED:next
+  # NOTICE: Also adapt the "matrix" section below when changing this.
   FREENET_MINIMUM_JAVA_VERSION: 8
+  # Use Gradle instead of Ant as it supports using multiple CPU cores on the unit tests.
+  BUILDER: gradle
+  DEPLOY: 0
 
 jobs:
   build:
     # FIXME: Use ubuntu-latest once we've finished converting from Travis to GHA syntax
     runs-on: ubuntu-14.04
+    strategy:
+      matrix:
+        # 8 is $FREENET_MINIMUM_JAVA_VERSION currently.
+        # FIXME: Try if ${{env.FREENET_MINIMUM_JAVA_VERSION}} works here.
+        java-version: [9, 10, 11, 12, 13, 14, 15]
+    name: >-
+        Java: ${{matrix.java-version}},
+        fred branch: ${{env.FRED}},
+        builder: ${{env.BUILDER}},
+        deploy: ${{env.DEPLOY}
+    
     steps:
     - name: Install apt packages
       # python3-pip is for .travis.upload-jar-to-freenet.sh
       run: apt-get --assume-yes install ant ant-optional junit4 libhamcrest-java python3-pip
+    
+    - name: Install Java
+      uses: actions/setup-java@v2
+      with:
+        # FIXME: Choose a distribution.
+        # TODO: Also test against Oracle's JDK once GHA supports it.
+        distribution: 'adopt'
+        java-version: ${{matrix.java-version}}
     
     - name: Checkout Freenet git repository
       uses: actions/checkout@v2
@@ -83,8 +106,6 @@ jobs:
         ## - tools/compare-gradle-jars-with-ant-jars
         ## - tools/compare-gradle-tests-with-ant-tests
 
-# Use Gradle instead of Ant as it supports using multiple CPU cores on the unit tests.
-env: FRED=next BUILDER=gradle
 matrix:
   include:
     # We will run most of our tests against fred branch next (= the development branch) to fulfill
@@ -108,13 +129,6 @@ matrix:
       # Don't use it on the above job because deployment happens there which is slow, just like Ant
       # - we would risk exhausting the time limit.
       env: FRED=next BUILDER=ant
-    - jdk: openjdk9
-    - jdk: openjdk10
-    - jdk: openjdk11
-    - jdk: openjdk12
-    - jdk: openjdk13
-    - jdk: openjdk14
-    - jdk: openjdk15
 
 deploy:
   provider: script
