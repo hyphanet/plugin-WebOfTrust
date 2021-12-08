@@ -8,6 +8,7 @@ name: CI
 on: [push, pull_request]
 
 env:
+  # FIXME: Move suitable vars to "matrix:" section.
   FRED: next
   # NOTICE: Also adapt the "matrix" section below when changing this.
   FREENET_MINIMUM_JAVA_VERSION: 8
