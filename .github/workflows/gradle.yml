@@ -10,7 +10,7 @@ on: [push, pull_request]
 env:
   # FIXME: Move suitable vars to "matrix:" section.
   # NOTICE: Also adapt the "matrix" section below when changing this.
-  FREENET_MINIMUM_JAVA_VERSION: 8
+  FRED_MINIMUM_JAVA_VERSION: 8
 
 jobs:
   build:
@@ -18,8 +18,8 @@ jobs:
     runs-on: ubuntu-14.04
     strategy:
       matrix:
-        # 8 is $FREENET_MINIMUM_JAVA_VERSION currently.
-        # FIXME: Try if ${{env.FREENET_MINIMUM_JAVA_VERSION}} works here.
+        # 8 is $FRED_MINIMUM_JAVA_VERSION currently.
+        # FIXME: Try if ${{env.FRED_MINIMUM_JAVA_VERSION}} works here.
         java-version: [9, 10, 11, 12, 13, 14, 15]
         fred-branch: next
         # Use Gradle instead of Ant as it supports using multiple CPU cores on the unit tests.
