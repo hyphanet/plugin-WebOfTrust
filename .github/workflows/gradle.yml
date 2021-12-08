@@ -20,10 +20,10 @@ jobs:
         # 8 is $FRED_MINIMUM_JAVA_VERSION currently.
         # FIXME: Try if ${{env.FRED_MINIMUM_JAVA_VERSION}} works here.
         java-version: [9, 10, 11, 12, 13, 14, 15]
-        fred-branch: "next"
+        fred-branch:  [next]
         # Use Gradle instead of Ant as it supports using multiple CPU cores on the unit tests.
-        WoT-builder: "gradle"
-        upload-jar-to-freenet: false
+        WoT-builder: [gradle]
+        upload-jar-to-freenet: [false]
         
         # FIXME: Adapt this section to GHA syntax
         include:
