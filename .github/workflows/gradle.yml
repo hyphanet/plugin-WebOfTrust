@@ -9,7 +9,6 @@ on: [push, pull_request]
 
 env:
   # FIXME: Move suitable vars to "matrix:" section.
-  FRED: next
   # NOTICE: Also adapt the "matrix" section below when changing this.
   FREENET_MINIMUM_JAVA_VERSION: 8
   # Use Gradle instead of Ant as it supports using multiple CPU cores on the unit tests.
@@ -25,9 +24,10 @@ jobs:
         # 8 is $FREENET_MINIMUM_JAVA_VERSION currently.
         # FIXME: Try if ${{env.FREENET_MINIMUM_JAVA_VERSION}} works here.
         java-version: [9, 10, 11, 12, 13, 14, 15]
+        fred-branch: next
     name: >-
         Java: ${{matrix.java-version}},
-        fred branch: ${{env.FRED}},
+        fred branch: ${{matrix.fred-branch}},
         builder: ${{env.BUILDER}},
         deploy: ${{env.DEPLOY}}
     
@@ -48,7 +48,7 @@ jobs:
       uses: actions/checkout@v2
       with:
         repository: freenet/fred
-        ref: ${{env.FRED}}  # Branch as specified by $FRED environment variable.
+        ref: ${{matrix.fred-branch}}
         path: fred
     
     - name: Checkout WoT git repository
