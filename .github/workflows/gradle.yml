@@ -8,7 +8,6 @@ name: CI
 on: [push, pull_request]
 
 env:
-  # FIXME: Move suitable vars to "matrix:" section.
   # NOTICE: Also adapt the "matrix" section below when changing this.
   FRED_MINIMUM_JAVA_VERSION: 8
 
