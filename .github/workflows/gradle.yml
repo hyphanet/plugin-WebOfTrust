@@ -23,7 +23,7 @@ jobs:
         fred-branch: next
         # Use Gradle instead of Ant as it supports using multiple CPU cores on the unit tests.
         WoT-builder: gradle
-        upload-jar-to-freenet: 0
+        upload-jar-to-freenet: false
         
         # FIXME: Adapt this section to GHA syntax
         include:
@@ -40,7 +40,7 @@ jobs:
           # will be tested against next by the second and following "jdk:" below.
           - fred-branch: master
             WoT-builder: gradle # FIXME: Can probably be removed as it is equal to the default.
-            upload-jar-to-freenet: 1
+            upload-jar-to-freenet: true
             # Travis doesn't support this yet so we will hardcode it:
             ## jdk: openjdk$FREENET_MINIMUM_JAVA_VERSION
             java-version: 8
@@ -103,7 +103,7 @@ jobs:
           echo "No changes at fred, not recompiling."
         fi &&
         # FIXME: Move the below to separate step
-        if [ "${{matrix.upload-jar-to-freenet}}" = 1 ] ; then
+        if [ "${{matrix.upload-jar-to-freenet}}" = "true" ] ; then
           echo "Starting a Freenet node already to connect to network far before deploy stage..." &&
           ./.travis.start-freenet.sh
         fi
@@ -133,15 +133,13 @@ jobs:
         # To test the Ant and Gradle builders against each other uncomment the following.
         ## - tools/compare-gradle-jars-with-ant-jars
         ## - tools/compare-gradle-tests-with-ant-tests
-
-deploy:
-  provider: script
-  # Prevent Travis from deleting the JAR before we can deploy it (wtf?)
-  skip_cleanup: true
-  script: ./.travis.upload-jar-to-freenet.sh
-  on:
-    all_branches: true
-    condition: $DEPLOY = 1
+    
+    - name: Upload WoT JAR to Freenet
+      # TODO: This does not use GitHub Actions' deployment API but rather is hereby declared as a
+      # plain step which runs a script. Consider if using the deployment API instead yields any
+      # benefit.
+      if: ${{matrix.upload-jar-to-freenet}}
+      run: ./.travis.upload-jar-to-freenet.sh
 
 # FIXME: Convert the below caching code from its Travis CI syntax to the GitHub Actions syntax.
 #
