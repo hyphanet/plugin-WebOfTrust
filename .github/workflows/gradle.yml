@@ -11,8 +11,6 @@ env:
   # FIXME: Move suitable vars to "matrix:" section.
   # NOTICE: Also adapt the "matrix" section below when changing this.
   FREENET_MINIMUM_JAVA_VERSION: 8
-  # Use Gradle instead of Ant as it supports using multiple CPU cores on the unit tests.
-  BUILDER: gradle
   DEPLOY: 0
 
 jobs:
@@ -25,10 +23,12 @@ jobs:
         # FIXME: Try if ${{env.FREENET_MINIMUM_JAVA_VERSION}} works here.
         java-version: [9, 10, 11, 12, 13, 14, 15]
         fred-branch: next
+        # Use Gradle instead of Ant as it supports using multiple CPU cores on the unit tests.
+        WoT-builder: gradle
     name: >-
         Java: ${{matrix.java-version}},
         fred branch: ${{matrix.fred-branch}},
-        builder: ${{env.BUILDER}},
+        builder: ${{matrix.WoT-builder}},
         deploy: ${{env.DEPLOY}}
     
     steps:
@@ -95,9 +95,9 @@ jobs:
         # Gradle version is too old for Java >= 9.
         # FIXME: Reconsider the above for GitHub Actions.
         ln -sf "$GITHUB_WORKSPACE/fred/gradlew"
-        if [ "$BUILDER" = "ant" ] ; then
+        if [ "${{matrix.WoT-builder}}" = "ant" ] ; then
             ant clean && ant
-        elif [ "$BUILDER" = "gradle" ] ; then
+        elif [ "${{matrix.WoT-builder}}" = "gradle" ] ; then
             # Show stdout/stderr so random seeds of failed tests can be obtained by developers to
             # reproduce failed test runs. Also prevents the 10 minute build timeout.
             # FIXME: The 10 minute timeout was a Travis CI thing. Does GHA have one?
