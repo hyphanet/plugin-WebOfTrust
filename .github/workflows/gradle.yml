@@ -11,7 +11,6 @@ env:
   # FIXME: Move suitable vars to "matrix:" section.
   # NOTICE: Also adapt the "matrix" section below when changing this.
   FREENET_MINIMUM_JAVA_VERSION: 8
-  DEPLOY: 0
 
 jobs:
   build:
@@ -25,11 +24,12 @@ jobs:
         fred-branch: next
         # Use Gradle instead of Ant as it supports using multiple CPU cores on the unit tests.
         WoT-builder: gradle
+        upload-jar-to-freenet: 0
     name: >-
         Java: ${{matrix.java-version}},
         fred branch: ${{matrix.fred-branch}},
         builder: ${{matrix.WoT-builder}},
-        deploy: ${{env.DEPLOY}}
+        deploy: ${{matrix.upload-jar-to-freenet}}
     
     steps:
     - name: Install apt packages
@@ -76,7 +76,7 @@ jobs:
           echo "No changes at fred, not recompiling."
         fi &&
         # FIXME: Move the below to separate step
-        if [ "$DEPLOY" = 1 ] ; then
+        if [ "${{matrix.upload-jar-to-freenet}}" = 1 ] ; then
           echo "Starting a Freenet node already to connect to network far before deploy stage..." &&
           ./.travis.start-freenet.sh
         fi
