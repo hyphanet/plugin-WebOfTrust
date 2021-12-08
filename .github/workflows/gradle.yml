@@ -39,7 +39,7 @@ jobs:
           # We only test against master on a single Java version to keep the matrix small, all the others
           # will be tested against next by the second and following "jdk:" below.
           - fred-branch: master
-            builder: gradle # FIXME: Can probably be removed as it is equal to the default.
+            WoT-builder: gradle # FIXME: Can probably be removed as it is equal to the default.
             upload-jar-to-freenet: 1
             # Travis doesn't support this yet so we will hardcode it:
             ## jdk: openjdk$FREENET_MINIMUM_JAVA_VERSION
