@@ -45,11 +45,12 @@ jobs:
             ## jdk: openjdk$FREENET_MINIMUM_JAVA_VERSION
             java-version: 8
           
-          - jdk: openjdk8
+          - java-version: 8
             # Still use Ant on one Java version to ensure it keeps working.
             # Don't use it on the above job because deployment happens there which is slow, just like Ant
             # - we would risk exhausting the time limit.
-            env: FRED=next BUILDER=ant
+            fred-branch: next # FIXME: Can probably be removed as it is equal to the default.
+            WoT-builder: ant
     
     name: >-
         Java: ${{matrix.java-version}},
