@@ -28,7 +28,7 @@ jobs:
         Java: ${{matrix.java-version}},
         fred branch: ${{env.FRED}},
         builder: ${{env.BUILDER}},
-        deploy: ${{env.DEPLOY}
+        deploy: ${{env.DEPLOY}}
     
     steps:
     - name: Install apt packages
