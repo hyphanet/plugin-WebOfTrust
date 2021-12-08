@@ -24,6 +24,31 @@ jobs:
         # Use Gradle instead of Ant as it supports using multiple CPU cores on the unit tests.
         WoT-builder: gradle
         upload-jar-to-freenet: 0
+        
+        # FIXME: Adapt this section to GHA syntax
+        include:
+          # We will run most of our tests against fred branch next (= the development branch) to fulfill
+          # our purpose of integration testing.
+          # But first we will hereby also test on branch master to ensure WoT works against the latest
+          # stable release as well because plugins can be updated without a new Freenet release.
+          # We also test on master before next because we will upload the WoT JAR to Freenet on master
+          # and that will take quite a bit of time so we should do it first to ensure the other faster
+          # build jobs can complete concurrently.
+          # We will upload from this fred and Java version because they are the minimum to guarantee
+          # the resulting fred upload and JAR will work everywhere.
+          # We only test against master on a single Java version to keep the matrix small, all the others
+          # will be tested against next by the second and following "jdk:" below.
+          - env: FRED=master BUILDER=gradle DEPLOY=1
+            # Travis doesn't support this yet so we will hardcode it:
+            ## jdk: openjdk$FREENET_MINIMUM_JAVA_VERSION
+            jdk: openjdk8
+          
+          - jdk: openjdk8
+            # Still use Ant on one Java version to ensure it keeps working.
+            # Don't use it on the above job because deployment happens there which is slow, just like Ant
+            # - we would risk exhausting the time limit.
+            env: FRED=next BUILDER=ant
+    
     name: >-
         Java: ${{matrix.java-version}},
         fred branch: ${{matrix.fred-branch}},
@@ -105,30 +130,6 @@ jobs:
         # To test the Ant and Gradle builders against each other uncomment the following.
         ## - tools/compare-gradle-jars-with-ant-jars
         ## - tools/compare-gradle-tests-with-ant-tests
-
-matrix:
-  include:
-    # We will run most of our tests against fred branch next (= the development branch) to fulfill
-    # our purpose of integration testing.
-    # But first we will hereby also test on branch master to ensure WoT works against the latest
-    # stable release as well because plugins can be updated without a new Freenet release.
-    # We also test on master before next because we will upload the WoT JAR to Freenet on master
-    # and that will take quite a bit of time so we should do it first to ensure the other faster
-    # build jobs can complete concurrently.
-    # We will upload from this fred and Java version because they are the minimum to guarantee
-    # the resulting fred upload and JAR will work everywhere.
-    # We only test against master on a single Java version to keep the matrix small, all the others
-    # will be tested against next by the second and following "jdk:" below.
-    - env: FRED=master BUILDER=gradle DEPLOY=1
-      # Travis doesn't support this yet so we will hardcode it:
-      ## jdk: openjdk$FREENET_MINIMUM_JAVA_VERSION
-      jdk: openjdk8
-
-    - jdk: openjdk8
-      # Still use Ant on one Java version to ensure it keeps working.
-      # Don't use it on the above job because deployment happens there which is slow, just like Ant
-      # - we would risk exhausting the time limit.
-      env: FRED=next BUILDER=ant
 
 deploy:
   provider: script
