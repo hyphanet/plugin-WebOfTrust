@@ -8,7 +8,7 @@ name: CI
 on: [push, pull_request]
 
 env:
-  FRED:next
+  FRED: next
   # NOTICE: Also adapt the "matrix" section below when changing this.
   FREENET_MINIMUM_JAVA_VERSION: 8
   # Use Gradle instead of Ant as it supports using multiple CPU cores on the unit tests.
