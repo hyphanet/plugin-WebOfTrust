@@ -54,7 +54,7 @@ jobs:
     
     name: >-
         Java: ${{matrix.java-version}},
-        fred branch: ${{matrix.fred-branch}},
+        fred: ${{matrix.fred-branch}},
         builder: ${{matrix.WoT-builder}},
         deploy: ${{matrix.upload-jar-to-freenet}}
     
