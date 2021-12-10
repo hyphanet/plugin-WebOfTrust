@@ -17,6 +17,7 @@ jobs:
     # FIXME: Also test on Windows using strategy.matrix
     runs-on: ubuntu-18.04
     strategy:
+      fail-fast: false # Don't cancel execution for all Java versions if one fails.
       matrix:
         # 8 is $FRED_MINIMUM_JAVA_VERSION currently.
         # FIXME: Try if ${{env.FRED_MINIMUM_JAVA_VERSION}} works here.
