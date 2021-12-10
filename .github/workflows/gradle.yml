@@ -67,7 +67,7 @@ jobs:
       uses: actions/setup-java@v2
       with:
         # FIXME: Choose a distribution.
-        # TODO: Also test against Oracle's JDK once GHA supports it.
+        # FIXME: Also test against Oracle's JDK once GHA supports it.
         distribution: 'adopt'
         java-version: ${{matrix.java-version}}
     
