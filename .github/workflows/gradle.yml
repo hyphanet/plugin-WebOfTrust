@@ -14,11 +14,13 @@ env:
 jobs:
   build:
     # FIXME: Use ubuntu-latest once we've finished converting from Travis to GHA syntax
+    # FIXME: Also test on Windows using strategy.matrix
     runs-on: ubuntu-18.04
     strategy:
       matrix:
         # 8 is $FRED_MINIMUM_JAVA_VERSION currently.
         # FIXME: Try if ${{env.FRED_MINIMUM_JAVA_VERSION}} works here.
+        # FIXME: Trim the set of Java versions to avoid exhausting our CPU time quota too quickly.
         java-version: [9, 10, 11, 12, 13, 14, 15]
         fred-branch:  [next]
         # Use Gradle instead of Ant as it supports using multiple CPU cores on the unit tests.
