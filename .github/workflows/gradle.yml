@@ -79,12 +79,12 @@ jobs:
       with:
         repository: freenet/fred
         ref: ${{matrix.fred-branch}}
-        path: fred
+        path: fred # Available via: "$GITHUB_WORKSPACE/fred"
     
     - name: Checkout WoT git repository
       uses: actions/checkout@v2
       with:
-        path: main
+        path: plugin-WebOfTrust # Available via: "$GITHUB_WORKSPACE/plugin-WebOfTrust"
     
     - name: Compile Freenet Git repository, start a node
       run: |
@@ -114,6 +114,8 @@ jobs:
     - name: Compile and test WoT
       run: |
         set -o errexit
+        cd "$GITHUB_WORKSPACE/plugin-WebOfTrust"
+        
         echo 'Checksums of dependencies:' ; sha256sum ../fred/build/output/*
         # Don't allow Travis to override the low memory limit which our builder sets with a higher one.
         # FIXME: Inspect printf output to see if we even need to do this on GitHub Actions.
