@@ -85,6 +85,7 @@ jobs:
       uses: actions/checkout@v2
       with:
         path: plugin-WebOfTrust # Available via: "$GITHUB_WORKSPACE/plugin-WebOfTrust"
+        submodules: true # FIXME: The Gradle script should do it automatically like the Ant one did.
     
     - name: Compile Freenet Git repository, start a node
       run: |
