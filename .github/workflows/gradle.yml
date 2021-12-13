@@ -57,7 +57,7 @@ jobs:
             WoT-builder: ant
     
     name: >-
-        Java: ${{matrix.java-version}}
+        JDK: ${{matrix.java-version}}
         fred: ${{matrix.fred-branch}}
         builder: ${{matrix.WoT-builder}}
         deploy: ${{matrix.upload-jar-to-freenet}}
