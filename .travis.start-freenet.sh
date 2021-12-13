@@ -13,7 +13,11 @@ pip3 install -U --user --egg pyFreenet3
 # Once that is fixed don't start a node here - do so by reverting the
 # commit which added this FIXME.
 
-cd "$TRAVIS_BUILD_DIR"/../fred
+if ! [ -e './build/output/freenet.jar' ] ; then
+	echo "ERROR: Run this script in a dir which contains a compiled fred git repository!" >&2
+	exit 1
+fi
+
 echo "Configuring node..."
 
 # Ignore Travis cache since seednodes may change.
