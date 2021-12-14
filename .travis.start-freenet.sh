@@ -5,7 +5,7 @@ set -o errtrace
 trap 'echo "Error at line $LINENO, exit code $?" >&2' ERR
 
 echo "Installing pyFreenet3..."
-pip3 install --upgrade --user pyFreenet3
+easy_install install --upgrade --user pyFreenet3
 
 # FIXME: As of 2018-05-03 fcpupload's "--spawn" parameter doesn't work,
 # see https://bugs.freenetproject.org/view.php?id=7018 - so we start our
