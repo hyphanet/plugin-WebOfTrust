@@ -64,8 +64,8 @@ jobs:
     
     steps:
     - name: Install apt packages
-      # python3-pip is for .travis.upload-jar-to-freenet.sh
-      run: sudo apt-get --assume-yes install ant ant-optional junit4 libhamcrest-java python3-pip
+      # python-setuptools is for .travis.upload-jar-to-freenet.sh
+      run: sudo apt-get --assume-yes install ant ant-optional junit4 libhamcrest-java python-setuptools
     
     - name: Install Java
       uses: actions/setup-java@v2
