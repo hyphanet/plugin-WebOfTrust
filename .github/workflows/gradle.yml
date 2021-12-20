@@ -109,7 +109,11 @@ jobs:
         fi
     
     - name: Start a Freenet node to prepare for JAR upload
-      if: ${{matrix.upload-jar-to-freenet}}
+      
+      # FIXME: Make it work and enable it.
+      ##if: ${{matrix.upload-jar-to-freenet}}
+      if: false
+      
       run: |
         echo "Starting a Freenet node already to connect to network far before deploy stage..." &&
         pushd "$GITHUB_WORKSPACE"/fred &&
@@ -148,7 +152,11 @@ jobs:
       # TODO: This does not use GitHub Actions' deployment API but rather is hereby declared as a
       # plain step which runs a script. Consider if using the deployment API instead yields any
       # benefit.
-      if: ${{matrix.upload-jar-to-freenet}}
+      
+      # FIXME: Make it work and enable it.
+      ## if: ${{matrix.upload-jar-to-freenet}}
+      if: false
+      
       run: ./.travis.upload-jar-to-freenet.sh
 
 # FIXME: Convert the below caching code from its Travis CI syntax to the GitHub Actions syntax.
