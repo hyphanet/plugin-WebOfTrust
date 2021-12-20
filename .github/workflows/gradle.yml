@@ -88,7 +88,7 @@ jobs:
         path: plugin-WebOfTrust # Available via: "$GITHUB_WORKSPACE/plugin-WebOfTrust"
         submodules: true # FIXME: The Gradle script should do it automatically like the Ant one did.
     
-    - name: Compile Freenet Git repository, start a node
+    - name: Compile Freenet Git repository
       run: |
         # FIXME: $FRED_UPDATED is not populated by GitHub Actions yet
         FRED_UPDATED=1 &&
@@ -106,8 +106,10 @@ jobs:
           popd
         else
           echo "No changes at fred, not recompiling."
-        fi &&
-        # FIXME: Move the below to separate step
+        fi
+    
+    - name: Start a Freenet node to prepare for JAR upload
+      run: |
         if [ "${{matrix.upload-jar-to-freenet}}" = "true" ] ; then
           echo "Starting a Freenet node already to connect to network far before deploy stage..." &&
           pushd "$GITHUB_WORKSPACE"/fred &&
