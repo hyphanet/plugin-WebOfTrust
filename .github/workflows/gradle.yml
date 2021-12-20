@@ -109,13 +109,12 @@ jobs:
         fi
     
     - name: Start a Freenet node to prepare for JAR upload
+      if: ${{matrix.upload-jar-to-freenet}}
       run: |
-        if [ "${{matrix.upload-jar-to-freenet}}" = "true" ] ; then
-          echo "Starting a Freenet node already to connect to network far before deploy stage..." &&
-          pushd "$GITHUB_WORKSPACE"/fred &&
-          "$GITHUB_WORKSPACE/plugin-WebOfTrust/.travis.start-freenet.sh" # FIXME: Rename the script &&
-          popd
-        fi
+        echo "Starting a Freenet node already to connect to network far before deploy stage..." &&
+        pushd "$GITHUB_WORKSPACE"/fred &&
+        "$GITHUB_WORKSPACE/plugin-WebOfTrust/.travis.start-freenet.sh" # FIXME: Rename the script &&
+        popd
     
     - name: Compile and test WoT
       run: |
