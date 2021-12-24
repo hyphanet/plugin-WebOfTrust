@@ -117,7 +117,7 @@ jobs:
       run: |
         echo "Starting a Freenet node already to connect to network far before deploy stage..." &&
         pushd "$GITHUB_WORKSPACE"/fred &&
-        "$GITHUB_WORKSPACE/plugin-WebOfTrust/.travis.start-freenet.sh" # FIXME: Rename the script &&
+        "$GITHUB_WORKSPACE/plugin-WebOfTrust/.travis.start-freenet.sh" && # FIXME: Rename the script
         popd
     
     - name: Compile and test WoT
