@@ -148,9 +148,10 @@ jobs:
         ## - tools/compare-gradle-tests-with-ant-tests
     
     - name: Upload WoT JAR to Freenet
-      # TODO: This does not use GitHub Actions' deployment API but rather is hereby declared as a
-      # plain step which runs a script. Consider if using the deployment API instead yields any
-      # benefit.
+      # TODO: Code quality: This does not use GitHub Actions' deployment API but rather is hereby
+      # declared as a plain step which runs a script. Consider if using the deployment API instead
+      # yields any benefit. See:
+      # https://docs.github.com/en/actions/deployment/deploying-with-github-actions
       
       # FIXME: Make it work and enable it.
       ## if: ${{matrix.upload-jar-to-freenet}}
