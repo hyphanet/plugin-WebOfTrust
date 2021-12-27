@@ -30,6 +30,8 @@ jobs:
         upload-jar-to-freenet: [false]
         
         # FIXME: Adapt this section to GHA syntax
+        # Notice: The below special cases will also define variables with the same values as the
+        # above defaults. This is necessary because otherwise GHA would set them to be empty.
         include:
           # We will run most of our tests against fred branch next (= the development branch) to fulfill
           # our purpose of integration testing.
@@ -43,18 +45,21 @@ jobs:
           # We only test against master on a single Java version to keep the matrix small, all the others
           # will be tested against next by the second and following "jdk:" below.
           - fred-branch: master
-            WoT-builder: gradle # FIXME: Can probably be removed as it is equal to the default.
             upload-jar-to-freenet: true
             # Travis doesn't support this yet so we will hardcode it:
             ## jdk: openjdk$FREENET_MINIMUM_JAVA_VERSION
             java-version: 8
+            # Kept at default:
+            WoT-builder: gradle
           
           - java-version: 8
             # Still use Ant on one Java version to ensure it keeps working.
             # Don't use it on the above job because deployment happens there which is slow, just like Ant
             # - we would risk exhausting the time limit.
-            fred-branch: next # FIXME: Can probably be removed as it is equal to the default.
             WoT-builder: ant
+            # Kept at default:
+            fred-branch: next
+            upload-jar-to-freenet: false
     
     name: >-
         JDK: ${{matrix.java-version}}
