@@ -7,14 +7,15 @@ name: CI
 # FIXME: Add cronjob
 on: [push, pull_request]
 
+env:
+  # NOTICE: Also adapt the "matrix" section below when changing this.
+  FRED_MINIMUM_JAVA_VERSION: 8
+
 jobs:
   build:
     # FIXME: Use ubuntu-latest once we've finished converting from Travis to GHA syntax
     # FIXME: Also test on Windows using strategy.matrix
     runs-on: ubuntu-18.04
-    env:
-      # NOTICE: Also adapt the "matrix" section below when changing this.
-      FRED_MINIMUM_JAVA_VERSION: 8
     strategy:
       fail-fast: false # Don't cancel execution for all Java versions if one fails.
       matrix:
