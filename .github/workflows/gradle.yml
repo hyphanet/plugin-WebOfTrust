@@ -21,7 +21,7 @@ jobs:
       matrix:
         # 9, 10 excluded because: Building fred fails there, probably because they're EOL.
         # FIXME: Trim the set of Java versions to avoid exhausting our CPU time quota too quickly.
-        java-version: [${{env.FRED_MINIMUM_JAVA_VERSION}}, 11, 12, 13, 14, 15]
+        java-version: ["${{env.FRED_MINIMUM_JAVA_VERSION}}", 11, 12, 13, 14, 15]
         fred-branch:  [next]
         # Use Gradle instead of Ant as it supports using multiple CPU cores on the unit tests.
         WoT-builder: [gradle]
