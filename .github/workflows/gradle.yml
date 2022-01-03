@@ -43,7 +43,8 @@ jobs:
           # We only test against master on a single Java version to keep the matrix small.
           #
           # Notice: If GHA did have a limit on the number of jobs being run concurrently we should
-          # run this one first as it is the slowest. However as of 2021-12-27 there is no limit:
+          # reorder the matrix to ensure this one runs first as it is the slowest. However as of
+          # 2021-12-27 there is no limit:
           # https://docs.github.com/en/actions/learn-github-actions/workflow-syntax-for-github-actions#jobsjob_idstrategymax-parallel
           - fred-branch: master
             upload-jar-to-freenet: true
