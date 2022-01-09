@@ -58,8 +58,8 @@ jobs:
           
           - java-version: 15
             # Still use Ant on one Java version to ensure it keeps working.
-            # Don't use it on the above job because deployment happens there which is slow, just like Ant
-            # - we would risk exhausting the time limit.
+            # Don't use it on the above job because deployment happens there which is slow, just
+            # like Ant.
             WoT-builder: ant
             # Kept at default:
             fred-branch: next
