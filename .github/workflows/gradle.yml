@@ -23,6 +23,7 @@ jobs:
         # TODO: Code quality: As of 2022-01-03 using ["${{env.FRED_MINIMUM_JAVA_VERSION}}", ...]
         # instead of [8, ...] does not work, see: https://github.com/actions/runner/issues/480
         # Retry once the above bugtracker entry is fixed.
+        # Also apply this to the "include:" section.
         # 
         # 9, 10 excluded because: Building fred fails there, probably because they're EOL.
         # FIXME: Trim the set of Java versions to avoid exhausting our CPU time quota too quickly.
@@ -51,8 +52,6 @@ jobs:
           # https://docs.github.com/en/actions/learn-github-actions/workflow-syntax-for-github-actions#jobsjob_idstrategymax-parallel
           - fred-branch: master
             upload-jar-to-freenet: true
-            # Travis doesn't support this yet so we will hardcode it:
-            ## jdk: openjdk$FREENET_MINIMUM_JAVA_VERSION
             java-version: 8
             # Kept at default:
             WoT-builder: gradle
