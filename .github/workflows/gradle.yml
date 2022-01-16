@@ -11,7 +11,7 @@ env:
 jobs:
   build:
     # FIXME: Use ubuntu-latest once we've finished converting from Travis to GHA syntax
-    # FIXME: Also test on Windows using strategy.matrix
+    # FIXME: Also test on Windows and MacOS using strategy.matrix
     runs-on: ubuntu-18.04
     strategy:
       fail-fast: false # Don't cancel execution for all Java versions if one fails.
