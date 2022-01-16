@@ -141,6 +141,8 @@ jobs:
         set -o errexit
         cd "$GITHUB_WORKSPACE/plugin-WebOfTrust"
         
+        # TODO: Put dependency checksums and fred version info into separate "- name" steps so they
+        # can be viewed more easily on the web interface.
         echo 'Checksums of dependencies:' ; sha256sum ../fred/build/output/*
         # Don't allow Travis to override the low memory limit which our builder sets with a higher one.
         # FIXME: Inspect printf output to see if we even need to do this on GitHub Actions.
