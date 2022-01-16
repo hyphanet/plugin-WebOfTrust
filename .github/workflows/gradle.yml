@@ -33,7 +33,6 @@ jobs:
         WoT-builder: [gradle]
         upload-jar-to-freenet: [false]
         
-        # FIXME: Adapt this section to GHA syntax
         # Notice: The below special cases will also define variables with the same values as the
         # above defaults. This is necessary because otherwise GHA would set them to be empty.
         include:
