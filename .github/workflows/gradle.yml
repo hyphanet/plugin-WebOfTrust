@@ -3,6 +3,8 @@
 # script. So convert it to the GHA syntax and then remove this FIXME.
 # See: https://docs.github.com/en/actions/guides/building-and-testing-java-with-gradle
 
+# FIXME: Replace the Travis CI badges in the README.md with GitHub Actions badges.
+
 name: CI
 # FIXME: Add cronjob
 on: [push, pull_request]
