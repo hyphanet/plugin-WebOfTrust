@@ -158,6 +158,7 @@ jobs:
             WOT__SHOW_GRADLE_TEST_OUTPUT=1 ./gradlew clean test jar
         else false ; fi
         # To test the Ant and Gradle builders against each other uncomment the following.
+        # FIXME: Do this because this script has been converted from Travis CI to GitHub Actions.
         ## - tools/compare-gradle-jars-with-ant-jars
         ## - tools/compare-gradle-tests-with-ant-tests
     
