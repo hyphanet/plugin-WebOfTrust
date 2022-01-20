@@ -24,7 +24,7 @@ jobs:
         # Also apply this to the "include:" section.
         # 
         # 9, 10 excluded because: Building fred fails there, probably because they're EOL.
-        # FIXME: Trim the set of Java versions to avoid exhausting our CPU time quota too quickly.
+        # TODO: Trim the set of Java versions to respect GitHub's free service.
         # FIXME: Add 16, 17, 18.
         java-version: [8, 11, 12, 13, 14, 15]
         fred-branch:  [next]
