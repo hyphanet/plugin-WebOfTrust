@@ -1,0 +1,192 @@
+# FIXME: Replace the Travis CI badges in the README.md with GitHub Actions badges.
+
+name: CI
+# FIXME: Add cronjob
+on: [push, pull_request]
+
+env:
+  # NOTICE: Also adapt the "matrix" section below when changing this.
+  FRED_MINIMUM_JAVA_VERSION: 8
+
+jobs:
+  build:
+    # FIXME: Use ubuntu-latest once we've finished converting from Travis to GHA syntax
+    # FIXME: Also test on Debian stable using strategy.matrix as that's what fred targets.
+    # FIXME: Also test on Windows and MacOS using strategy.matrix
+    runs-on: ubuntu-18.04
+    strategy:
+      fail-fast: false # Don't cancel execution for all Java versions if one fails.
+      matrix:
+        # 8 is $FRED_MINIMUM_JAVA_VERSION currently.
+        # TODO: Code quality: As of 2022-01-03 using ["${{env.FRED_MINIMUM_JAVA_VERSION}}", ...]
+        # instead of [8, ...] does not work, see: https://github.com/actions/runner/issues/480
+        # Retry once the above bugtracker entry is fixed.
+        # Also apply this to the "include:" section.
+        # 
+        # 9, 10 excluded because: Building fred fails there, probably because they're EOL.
+        # TODO: Trim the set of Java versions to respect GitHub's free service.
+        # FIXME: Add 16, 17, 18.
+        java-version: [8, 11, 12, 13, 14, 15]
+        fred-branch:  [next]
+        # Use Gradle instead of Ant as it supports using multiple CPU cores on the unit tests.
+        WoT-builder: [gradle]
+        upload-jar-to-freenet: [false]
+        
+        # Notice: The below special cases will also define variables with the same values as the
+        # above defaults. This is necessary because otherwise GHA would set them to be empty.
+        include:
+          # We will run most of our tests against fred branch next (= the development branch) to
+          # fulfill our purpose of integration testing.
+          # But we will hereby also test on branch master to ensure WoT works against the
+          # latest stable release as well because plugins can be updated without a new Freenet
+          # release.
+          # We will upload from this fred and Java version because they are the minimum to guarantee
+          # the resulting fred upload and JAR will work everywhere.
+          # We only test against master on a single Java version to keep the matrix small.
+          #
+          # Notice: If GHA did have a limit on the number of jobs being run concurrently we should
+          # reorder the matrix to ensure this one runs first as it is the slowest. However as of
+          # 2021-12-27 there is no limit:
+          # https://docs.github.com/en/actions/learn-github-actions/workflow-syntax-for-github-actions#jobsjob_idstrategymax-parallel
+          - fred-branch: master
+            upload-jar-to-freenet: true
+            java-version: 8
+            # Kept at default:
+            WoT-builder: gradle
+          
+          - java-version: 15
+            # Still use Ant on one Java version to ensure it keeps working.
+            # Don't use it on the above job because deployment happens there which is slow, just
+            # like Ant.
+            WoT-builder: ant
+            # Kept at default:
+            fred-branch: next
+            upload-jar-to-freenet: false
+    
+    name: >-
+        JDK${{matrix.java-version}}
+        fred: ${{matrix.fred-branch}}
+        builder: ${{matrix.WoT-builder}}
+        deploy: ${{matrix.upload-jar-to-freenet}}
+    
+    steps:
+    - name: Install apt packages
+      # python3-pip is for .travis.upload-jar-to-freenet.sh
+      run: sudo apt-get --assume-yes install ant ant-optional junit4 libhamcrest-java python3-pip
+    
+    - name: Install Java
+      uses: actions/setup-java@v2
+      with:
+        # FIXME: Choose a distribution.
+        # FIXME: Also test against Oracle's JDK once GHA supports it.
+        distribution: 'adopt'
+        java-version: ${{matrix.java-version}}
+    
+    - name: Checkout Freenet git repository
+      uses: actions/checkout@v2
+      with:
+        repository: freenet/fred
+        ref: ${{matrix.fred-branch}}
+        path: fred # Available via: "$GITHUB_WORKSPACE/fred"
+    
+    - name: Checkout WoT git repository
+      uses: actions/checkout@v2
+      with:
+        path: plugin-WebOfTrust # Available via: "$GITHUB_WORKSPACE/plugin-WebOfTrust"
+        # FIXME: The Gradle script should init submodules automatically like the Ant one did.
+        # Remove the command for that from the README.md once you implement it.
+        submodules: true
+    
+    - name: Compile Freenet Git repository
+      run: |
+        # FIXME: $FRED_UPDATED is not populated by GitHub Actions yet
+        FRED_UPDATED=1 &&
+        if [ "$FRED_UPDATED" = 1 ] ; then
+          pushd "$GITHUB_WORKSPACE"/fred &&
+          # TODO: freenet.jar won't contain class Version if we don't run the
+          # clean task in a separate execution of Gradle. I.e. this wouldn't work:
+          #   $ gradle clean jar
+          # This is due to a bug in fred's Gradle script which could be fixed
+          # like this WoT commit did: 06c007204f40c712a398f0b58671f77fd9aeffd1
+          # EDIT: A better long-term fix for such issues would be to use a file "Version.properties"
+          # instead of patching the "Version.java" source code, like Freetalk now does.
+          # See Freetalk commits 195cfd70aad92c592e0a591d9804712b1cb43a1e and
+          # 0d956c4bf0afbca7a8cb9ef855d0ea415f09bb9a
+          ./gradlew clean &&
+          # "copyRuntimeLibs" copies the JAR *and* dependencies - which WoT also
+          # needs - to build/output/
+          ./gradlew jar copyRuntimeLibs -x test &&
+          popd
+        else
+          echo "No changes at fred, not recompiling."
+        fi
+    
+    - name: Start a Freenet node to prepare for JAR upload
+      
+      # FIXME: Make it work and enable it.
+      ##if: ${{matrix.upload-jar-to-freenet}}
+      if: false
+      
+      run: |
+        echo "Starting a Freenet node already to connect to network far before deploy stage..." &&
+        cd "$GITHUB_WORKSPACE"/fred &&
+        "$GITHUB_WORKSPACE/plugin-WebOfTrust/.travis.start-freenet.sh" # FIXME: Rename the script
+    
+    - name: Compile and test WoT
+      run: |
+        set -o errexit
+        cd "$GITHUB_WORKSPACE/plugin-WebOfTrust"
+        
+        # TODO: Put dependency checksums and fred version info into separate "- name" steps so they
+        # can be viewed more easily on the web interface.
+        echo 'Checksums of dependencies:' ; sha256sum ../fred/build/output/*
+        # Don't allow Travis to override the low memory limit which our builder sets with a higher one.
+        # FIXME: Inspect printf output to see if we even need to do this on GitHub Actions.
+        printf "%s\n" "$_JAVA_OPTIONS"
+        unset _JAVA_OPTIONS
+        echo 'fred version:'
+        java -classpath '../fred/build/output/freenet.jar' 'freenet.node.Version'
+        # Use the same Gradle as fred to re-use the fixes we applied to it above and because Travis'
+        # Gradle version is too old for Java >= 9.
+        # FIXME: Reconsider the above for GitHub Actions.
+        ln -sf "$GITHUB_WORKSPACE/fred/gradlew"
+        if [ "${{matrix.WoT-builder}}" = "ant" ] ; then
+            ant clean && ant
+        elif [ "${{matrix.WoT-builder}}" = "gradle" ] ; then
+            # Show stdout/stderr so random seeds of failed tests can be obtained by developers to
+            # reproduce failed test runs. Also prevents the 10 minute build timeout.
+            # FIXME: The 10 minute timeout was a Travis CI thing. Does GHA have one?
+            WOT__SHOW_GRADLE_TEST_OUTPUT=1 ./gradlew clean test jar
+        else false ; fi
+        # To test the Ant and Gradle builders against each other uncomment the following.
+        # FIXME: Do this because this script has been converted from Travis CI to GitHub Actions.
+        ## - tools/compare-gradle-jars-with-ant-jars
+        ## - tools/compare-gradle-tests-with-ant-tests
+    
+    - name: Upload WoT JAR to Freenet
+      # TODO: Code quality: This does not use GitHub Actions' deployment API but rather is hereby
+      # declared as a plain step which runs a script. Consider if using the deployment API instead
+      # yields any benefit. See:
+      # https://docs.github.com/en/actions/deployment/deploying-with-github-actions
+      
+      # FIXME: Make it work and enable it.
+      ## if: ${{matrix.upload-jar-to-freenet}}
+      if: false
+      
+      run: ./.travis.upload-jar-to-freenet.sh
+
+# FIXME: Convert the below caching code from its Travis CI syntax to the GitHub Actions syntax.
+# See https://docs.github.com/en/actions/guides/building-and-testing-java-with-gradle#caching-dependencies
+#
+## before_cache:
+##   - rm -f  $HOME/.gradle/caches/modules-2/modules-2.lock
+##   - rm -f  $HOME/.gradle/caches/jars-2/jars-2.lock
+##   - rm -fr $HOME/.gradle/caches/*/plugin-resolution/
+## 
+## cache:
+##   apt: true
+##   directories:
+##   - $TRAVIS_BUILD_DIR/../fred/
+##   - $HOME/.m2
+##   - $HOME/.gradle/caches/
+##   - $HOME/.gradle/wrapper/

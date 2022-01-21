@@ -5,7 +5,7 @@ set -o errtrace
 trap 'echo "Error at line $LINENO, exit code $?" >&2' ERR
 
 echo "Installing pyFreenet3..."
-pip3 install -U --user --egg pyFreenet3
+pip3 install --upgrade --user pyFreenet3
 
 # FIXME: As of 2018-05-03 fcpupload's "--spawn" parameter doesn't work,
 # see https://bugs.freenetproject.org/view.php?id=7018 - so we start our
@@ -13,7 +13,11 @@ pip3 install -U --user --egg pyFreenet3
 # Once that is fixed don't start a node here - do so by reverting the
 # commit which added this FIXME.
 
-cd "$TRAVIS_BUILD_DIR"/../fred
+if ! [ -e './build/output/freenet.jar' ] ; then
+	echo "ERROR: Run this script in a dir which contains a compiled fred git repository!" >&2
+	exit 1
+fi
+
 echo "Configuring node..."
 
 # Ignore Travis cache since seednodes may change.

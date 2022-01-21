@@ -62,6 +62,7 @@ By the way: News about the current WoT development are posted to that board abou
 
 Clone the [fred](https://github.com/freenet/fred) and plugin-WebOfTrust repositories into the same
 parent directory.  
+Initialize the git submodules by `( cd plugin-WebOfTrust && git submodule update --init )`.  
 Compile fred by command line using `( cd fred && ./gradlew jar copyRuntimeLibs )`, or for
 compiling it with Eclipse use the [below instructions](#compiling-with-eclipse).
 
