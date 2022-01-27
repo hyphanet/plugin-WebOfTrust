@@ -145,13 +145,13 @@ jobs:
         unset _JAVA_OPTIONS
         echo 'fred version:'
         java -classpath '../fred/build/output/freenet.jar' 'freenet.node.Version'
-        # Use the same Gradle as fred to re-use the fixes we applied to it above and because Travis'
-        # Gradle version is too old for Java >= 9.
-        # FIXME: Reconsider the above for GitHub Actions.
-        ln -sf "$GITHUB_WORKSPACE/fred/gradlew"
         if [ "${{matrix.WoT-builder}}" = "ant" ] ; then
             ant clean && ant
         elif [ "${{matrix.WoT-builder}}" = "gradle" ] ; then
+            rm -f ./gradlew
+            # Latest Gradle version as of 2021-06-14.
+            gradle wrapper --gradle-version 7.1
+            ./gradlew --version
             # Show stdout/stderr so random seeds of failed tests can be obtained by developers to
             # reproduce failed test runs. Also prevents the 10 minute build timeout.
             # FIXME: The 10 minute timeout was a Travis CI thing. Does GHA have one?
