@@ -148,6 +148,9 @@ jobs:
         if [ "${{matrix.WoT-builder}}" = "ant" ] ; then
             ant clean && ant
         elif [ "${{matrix.WoT-builder}}" = "gradle" ] ; then
+            # FIXME: Debug code for gradle ignoring --gradle-version, remove once this is fixed
+            set -x
+            
             rm -f ./gradlew
             # Latest Gradle version known to definitely work with WoT.
             # FIXME: Upgrade it and fix the Gradle script to work with the most recent one.
