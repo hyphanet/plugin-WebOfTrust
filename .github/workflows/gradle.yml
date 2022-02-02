@@ -159,10 +159,13 @@ jobs:
             # script and fail if the build script is incompatible with the system's Gradle version,
             # which would result in the wrapper NOT being downloaded.
             # In other words: "gradle wrapper" doesn't ignore the build script like it should IMHO.
-            gradle wrapper --gradle-version 4.10.3 --continue
+            # EDIT: The above workaround does not work, the build failure still causes cancellation.
+            # Trying with "--no-daemon" hence as the logs show that it tries to start a daemon,
+            # which might be what parses the build script.
+            gradle wrapper --gradle-version 4.10.3 --continue --no-daemon
             # Workaround for the above command ignoring the specified version and downloading a new
             # one instead.
-            gradle wrapper --gradle-version 4.10.3 --continue
+            gradle wrapper --gradle-version 4.10.3 --continue --no-daemon
             ./gradlew --version
             # Show stdout/stderr so random seeds of failed tests can be obtained by developers to
             # reproduce failed test runs. Also prevents the 10 minute build timeout.
