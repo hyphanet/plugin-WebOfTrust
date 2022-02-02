@@ -150,8 +150,10 @@ jobs:
         elif [ "${{matrix.WoT-builder}}" = "gradle" ] ; then
             rm -f ./gradlew
             # Latest Gradle version as of 2021-07-02.
-            # NOTICE: Gradle might ignore the specified version and download a newer one instead.
             gradle wrapper --gradle-version 7.1.1
+            # Workaround for the above command ignoring the specified version and downloading a
+            # newer one instead (which fails to work with our current Gradle script).
+            ./gradlew wrapper --gradle-version 7.1.1
             ./gradlew --version
             # Show stdout/stderr so random seeds of failed tests can be obtained by developers to
             # reproduce failed test runs. Also prevents the 10 minute build timeout.
