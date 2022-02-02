@@ -155,6 +155,9 @@ jobs:
             # Latest Gradle version known to definitely work with WoT.
             # FIXME: Upgrade it and fix the Gradle script to work with the most recent one.
             gradle wrapper --gradle-version 4.10.3
+            # Workaround for the above command ignoring the specified version and downloading a new
+            # one instead.
+            gradle wrapper --gradle-version 4.10.3
             ./gradlew --version
             # Show stdout/stderr so random seeds of failed tests can be obtained by developers to
             # reproduce failed test runs. Also prevents the 10 minute build timeout.
