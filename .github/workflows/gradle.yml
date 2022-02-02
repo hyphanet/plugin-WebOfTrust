@@ -151,7 +151,7 @@ jobs:
             # FIXME: Debug code for gradle ignoring --gradle-version, remove once this is fixed
             set -x
             
-            rm -f ./gradlew
+            rm -rf ./gradlew ./gradlew.bat ./gradle/
             # Latest Gradle version known to definitely work with WoT.
             # FIXME: Upgrade it and fix the Gradle script to work with the most recent one.
             gradle wrapper --gradle-version 4.10.3
