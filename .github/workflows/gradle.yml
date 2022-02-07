@@ -157,10 +157,11 @@ jobs:
             # TODO: Remove, along with the mv which undos it, once the Gradle issue is fixed:
             # https://github.com/gradle/gradle/issues/19809
             mv --force build.gradle build.gradle.github-actions-temp
+            echo "apply plugin: 'java'" > build.gradle
             # Latest Gradle version known to definitely work with WoT.
             # FIXME: Upgrade it and fix the Gradle script to work with the most recent one.
             gradle wrapper --gradle-version 4.10.3
-            mv build.gradle.github-actions-temp build.gradle
+            mv --force build.gradle.github-actions-temp build.gradle
             ./gradlew --version
             # Show stdout/stderr so random seeds of failed tests can be obtained by developers to
             # reproduce failed test runs. Also prevents the 10 minute build timeout.
