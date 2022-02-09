@@ -151,11 +151,12 @@ jobs:
             # FIXME: Debug code for gradle ignoring --gradle-version, remove once this is fixed
             set -x
             
+            # FIXME: Move Gradle download to separate step
             rm -rf ./gradlew ./gradlew.bat ./gradle/
-            # Workaround for "$ gradle wrapper ..."  failing to download the wrapper if the Gradle
-            # version is incompatible with our build file and thus fails to parse.
-            # TODO: Remove, along with the mv which undos it, once the Gradle issue is fixed:
-            # https://github.com/gradle/gradle/issues/19809
+            # Workaround for "$ gradle wrapper ..."  failing to download the wrapper if the build
+            # file is incompatible with the system's Gradle version and thus fails to parse.
+            # TODO: Code quality: Remove, along with the mv which undos it, once the Gradle issue is
+            # fixed: https://github.com/gradle/gradle/issues/19809
             mv --force build.gradle build.gradle.github-actions-temp
             echo "apply plugin: 'java'" > build.gradle
             # Latest Gradle version known to definitely work with WoT.
