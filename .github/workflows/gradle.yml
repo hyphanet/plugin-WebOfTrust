@@ -10,10 +10,9 @@ env:
 
 jobs:
   build:
-    # FIXME: Use ubuntu-latest once we've finished converting from Travis to GHA syntax
     # FIXME: Also test on Debian stable using strategy.matrix as that's what fred targets.
     # FIXME: Also test on Windows and MacOS using strategy.matrix
-    runs-on: ubuntu-18.04
+    runs-on: ubuntu-latest
     strategy:
       fail-fast: false # Don't cancel execution for all Java versions if one fails.
       matrix:
@@ -146,13 +145,24 @@ jobs:
         unset _JAVA_OPTIONS
         echo 'fred version:'
         java -classpath '../fred/build/output/freenet.jar' 'freenet.node.Version'
-        # Use the same Gradle as fred to re-use the fixes we applied to it above and because Travis'
-        # Gradle version is too old for Java >= 9.
-        # FIXME: Reconsider the above for GitHub Actions.
-        ln -sf "$GITHUB_WORKSPACE/fred/gradlew"
         if [ "${{matrix.WoT-builder}}" = "ant" ] ; then
             ant clean && ant
         elif [ "${{matrix.WoT-builder}}" = "gradle" ] ; then
+            # FIXME: Move Gradle download to separate step
+            rm -rf ./gradlew ./gradlew.bat ./gradle/
+            # Workaround for "$ gradle wrapper ..."  failing to download the wrapper if the build
+            # file is incompatible with the system's Gradle version and thus fails to parse.
+            # TODO: Code quality: Remove, along with the mv which undos it, once the Gradle issue is
+            # fixed: https://github.com/gradle/gradle/issues/19809
+            mv --force build.gradle build.gradle.github-actions-temp
+            echo "apply plugin: 'java'" > build.gradle
+            # Latest Gradle version known to definitely work with WoT.
+            # FIXME: Upgrade it and fix the Gradle script to work with the most recent one.
+            # FIXME: Apply Freetalk commit fba2d9723bef29f4d9f984d74a41b6c88b7a3887 once the latest
+            # Gradle works.
+            gradle wrapper --gradle-version 4.10.3
+            mv --force build.gradle.github-actions-temp build.gradle
+            ./gradlew --version
             # Show stdout/stderr so random seeds of failed tests can be obtained by developers to
             # reproduce failed test runs. Also prevents the 10 minute build timeout.
             # FIXME: The 10 minute timeout was a Travis CI thing. Does GHA have one?
@@ -160,6 +170,7 @@ jobs:
         else false ; fi
         # To test the Ant and Gradle builders against each other uncomment the following.
         # FIXME: Do this because this script has been converted from Travis CI to GitHub Actions.
+        # FIXME: Make sure the scripts use the Gradle wrapper so the Gradle version matches.
         ## - tools/compare-gradle-jars-with-ant-jars
         ## - tools/compare-gradle-tests-with-ant-tests
     
