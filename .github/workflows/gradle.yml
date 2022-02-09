@@ -170,6 +170,7 @@ jobs:
         else false ; fi
         # To test the Ant and Gradle builders against each other uncomment the following.
         # FIXME: Do this because this script has been converted from Travis CI to GitHub Actions.
+        # FIXME: Make sure the scripts use the Gradle wrapper so the Gradle version matches.
         ## - tools/compare-gradle-jars-with-ant-jars
         ## - tools/compare-gradle-tests-with-ant-tests
     
