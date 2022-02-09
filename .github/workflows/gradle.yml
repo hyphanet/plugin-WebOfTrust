@@ -161,7 +161,7 @@ jobs:
             echo "apply plugin: 'java'" > build.gradle
             # Latest Gradle version known to definitely work with WoT.
             # FIXME: Upgrade it and fix the Gradle script to work with the most recent one.
-            gradle wrapper --gradle-version 5.1.1
+            gradle wrapper --gradle-version 4.10.3
             mv --force build.gradle.github-actions-temp build.gradle
             ./gradlew --version
             # Show stdout/stderr so random seeds of failed tests can be obtained by developers to
