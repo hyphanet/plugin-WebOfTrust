@@ -10,7 +10,8 @@ env:
 
 jobs:
   build:
-    # FIXME: Also test on Debian stable using strategy.matrix as that's what fred targets.
+    # TODO: Also test on Debian stable using strategy.matrix as that's what fred targets.
+    # Unfortunately as of 2022-02-27 Debian is not available on GitHub Actions (yet?).
     # FIXME: Also test on Windows and MacOS using strategy.matrix
     runs-on: ubuntu-latest
     strategy:
