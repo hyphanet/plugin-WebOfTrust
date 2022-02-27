@@ -13,10 +13,10 @@ jobs:
     # TODO: Also test on Debian stable using strategy.matrix as that's what fred targets.
     # Unfortunately as of 2022-02-27 Debian is not available on GitHub Actions (yet?).
     # FIXME: Also test on Windows and MacOS using strategy.matrix
-    runs-on: ubuntu-latest
     strategy:
       fail-fast: false # Don't cancel execution for all Java versions if one fails.
       matrix:
+        os: ubuntu-latest
         # 8 is $FRED_MINIMUM_JAVA_VERSION currently.
         # TODO: Code quality: As of 2022-01-03 using ["${{env.FRED_MINIMUM_JAVA_VERSION}}", ...]
         # instead of [8, ...] does not work, see: https://github.com/actions/runner/issues/480
@@ -63,6 +63,7 @@ jobs:
             fred-branch: next
             upload-jar-to-freenet: false
     
+    runs-on: ${{ matrix.os }}
     name: >-
         JDK${{matrix.java-version}}
         fred: ${{matrix.fred-branch}}
