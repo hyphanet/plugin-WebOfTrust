@@ -52,6 +52,7 @@ jobs:
             upload-jar-to-freenet: true
             java-version: 8
             # Kept at default:
+            os: ubuntu-latest
             WoT-builder: gradle
           
           - java-version: 15
@@ -60,6 +61,7 @@ jobs:
             # like Ant.
             WoT-builder: ant
             # Kept at default:
+            os: ubuntu-latest
             fred-branch: next
             upload-jar-to-freenet: false
     
