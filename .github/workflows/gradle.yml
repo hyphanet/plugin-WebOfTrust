@@ -111,6 +111,7 @@ jobs:
         submodules: true
     
     - name: Compile Freenet Git repository
+      shell: bash
       run: |
         # FIXME: $FRED_UPDATED is not populated by GitHub Actions yet
         FRED_UPDATED=1 &&
@@ -140,12 +141,14 @@ jobs:
       ##if: ${{matrix.upload-jar-to-freenet}}
       if: false
       
+      shell: bash
       run: |
         echo "Starting a Freenet node already to connect to network far before deploy stage..." &&
         cd "$GITHUB_WORKSPACE"/fred &&
         "$GITHUB_WORKSPACE/plugin-WebOfTrust/.travis.start-freenet.sh" # FIXME: Rename the script
     
     - name: Compile and test WoT
+      shell: bash
       run: |
         set -o errexit
         cd "$GITHUB_WORKSPACE/plugin-WebOfTrust"
@@ -194,6 +197,7 @@ jobs:
       ## if: ${{matrix.upload-jar-to-freenet}}
       if: false
       
+      shell: bash
       run: ./.travis.upload-jar-to-freenet.sh
 
 # FIXME: Convert the below caching code from its Travis CI syntax to the GitHub Actions syntax.
