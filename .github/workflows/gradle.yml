@@ -67,6 +67,7 @@ jobs:
     
     runs-on: ${{ matrix.os }}
     name: >-
+        ${{matrix.os}}
         JDK${{matrix.java-version}}
         fred: ${{matrix.fred-branch}}
         builder: ${{matrix.WoT-builder}}
