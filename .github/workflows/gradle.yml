@@ -79,11 +79,8 @@ jobs:
       # installation there with the !contains() to see if they're perhaps installed by default.
       # However the lack of sudo does not necessarily mean that there is no apt-get on Windows.
       # Try if there is one.
-      # EDIT: The default shell is NOT bash on Windows but PowerShell Core! So perhaps the regular
-      # Linux commands are not in the environment there. Try if "shell: bash" makes sudo available.
-      # Source: https://docs.github.com/en/actions/reference/workflow-syntax-for-github-actions#using-a-specific-shell
       shell: bash
-      ## if: runner.os == 'Linux'
+      if: runner.os == 'Linux'
       # python3-pip is for .travis.upload-jar-to-freenet.sh
       run: sudo apt-get --assume-yes install ant ant-optional junit4 libhamcrest-java python3-pip
     
