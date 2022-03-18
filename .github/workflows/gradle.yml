@@ -13,9 +13,9 @@ jobs:
     strategy:
       fail-fast: false # Don't cancel execution for all Java versions if one fails.
       matrix:
-        # TODO: Also test on Debian stable using strategy.matrix as that's what fred targets.
+        # TODO: Also test on Debian stable as that's what fred targets.
         # Unfortunately as of 2022-02-27 Debian is not available on GitHub Actions (yet?).
-        # FIXME: Also test on Windows and MacOS using strategy.matrix
+        # FIXME: Also test on Windows and MacOS.
         os: [ubuntu-latest]
         # 8 is $FRED_MINIMUM_JAVA_VERSION currently.
         # TODO: Code quality: As of 2022-01-03 using ["${{env.FRED_MINIMUM_JAVA_VERSION}}", ...]
