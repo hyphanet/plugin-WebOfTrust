@@ -75,14 +75,15 @@ jobs:
     
     steps:
     - name: Install apt packages
-      # FIXME: "sudo" command does not exist on Windows so I've just disabled the whole package
-      # installation there with the !contains() to see if they're perhaps installed by default.
-      # However the lack of sudo does not necessarily mean that there is no apt-get on Windows.
-      # Try if there is one.
       shell: bash
-      if: runner.os == 'Linux'
       # python3-pip is for .travis.upload-jar-to-freenet.sh
-      run: sudo apt-get --assume-yes install ant ant-optional junit4 libhamcrest-java python3-pip
+      run: |
+        if [ '${{runner.os}}' = 'Windows' ] ; then
+          echo 'FIXME: Cannot build on Windows yet: Find a way to install JUnit + Hamcrest!'
+          exit 1
+        else
+          sudo apt-get --assume-yes install ant ant-optional junit4 libhamcrest-java python3-pip
+        fi
     
     - name: Install Java
       uses: actions/setup-java@v2
