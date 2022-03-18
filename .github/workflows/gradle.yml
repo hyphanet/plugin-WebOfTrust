@@ -76,12 +76,12 @@ jobs:
     steps:
     - name: Install apt packages
       shell: bash
-      # python3-pip is for .travis.upload-jar-to-freenet.sh
       run: |
         if [ '${{runner.os}}' = 'Windows' ] ; then
           echo 'FIXME: Cannot build on Windows yet: Find a way to install JUnit + Hamcrest!'
           exit 1
         else
+          # python3-pip is for .travis.upload-jar-to-freenet.sh
           sudo apt-get --assume-yes install ant ant-optional junit4 libhamcrest-java python3-pip
         fi
     
