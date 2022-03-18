@@ -168,8 +168,14 @@ jobs:
             echo "apply plugin: 'java'" > build.gradle
             # Latest Gradle version known to definitely work with WoT.
             # FIXME: Upgrade it and fix the Gradle script to work with the most recent one.
-            # FIXME: Apply Freetalk commit fba2d9723bef29f4d9f984d74a41b6c88b7a3887 once the latest
-            # Gradle works.
+            # FIXME: Once the latest Gradle works apply these Freetalk commits:
+            #   fba2d9723bef29f4d9f984d74a41b6c88b7a3887
+            #   ef952a58d29aeea0928ab4597819a42811dc3943
+            #   81ae3f972f60abd95b2c8d29e22184b42518676d
+            #   77fc5a73bde615792dfd2886f9257382b4557640
+            #   b0ba09c129e1469d6268434203783bb7c6024c8b
+            #   5aa85ed4532c20284fbb0bf4f532b3299f29716e
+            #   75093ebf5fbdb252a34a118d7857e442f96562a8
             gradle wrapper --gradle-version 4.10.3
             mv --force build.gradle.github-actions-temp build.gradle
             ./gradlew --version
