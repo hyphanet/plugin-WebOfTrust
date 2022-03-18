@@ -10,12 +10,13 @@ env:
 
 jobs:
   build:
-    # FIXME: Also test on Debian stable using strategy.matrix as that's what fred targets.
-    # FIXME: Also test on Windows and MacOS using strategy.matrix
-    runs-on: ubuntu-latest
     strategy:
       fail-fast: false # Don't cancel execution for all Java versions if one fails.
       matrix:
+        # TODO: Also test on Debian stable as that's what fred targets.
+        # Unfortunately as of 2022-02-27 Debian is not available on GitHub Actions (yet?).
+        # FIXME: Also test on Windows and MacOS.
+        os: [ubuntu-latest]
         # 8 is $FRED_MINIMUM_JAVA_VERSION currently.
         # TODO: Code quality: As of 2022-01-03 using ["${{env.FRED_MINIMUM_JAVA_VERSION}}", ...]
         # instead of [8, ...] does not work, see: https://github.com/actions/runner/issues/480
@@ -51,6 +52,7 @@ jobs:
             upload-jar-to-freenet: true
             java-version: 8
             # Kept at default:
+            os: ubuntu-latest
             WoT-builder: gradle
           
           - java-version: 15
@@ -59,10 +61,13 @@ jobs:
             # like Ant.
             WoT-builder: ant
             # Kept at default:
+            os: ubuntu-latest
             fred-branch: next
             upload-jar-to-freenet: false
     
+    runs-on: ${{ matrix.os }}
     name: >-
+        ${{matrix.os}}
         JDK${{matrix.java-version}}
         fred: ${{matrix.fred-branch}}
         builder: ${{matrix.WoT-builder}}
@@ -70,8 +75,15 @@ jobs:
     
     steps:
     - name: Install apt packages
-      # python3-pip is for .travis.upload-jar-to-freenet.sh
-      run: sudo apt-get --assume-yes install ant ant-optional junit4 libhamcrest-java python3-pip
+      shell: bash
+      run: |
+        if [ '${{runner.os}}' = 'Windows' ] ; then
+          echo 'FIXME: Cannot build on Windows yet: Find a way to install JUnit + Hamcrest!'
+          exit 1
+        else
+          # python3-pip is for .travis.upload-jar-to-freenet.sh
+          sudo apt-get --assume-yes install ant ant-optional junit4 libhamcrest-java python3-pip
+        fi
     
     - name: Install Java
       uses: actions/setup-java@v2
@@ -97,6 +109,7 @@ jobs:
         submodules: true
     
     - name: Compile Freenet Git repository
+      shell: bash
       run: |
         # FIXME: $FRED_UPDATED is not populated by GitHub Actions yet
         FRED_UPDATED=1 &&
@@ -126,12 +139,14 @@ jobs:
       ##if: ${{matrix.upload-jar-to-freenet}}
       if: false
       
+      shell: bash
       run: |
         echo "Starting a Freenet node already to connect to network far before deploy stage..." &&
         cd "$GITHUB_WORKSPACE"/fred &&
         "$GITHUB_WORKSPACE/plugin-WebOfTrust/.travis.start-freenet.sh" # FIXME: Rename the script
     
     - name: Compile and test WoT
+      shell: bash
       run: |
         set -o errexit
         cd "$GITHUB_WORKSPACE/plugin-WebOfTrust"
@@ -154,8 +169,14 @@ jobs:
             echo "apply plugin: 'java'" > build.gradle
             # Latest Gradle version known to definitely work with WoT.
             # FIXME: Upgrade it and fix the Gradle script to work with the most recent one.
-            # FIXME: Apply Freetalk commit fba2d9723bef29f4d9f984d74a41b6c88b7a3887 once the latest
-            # Gradle works.
+            # FIXME: Once the latest Gradle works apply these Freetalk commits:
+            #   fba2d9723bef29f4d9f984d74a41b6c88b7a3887
+            #   ef952a58d29aeea0928ab4597819a42811dc3943
+            #   81ae3f972f60abd95b2c8d29e22184b42518676d
+            #   77fc5a73bde615792dfd2886f9257382b4557640
+            #   b0ba09c129e1469d6268434203783bb7c6024c8b
+            #   5aa85ed4532c20284fbb0bf4f532b3299f29716e
+            #   75093ebf5fbdb252a34a118d7857e442f96562a8
             gradle wrapper --gradle-version 4.10.3
             mv --force build.gradle.github-actions-temp build.gradle
             ./gradlew --version
@@ -180,6 +201,7 @@ jobs:
       ## if: ${{matrix.upload-jar-to-freenet}}
       if: false
       
+      shell: bash
       run: ./.travis.upload-jar-to-freenet.sh
 
 # FIXME: Convert the below caching code from its Travis CI syntax to the GitHub Actions syntax.
