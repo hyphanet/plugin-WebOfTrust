@@ -74,7 +74,7 @@ jobs:
         deploy: ${{matrix.upload-jar-to-freenet}}
     
     steps:
-    - name: Install apt packages
+    - name: Install dependencies
       shell: bash
       run: |
         if [ '${{runner.os}}' = 'Windows' ] ; then
