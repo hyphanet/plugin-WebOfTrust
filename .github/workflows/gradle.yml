@@ -16,7 +16,7 @@ jobs:
         # TODO: Also test on Debian stable as that's what fred targets.
         # Unfortunately as of 2022-02-27 Debian is not available on GitHub Actions (yet?).
         # FIXME: Also test on Windows and MacOS.
-        os: [ubuntu-latest, macos-latest]
+        os: [ubuntu-latest]
         # 8 is $FRED_MINIMUM_JAVA_VERSION currently.
         # TODO: Code quality: As of 2022-01-03 using ["${{env.FRED_MINIMUM_JAVA_VERSION}}", ...]
         # instead of [8, ...] does not work, see: https://github.com/actions/runner/issues/480
@@ -82,7 +82,8 @@ jobs:
           exit 1
         elif [ '${{runner.os}}' = 'macOS' ] ; then
           brew install coreutils # For step "Compile and test WoT"
-          echo 'FIXME: Find a way to install JUnit + Hamcrest if not installed by default!' >&2
+          echo 'FIXME: Cannot build on MacOS yet: Find a way to install JUnit + Hamcrest!' >&2
+          exit 1
         else
           # python3-pip is for .travis.upload-jar-to-freenet.sh
           sudo apt-get --assume-yes install ant ant-optional junit4 libhamcrest-java python3-pip
