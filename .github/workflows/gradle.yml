@@ -74,11 +74,15 @@ jobs:
         deploy: ${{matrix.upload-jar-to-freenet}}
     
     steps:
-    - name: Install apt packages
+    - name: Install dependencies
       shell: bash
       run: |
         if [ '${{runner.os}}' = 'Windows' ] ; then
-          echo 'FIXME: Cannot build on Windows yet: Find a way to install JUnit + Hamcrest!'
+          echo 'FIXME: Cannot build on Windows yet: Find a way to install JUnit + Hamcrest!' >&2
+          exit 1
+        elif [ '${{runner.os}}' = 'macOS' ] ; then
+          brew install coreutils # For step "Compile and test WoT"
+          echo 'FIXME: Cannot build on MacOS yet: Find a way to install JUnit + Hamcrest!' >&2
           exit 1
         else
           # python3-pip is for .travis.upload-jar-to-freenet.sh
@@ -165,7 +169,7 @@ jobs:
             # file is incompatible with the system's Gradle version and thus fails to parse.
             # TODO: Code quality: Remove, along with the mv which undos it, once the Gradle issue is
             # fixed: https://github.com/gradle/gradle/issues/19809
-            mv --force build.gradle build.gradle.github-actions-temp
+            mv -f build.gradle build.gradle.github-actions-temp
             echo "apply plugin: 'java'" > build.gradle
             # Latest Gradle version known to definitely work with WoT.
             # FIXME: Upgrade it and fix the Gradle script to work with the most recent one.
@@ -177,8 +181,9 @@ jobs:
             #   b0ba09c129e1469d6268434203783bb7c6024c8b
             #   5aa85ed4532c20284fbb0bf4f532b3299f29716e
             #   75093ebf5fbdb252a34a118d7857e442f96562a8
+            #   1caddf40a743477499df6013b3ec61ab89453d39
             gradle wrapper --gradle-version 4.10.3
-            mv --force build.gradle.github-actions-temp build.gradle
+            mv -f build.gradle.github-actions-temp build.gradle
             ./gradlew --version
             # Show stdout/stderr so random seeds of failed tests can be obtained by developers to
             # reproduce failed test runs. Also prevents the 10 minute build timeout.
