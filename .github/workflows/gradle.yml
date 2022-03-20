@@ -81,6 +81,7 @@ jobs:
           echo 'FIXME: Cannot build on Windows yet: Find a way to install JUnit + Hamcrest!' >&2
           exit 1
         elif [ '${{runner.os}}' = 'macOS' ] ; then
+          brew install coreutils # For step "Compile and test WoT"
           echo 'FIXME: Find a way to install JUnit + Hamcrest if not installed by default!' >&2
         else
           # python3-pip is for .travis.upload-jar-to-freenet.sh
