@@ -78,10 +78,10 @@ jobs:
       shell: bash
       run: |
         if [ '${{runner.os}}' = 'Windows' ] ; then
-          echo 'FIXME: Cannot build on Windows yet: Find a way to install JUnit + Hamcrest!'
+          echo 'FIXME: Cannot build on Windows yet: Find a way to install JUnit + Hamcrest!' >&2
           exit 1
         elif [ '${{runner.os}}' = 'macOS' ] ; then
-          echo 'FIXME: Find a way to install JUnit + Hamcrest if not installed by default!'
+          echo 'FIXME: Find a way to install JUnit + Hamcrest if not installed by default!' >&2
         else
           # python3-pip is for .travis.upload-jar-to-freenet.sh
           sudo apt-get --assume-yes install ant ant-optional junit4 libhamcrest-java python3-pip
