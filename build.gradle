@@ -6,6 +6,14 @@ sourceCompatibility = targetCompatibility = 7
 tasks.withType(JavaCompile) { options.encoding = "UTF-8" }
 javadoc.enabled = false
 
+repositories {
+	if(System.getenv('WOT__DOWNLOAD_DEPENDENCIES') == '1') {
+		println 'WARNING: Download of dependencies is enabled! This script does not use '
+		      + 'gradle-witness yet, therefore supply chain attacks are possible!'
+		mavenCentral()
+	}
+}
+
 configurations { junit } // Needed when we manually specify the tests' classpath
 dependencies {
 	// Run fred's Gradle with "./gradlew jar copyRuntimeLibs" to produce this directory
