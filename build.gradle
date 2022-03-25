@@ -8,8 +8,7 @@ javadoc.enabled = false
 
 repositories {
 	if(System.getenv('WOT__DOWNLOAD_DEPENDENCIES') == '1') {
-		println 'WARNING: Download of dependencies is enabled! This script does not use '
-		      + 'gradle-witness yet, therefore supply chain attacks are possible!'
+		println 'WARNING: Download of dependencies is enabled! Watch out for supply chain attacks!'
 		mavenCentral()
 	}
 }
