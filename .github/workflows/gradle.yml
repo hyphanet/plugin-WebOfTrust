@@ -81,7 +81,7 @@ jobs:
           brew install coreutils # For step "Compile and test WoT"
           echo 'FIXME: Cannot build on MacOS yet: Find a way to install JUnit + Hamcrest!' >&2
           exit 1
-        elif [ '${{runner.os}}' = 'Linux' ]
+        elif [ '${{runner.os}}' = 'Linux' ] ; then
           # python3-pip is for .travis.upload-jar-to-freenet.sh
           sudo apt-get --assume-yes install ant ant-optional junit4 libhamcrest-java python3-pip
         fi
