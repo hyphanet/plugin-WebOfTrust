@@ -6,6 +6,13 @@ sourceCompatibility = targetCompatibility = 7
 tasks.withType(JavaCompile) { options.encoding = "UTF-8" }
 javadoc.enabled = false
 
+repositories {
+	if(System.getenv('WOT__DOWNLOAD_DEPENDENCIES') == '1') {
+		println 'WARNING: Download of dependencies is enabled! Watch out for supply chain attacks!'
+		mavenCentral()
+	}
+}
+
 configurations { junit } // Needed when we manually specify the tests' classpath
 dependencies {
 	// Run fred's Gradle with "./gradlew jar copyRuntimeLibs" to produce this directory
@@ -14,7 +21,10 @@ dependencies {
 	// Use Gradle's dependency management + gradle-witness once this has been resolved.
 	compile fileTree(dir: '../fred/build/output/', include: '*.jar')
 	compile files('db4o-7.4/db4o.jar')
-	junit files('/usr/share/java/junit4.jar', '/usr/share/java/hamcrest-core.jar')
+	if(System.getenv('WOT__DOWNLOAD_DEPENDENCIES') == '1')
+		junit('junit:junit:4.11') // Hamcrest is automatically included as transitive dependency.
+	else
+		junit files('/usr/share/java/junit4.jar', '/usr/share/java/hamcrest-core.jar')
 	testCompile configurations.junit
 }
 
