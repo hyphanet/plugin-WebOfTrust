@@ -15,7 +15,7 @@ jobs:
       matrix:
         # TODO: Also test on Debian stable as that's what fred targets.
         # Unfortunately as of 2022-02-27 Debian is not available on GitHub Actions (yet?).
-        # FIXME: Also test on Windows and MacOS.
+        # FIXME: Also test on MacOS.
         os: [ubuntu-latest, windows-latest]
         # 8 is $FRED_MINIMUM_JAVA_VERSION currently.
         # TODO: Code quality: As of 2022-01-03 using ["${{env.FRED_MINIMUM_JAVA_VERSION}}", ...]
