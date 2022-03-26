@@ -90,6 +90,7 @@ jobs:
           # python3-pip is for .travis.upload-jar-to-freenet.sh
           sudo apt-get --assume-yes install ant ant-optional junit4 libhamcrest-java python3-pip
         fi
+        # On Windows the dependencies will be downloaded using Gradle.
     
     - name: Install Java
       uses: actions/setup-java@v2
