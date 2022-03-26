@@ -64,7 +64,12 @@ jobs:
             os: ubuntu-latest
             fred-branch: next
             upload-jar-to-freenet: false
-    
+        
+        exclude:
+          - os: windows-latest
+            # TODO: Bug: As of 2021-09-11 fred doesn't compile with Java 16 on Windows due to its
+            # Gradle version 4.10.3 not working there. Try again once fred uses a more recent one.
+            java-version: 16
     runs-on: ${{ matrix.os }}
     name: >-
         ${{matrix.os}}
