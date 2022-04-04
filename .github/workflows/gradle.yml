@@ -15,8 +15,7 @@ jobs:
       matrix:
         # TODO: Also test on Debian stable as that's what fred targets.
         # Unfortunately as of 2022-02-27 Debian is not available on GitHub Actions (yet?).
-        # FIXME: Also test on MacOS.
-        os: [ubuntu-latest, windows-latest]
+        os: [ubuntu-latest, windows-latest, macos-latest]
         # 8 is $FRED_MINIMUM_JAVA_VERSION currently.
         # TODO: Code quality: As of 2022-01-03 using ["${{env.FRED_MINIMUM_JAVA_VERSION}}", ...]
         # instead of [8, ...] does not work, see: https://github.com/actions/runner/issues/480
@@ -84,8 +83,7 @@ jobs:
       run: |
         if [ '${{runner.os}}' = 'macOS' ] ; then
           brew install coreutils # For step "Compile and test WoT"
-          echo 'FIXME: Cannot build on MacOS yet: Find a way to install JUnit + Hamcrest!' >&2
-          exit 1
+          # The remaining dependencies will be downloaded using Gradle.
         elif [ '${{runner.os}}' = 'Linux' ] ; then
           # python3-pip is for .travis.upload-jar-to-freenet.sh
           sudo apt-get --assume-yes install ant ant-optional junit4 libhamcrest-java python3-pip
@@ -190,8 +188,8 @@ jobs:
             #   75c49a7fa3229bd142723b62f493b918e7486330
             gradle wrapper --gradle-version 4.10.3
             mv -f build.gradle.github-actions-temp build.gradle
-            if [ "${{runner.os}}" = 'Windows' ] ; then
-              # On Windows we can't get the dependencies from /usr/share so download them instead.
+            if [ "${{runner.os}}" != 'Linux' ] ; then
+              # We can't obtain the dependencies from /usr/share so download them instead.
               export WOT__DOWNLOAD_DEPENDENCIES=1
             fi
             ./gradlew --version
