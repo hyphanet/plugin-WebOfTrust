@@ -24,8 +24,8 @@ jobs:
         # 
         # 9, 10 excluded because: Building fred fails there, probably because they're EOL.
         # TODO: Trim the set of Java versions to respect GitHub's free service.
-        # FIXME: Add 16, 17, 18.
-        java-version: [8, 11, 12, 13, 14, 15]
+        # FIXME: Add 17, 18.
+        java-version: [8, 11, 12, 13, 14, 15, 16]
         fred-branch:  [next]
         # Use Gradle instead of Ant as it supports using multiple CPU cores on the unit tests.
         WoT-builder: [gradle]
@@ -54,7 +54,7 @@ jobs:
             os: ubuntu-latest
             WoT-builder: gradle
           
-          - java-version: 15
+          - java-version: 16
             # Still use Ant on one Java version to ensure it keeps working.
             # Don't use it on the above job because deployment happens there which is slow, just
             # like Ant.
