@@ -90,6 +90,11 @@ test {
 		exclude '**/TickerDelayedBackgroundJobTest.class'
 	}
 	
+	// FIXME: Workaround attempt for db4o breaking, and thus unit tests failing, with Java >= 16.
+	// If this works then properly document it, if not remove it.
+	// Also figure out a way for how to apply it when running Freetalk in an actual Freenet node.
+	jvmArgs '--add-opens', 'java.base/java.lang=ALL-UNNAMED'
+	
 	/* TODO: Performance: As of 2019-04-28 doesn't work on Travis CI yet because the Gradle version
 	/* on Ubuntu Trusty is too old - and we cannot use Ubuntu Xenial because Java 7 doesn't work
 	/* there but it is still the minimal Java version required by Freenet. */
