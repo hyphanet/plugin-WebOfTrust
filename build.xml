@@ -94,7 +94,12 @@
 		<fileset file="${hamcrest.location}"/>
 		<fileset file="${cobertura.location}"/>
 	</path>
-
+	
+	<!-- For junit - we need to specify some command line arguments on Java >= 9 -->
+	<condition property="java.atleast9">
+		<javaversion atleast="9"/>
+	</condition>
+	
 	<presetdef name="javac">
 		<!--
 		includeantruntime is a workaround for an ant 1.8 misfeature. TODO: Remove when ant fixes this.
@@ -335,6 +340,7 @@
 			<sysproperty key="net.sourceforge.cobertura.datafile"
 				file="${build-test-coverage}/cobertura.ser" if:true="${test.coverage}"/>
 			<sysproperty key="extensiveTesting" value="${extensiveTesting}" />
+			<jvmarg if:true="${java.atleast9}" line="--add-opens java.base/java.lang=ALL-UNNAMED"/>
 			<jvmarg value="-Djava.awt.headless=true"/>
 			<!-- See IS_UNIT_TEST at class Configuration -->
 			<jvmarg value="-Dis_WOT_unit_test=true"/>
@@ -374,6 +380,7 @@
 			</batchtest>
 			
 			<sysproperty key="extensiveTesting" value="${extensiveTesting}" />
+			<jvmarg if:true="${java.atleast9}" line="--add-opens java.base/java.lang=ALL-UNNAMED"/>
 			<jvmarg value="-Djava.awt.headless=true"/>
 			<!-- See IS_UNIT_TEST at class Configuration -->
 			<jvmarg value="-Dis_WOT_unit_test=true"/>
