@@ -90,8 +90,10 @@ test {
 		exclude '**/TickerDelayedBackgroundJobTest.class'
 	}
 	
-	// Workaround for db4o breaking, and thus unit tests failing, with Java >= 16.
-	// It allows db4o to use reflection to read data out of JRE's core classes.
+	// Workaround for db4o breaking, and thus unit tests failing, with Java >= 16:
+	// Java 16 blocks reflection from looking into JRE's core classes. But db4o needs that to
+	// fulfill its purpose of being a database which can consume Java classes without adding any
+	// code to them. Thus we allow it by a command line option.
 	//
 	// We run this on Java 9 and above, not just 16 and above, to support old Gradle versions which
 	// won't be able to detect Java 16 as such. 9 is the minimum needed to support '--add-opens'.
