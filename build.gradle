@@ -92,7 +92,7 @@ test {
 	
 	// Workaround for db4o breaking, and thus unit tests failing, with Java >= 16:
 	// Java 16 blocks reflection from looking into JRE's core classes. But db4o needs that to
-	// fulfill its purpose of being a database which can consume Java classes without adding any
+	// fulfill its purpose of being a database which can store Java classes without adding any
 	// code to them. Thus we allow it by a command line option.
 	//
 	// We run this on Java 9 and above, not just 16 and above, to support old Gradle versions which
