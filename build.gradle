@@ -97,9 +97,6 @@ test {
 	//
 	// We run this on Java 9 and above, not just 16 and above, to support old Gradle versions which
 	// won't be able to detect Java 16 as such. 9 is the minimum needed to support '--add-opens'.
-	// 
-	// FIXME:
-	// Also figure out a way for how to apply it when running WoT in an actual Freenet node.
 	if(JavaVersion.current().getMajorVersion().toInteger() >= 9)
 		jvmArgs '--add-opens', 'java.base/java.lang=ALL-UNNAMED'
 	
