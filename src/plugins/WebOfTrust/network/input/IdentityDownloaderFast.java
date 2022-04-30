@@ -87,7 +87,7 @@ import freenet.support.io.NativeThread;
  * very likely exist.  
  * EditionHints are obtained from remote Identitys (and thus could be fake).
  * 
- * (Therefore IdentityDownloaderfast does *not* use {@link USKManager#hintUpdate(USK, long,
+ * (Therefore IdentityDownloaderFast does *not* use {@link USKManager#hintUpdate(USK, long,
  * ClientContext)}.  
  * TODO: Performance: Consider whether it might make sense to use that function in some special
  * cases, e.g. along with restoreOwnIdentity() where we have some confidence that the hint which
