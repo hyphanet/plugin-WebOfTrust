@@ -82,7 +82,16 @@ import freenet.support.io.NativeThread;
  * That's necessary because USK subscriptions are expensive, they create a constant load of
  * polling on the network.
  * The lack of this class subscribing to all {@link Identity}s is compensated by
- * {@link IdentityDownloaderSlow} which deals with the rest of them in a less expensive manner.
+ * {@link IdentityDownloaderSlow} which deals with the rest of them in a less expensive manner:  
+ * It downloads editions only when there is an {@link EditionHint} indicating that the editions do
+ * very likely exist.  
+ * EditionHints are obtained from remote Identitys (and thus could be fake).
+ * 
+ * (Therefore IdentityDownloaderfast does *not* use {@link USKManager#hintUpdate(USK, long,
+ * ClientContext)}.  
+ * TODO: Performance: Consider whether it might make sense to use that function in some special
+ * cases, e.g. along with restoreOwnIdentity() where we have some confidence that the hint which
+ * the user gave us is very likely valid.)
  * 
  * FIXME: Add logging to callbacks and {@link DownloadScheduler#run()} */
 public final class IdentityDownloaderFast implements
