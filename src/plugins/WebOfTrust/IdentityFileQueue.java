@@ -132,6 +132,10 @@ public interface IdentityFileQueue {
 	/** Adds the file and calls {@link BackgroundJob#triggerExecution()} upon the event handler
 	 *  which has been registered using {@link #registerEventHandler(BackgroundJob)}.  
 	 *  Typically this will be the {@link IdentityFileProcessor}.
+	 *  
+	 *  If the queue already contains an edition of the Identity at hand, add() implementations
+	 *  may drop the lower edition among the already queued one and the one currently passed to
+	 *  add(), but they are not strictly required to drop it.  
 	 * 
 	 *  NOTICE: While add() will always succeed even if {@link #getSizeSoftLimit()} is violated you
 	 *  should nevertheless try to control the amount of files you add() as specified at
