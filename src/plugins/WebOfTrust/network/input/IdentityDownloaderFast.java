@@ -19,6 +19,7 @@ import java.util.concurrent.atomic.AtomicInteger;
 import plugins.WebOfTrust.Identity;
 import plugins.WebOfTrust.Identity.FetchState;
 import plugins.WebOfTrust.Identity.IdentityID;
+import plugins.WebOfTrust.IdentityFetcher;
 import plugins.WebOfTrust.IdentityFile;
 import plugins.WebOfTrust.IdentityFileQueue;
 import plugins.WebOfTrust.IdentityFileQueue.IdentityFileStream;
@@ -88,7 +89,7 @@ import freenet.support.io.NativeThread;
  * EditionHints are obtained from remote Identitys (and thus could be fake).
  * 
  * (Therefore IdentityDownloaderFast does *not* use {@link USKManager#hintUpdate(USK, long,
- * ClientContext)}.  
+ * ClientContext)} like its predecessor {@link IdentityFetcher} did.  
  * TODO: Performance: Consider whether it might make sense to use that function in some special
  * cases, e.g. along with restoreOwnIdentity() where we have some confidence that the hint which
  * the user gave us is very likely valid.)
