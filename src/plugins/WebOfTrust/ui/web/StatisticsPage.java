@@ -346,6 +346,10 @@ public class StatisticsPage extends WebPageImpl {
 			+ " " + s.mTotalQueuedDownloadsInSession));
 		ul.addChild(new HTMLNode("li", l.getString(p + "RunningDownloads")
 			+ " " + s.mRunningDownloads));
+		// FIXME: MaxRunningDownloads may be misleading now because the IdentityDownloaderSlow has
+		// been changed to stop downloading more files if the IdentityFileQueue is at its soft limit
+		// of files pending processing. Display this info somehow here as well.
+		// Also display the soft limit in the queue's stats box.
 		ul.addChild(new HTMLNode("li", l.getString(p + "MaxRunningDownloads")
 			+ " " + s.mMaxRunningDownloads));
 		ul.addChild(new HTMLNode("li", l.getString(p + "SucceededDownloads")
