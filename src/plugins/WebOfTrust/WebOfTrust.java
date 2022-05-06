@@ -2228,6 +2228,18 @@ public final class WebOfTrust extends WebOfTrustInterface
 					long edition = new FreenetURI(seedURI).getEdition();
 					
 					if(existingSeed.getNextEditionToFetch() < edition) {
+						// FIXME: createSeedIdentities() is called in runPlugin() **after**
+						// mFetcher.start(). Thus it is probably unsafe to change the edition here
+						// without notifying mFetcher. Investigate that.
+						// It's also ugly to use forceSetEdition() because that is not something
+						// we do in the regular control flow anywhere IIRC.
+						// Consider replacing this with creating EditionHint objects by calling
+						// mFetcher.storeNewEditionHint...().
+						// Or with just doing nothing because createOwnIdentity() will cause the
+						// EditionHints to be created (once the FIXME for that there is resolved),
+						// and before there is no OwnIdentity we don't need to download the seeds
+						// anyway.
+						
 						existingSeed.forceSetEdition(edition);
 						existingSeed.forceSetCurrentEditionFetchState(FetchState.NotFetched);
 						
