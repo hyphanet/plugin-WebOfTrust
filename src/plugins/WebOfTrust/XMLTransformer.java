@@ -444,6 +444,10 @@ public final class XMLTransformer {
 	 * - The identity itself and its attributes
 	 * - The trust list of the identity, if it has published one in the XML.
 	 * 
+	 * Must obey constraints specified by {@link IdentityFileQueue#poll()} because the
+	 * {@link IdentityFileProcessor} passes data which was returned by that function to this one
+	 * here.
+	 * 
 	 * @param xmlInputStream The input stream containing the XML.
 	 * @throws OutOfMemoryError To indicate you should stop calling this function for a while. */
 	public ImportIdentityStatistics importIdentity(FreenetURI identityURI,
@@ -499,7 +503,8 @@ public final class XMLTransformer {
 				// IdentityDownloader* implementations for downloading identities:
 				// Different implementations of IdentityDownloader may concurrently start a download
 				// for the same edition which can cause it to be downloaded twice.
-				// See the comments in IdentityDownloaderSlow.onNewEditionImported().
+				// See the "ATTENTION:" comment at IdentityFileQueue.poll() and the comments inside
+				// IdentityDownloaderSlow.onNewEditionImported().
 				// FIXME: Decide what to do about this logging, we shouldn't completely ignore
 				// the issue if it happens too frequently - old editions being downloaded might also
 				// be due to bugs - so just removing the logging may not be a good idea.
