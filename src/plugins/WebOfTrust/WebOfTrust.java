@@ -3322,6 +3322,16 @@ public final class WebOfTrust extends WebOfTrustInterface
 	}
 
 	/**
+	 * NOTICE: The passed trusteeEditionHint is **not** used to create an {@link EditionHint}
+	 * object at the {@link IdentityDownloaderSlow}!  
+	 * Use {@link IdentityDownloaderController#storeNewEditionHintCommandWithoutCommit(EditionHint)}
+	 * if an EditionHint should be stored.  
+	 * FIXME: Consider renaming the parameter to avoid this pitfall. Or alternatively implement
+	 * {@link IdentityDownloader#storeTrustChangedCommandWithoutCommit(Trust, Trust)} at
+	 * IdentityDownloaderSlow in order to create EditionHints automatically.
+	 * But the explicit mechanism of a separate callback for storing hints is probably better
+	 * because it ensures hints do not wrongly get stored when they should not be stored.
+	 * 
 	 * @see #setTrustWithoutCommit(Identity, Identity, byte, String)
 	 * @param trusteeEditionHint See {@link Trust#setTrusteeEdition(long)} */
 	Trust setTrustWithoutCommit(Identity truster, Identity trustee, long trusteeEditionHint,
@@ -5210,7 +5220,7 @@ public final class WebOfTrust extends WebOfTrustInterface
 	public synchronized OwnIdentity createOwnIdentity(FreenetURI insertURI, String nickName,
 			boolean publishTrustList, String context) throws MalformedURLException, InvalidParameterException {
 		
-		synchronized(mFetcher) { // For beginTrustListImport()/setTrustWithoutCommit()
+		synchronized(mFetcher) { // For beginTrustListImport()/setTrustWithoutCommit()/etc.
 		synchronized(mSubscriptionManager) { // For beginTrustListImport()/setTrustWithoutCommit()/storeIdentityChangedNotificationWithoutCommit()
 		synchronized(Persistent.transactionLock(mDB)) {
 			try {
@@ -5257,9 +5267,12 @@ public final class WebOfTrust extends WebOfTrustInterface
 				for(String seedURIString : WebOfTrustInterface.SEED_IDENTITIES) {
 					try {
 						FreenetURI seedURI = new FreenetURI(seedURIString);
+						
 						setTrustWithoutCommit(
 							identity, getIdentityByURI(seedURI), seedURI.getEdition(),
 							(byte)100, "Automatically assigned trust to a seed identity.");
+						
+						// FIXME: Call mFetcher.storeNewEditionHintCommandWithoutCommit()
 					} catch(MalformedURLException e) {
 						Logger.error(this, "SHOULD NOT HAPPEN: Seed URI is malformed: " + e);
 					} catch(UnknownIdentityException e) {
