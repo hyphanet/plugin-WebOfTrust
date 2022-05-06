@@ -429,6 +429,10 @@ public class StatisticsPage extends WebPageImpl {
 			SimpleDateFormat dateFormat = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss");
 			
 			for(EditionHint h : downloader.getQueue()) {
+				// FIXME: The logic for how the downloader processes its queue has recently changed,
+				// it e.g. ignores some hints now.
+				// Make sure what we show here matches the current logic.
+				
 				HTMLNode r = q.addChild("tr");
 				if(downloader.isDownloadInProgress(h))
 					r.addAttribute("style", "font-weight: bold");
