@@ -5213,6 +5213,8 @@ public final class WebOfTrust extends WebOfTrustInterface
 			}
 
 			// The identity hasn't received a trust value. Therefore, there is no reason to fetch it and we don't notify the IdentityFetcher.
+			// Once you implement setting a trust value here make sure to call
+			// mFetcher.storeNewEditionHintCommandWithoutCommit().
 			
 			Logger.normal(this, "addIdentity(): " + identity);
 			return identity;
