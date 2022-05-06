@@ -136,6 +136,8 @@ public interface IdentityFileQueue {
 	 *  If the queue already contains an edition of the Identity at hand, add() implementations
 	 *  may drop the lower edition among the already queued one and the one currently passed to
 	 *  add(), but they are not strictly required to drop it.  
+	 *  Calls to {@link #poll()} may thus return editions in an arbitrary order. See its
+	 *  documentation for details.
 	 * 
 	 *  NOTICE: While add() will always succeed even if {@link #getSizeSoftLimit()} is violated you
 	 *  should nevertheless try to control the amount of files you add() as specified at
@@ -163,7 +165,17 @@ public interface IdentityFileQueue {
 	 * handing the whole {@link IdentityFileStreamWrapper} itself out. That prevents the XML parser
 	 * from closing the wrapper right after parsing and before the output of the parser has been
 	 * processed by its user.
-	 * See the JavaDoc of {@link IdentityFileStreamWrapper} for details. */
+	 * See the JavaDoc of {@link IdentityFileStreamWrapper} for details.
+	 * 
+	 * ATTENTION: Multiple subsequent calls to poll() may return editions of the same Identity in
+	 * an **arbitrary** order.  
+	 * This notably includes first returning the latest edition and in subsequent calls outdated
+	 * editions.  
+	 * Thus when processing the editions you **must** ensure outdated ones are ignored.  
+	 * This is intentional: There are multiple concurrently running IdentityDownloader
+	 * implementations feeding the queue. These can, due to the concurrency, cause out-of-order
+	 * download of editions. Therefore it is impossible to preserve order anyway, even if the
+	 * IdentityFileQueue implementations tried to do so for what is currently queued. */
 	public IdentityFileStreamWrapper poll();
 
 	/** Gets the number of files available for {@link #poll()}.
