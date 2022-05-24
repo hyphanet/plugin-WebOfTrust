@@ -66,9 +66,9 @@ jobs:
         
         # TODO: Bug: As of 2022-05-24 fred doesn't compile with Java >= 16 on Windows due to its
         # Gradle version 4.10.3 not working there. Try again once fred uses a more recent one.
-        # TODO: Code quality: As of 2022-05-24 GHA does not support arrays such as
-        # "java-version: [16, 17]" here yet, see https://github.com/github/feedback/discussions/7835
-        # Use an array once it's fixed.
+        # TODO: Code quality: As of 2022-05-24 GHA wrongly parses arrays such as
+        # "java-version: [16, 17]" into their literal string value instead of expanding them. Use an
+        # array once it's fixed. See https://github.com/github/feedback/discussions/7835
         exclude:
           - os: windows-latest
             java-version: 16
