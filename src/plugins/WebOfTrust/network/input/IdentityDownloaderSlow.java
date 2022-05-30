@@ -1127,6 +1127,13 @@ public final class IdentityDownloaderSlow implements
 				
 				// isFatal() includes temporary problems such as running out of disk space.
 				// Thus don't delete the hint so we can try downloading it again. 
+				// FIXME: It probably would be more safe to replace usage of fred's isFatal(),
+				// and also the above usage of isDefinitelyFatal(), with code of our own which
+				// contains a switch() to handle *all* FetchException failure modes:
+				// That would ensure we don't constantly retry fetching something which cannot be
+				// fetched because we didn't inspect fred's isFatal() implementation well enough or
+				// because someone changes it.
+				// It would also ensure we do retry stuff which should be retried.
 				
 				synchronized(mLock) {
 					++mFailedTemporarilyDownloads;
