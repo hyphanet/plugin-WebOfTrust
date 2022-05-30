@@ -1180,7 +1180,8 @@ public final class IdentityDownloaderSlow implements
 		// I don't have time to look up the storage logic behind that now, do check it and if yes
 		// replace the assert & documentation with proper ones.
 		assert(deletedHints == 1
-		    || deletedHints == 0 /* See Javadoc of the deleteEditionHints() return value. */);
+		    || deletedHints == 0 /* See Javadoc of the deleteEditionHints() return value. */)
+		    : "deletedHints is: " + deletedHints;
 	}
 
 	/** @see #deleteEditionHints(FreenetURI, boolean, FetchException) */
