@@ -22,6 +22,25 @@ import freenet.support.io.NativeThread;
  * See <a href="https://bugs.freenetproject.org/view.php?id=6521">the relevant bugtracker entry</a>.
  * <br><br>
  * 
+ * FIXME: PrioritizedTicker.realRun() almost re-runs this class' jobs if they throw during
+ * execution, it only doesn't do so because we implement FastRunnable.
+ * Since PrioritizedTicker is fred code, it can change in the future without our knowledge, it
+ * might be changed to **do** re-run the jobs even when using FastRunnable.  
+ * But BackgroundJobs must not be re-run, a single call to their triggerExecution() must only yield
+ * a single execution.  
+ * Potential fixes:
+ * - Documentation which ensures we keep using FastRunnable.
+ * - Or just use our own scheduler class instead of Ticker (fred might not want us to do that, e.g.
+ *   to ensure its Executor is used? I don't recall this precisely.)
+ * - Add try/catch blocks to ensure they cannot throw.
+ * - Add two variables, "long nextRunID = 0; long lastRunID = 0". triggerExecution() increments
+ *   "nextRunID". Once the execution starts check if "lastRunID == nextRunID". If yes the
+ *   execution had already happened, do not run it again. If no, set "lastRunID = nextRunID" and
+ *   run it.
+ * FIXME: Also, because we use FastRunnable we block the ticker thread while we try to acquire
+ * our lock. So make damn sure that we don't take the lock for a long time anywhere in this class.  
+ * Or maybe don't use FastRunnable if possible?
+ * 
  * @author bertm
  * @see TickerDelayedBackgroundJobFactory
  */
