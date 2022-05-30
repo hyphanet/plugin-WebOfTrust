@@ -1295,7 +1295,7 @@ public final class IdentityDownloaderSlow implements
 		// needs to be done first to ensure that hints are always deleted once they become
 		// obsolete. Specifically we currently don't delete them if the
 		// IdentityDownloaderFast fetches an edition.
-		assert(deleted >= 1);
+		assert(deleted >= 1) : "deleted is: " + deleted;
 		
 		if(logMINOR)
 			Logger.minor(this, "deleteEditionHints() finished, deleted hints: " + deleted);
