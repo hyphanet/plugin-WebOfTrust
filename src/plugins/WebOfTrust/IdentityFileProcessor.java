@@ -229,6 +229,12 @@ public final class IdentityFileProcessor implements Daemon, DelayedBackgroundJob
 						// probably is one of the most memory-heavy parts of WoT.
 						// So if it causes OOM we better wait for some time to give memory pressure
 						// a chance to relax before trying again.
+						// TODO: Bugs: IIRC there might be some places where triggerExecution() is
+						// called with a delay of 0, which then shortens the delay we set here to 0,
+						// though probably these are merely unit tests.
+						// Review the calls to triggerExecution() and think about that.
+						// Also adapt the documentation of triggerExecution() to mention the
+						// potential issue of a delay of 0.
 						triggerExecution(60 * 1000);
 						Logger.error(this, "Delaying processing due to OutOfMemoryError!", e);
 						break;
