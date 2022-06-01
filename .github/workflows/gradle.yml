@@ -102,8 +102,8 @@ jobs:
     - name: Install Java
       uses: actions/setup-java@v2
       with:
-        # Using 'zulu' distribution because as of 2022-05-24 it is the only one which has early
-        # access builds available of the upcoming Java 19.
+        # Using 'zulu' distribution because as of 2022-05-24 the other distributions either don't
+        # provide many old Java versions or lack an early access build of the upcoming version.
         # FIXME: Also test against Oracle's JDK once GHA supports it.
         distribution: 'zulu'
         java-version: ${{matrix.java-version}}
