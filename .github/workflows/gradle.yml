@@ -104,6 +104,7 @@ jobs:
       with:
         # Using 'zulu' distribution because as of 2022-05-24 the other distributions either don't
         # provide many old Java versions or lack an early access build of the upcoming version.
+        # For some overview of distributions see https://news.ycombinator.com/item?id=28820601
         # FIXME: Also test against Oracle's JDK once GHA supports it.
         distribution: 'zulu'
         java-version: ${{matrix.java-version}}
