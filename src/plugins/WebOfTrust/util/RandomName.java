@@ -288,8 +288,7 @@ public final class RandomName {
         "Émilie", "Émilie", "Étienne", "Évariste"};
 
     final static String[] lastnames = {
-        ".", "&", "—", "1.", "3.",
-        "a", "A.", "Abarth", "Abbas", "Abbās",
+        "Abarth", "Abbas", "Abbās",
         "Abbe", "Abdollah", "Abdul", "Abdulaziz", "Abel",
         "Abenragel", "Abhay", "Abhyankar", "abi", "Abi",
         "Abidi", "Abolfadl", "Abol-fath", "Abol-hasan", "Abouleish",
@@ -1063,7 +1062,7 @@ public final class RandomName {
          * sensible (ends with . [middle name] or is ibn ["son of"] or
          * is al [arabic prefix for "the"] or is just 1 letter) or you
          * roll 1 on a die :) */
-        while (nextpart.endsWith(".") || "ibn".equals(nextpart) || seperator.equals(nextpart) || "al".equals(nextpart) || rand.nextInt(6) == 1) {
+        while (nextpart.endsWith(".") || "ibn".equals(nextpart) || "al".equals(nextpart) || rand.nextInt(6) == 1) {
                 name.append(seperator);
                 nextpart = lastnames[rand.nextInt(lastnames.length)];
                 name.append(nextpart);
