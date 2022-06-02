@@ -21,8 +21,7 @@ import java.util.Random;
 import plugins.WebOfTrust.Identity;
 import plugins.WebOfTrust.exceptions.InvalidParameterException;
 
-public class RandomName
-{
+public final class RandomName {
     /* Just allocate the String in one step. A better way would be to
      * read it from a static file, but I don’t know how to do that
      * reliably, so that has to wait. */
