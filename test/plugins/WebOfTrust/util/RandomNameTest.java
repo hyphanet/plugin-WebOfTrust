@@ -19,25 +19,36 @@ public class RandomNameTest extends TestCase {
 	 * 
 	 * This function tests whether the tokens are valid nicknames on their own according to {@link Identity#validateNickname(String)}.
 	 * - If the tokens are valid, a combination of them using a separator is probably also valid.
-	 * 
-	 * @throws InvalidParameterException If the test failed.
 	 */
-	public void testNameTokens() throws InvalidParameterException {
-		for(String firstname : RandomName.firstnames)
-			Identity.validateNickname(firstname);
+	public void testNameTokens() {
+		for(String firstname : RandomName.firstnames) {
+			try {
+				Identity.validateNickname(firstname);
+			} catch(InvalidParameterException e) {
+				fail("Invalid first name: '" + firstname + "', reason: " + e);
+			}
+		}
 		
-		for(String lastname : RandomName.lastnames)
-			Identity.validateNickname(lastname);
+		for(String lastname : RandomName.lastnames) {
+			try {
+				Identity.validateNickname(lastname);
+			} catch(InvalidParameterException e) {
+				fail("Invalid last name: '" + lastname + "', reason: " + e);
+			}
+		}
 	}
 
 	/**
 	 * Test whether the actual name generation function {@link RandomName#newNickname()} generates valid nicknames.
 	 * This is needed in addition to {@link #testNameTokens()} to ensure that the token separator used in the nickname is also valid.
-	 * 
-	 * @throws InvalidParameterException If the test failed.
 	 */
-    public void testNewNickname() throws InvalidParameterException {
-    	Identity.validateNickname(RandomName.newNickname());
-    }
+	public void testNewNickname() {
+		String name = RandomName.newNickname();
+		try {
+			Identity.validateNickname(name);
+		} catch(InvalidParameterException e) {
+			fail("Invalid name: '" + name + "', reason: " + e);
+		}
+	}
 
 }
