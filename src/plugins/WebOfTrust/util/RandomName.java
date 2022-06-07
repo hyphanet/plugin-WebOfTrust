@@ -288,7 +288,7 @@ public final class RandomName {
         "Émilie", "Émilie", "Étienne", "Évariste"};
 
     final static String[] lastnames = {
-        "Abarth", "Abbas", "Abbās",
+        "A.", "Abarth", "Abbas", "Abbās",
         "Abbe", "Abdollah", "Abdul", "Abdulaziz", "Abel",
         "Abenragel", "Abhay", "Abhyankar", "abi", "Abi",
         "Abidi", "Abolfadl", "Abol-fath", "Abol-hasan", "Abouleish",
