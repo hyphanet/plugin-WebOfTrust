@@ -3,9 +3,11 @@
  * any later version). See http://www.gnu.org/ for details of the GPL. */
 package plugins.WebOfTrust.util;
 
+import java.util.HashSet;
+
+import junit.framework.TestCase;
 import plugins.WebOfTrust.Identity;
 import plugins.WebOfTrust.exceptions.InvalidParameterException;
-import junit.framework.TestCase;
 
 /**
  * Tests class {@link RandomName}.
@@ -21,12 +23,17 @@ public class RandomNameTest extends TestCase {
 	 * - If the tokens are valid, a combination of them using a separator is probably also valid.
 	 */
 	public void testNameTokens() {
+		HashSet<String> seenFirstNames = new HashSet<>(RandomName.firstnames.length * 2);
+		HashSet<String> seenLastNames  = new HashSet<>(RandomName.lastnames.length  * 2);
+		
 		for(String firstname : RandomName.firstnames) {
 			try {
 				Identity.validateNickname(firstname);
 			} catch(InvalidParameterException e) {
 				fail("Invalid first name: '" + firstname + "', reason: " + e);
 			}
+			
+			assertTrue("Duplicate check firstname: " + firstname, seenFirstNames.add(firstname));
 		}
 		
 		for(String lastname : RandomName.lastnames) {
@@ -35,6 +42,8 @@ public class RandomNameTest extends TestCase {
 			} catch(InvalidParameterException e) {
 				fail("Invalid last name: '" + lastname + "', reason: " + e);
 			}
+			
+			assertTrue("Duplicate check lastname: " + lastname, seenLastNames.add(lastname));
 		}
 	}
 
