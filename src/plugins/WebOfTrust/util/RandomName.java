@@ -232,7 +232,7 @@ public final class RandomName {
         "Rogers", "Roland", "Rolf", "Rollo", "Ron", "Ronald",
         "Rosalind", "Rosalinde", "Rosalyn", "Rose", "Ross", "Roth",
         "Rousseau", "Roy", "Royal", "Rudolf", "Rudolph", "Rumi", "Rune",
-        "Rupert", "Ruth", "Ruth", "Ruttan", "Ryan", "Ryerson", "Rémy",
+        "Rupert", "Ruth", "Ruttan", "Ryan", "Ryerson", "Rémy",
         "Rüdiger", "Sabine", "Sabourin", "Sabzevari", "Sackett",
         "Safer", "Saghani", "Saghir", "Sahl", "Saint", "Sake", "Salim",
         "Salimuzzaman", "Sally", "Salman", "Salomon", "Salvatore", "Sam",
@@ -243,11 +243,11 @@ public final class RandomName {
         "See", "Selim", "Selye", "Sergei", "Sergey", "Serhij", "Sethus",
         "Seymour", "Shahid", "Shahrastani", "Shahrazuri", "Shams",
         "Shanti", "Shao", "Shapur", "Sharaf", "Sharp", "Shawn", "Shaykh",
-        "Sheikh", "Sheila", "Sheila", "Shen", "Shi", "Shinya",
+        "Sheikh", "Sheila", "Shen", "Shi", "Shinya",
         "Shirazi", "Shirley", "Shoukai", "Shreeram", "Sicard", "Sidney",
         "Siegfried", "Siegmund", "Sigmund", "Silvanus", "Simard", "Simon",
-        "Simpson", "Siméon", "Sir", "Siva", "Smith", "Sofia", "Sofia",
-        "Sofja", "Sol", "Song", "Sophie", "Sophie", "Sophus",
+        "Simpson", "Siméon", "Sir", "Siva", "Smith", "Sofia",
+        "Sofja", "Sol", "Song", "Sophie", "Sophus",
         "Sotirichos", "Srinivasa", "St.", "Stacy", "Stairs", "Stam",
         "Stanley", "Stanton", "Starkman", "Steele", "Stefan", "Stefano",
         "Stefanos", "Stelck", "Stephanie", "Stephanos", "Stephen",
@@ -285,7 +285,7 @@ public final class RandomName {
         "Zachary", "Zaghloul", "Zarrin", "Zayn", "Zhang", "Zhao",
         "Zheng", "Zhou", "Zhu", "Zhuang", "Zimmer", "Zygmunt",
         "zahid", "Ányos", "Édouard", "Élie", "Émile",
-        "Émilie", "Émilie", "Étienne", "Évariste"};
+        "Émilie", "Étienne", "Évariste"};
 
     final static String[] lastnames = {
         "A.", "Abarth", "Abbas", "Abbās",
