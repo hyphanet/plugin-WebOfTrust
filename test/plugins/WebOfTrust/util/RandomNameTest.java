@@ -3,6 +3,8 @@
  * any later version). See http://www.gnu.org/ for details of the GPL. */
 package plugins.WebOfTrust.util;
 
+import static java.lang.System.err;
+
 import java.util.HashSet;
 
 import junit.framework.TestCase;
@@ -25,6 +27,7 @@ public class RandomNameTest extends TestCase {
 	public void testNameTokens() {
 		HashSet<String> seenFirstNames = new HashSet<>(RandomName.firstnames.length * 2);
 		HashSet<String> seenLastNames  = new HashSet<>(RandomName.lastnames.length  * 2);
+		boolean duplicatesFound = false;
 		
 		for(String firstname : RandomName.firstnames) {
 			try {
@@ -33,7 +36,10 @@ public class RandomNameTest extends TestCase {
 				fail("Invalid first name: '" + firstname + "', reason: " + e);
 			}
 			
-			assertTrue("Duplicate check firstname: " + firstname, seenFirstNames.add(firstname));
+			if(!seenFirstNames.add(firstname)) {
+				err.println("Duplicate first name: " + firstname);
+				duplicatesFound = true;
+			}
 		}
 		
 		for(String lastname : RandomName.lastnames) {
@@ -43,8 +49,13 @@ public class RandomNameTest extends TestCase {
 				fail("Invalid last name: '" + lastname + "', reason: " + e);
 			}
 			
-			assertTrue("Duplicate check lastname: " + lastname, seenLastNames.add(lastname));
+			if(!seenLastNames.add(lastname)) {
+				err.println("Duplicate last name: " + lastname);
+				duplicatesFound = true;
+			}
 		}
+		
+		assertFalse("Duplicate check failed, see stderr for duplicates.", duplicatesFound);
 	}
 
 	/**
