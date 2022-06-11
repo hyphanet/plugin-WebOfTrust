@@ -18,8 +18,10 @@ package plugins.WebOfTrust.util;
 
 import static java.lang.Math.max;
 import static java.lang.System.out;
+
 import java.util.Random;
 
+import freenet.l10n.ISO639_3;
 import plugins.WebOfTrust.Identity;
 import plugins.WebOfTrust.exceptions.InvalidParameterException;
 
@@ -59,9 +61,25 @@ public final class RandomName {
 		out.println("Maximum last name length:  " + maxLastLen);
 	}
 
-    /* Just allocate the String in one step. A better way would be to
-     * read it from a static file, but I don’t know how to do that
-     * reliably, so that has to wait. */
+	/** About 1538 first names which we use as template to generate random first name + last name
+	 *  combinations.
+	 *  
+	 *  In 2022 ArneBab has attempted to make this equally balanced in terms of the count of female
+	 *  and male names.  
+	 *  An imbalance of about 2% may still exist towards male names because xor found some duplicate
+	 *  names afterwards which were then removed to keep the list duplicate-free.  
+	 *  Avoiding duplicates is a good idea because it allows the unit tests to check for duplicates
+	 *  and fail if there are any. Considering the large size of the list manual checking would not
+	 *  be feasible, so a unit test must exist.
+	 *  
+	 *  TODO: Code quality: Put the names into separate text files then and load them as resources
+	 *  from the JAR.  
+	 *  For an example of how to do that see function {@link ISO639_3#loadFromTabFile()} at fred.
+	 *  
+	 *  TODO: Code quality: The next iteration of this code should split the template names into
+	 *  sets, e.g. "femaleFirstnames", "maleFirstnames" (and possibly also "neutralFirstnames") to
+	 *  always allow equal gender distribution of the generated names no matter the size of each of
+	 *  the sets. */
     final static String[] firstnames = {
         "Aatsista", "Abbas", "Abbott", "Abd", "Abdel", "Abdol",
         "Abdul", "Abdus", "Abel", "Abolfadl", "Abraham", "Abu", "Abul",
