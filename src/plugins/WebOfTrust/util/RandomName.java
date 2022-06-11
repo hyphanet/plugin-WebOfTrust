@@ -16,12 +16,49 @@
 
 package plugins.WebOfTrust.util;
 
+import static java.lang.Math.max;
+import static java.lang.System.out;
 import java.util.Random;
 
 import plugins.WebOfTrust.Identity;
 import plugins.WebOfTrust.exceptions.InvalidParameterException;
 
 public final class RandomName {
+
+	/** For development purposes.
+	 * 
+	 *  Prints info about the set of template {@link #firstnames} and {@link #lastnames} which we
+	 *  use as foundation to generate random names.
+	 *  
+	 *  Can be used when changing these arrays to determine if the changes made sense.  
+	 *  Please also run the unit test {@link RandomNameTest} then.  
+	 *  And if necessary update the initial capacity of the {@link StringBuilder} which is used by
+	 *  {@link #newNameBaseUnlimitedLength(String)}. */
+	public static void main(String[] args) {
+		out.println("Number of first names: " + firstnames.length);
+		out.println("Number of last names:  " + lastnames.length);
+		out.println();
+		
+		int firstnamesCharCount = 0;
+		int lastnamesCharCount  = 0;
+		
+		for(String firstname : firstnames) firstnamesCharCount += firstname.length();
+		for(String lastname  : lastnames)  lastnamesCharCount  += lastname.length();
+		
+		out.println("Average first name length: " + (float)firstnamesCharCount / firstnames.length);
+		out.println("Average last name length:  " + (float)lastnamesCharCount  / lastnames.length);
+		out.println();
+		
+		int maxFirstLen = 0;
+		int maxLastLen  = 0;
+		
+		for(String firstname : firstnames) maxFirstLen = max(maxFirstLen, firstname.length());
+		for(String lastname  : lastnames)  maxLastLen  = max(maxLastLen,  lastname.length());
+		
+		out.println("Maximum first name length: " + maxFirstLen);
+		out.println("Maximum last name length:  " + maxLastLen);
+	}
+
     /* Just allocate the String in one step. A better way would be to
      * read it from a static file, but I don’t know how to do that
      * reliably, so that has to wait. */
