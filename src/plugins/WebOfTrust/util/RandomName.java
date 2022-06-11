@@ -1088,8 +1088,8 @@ public final class RandomName {
      * Does not respect length limitation of nicknames. You need to repeat calling this function until {@link Identity#validateNickname(String)} does not throw.
      */
     static private String newNameBaseUnlimitedLength(String seperator) {
-        StringBuilder name = new StringBuilder();
         Random rand = new Random();
+        StringBuilder name = new StringBuilder(Identity.MAX_NICKNAME_LENGTH);
         String nextpart = new String(firstnames[rand.nextInt(firstnames.length)]);
         name.append(nextpart);
         name.append(seperator);
