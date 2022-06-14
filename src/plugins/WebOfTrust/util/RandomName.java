@@ -1118,18 +1118,16 @@ public final class RandomName {
         StringBuilder name = new StringBuilder(Identity.MAX_NICKNAME_LENGTH);
         String nextpart = firstnames[rand.nextInt(firstnames.length)];
         name.append(nextpart);
-        name.append(seperator);
-        nextpart = lastnames[rand.nextInt(lastnames.length)];
-        name.append(nextpart);
+        
+        do {
         /* Append nameparts as long as the last part is either not
          * sensible (ends with . [middle name] or is ibn ["son of"] or
          * is al [arabic prefix for "the"] or is just 1 letter) or you
          * roll 1 on a die :) */
-        while (nextpart.endsWith(".") || "ibn".equals(nextpart) || "al".equals(nextpart) || rand.nextInt(6) == 1) {
                 name.append(seperator);
                 nextpart = lastnames[rand.nextInt(lastnames.length)];
                 name.append(nextpart);
-            }
+        } while (nextpart.endsWith(".") || "ibn".equals(nextpart) || "al".equals(nextpart) || rand.nextInt(6) == 1);
         return name.toString();
     };
     
