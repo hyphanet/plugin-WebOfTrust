@@ -1130,19 +1130,19 @@ public final class RandomName {
     static private String newNameBaseUnlimitedLength(String seperator) {
         Random rand = new Random();
         StringBuilder name = new StringBuilder(Identity.MAX_NICKNAME_LENGTH);
-        String nextpart = firstnames[rand.nextInt(firstnames.length)];
-        name.append(nextpart);
+        String previousPart = firstnames[rand.nextInt(firstnames.length)];
+        name.append(previousPart);
         
         do {
 			name.append(seperator);
-			nextpart = lastnames[rand.nextInt(lastnames.length)];
-			name.append(nextpart);
+			previousPart = lastnames[rand.nextInt(lastnames.length)];
+			name.append(previousPart);
 			
 			/* Append nameparts as long as the last part is either not
 			 * sensible (ends with . [middle name] or is ibn ["son of"] or
 			 * is al [arabic prefix for "the"] or is just 1 letter) or you
 			 * roll 1 on a die :) */
-        } while (nextpart.endsWith(".") || "ibn".equals(nextpart) || "al".equals(nextpart) || nextpart.length() == 1 || rand.nextInt(6) == 1);
+        } while (previousPart.endsWith(".") || "ibn".equals(previousPart) || "al".equals(previousPart) || previousPart.length() == 1 || rand.nextInt(6) == 1);
         return name.toString();
     };
     
