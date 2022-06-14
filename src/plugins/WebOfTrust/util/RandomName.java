@@ -1142,7 +1142,14 @@ public final class RandomName {
 			 * sensible (ends with . [middle name] or is ibn ["son of"] or
 			 * is al [arabic prefix for "the"] or is just 1 letter) or you
 			 * roll 1 on a die :) */
-        } while (previousPart.endsWith(".") || previousPart.equals("ibn") || previousPart.equals("al") || previousPart.length() == 1 || rand.nextInt(6) == 1);
+		} while (
+			previousPart.endsWith(".") ||
+			previousPart.equals("ibn") ||
+			previousPart.equals("al") ||
+			previousPart.length() == 1 ||
+			rand.nextInt(6) == 1
+		);
+		
         return name.toString();
     };
     
