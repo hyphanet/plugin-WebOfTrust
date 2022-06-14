@@ -1116,7 +1116,7 @@ public final class RandomName {
     static private String newNameBaseUnlimitedLength(String seperator) {
         Random rand = new Random();
         StringBuilder name = new StringBuilder(Identity.MAX_NICKNAME_LENGTH);
-        String nextpart = new String(firstnames[rand.nextInt(firstnames.length)]);
+        String nextpart = firstnames[rand.nextInt(firstnames.length)];
         name.append(nextpart);
         name.append(seperator);
         nextpart = lastnames[rand.nextInt(lastnames.length)];
