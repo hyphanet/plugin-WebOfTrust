@@ -345,6 +345,11 @@ public final class RandomName {
         "zahid", "Ányos", "Édouard", "Élie", "Émile",
         "Émilie", "Étienne", "Évariste"};
 
+	/** About 3670 last names which we use as template to generate random first name + last name
+	 *  combinations.
+	 *  
+	 *  After changing this list please do what is described in the documentation of
+	 *  {@link #main(String[])}. */
     final static String[] lastnames = {
         "A.", "Abarth", "Abbas", "Abbās",
         "Abbe", "Abdollah", "Abdul", "Abdulaziz", "Abel",
