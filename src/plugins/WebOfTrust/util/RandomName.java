@@ -17,6 +17,7 @@
 package plugins.WebOfTrust.util;
 
 import static java.lang.Math.max;
+import static java.lang.Math.min;
 import static java.lang.System.out;
 
 import java.util.Random;
@@ -51,13 +52,26 @@ public final class RandomName {
 		out.println("Average last name length:  " + (float)lastnamesCharCount  / lastnames.length);
 		out.println();
 		
-		int maxFirstLen = 0;
-		int maxLastLen  = 0;
+		int minFirstLen = Integer.MAX_VALUE;
+		int maxFirstLen = Integer.MIN_VALUE;
 		
-		for(String firstname : firstnames) maxFirstLen = max(maxFirstLen, firstname.length());
-		for(String lastname  : lastnames)  maxLastLen  = max(maxLastLen,  lastname.length());
+		int minLastLen  = Integer.MAX_VALUE;
+		int maxLastLen  = Integer.MIN_VALUE;
 		
+		for(String firstname : firstnames) {
+			minFirstLen = min(minFirstLen, firstname.length());
+			maxFirstLen = max(maxFirstLen, firstname.length());
+		}
+		
+		for(String lastname  : lastnames) {
+			minLastLen  = min(minLastLen, lastname.length());
+			maxLastLen  = max(maxLastLen, lastname.length());
+		}
+		
+		out.println("Minimum first name length: " + minFirstLen);
 		out.println("Maximum first name length: " + maxFirstLen);
+		out.println();
+		out.println("Minimum last name length:  " + minLastLen);
 		out.println("Maximum last name length:  " + maxLastLen);
 	}
 
