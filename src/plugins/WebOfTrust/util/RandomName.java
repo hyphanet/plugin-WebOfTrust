@@ -72,8 +72,11 @@ public final class RandomName {
 	 *  and fail if there are any. Considering the large size of the list manual checking would not
 	 *  be feasible, so a unit test must exist.
 	 *  
-	 *  TODO: Code quality: Put the names into separate text files then and load them as resources
-	 *  from the JAR.  
+	 *  After changing this list please do what is described in the documentation of
+	 *  {@link #main(String[])}.
+	 *  
+	 *  TODO: Code quality: Put the names into separate text files and load them as resources from
+	 *  the JAR.  
 	 *  For an example of how to do that see function {@link ISO639_3#loadFromTabFile()} at fred.
 	 *  
 	 *  TODO: Code quality: The next iteration of this code should split the template names into
