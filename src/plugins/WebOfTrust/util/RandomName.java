@@ -27,6 +27,14 @@ import freenet.l10n.ISO639_3;
 import plugins.WebOfTrust.Identity;
 import plugins.WebOfTrust.exceptions.InvalidParameterException;
 
+/** Generates random nicknames for WoT {@link Identity}s, using sets of real human first and last
+ *  names as templates.
+ * 
+ *  This ensures the user does not accidentally reveal who they are by inventing "random" names
+ *  using their brain which are not actually random but rather the names of people they have known
+ *  in the distant past.  
+ *  It is a known issue that humans do this subconsciously when trying to invent random names on
+ *  their own! */
 public final class RandomName {
 
 	/** For development purposes.
@@ -1143,10 +1151,14 @@ public final class RandomName {
         "Zuckermandel", "Zuhr", "Zülicke", "Zwicker", "اخوان",
         "الصفا", "الوفا", "وخلان"};
     
-    /**
-     * Generate a random nickname consisting of firstname, a possible middle part and a lastname. They are separated using the given separator.
-     * Does not respect length limitation of nicknames. You need to repeat calling this function until {@link Identity#validateNickname(String)} does not throw.
-     */
+    /** The core generator function which actually generates names.
+     *  
+     *  NOTICE: This does **not** check if they're valid in terms of
+     *  {@link Identity#validateNickname(String)}! Use {@link #newNameBase(String)} instead.
+     *  
+     *  See {@link #newNickname()} for a description of what the names will look like.
+     *  
+     *  @param separator Used to separate first name, middle names and last name. */
     static private String newNameBaseUnlimitedLength(String seperator) {
         Random rand = new Random();
         StringBuilder name = new StringBuilder(Identity.MAX_NICKNAME_LENGTH);
@@ -1170,6 +1182,11 @@ public final class RandomName {
         return name.toString();
     };
     
+    /** Wrapper around {@link #newNameBaseUnlimitedLength(String)} which generates names until
+     *  {@link Identity#validateNickname(String)} considers one a valid nickname.
+     * 
+     *  @param separator Used to separate first name, middle names and last name.
+     *      Use {@link #newNickname()} for the default separator. */
     static private String newNameBase(String separator) {
     	String name;
 		boolean invalidName = true;
@@ -1189,7 +1206,16 @@ public final class RandomName {
     	return name;
     }
 
-    /** Generate a Nickname: No spaces. */
+    /** Generates a random nickname which satisfies {@link Identity#validateNickname(String)}.
+     *  
+     *  Typically consists of the following, each separated by "_":
+     *  - a first name
+     *  - zero or more middle names
+     *  - a last name.
+     *  
+     *  The names are randomly chosen from sets of real human first and last names.
+     *  
+     *  Gender-balance is roughly obeyed. */
     static public String newNickname() {
         return newNameBase("_");
     };
