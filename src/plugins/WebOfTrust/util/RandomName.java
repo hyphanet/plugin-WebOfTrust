@@ -1156,10 +1156,10 @@ public final class RandomName {
 			// Append nameparts as long as the last part is either not sensible or you roll 1 on a
 			// die :)
 		} while (
-			previousPart.endsWith(".") ||  // middle name
-			isAllLowercase(previousPart) ||  // middle name, things like "of", "the", "ibn", "al"
 			previousPart.length() == 1 ||  // just 1 letter
-			rand.nextInt(6) == 1           // roll a die
+			rand.nextInt(6) == 1       ||  // roll a die
+			previousPart.endsWith(".") ||  // middle name
+			isAllLowercase(previousPart)   // middle name, things like "of", "the", "ibn", "al"
 		);
 		
         return name.toString();
