@@ -19,6 +19,7 @@ package plugins.WebOfTrust.util;
 import static java.lang.Math.max;
 import static java.lang.Math.min;
 import static java.lang.System.out;
+import static plugins.WebOfTrust.util.StringUtil.isAllLowercase;
 
 import java.util.Random;
 
@@ -1156,8 +1157,7 @@ public final class RandomName {
 			// die :)
 		} while (
 			previousPart.endsWith(".") ||  // middle name
-			previousPart.equals("ibn") ||  // "son of"
-			previousPart.equals("al") ||   // Arabic prefix for "the"
+			isAllLowercase(previousPart) ||  // middle name, things like "of", "the", "ibn", "al"
 			previousPart.length() == 1 ||  // just 1 letter
 			rand.nextInt(6) == 1           // roll a die
 		);
