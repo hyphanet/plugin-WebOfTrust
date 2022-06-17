@@ -1160,14 +1160,14 @@ public final class RandomName {
      *  See {@link #newNickname()} for a description of what the names will look like.
      *  
      *  @param separator Used to separate first name, middle names and last name. */
-    static private String newNameBaseUnlimitedLength(String seperator) {
+    static private String newNameBaseUnlimitedLength(String separator) {
         Random rand = new Random();
         StringBuilder name = new StringBuilder(Identity.MAX_NICKNAME_LENGTH);
         String previousPart = firstnames[rand.nextInt(firstnames.length)];
         name.append(previousPart);
         
         do {
-			name.append(seperator);
+			name.append(separator);
 			previousPart = lastnames[rand.nextInt(lastnames.length)];
 			name.append(previousPart);
 			
