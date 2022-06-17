@@ -88,6 +88,11 @@ public final class RandomName {
 			if(isAllLowercase(lastname))
 				out.println(lastname);
 		}
+		
+		out.println();
+		out.println("Some values of RandomName.newNickname():");
+		for(int i=0; i<128; ++i)
+			out.println(newNickname());
 	}
 
 	/** About 1538 first names which we use as template to generate random first name + last name
