@@ -25,11 +25,12 @@ import java.util.Random;
 
 import freenet.l10n.ISO639_3;
 import plugins.WebOfTrust.Identity;
+import plugins.WebOfTrust.OwnIdentity;
 import plugins.WebOfTrust.exceptions.InvalidParameterException;
 
-/** Generates random nicknames for WoT {@link Identity}s, using sets of real human first and last
+/** Generates random nicknames for WoT {@link OwnIdentity}s, using sets of real human first and last
  *  names as templates.
- * 
+ *  
  *  This ensures the user does not accidentally reveal who they are by inventing "random" names
  *  using their brain which are not actually random but rather the names of people they have known
  *  in the distant past.  
@@ -1213,7 +1214,8 @@ public final class RandomName {
      *  - zero or more middle names
      *  - a last name.
      *  
-     *  The names are randomly chosen from sets of real human first and last names.
+     *  Each of these three components are randomly chosen from sets of real human first and last
+     *  names.
      *  
      *  Gender-balance is roughly obeyed. */
     static public String newNickname() {
