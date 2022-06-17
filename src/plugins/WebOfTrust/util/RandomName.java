@@ -40,7 +40,6 @@ public final class RandomName {
 	public static void main(String[] args) {
 		out.println("Number of first names: " + firstnames.length);
 		out.println("Number of last names:  " + lastnames.length);
-		out.println();
 		
 		int firstnamesCharCount = 0;
 		int lastnamesCharCount  = 0;
@@ -48,9 +47,9 @@ public final class RandomName {
 		for(String firstname : firstnames) firstnamesCharCount += firstname.length();
 		for(String lastname  : lastnames)  lastnamesCharCount  += lastname.length();
 		
+		out.println();
 		out.println("Average first name length: " + (float)firstnamesCharCount / firstnames.length);
 		out.println("Average last name length:  " + (float)lastnamesCharCount  / lastnames.length);
-		out.println();
 		
 		int minFirstLen = Integer.MAX_VALUE;
 		int maxFirstLen = Integer.MIN_VALUE;
@@ -68,11 +67,26 @@ public final class RandomName {
 			maxLastLen  = max(maxLastLen, lastname.length());
 		}
 		
+		out.println();
 		out.println("Minimum first name length: " + minFirstLen);
 		out.println("Maximum first name length: " + maxFirstLen);
 		out.println();
 		out.println("Minimum last name length:  " + minLastLen);
 		out.println("Maximum last name length:  " + maxLastLen);
+		
+		out.println();
+		out.println("Lowercase first names:");
+		for(String firstname  : firstnames) {
+			if(isAllLowercase(firstname))
+				out.println(firstname);
+		}
+		
+		out.println();
+		out.println("Lowercase last names:");
+		for(String lastname  : lastnames) {
+			if(isAllLowercase(lastname))
+				out.println(lastname);
+		}
 	}
 
 	/** About 1538 first names which we use as template to generate random first name + last name
