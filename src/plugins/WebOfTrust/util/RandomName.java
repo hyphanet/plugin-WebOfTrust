@@ -16,342 +16,385 @@
 
 package plugins.WebOfTrust.util;
 
+import static java.lang.Math.max;
+import static java.lang.Math.min;
+import static java.lang.System.out;
+import static plugins.WebOfTrust.util.StringUtil.isAllLowercase;
+
 import java.util.Random;
 
+import freenet.l10n.ISO639_3;
 import plugins.WebOfTrust.Identity;
+import plugins.WebOfTrust.OwnIdentity;
 import plugins.WebOfTrust.exceptions.InvalidParameterException;
 
-public class RandomName
-{
-    /* Just allocate the String in one step. A better way would be to
-     * read it from a static file, but I don’t know how to do that
-     * reliably, so that has to wait. Indentation removed for the
-     * construction, because it increases the filesize by 50%. */
+/** Generates random nicknames for WoT {@link OwnIdentity}s, using sets of real human first and last
+ *  names as templates.
+ *  
+ *  This ensures the user does not accidentally reveal who they are by inventing "random" names
+ *  using their brain which are not actually random but rather the names of people they have known
+ *  in the distant past.  
+ *  It is a known issue that humans do this subconsciously when trying to invent random names on
+ *  their own! */
+public final class RandomName {
+
+	/** For development purposes.
+	 * 
+	 *  Prints info about the set of template {@link #firstnames} and {@link #lastnames} which we
+	 *  use as foundation to generate random names.
+	 *  
+	 *  Can be used when changing these arrays to determine if the changes made sense.  
+	 *  Please also run the unit test {@link RandomNameTest} then.  
+	 *  And if necessary update the initial capacity of the {@link StringBuilder} which is used by
+	 *  {@link #newNameBaseUnlimitedLength(String)}. */
+	public static void main(String[] args) {
+		out.println("Number of first names: " + firstnames.length);
+		out.println("Number of last names:  " + lastnames.length);
+		
+		int firstnamesCharCount = 0;
+		int lastnamesCharCount  = 0;
+		
+		for(String firstname : firstnames) firstnamesCharCount += firstname.length();
+		for(String lastname  : lastnames)  lastnamesCharCount  += lastname.length();
+		
+		out.println();
+		out.println("Average first name length: " + (float)firstnamesCharCount / firstnames.length);
+		out.println("Average last name length:  " + (float)lastnamesCharCount  / lastnames.length);
+		
+		int minFirstLen = Integer.MAX_VALUE;
+		int maxFirstLen = Integer.MIN_VALUE;
+		
+		int minLastLen  = Integer.MAX_VALUE;
+		int maxLastLen  = Integer.MIN_VALUE;
+		
+		for(String firstname : firstnames) {
+			minFirstLen = min(minFirstLen, firstname.length());
+			maxFirstLen = max(maxFirstLen, firstname.length());
+		}
+		
+		for(String lastname  : lastnames) {
+			minLastLen  = min(minLastLen, lastname.length());
+			maxLastLen  = max(maxLastLen, lastname.length());
+		}
+		
+		out.println();
+		out.println("Minimum first name length: " + minFirstLen);
+		out.println("Maximum first name length: " + maxFirstLen);
+		out.println();
+		out.println("Minimum last name length:  " + minLastLen);
+		out.println("Maximum last name length:  " + maxLastLen);
+		
+		out.println();
+		out.println("Lowercase first names:");
+		for(String firstname  : firstnames) {
+			if(isAllLowercase(firstname))
+				out.println(firstname);
+		}
+		
+		out.println();
+		out.println("Lowercase last names:");
+		for(String lastname  : lastnames) {
+			if(isAllLowercase(lastname))
+				out.println(lastname);
+		}
+		
+		out.println();
+		out.println("Some values of RandomName.newNickname():");
+		for(int i=0; i<128; ++i)
+			out.println(newNickname());
+	}
+
+	/** About 1538 first names which we use as template to generate random first name + last name
+	 *  combinations.
+	 *  
+	 *  In 2022 ArneBab has attempted to make this equally balanced in terms of the count of female
+	 *  and male names.  
+	 *  An imbalance of about 2% may still exist towards male names because xor found some duplicate
+	 *  names afterwards which were then removed to keep the list duplicate-free.  
+	 *  Avoiding duplicates is a good idea because it allows the unit tests to check for duplicates
+	 *  and fail if there are any. Considering the large size of the list manual checking would not
+	 *  be feasible, so a unit test must exist.
+	 *  
+	 *  After changing this list please do what is described in the documentation of
+	 *  {@link #main(String[])}.
+	 *  
+	 *  TODO: Code quality: Put the names into separate text files and load them as resources from
+	 *  the JAR.  
+	 *  For an example of how to do that see function {@link ISO639_3#loadFromTabFile()} at fred.
+	 *  
+	 *  TODO: Code quality: The next iteration of this code should split the template names into
+	 *  sets, e.g. "femaleFirstnames", "maleFirstnames" (and possibly also "neutralFirstnames") to
+	 *  always allow equal gender distribution of the generated names no matter the size of each of
+	 *  the sets. */
     final static String[] firstnames = {
-        "Aatsista", "Abbas", "Abbott", "Abd",
-        "Abdel", "Abdol", "Abdul", "AbdulrahmanAbhari", "Abdus",
-        "Abel", "Abolfadl", "Abraham", "Abu", "Abū",
-        "Abul", "Abulcasis", "Achim", "Ada",
-        "Adalbert", "Adam", "Addison", "Adele", "Adilson",
-        "Adnan", "Adolf", "Adolfo", "Adolph", "Adolphe",
-        "Adrian", "Adrien", "Agostino", "Ahearn", "Ahmad",
-        "Ahmed", "Aimé", "Air", "Akhtar", "Al",
-        "Alain", "Alan", "Albert", "Alberte",
-        "Alberto", "Albrecht", "Aldo", "Alec", "Alejandro",
-        "Alexander", "Alexandre", "Alexei", "Alexis", "Alexius",
-        "Alfred", "Alhazen", "AlhazenAmuli", "Ali", "Alicia",
-        "Alistair", "Allan", "Allen", "Allenna", "Allvar",
-        "Alois", "Alonzo", "Alphonse", "Alsayed", "Altman",
-        "Alvar", "Alvin", "Alwin", "Amasa", "Ambrose",
-        "Ambrozic", "Amin", "Amir", "Anatol", "Anders",
-        "André", "Andreas", "Andrei", "Andrew", "Andy",
-        "Angélique", "Anil", "Animesh", "Anita", "Ann",
-        "Anna", "Anousheh", "AnsariAn", "Anselm", "Anthony",
-        "Antoine", "Anton", "Antonella", "Antonio", "Antonius",
-        "Ányos", "Aqa",
-        "Arbour", "Arden", "Armand", "Armin", "Armstrong",
-        "Arnaldo", "Arndt", "Arne", "Arnold", "Arnoult",
-        "Arthur", "Arun", "Arvid", "AryabhataBaudhayana", "Asad",
-        "Asaph", "Aseem", "Ashok", "Ashoke", "Asper",
-        "AstarabadiAufi", "Astronomers", "Athanase", "Athanasius", "Atul",
-        "Auer", "August", "Auguste", "Augustin", "Augusto",
-        "Augustus", "Aurel", "AverroesAl", "AverroesAvicenna", "AverroesIbn",
-        "AverroesIbn", "AverroesIbn", "Avi", "AvicennaAbd", "AvicennaAbū",
-        "AvicennaAl", "AvicennaAzophi", "AvicennaHakim", "AvicennaIbn", "Axel",
-        "Axworthy", "Aziga", "Aziz", "Azizul", "Azod",
-        "Ba", "Bacharuddin", "BaghawiBahai", "Bagshaw", "Bain",
-        "Baldwin", "Balfour", "BalkhiBalkhi", "BalkhiBanū",
-        "Baltovich", "Baltzar", "Bandura", "Bangxing", "Banū",
-        "Barbara", "Barlaam", "Barlow", "BarmakBayhaqi", "Barrie",
-        "Barringer", "Barry", "Bartholomew", "Bartolomeo", "Baruj",
-        "Bascom", "Beatrice", "Beatty", "Becky", "Bee",
-        "Bégin", "BehbahaniIbn", "Beker", "Béla", "Belaney",
-        "Bell", "Belsazar", "Ben", "Benedict", "Bengt",
-        "Benjamin", "Benoît", "Berend", "Berger", "Bernard",
-        "Bernardo", "Bernd", "Bernhard", "Bernt", "Berta",
-        "Berthold", "Besette", "Beth", "Bethune", "Bhāskara",
-        "Biéler", "Big", "Bigelow", "Bill", "Billy",
-        "bin", "Bindy", "Bing", "Birbal", "Birjandi",
-        "BiruniBukhari", "Bishop", "Bjarni", "Björn", "Black",
-        "Blass", "Blaylock", "Blondin", "Blusson", "Bob",
-        "Bombardier", "Bonnie", "Boris", "Bourassa", "Bourgault",
-        "Boyd", "Boyle", "Braden", "Bradley", "BrahmadevaBrahmagupta",
-        "Brant", "Brendan", "Brethren", "Brian", "Bridget",
-        "Brigadier", "Broadbent", "Brockhouse", "Bronfman", "Brook",
-        "Brossard", "Brother", "Brown", "Bruce", "Bruno",
-        "Brunt", "Bryan", "Buck", "Bucke", "Bùi",
-        "Bukhtishu", "BukhtishuBukhtishu,", "Bull", "Burzoe", "Bửu",
-        "Cai", "Caleb", "Callaghan", "Callinicus", "Calvert",
+        "Aatsista", "Abbas", "Abbott", "Abd", "Abdel", "Abdol",
+        "Abdul", "Abdus", "Abel", "Abolfadl", "Abraham", "Abu", "Abul",
+        "Abulcasis", "Abū", "Achim", "Ada", "Adalbert", "Adam",
+        "Addison", "Adele", "Adilson", "Adnan", "Adolf", "Adolfo",
+        "Adolph", "Adolphe", "Adrian", "Adrien", "Agnodice", "Agostino",
+        "Ahearn", "Ahmad", "Ahmed", "Aimé", "Air", "Akhtar", "Al",
+        "Alain", "Alan", "Albert", "Alberte", "Alberto", "Albrecht",
+        "Aldo", "Alec", "Alejandro", "Alessandra", "Alexander",
+        "Alexandre", "Alexei", "Alexis", "Alexius", "Alfred", "Alhazen",
+        "Ali", "Alice", "Alicia", "Alistair", "Allan", "Allen",
+        "Allenna", "Allvar", "Alois", "Alonzo", "Alphonse", "Alsayed",
+        "Altman", "Alvar", "Alvin", "Alwin", "Amalie", "Amasa",
+        "Ambrose", "Ambrozic", "Amin", "Amir", "Anatol", "Anders",
+        "Andreas", "Andrei", "Andrew", "André", "Andy", "Angélique",
+        "Anil", "Animesh", "Anita", "Ann", "Anna", "Annie",
+        "Anousheh", "Anselm", "Anthony", "Antoine", "Anton", "Antonella",
+        "Antonia", "Antonio", "Antonius", "Aqa", "Arbour", "Arden",
+        "Armand", "Armin", "Armstrong", "Arnaldo", "Arndt", "Arne",
+        "Arnold", "Arnoult", "Arthur", "Arun", "Arvid", "Asad", "Asaph",
+        "Aseem", "Ashok", "Ashoke", "Asper", "Athanase", "Athanasius",
+        "Atul", "Auer", "August", "Auguste", "Augustin", "Augusto",
+        "Augustus", "Aurel", "Avi", "Axel", "Axworthy", "Aziga", "Aziz",
+        "Azizul", "Azod", "Ba", "Bacharuddin", "Bagshaw", "Bain",
+        "Baldwin", "Balfour", "Baltovich", "Baltzar", "Bandura",
+        "Bangxing", "Banū", "Barbara", "Barlaam", "Barlow",
+        "Barrie", "Barringer", "Barry", "Bartholomew", "Bartolomeo",
+        "Baruj", "Bascom", "Beatrice", "Beatty", "Becky", "Bee", "Beker",
+        "Belaney", "Bell", "Belle", "Belsazar", "Ben", "Benedict",
+        "Bengt", "Benjamin", "Benoît", "Berend", "Berger", "Bernard",
+        "Bernardo", "Bernd", "Bernhard", "Bernt", "Berta", "Berthold",
+        "Besette", "Beth", "Bethune", "Bhāskara", "Big", "Bigelow",
+        "Bill", "Billy", "Bindy", "Bing", "Birbal", "Birjandi", "Bishop",
+        "Biéler", "Bjarni", "Björn", "Black", "Blass", "Blaylock",
+        "Blondin", "Blusson", "Bob", "Bombardier", "Bonnie", "Boris",
+        "Bourassa", "Bourgault", "Boyd", "Boyle", "Braden", "Bradley",
+        "Brant", "Brendan", "Brethren", "Brian", "Bridget", "Brigadier",
+        "Broadbent", "Brockhouse", "Bronfman", "Brook", "Brossard",
+        "Brother", "Brown", "Bruce", "Bruno", "Brunt", "Bryan", "Buck",
+        "Bucke", "Bukhtishu", "Bull", "Burzoe", "Bégin", "Béla", "Bùi",
+        "Bửu", "Cai", "Caleb", "Callaghan", "Callinicus", "Calvert",
         "Calvin", "Camille", "Campbell", "Campeau", "Captain",
-        "Carbonneau", "Cardinal", "Carey", "Carl", "Carlo",
-        "Carlos", "Carol", "Carolus", "Carroll", "Caryl",
-        "Caspar", "Cassius", "Caten", "Cato", "Cecil",
-        "Celeste", "Cerny", "César", "Cesare", "Chambers",
-        "ChanakyaCharaka", "Chang", "Chante", "Chao", "Charles",
-        "Charlotte", "Chauncey", "Chemistry", "Chen", "Chester",
-        "Chiara", "Chief", "Chien", "Childs", "Chris",
-        "Chrisholm", "Christian", "Christiane", "Christof", "Christoph",
-        "Christophe", "Christopher", "Chu", "Clague", "Claire",
-        "Clarence", "Clark", "Claude", "Claudia", "Claus",
-        "Clifford", "Coching", "Cohen", "Cojocaru",
-        "Colin", "Colonel", "Conrad", "Constantine", "Constantinos",
-        "Cooke", "Copps", "Corentin", "Corrado", "Cossette",
-        "Craig", "Cummings", "Cumrun", "Cumshewa", "Cunning",
-        "Currie", "Cynthia", "Damian",
-        "Dan", "Daniel", "Dankmar", "Danny",
-        "Dave", "David", "Davidson", "Dean", "Death",
-        "Debora", "Deborah", "Deepak", "DeGroote", "Delfino",
-        "Demetrius", "Dennis", "Derek", "Derry", "Desmarais",
-        "Detlev", "DeWitt", "Diamond", "Dian", "Dick",
-        "Didymos", "Diederich", "Diederik", "Diedrich", "Dieter",
-        "Dinawaree", "DīnawarīDinawaree", "Ding", "Dionysios", "Dionysius",
-        "Dmitri", "Dmytruk", "Dobbin", "Don", "Donald",
-        "Donaldson", "Doris", "Doug", "Dougal", "Douglas",
-        "Dow", "Dr", "Dragoljub", "Dreimanis", "Dries",
-        "Dwight", "Eastman", "Eaton", "Ebbers",
-        "Ebenezer", "Eberhard", "Ed", "Edgar", "Edmond",
-        "Edmund", "Edouard", "Édouard", "Edsger", "Eduard",
-        "Edward", "Edwin", "Efstratios", "Eilhard", "Eleftherios",
-        "Eleuthère", "Eli", "Eliakim", "Elias", "Élie",
-        "Elijah", "Elisabeth", "Elizabeth", "Ellen", "Elliot",
-        "Elmer", "Eloise", "Elsa", "Elsayed", "Elsie",
-        "Elwin", "Eman", "Emanuel", "Emil", "Emile",
-        "Émile", "Émilie", "Emily", "Engelbert", "Enne",
-        "Enrico", "Enzo", "Ephraim", "Eric", "Erich",
-        "Erik", "Erna", "Ernest", "Ernesto", "Ernst",
-        "ErnstViktor", "Erwin", "Esfarayeni", "Essam", "Etienne",
-        "Étienne", "Eugen", "Eugene", "Eugène", "Eugenio",
-        "Eustachio", "Eustathius", "EutociusChronas", "Eva", "Evangelista",
-        "Evans", "Évariste", "Evliya", "Fabian", "Fabrice",
-        "Faheem", "Fairclough", "Farabi", "Farghani", "Fariborz",
-        "Farid", "Farkas", "Farouk", "Farsi", "Faten",
-        "Fausto", "Fawzia", "Fazari", "Fazle", "Fazlur",
-        "Federico", "Felice", "Felix", "Félix", "Fenerty",
-        "Ferdinand", "Ferdinando", "Ferdowsi", "Ferid", "Fernando",
-        "Fessenden", "Feyz", "Fields", "Filippo", "Fisher",
-        "Florian", "Flossie", "Fonyo", "Fooke", "Foote",
-        "Forrest", "Fortunio", "Fox", "Frances", "Francesco",
-        "Francis", "Franciscus", "François", "Françoise", "Frank",
-        "Franklin", "Franks", "Frans", "Franz", "Fraser",
-        "Fred", "Frédéric", "Frederick", "Frieder", "Friederich",
-        "Friedrich", "Fritjof", "Fritz", "Frum", "Frye",
-        "Fuller", "Fullerian", "Gabriel", "Gabrielse", "Gabrio",
-        "Gaetano", "Gajendra", "Galbraith", "Galileo", "Gamal",
-        "Ganapathi", "Gao", "Gardezi", "Gaspard", "Gaspare",
-        "Gaston", "Geber", "Gene", "General", "Georg",
-        "George", "Georges", "Georgi", "Georgios", "Gerald",
-        "Gerard", "Gerd", "Gerhard", "Gerhart", "Germinal",
-        "Gernot", "Gerry", "Gertrud", "Gesner", "GhazaliGilani,",
-        "Ghiyāth", "Giacinto", "Giacopo", "Giambattista", "Gian",
-        "Gianni", "Gianpiero", "Giauque", "Gilbert", "Gill",
-        "Gilles", "Giorgio", "Giovanni", "Giuliano", "Giulio",
-        "Giuseppe", "Gopalasamudram", "Gordon", "Goresky", "Gorgani",
-        "Gosling", "Gösta", "Gottfried", "Gotthilf", "Gotthold",
-        "Gottlob", "Grace", "Grady", "Graeme", "Granholm",
-        "Grant", "Greg", "Gregor", "Gregorio", "Gregory",
-        "Grete", "Grigori", "Grote", "Groulx", "Guenter",
-        "Guglielmo", "Guido", "Guité", "Günter", "Günther",
-        "Guo", "Guoray", "Gustaf", "Gustav", "Gustavus",
-        "Guujaaw", "Guy", "Gyula", "Håkan", "Hakim",
-        "Hal", "HalayudhaJayadeva", "Hall", "Hallaj", "Haly",
-        "Hamadani", "Hamed", "Hammad", "HanbalHarawi,", "Haney",
-        "Hannes", "Hanns", "Hans", "Hansen", "Har",
-        "Harald", "Harawi", "Harish", "Harley", "Harlow",
-        "Harold", "Haroon", "Haroutioun", "Harren", "Harriet",
-        "Harriette", "Harrison", "Harry", "Hartmut", "Harvey",
-        "Hasan", "Hasani", "Haskell", "Hassan", "Hawley",
-        "Hawthorne", "He", "Heber", "Hechtman", "Hector",
-        "Hedy", "Heide", "Heike", "Heiko", "Heinrich",
-        "Heinz", "Helen", "Helga", "Helge", "Helmut",
-        "Helmuth", "Hendrik", "Henning", "Henri", "Henriette",
-        "Henry", "Herbert", "Herman", "Hermann", "Herrick",
-        "Hervé", "Herzberg", "Hessaby", "Hezarfen", "Hibat",
-        "Hierocles", "Hieronymus", "Hillier", "Hippolyte", "Hiram",
-        "hitects", "Hjalmar", "Ho", "Homayoun", "Homi",
-        "Homolka", "Hongjia", "Hoodless", "Horace", "Horst",
-        "Hotz", "Howard", "Howe", "Hsien", "Hubel",
-        "Hubert", "Hugh", "Hugo", "Hulusi", "Humphrey",
-        "Humphry", "Hunayn", "Ian", "Ibn", "Ibrahim",
-        "Ignacio", "Ignatieff", "Ignaz", "Igo", "Ikhwan",
-        "IlaqiIlyas,", "Ingo", "Innis", "Ioannes", "Ion",
-        "Ioulianos", "Ira", "Irene", "Irène", "Irit",
-        "Irvine", "Irving", "Isaac", "Isfahani", "Ishaq",
-        "Ishfaq", "Ishrat", "Isidore", "IstakhriIranshahri", "Ivan",
-        "Jabbo", "Jābir", "Jack", "Jacks", "Jacob",
-        "Jacques", "Jafar", "Jagadish", "Jagdish",
-        "JaghminiJaldaki", "Jagmohan", "Jakob", "James", "Jamshīd",
-        "Jan", "Jane", "Janet", "Janice", "Janne",
-        "János", "Janus", "Jarrah", "Jay", "Jean",
-        "Jeffrey", "Jegor", "Jennifer", "Jennings", "Jens",
-        "Jeremy", "Jerome", "Jerry", "Jewgraf", "Jia",
-        "Jiamo", "Jiang", "Jim", "Joan", "Joannes",
-        "Joaquin", "Jochen", "Joe", "Joël", "Johan",
-        "Johann", "Johannes", "Johanson", "John", "Johns",
-        "Johnson", "Jon", "Jonas", "Jonathan", "Jones",
-        "Jöns", "Jørgen", "José", "Josef", "Joseph",
-        "Joshua", "Josiah", "Joyce", "József", "Jules",
-        "Julia", "Julie", "Julien", "Julius", "June",
-        "Jürgen", "Justin", "Justus", "JuvayniJuwayni", "JuzjaniJamasb",
-        "Kailas", "Kajetan", "Kalidas", "Kamal", "Kamāl",
-        "KarajiKashani", "Karel", "Karin", "Karl", "Karol",
-        "KashfiKazerouni", "Kate", "Katharina", "Katherine", "Kathy",
-        "Kazem", "Keen", "Kelvin", "Kenneth", "Kent",
-        "Kerim", "KermaniKermani", "Kesterton", "Kevin", "Keyes",
-        "KhademhosseiniKhazeni", "Khalid", "Khalil", "KhazeniKhayyám", "KhorasaniKhujandi",
-        "KiamehrKhwarizmi", "Kieran", "Killam", "Kim", "Kimura",
-        "Kirstin", "Klattasine", "Klaus", "Klein", "Knut",
-        "Kometas", "Konrad", "Kotcherlakota", "Koyah", "Kristian",
-        "Kristin", "Krogh", "KuhiKubra", "Kurd", "Kurt",
-        "Kushyar", "Kyle", "Labib", "Labīd",
-        "Lacombe", "Lagari", "Laliberté", "Lalji", "Lambton",
-        "Lance", "Lanctôt", "Landon", "Landrum", "Langlois",
-        "Laramie", "Larry", "Lars", "László", "Latimer",
-        "Lauren", "Lawrence", "Layton", "Lazareanu", "Lazarus",
-        "Lazzaro", "Le", "Lebrecht", "Lee", "Legere",
-        "Leigh", "Leland", "Len", "Lennart", "Lenore",
-        "Leo", "Leon", "Leonard", "Leonardo", "Leonhard",
-        "Leonid", "Leontios", "Leopold", "Leopoldo", "Lépine",
-        "Leslie", "Lester", "Lewis", "Li", "Lieselott",
-        "Lieutenant", "Lillian", "Lisa", "Lise", "Liselotte",
-        "Liu", "Loránd", "Lorenz", "Lorenzo", "Lorraine",
-        "Lortie", "Lotfi", "Lothar", "Louis", "Lucien",
-        "Lucius", "Luckett", "Ludolph", "Ludovic", "Ludvig",
-        "Ludwig", "Luigi", "Luisa", "Luko", "Lutz",
-        "Lybbert", "Lyman", "Lynn", "Ma", "Macalister",
-        "Macdonald", "Macedonio", "Mackay", "Macoun", "Macphail",
-        "MacPherson", "Mae", "Maged", "Magnus", "MahaniMohammad",
-        "Mahbub", "Mahmoud", "Main", "Mainse", "Major",
-        "MajusiMarvazi", "Malcolm", "Mance", "Mandrake", "Manfred",
-        "Manindra", "Manne", "Mansbridge", "MansooriMuhammad", "Mansukh",
-        "Mansur", "Manuel", "Maquinna", "Marc", "Marcel",
-        "Marcela", "Marcellin", "Marcia", "Marcin", "Marco",
-        "Marcus", "Marek", "Margaret", "Marguerite", "Marian",
-        "Mariano", "Marie", "Marigny", "Marjorie", "Mark",
-        "Markle", "Marks", "Marshall", "Marta", "Martin",
-        "Martinus", "MarvaziMasawaiyh", "Mary", "Maryam", "MashallahMasihi",
-        "Mathias", "Matt", "Matthew", "Matthias", "Matyáš",
-        "Maurice", "Max", "Maxime", "Maximilian", "Maximus",
-        "Mayer", "McCain", "McCoy", "McCulloch", "McGee",
-        "McLachlin", "McLeod", "McLuhan", "McMillan", "McNeil",
-        "McPherson", "McTavish", "Mead", "Meghnad", "Mehdi",
-        "Mehmet", "Mehran", "Meinolf", "Melanie", "Melchisédech",
-        "Menten", "Menyhért", "Merle", "Merrill", "Michael",
-        "Michail", "Michel", "Michelangelo", "Middleton", "Mihajlo",
-        "Mike", "Milgaard", "Mills", "Mir", "Mirko",
-        "Mirza", "MiskawayhMostowfi", "Mo",
-        "Mohamed", "Mohammad", "Molson", "Monica", "Monika",
-        "Monte", "Monty", "Morgan", "Morgentaler", "Morin",
-        "Moritz", "Morrow", "Moshe", "Mostafa", "Mountjoy",
-        "Moustafa", "Moustapha", "Mozaffar", "Muhammad", "Muhammed",
-        "Muḥyi", "Muise", "MullasadraMuqaffa", "Munir", "Munk",
-        "Munro", "Murder", "Murray", "Mustafa", "MuwaffaqMuhammad",
-        "Nachman", "Nader", "NagarjunaPingala", "NagawriNahavandi", "NahavandiNakhshabi",
-        "Naismith", "Najab", "Naldrett", "Napoleone", "Narendra",
-        "NasaviNatili", "Nasir", "Nasīr", "Nat", "Nathan",
-        "Nathanael", "Nathaniel", "NaubakhtAl", "NaubakhtNaubakht", "NawbakhtyNawbakhti",
-        "NayriziNaqshband", "Nazir", "Neil", "NeishaburiNeishaburi", "Nelson",
-        "Neophytos", "Newman", "Nezami", "Nguyet", "Nicephorus",
+        "Carbonneau", "Cardinal", "Carey", "Carl", "Carlo", "Carlos",
+        "Carol", "Caroline", "Carolus", "Carroll", "Caryl", "Caspar",
+        "Cassius", "Caten", "Cato", "Cecil", "Cecila", "Cecilia",
+        "Celeste", "Cerny", "Cesare", "Chambers", "Chang", "Chante",
+        "Chao", "Charles", "Charlotte", "Chauncey",
+        "Chemistry", "Chen", "Chester", "Chiara", "Chief",
+        "Chien", "Chien-Shiung", "Childs", "Chris", "Chrisholm",
+        "Christian", "Christiane", "Christof", "Christoph",
+        "Christophe", "Christopher", "Chu", "Clague", "Claire", "Clara",
+        "Clarence", "Clark", "Claude", "Claudia", "Claus", "Cleopatra",
+        "Clifford", "Coching", "Cohen", "Cojocaru", "Colin", "Colonel",
+        "Conrad", "Constantine", "Constantinos", "Cooke", "Copps",
+        "Corentin", "Corrado", "Cossette", "Craig", "Cummings", "Cumrun",
+        "Cumshewa", "Cunning", "Currie", "Cynthia", "César", "Damian",
+        "Dan", "Daniel", "Dankmar", "Danny", "Dave", "David", "Davidson",
+        "Dean", "Death", "Debora", "Deborah", "Deepak", "Delfino",
+        "Demetrius", "Dennis", "Derek", "Derry", "Desmarais", "Detlev",
+        "Diamond", "Dian", "Dick", "Didymos", "Diederich",
+        "Diederik", "Diedrich", "Dieter", "Dinawaree", "Ding",
+        "Dionysios", "Dionysius", "Dixy", "Dmitri", "Dmytruk", "Dobbin",
+        "Don", "Donald", "Donaldson", "Doris", "Dorothy",
+        "Doug", "Dougal", "Douglas", "Dow", "Dr", "Dragoljub",
+        "Dreimanis", "Dries", "Dwight", "Eastman", "Eaton", "Ebbers",
+        "Ebenezer", "Eberhard", "Ed", "Edgar", "Edmond", "Edmund",
+        "Edouard", "Edsger", "Eduard", "Edward", "Edwin", "Efstratios",
+        "Eilhard", "Eleftherios", "Elena", "Eleuthère", "Eli", "Eliakim",
+        "Elias", "Elijah", "Elisabeth",
+        "Elizabeth", "Ellen", "Elliot", "Elmer", "Eloise",
+        "Elsa", "Elsayed", "Elsie", "Elwin", "Eman", "Emanuel", "Emil",
+        "Emile", "Emily", "Emmanuelle", "Emmy", "Engelbert", "Enne",
+        "Enrico", "Enzo", "Ephraim", "Eric", "Erich", "Erik", "Erna",
+        "Ernest", "Ernesto", "Ernst", "Erwin", "Esfarayeni", "Essam",
+        "Esther", "Etienne", "Eugen", "Eugene", "Eugenio", "Eugène",
+        "Eustachio", "Eustathius", "Eva", "Evangelista", "Evans",
+        "Evliya", "Fabian", "Fabrice", "Faheem", "Fairclough", "Fanny",
+        "Farabi", "Farghani", "Fariborz", "Farid", "Farkas", "Farouk",
+        "Farsi", "Faten", "Fausto", "Fawzia", "Fazari", "Fazle",
+        "Fazlur", "Federico", "Felice", "Felix", "Fenerty", "Ferdinand",
+        "Ferdinando", "Ferdowsi", "Ferid", "Fernando", "Fessenden",
+        "Feyz", "Fields", "Filippo", "Fisher", "Florence", "Florian",
+        "Flossie", "Fonyo", "Fooke", "Foote", "Forrest", "Fortunio",
+        "Fox", "Frances", "Francesco", "Francis", "Franciscus",
+        "Francoise", "Frank", "Franklin", "Franks", "Frans", "Franz",
+        "François", "Françoise", "Fraser", "Fred", "Frederick", "Frieder",
+        "Friederich", "Friedrich", "Fritjof", "Fritz", "Frum", "Frye",
+        "Frédéric", "Fuller", "Fullerian", "Félix", "Gabriel",
+        "Gabrielse", "Gabrio", "Gaetano", "Gajendra", "Galbraith",
+        "Galileo", "Gamal", "Ganapathi", "Gao", "Gardezi", "Gaspard",
+        "Gaspare", "Gaston", "Geber", "Gene", "General", "Georg",
+        "George", "Georges", "Georgi", "Georgios", "Gerald", "Gerard",
+        "Gerd", "Gerhard", "Gerhart", "Germinal", "Gernot", "Gerry",
+        "Gertrud", "Gertrude", "Gerty", "Gesner", "Ghiyāth", "Giacinto",
+        "Giacopo", "Giambattista", "Gian", "Gianni", "Gianpiero",
+        "Giauque", "Gilbert", "Gill", "Gilles", "Giorgio", "Giovanni",
+        "Giuliano", "Giulio", "Giuseppe", "Gopalasamudram", "Gordon",
+        "Goresky", "Gorgani", "Gosling", "Gottfried", "Gotthilf",
+        "Gotthold", "Gottlob", "Grace", "Grady", "Graeme",
+        "Granholm", "Grant", "Greg", "Gregor", "Gregorio", "Gregory",
+        "Grete", "Grigori", "Grote", "Groulx", "Guenter", "Guglielmo",
+        "Guido", "Guité", "Guo", "Guoray", "Gustaf", "Gustav",
+        "Gustavus", "Guujaaw", "Guy", "Gyula", "Gösta", "Günter",
+        "Günther", "Hakim", "Hal", "Hall", "Hallaj", "Haly", "Hamadani",
+        "Hamed", "Hammad", "Haney", "Hannes", "Hanns", "Hans",
+        "Hansen", "Har", "Harald", "Harawi", "Harish", "Harley",
+        "Harlow", "Harold", "Haroon", "Haroutioun", "Harren",
+        "Harriet", "Harriette", "Harrison", "Harry", "Hartmut", "Harvey",
+        "Hasan", "Hasani", "Haskell", "Hassan", "Hawley", "Hawthorne",
+        "He", "Heber", "Hechtman", "Hector", "Hedy", "Heide", "Heike",
+        "Heiko", "Heinrich", "Heinz", "Helen", "Helga", "Helge",
+        "Helmut", "Helmuth", "Hendrik", "Henning", "Henri", "Henrietta",
+        "Henriette", "Henry", "Herbert", "Herman", "Hermann",
+        "Herrick", "Hervé", "Herzberg", "Hessaby", "Hezarfen", "Hibat",
+        "Hierocles", "Hieronymus", "Hildegard", "Hillier", "Hippolyte",
+        "Hiram", "Hjalmar", "Ho", "Homayoun", "Homi", "Homolka",
+        "Hongjia", "Hoodless", "Horace", "Horst", "Hotz", "Howard",
+        "Howe", "Hsien", "Hubel", "Hubert", "Hugh", "Hugo", "Hulusi",
+        "Humphrey", "Humphry", "Hunayn", "Hypatia", "Håkan", "Ian",
+        "Ibn", "Ibrahim", "Ignacio", "Ignatieff", "Ignaz", "Igo",
+        "Ikhwan", "Inge", "Ingo", "Innis", "Ioannes", "Ion", "Ioulianos",
+        "Ira", "Irene", "Irit", "Irvine", "Irving", "Irène", "Isaac",
+        "Isfahani", "Ishaq", "Ishfaq", "Ishrat", "Isidore", "Ivan",
+        "Jabbo", "Jack", "Jacks", "Jacob", "Jacques", "Jafar",
+        "Jagadish", "Jagdish", "Jagmohan", "Jakob", "James", "Jamshīd",
+        "Jan", "Jane", "Janet", "Janice", "Janne", "Janus",
+        "Jarrah", "Jay", "Jean", "Jeffrey", "Jegor", "Jennifer",
+        "Jennings", "Jens", "Jeremy", "Jerome", "Jerry", "Jewgraf",
+        "Jia", "Jiamo", "Jiang", "Jim", "Joan", "Joannes", "Joaquin",
+        "Jochen", "Joe", "Johan", "Johann", "Johannes", "Johanson",
+        "John", "Johns", "Johnson", "Jon", "Jonas", "Jonathan", "Jones",
+        "Josef", "Joseph", "Joshua", "Josiah", "José", "Joy", "Joyce",
+        "Joël", "Jules", "Julia", "Julie", "Julien", "Julius", "June",
+        "Justin", "Justus", "János", "József", "Jöns", "Jørgen",
+        "Jürgen", "Jābir", "Kailas", "Kajetan", "Kalidas", "Kamal",
+        "Kamāl", "Karel", "Karin", "Karl", "Karol", "Kate", "Katharina",
+        "Katherine", "Kathy", "Kazem", "Keen", "Kelvin", "Kenneth",
+        "Kent", "Kerim", "Kesterton", "Kevin", "Keyes", "Khalid",
+        "Khalil", "Kieran", "Killam", "Kim", "Kimura", "Kirstin",
+        "Klattasine", "Klaus", "Klein", "Knut", "Kometas", "Konrad",
+        "Kotcherlakota", "Koyah", "Kristian", "Kristin", "Krogh", "Kurd",
+        "Kurt", "Kushyar", "Kyle", "Labib", "Labīd", "Lacombe",
+        "Lagari", "Laliberté", "Lalji", "Lambton", "Lance", "Lanctôt",
+        "Landon", "Landrum", "Langlois", "Laramie", "Larry", "Lars",
+        "Latimer", "Laura", "Lauren", "Lawrence", "Layton", "Lazareanu",
+        "Lazarus", "Lazzaro", "Le", "Lebrecht", "Lee", "Legere", "Leigh",
+        "Leland", "Len", "Lennart", "Lenore", "Leo", "Leon", "Leonard",
+        "Leonardo", "Leonhard", "Leonid", "Leontios", "Leopold",
+        "Leopoldo", "Leslie", "Lester", "Lewis", "Li", "Libbie",
+        "Lieselott", "Lieutenant", "Lillian", "Lisa",
+        "Lise", "Liselotte", "Liu", "Lorenz", "Lorenzo",
+        "Lorraine", "Lortie", "Loránd", "Lotfi", "Lothar", "Louis",
+        "Lucien", "Lucius", "Luckett", "Ludolph", "Ludovic", "Ludvig",
+        "Ludwig", "Luigi", "Luisa", "Luko", "Lutz", "Lybbert", "Lydia",
+        "Lyman", "Lynn", "László", "Lépine", "Ma", "Macalister",
+        "Macdonald", "Macedonio", "Mackay", "Macoun", "Macphail", "Mae",
+        "Maged", "Magnus", "Mahbub", "Mahmoud", "Main", "Mainse",
+        "Major", "Malcolm", "Mance", "Mandrake", "Manfred", "Manindra",
+        "Manne", "Mansbridge", "Mansukh", "Mansur", "Manuel", "Maquinna",
+        "Marc", "Marcel", "Marcela", "Marcellin", "Marcia", "Marcin",
+        "Marco", "Marcus", "Marek", "Margaret", "Margarethe",
+        "Marguerite", "Maria", "Marian", "Mariano",
+        "Marie", "Marigny", "Marjorie", "Mark", "Markle", "Marks",
+        "Marshall", "Marta", "Martin", "Martinus", "Mary",
+        "Maryam", "Mathias", "Matt", "Matthew", "Matthias", "Matyáš",
+        "Maurice", "Max", "Maxime", "Maximilian", "Maximus", "May",
+        "Mayer", "Mead", "Meghnad", "Mehdi", "Mehmet", "Mehran",
+        "Meinolf", "Melanie", "Melchisédech", "Melissa", "Menten",
+        "Menyhért", "Merle", "Merrill", "Michael", "Michail", "Michel",
+        "Michelangelo", "Middleton", "Mihajlo", "Mike", "Milgaard",
+        "Mills", "Mir", "Mirko", "Mirza", "Mo", "Mohamed", "Mohammad",
+        "Molson", "Monica", "Monika", "Monte", "Monty", "Morgan",
+        "Morgentaler", "Morin", "Moritz", "Morrow", "Moshe", "Mostafa",
+        "Mountjoy", "Moustafa", "Moustapha", "Mozaffar", "Muhammad",
+        "Muhammed", "Muise", "Munir", "Munk", "Munro", "Murder",
+        "Murray", "Mustafa", "Muḥyi", "Nachman", "Nader", "Naismith",
+        "Najab", "Naldrett", "Nancy", "Napoleone", "Narendra", "Nasir",
+        "Nat", "Nathan", "Nathanael", "Nathaniel", "Nazir", "Neil",
+        "Nelson", "Neophytos", "Newman", "Nezami", "Nguyet", "Nicephorus",
         "Nicholas", "Nicola", "Nicolas", "Nicolaus", "Nicole",
-        "Nicolò", "Niels", "Nikephoros", "Niketas", "Niklas",
-        "Nikola", "Nikolai", "Nikolaos", "Nikolaus", "Nils",
-        "Nima", "Nitya", "Niyaz", "Noam", "Noella",
-        "Noga", "Norbert", "Noreen", "Norman", "Norwest",
-        "Nur", "Nurbakhshi", "Ogden", "Olaus", "Olav",
-        "Ole", "Olga", "Olinde", "Oliver", "Olson",
-        "Omar", "Orest", "Ormsby", "Osborne", "Oscar",
-        "Oskar", "Osler", "Othenio", "Othmar", "Ottaviano",
-        "Otto", "Ottomar", "Ouyang", "Owen", "Padmanabhan",
-        "Pafnuti", "Paikin", "Palmer", "Pan", "Pandurang",
-        "Paolo", "Papineau", "ParacelsusClemens", "Parker", "Pasquale",
-        "Patcha", "Patriarch", "Patrick", "Pattison", "Paul",
-        "Pedro", "Pegahmagabow", "Pehr", "Pei", "Peltier",
-        "Penfield", "Per", "Percy", "Perri", "Pervez",
-        "Pete", "Peter", "Philip", "Philipp", "Philippe",
-        "PiapotTecumseh", "Pickersgill", "Pickton", "Pierre", "Pieter",
-        "Pietro", "Pinker", "Piri", "Pjotr", "Placidus",
-        "Platon", "Polanyi", "Porritt", "Pouliot", "Prasanta",
-        "Price", "Prince", "Prodromos", "Prof", "Prosper",
-        "Qāḍī", "Qazi", "QazwiniQumi", "QumriQushayri", "Qutb",
-        "Rachid", "Rafi", "Raghunath", "Raimondo", "Rainer",
-        "Rajeev", "Rakesh", "Ralf", "Ralph", "Ralston",
-        "Ram", "Ramesh", "Ranajit", "Randi", "Randy",
-        "Ranj", "Raoul", "Ray", "Raymond", "RaziRazi",
-        "Raziuddin", "Rear", "Rebecca", "Redpath", "Reeves",
-        "Reichmann", "Reinhard", "Reinhold", "Rémy", "Ren",
-        "Rene", "René", "Reyat", "Rhetorios", "Riaz",
-        "RiazuddinAbdul", "Richard", "Rick", "Ricketts", "Riel",
-        "Rivard", "Robert", "Roberta", "Roberto", "Roberts",
-        "Robertson", "Rocha", "Roddam", "Rodney", "Roger",
-        "Rogers", "Roland", "Rolf", "Rollo", "Ron",
-        "Ronald", "Rosalind", "Rosalinde", "Rose", "Ross",
-        "Roth", "Rousseau", "Roy", "Royal", "Rüdiger",
-        "Rudolf", "Rudolph", "RumiRashid", "Rune", "Rupert",
-        "Ruth", "Ruttan", "Ryan", "Ryerson", "Sabine",
-        "Sabourin", "SabzevariSepahsalar", "Sackett", "Safer", "Saghani",
-        "Saghir", "SahlSahl", "Saint", "Sake", "Salim",
-        "Salimuzzaman", "Salman", "Salomon", "Salvatore", "Sam",
-        "SamarqandiSamarqandi", "Sameera", "Samir", "Samuel", "Sandra",
-        "Sandy", "Sanford", "Sangster", "Sanjeev", "Saputo",
-        "SarakhsiSarakhsi", "SarakhsiSeifzadeh", "Saul", "Saunders", "Schawlow",
-        "Schindler", "Schlumberger", "Schnarre", "Scholes", "Scipione",
-        "Scott", "Sean", "Sebastian", "See", "Selim",
-        "Selye", "Sergei", "Sergey", "Serhij", "Sethus",
-        "Seymour", "Shahid", "Shahrastani", "ShahrazuriShahrazuri", "Shams",
-        "Shanti", "Shao", "Shapur", "Sharaf", "Sharp",
-        "Shawn", "Shaykh", "Sheikh", "Sheila", "Shen",
-        "Shi", "Shinya", "ShiraziShirazi", "ShiraziSijzi", "Shoukai",
-        "Shreeram", "Sicard", "Sidney", "Siegfried", "Siegmund",
-        "Sigmund", "SijziSoleiman", "Silvanus", "Simard", "Siméon",
-        "Simon", "Simpson", "Sir", "Siva", "SlumachSmith,",
-        "Smith", "Sofia", "Sofja", "Sol",
-        "Song", "Sophie", "Sophus", "Sotirichos", "Srinivasa",
-        "St.", "Stacy", "Stairs", "Stam", "Stanley",
-        "Stanton", "Starkman", "Steele", "Stefan", "Stefano",
+        "Nicolò", "Niels", "Nikephoros", "Niketas", "Niklas", "Nikola",
+        "Nikolai", "Nikolaos", "Nikolaus", "Nils", "Nima", "Nitya",
+        "Niyaz", "Noam", "Noella", "Noga", "Norbert", "Noreen", "Norman",
+        "Norwest", "Nur", "Nurbakhshi", "Ogden", "Olaus", "Olav",
+        "Ole", "Olga", "Olinde", "Oliver", "Olson", "Omar", "Orest",
+        "Ormsby", "Osborne", "Oscar", "Oskar", "Osler", "Othenio",
+        "Othmar", "Ottaviano", "Otto", "Ottomar", "Ouyang", "Owen",
+        "Padmanabhan", "Pafnuti", "Paikin", "Palmer", "Pan", "Pandurang",
+        "Paolo", "Papineau", "Parker", "Pasquale", "Patcha",
+        "Patriarch", "Patricia", "Patrick", "Pattison", "Paul", "Pedro",
+        "Pegahmagabow", "Pehr", "Pei", "Peltier", "Penfield", "Per",
+        "Percy", "Perri", "Pervez", "Pete", "Peter", "Philip", "Philipp",
+        "Philippe", "Pickersgill", "Pickton", "Pierre", "Pieter",
+        "Pietro", "Pinker", "Piri", "Pjotr", "Placidus", "Platon",
+        "Polanyi", "Porritt", "Pouliot", "Prasanta", "Price", "Prince",
+        "Prodromos", "Prof", "Prosper", "Qazi", "Qutb", "Qāḍī", "Rachel",
+        "Rachid", "Rafi", "Raghunath", "Raimondo", "Rainer", "Rajeev",
+        "Rakesh", "Ralf", "Ralph", "Ralston", "Ram", "Ramesh", "Ranajit",
+        "Randi", "Randy", "Ranj", "Raoul", "Ray", "Raymond", "Razi",
+        "Raziuddin", "Rear", "Rebecca", "Redpath", "Reeves", "Reichmann",
+        "Reinhard", "Reinhold", "Ren", "Rene", "René", "Reyat",
+        "Rhetorios", "Riaz", "Riazuddin", "Richard", "Rick", "Ricketts",
+        "Riel", "Rita", "Rivard", "Robert", "Roberta", "Roberto",
+        "Roberts", "Robertson", "Rocha", "Roddam", "Rodney", "Roger",
+        "Rogers", "Roland", "Rolf", "Rollo", "Ron", "Ronald",
+        "Rosalind", "Rosalinde", "Rosalyn", "Rose", "Ross", "Roth",
+        "Rousseau", "Roy", "Royal", "Rudolf", "Rudolph", "Rumi", "Rune",
+        "Rupert", "Ruth", "Ruttan", "Ryan", "Ryerson", "Rémy",
+        "Rüdiger", "Sabine", "Sabourin", "Sabzevari", "Sackett",
+        "Safer", "Saghani", "Saghir", "Sahl", "Saint", "Sake", "Salim",
+        "Salimuzzaman", "Sally", "Salman", "Salomon", "Salvatore", "Sam",
+        "Samarqandi", "Sameera", "Samir", "Samuel", "Sandra", "Sandy",
+        "Sanford", "Sangster", "Sanjeev", "Saputo", "Sarah", "Sarakhsi",
+        "Saul", "Saunders", "Schawlow", "Schindler", "Schlumberger",
+        "Schnarre", "Scholes", "Scipione", "Scott", "Sean", "Sebastian",
+        "See", "Selim", "Selye", "Sergei", "Sergey", "Serhij", "Sethus",
+        "Seymour", "Shahid", "Shahrastani", "Shahrazuri", "Shams",
+        "Shanti", "Shao", "Shapur", "Sharaf", "Sharp", "Shawn", "Shaykh",
+        "Sheikh", "Sheila", "Shen", "Shi", "Shinya",
+        "Shirazi", "Shirley", "Shoukai", "Shreeram", "Sicard", "Sidney",
+        "Siegfried", "Siegmund", "Sigmund", "Silvanus", "Simard", "Simon",
+        "Simpson", "Siméon", "Sir", "Siva", "Smith", "Sofia",
+        "Sofja", "Sol", "Song", "Sophie", "Sophus",
+        "Sotirichos", "Srinivasa", "St.", "Stacy", "Stairs", "Stam",
+        "Stanley", "Stanton", "Starkman", "Steele", "Stefan", "Stefano",
         "Stefanos", "Stelck", "Stephanie", "Stephanos", "Stephen",
         "Stephenson", "Steve", "Steven", "Stewart", "Strangway",
         "Stronach", "Stuart", "Studholme", "Su", "Subramanyan",
-        "Suhrawardi", "Sujoy", "Sultan", "Sultana", "Sun",
-        "Sunatori", "Sundback", "Sunder", "Sunil", "Susanne",
-        "SushrutaVyasa", "Suzuki", "Svante", "Sven", "Sydney",
-        "Syed", "Sylvestre", "Symeon", "Symons", "Sztybel",
-        "TabaraniTabari", "TabariTabari", "TabriziTaftazani", "Taché", "Taha",
-        "TahirTayfur", "Talgat", "Tamsin", "Tan", "Tanner",
-        "Taqi", "TāriqTirmidhi", "Taryn", "Taube", "Taylor",
-        "Tej", "Tekakwitha", "Terry", "Thatcher", "The",
-        "Theo", "Theodigios", "Theodoghius", "Theodor", "Theodore",
-        "Théodore", "Theodoros", "Theofilos", "Thériault", "This",
-        "Thomas", "Thomson", "Thorvald", "Tiberius", "Till",
-        "Tilley", "Tim", "Timotheos", "Timothy", "Tipu",
-        "Tobias", "Todd", "Toffy", "Tom", "Tommaso",
-        "Tong", "Tony", "Torsten", "Traugott", "Trinh",
-        "Trueman", "Truscott", "Tuan", "TusiTusi",
-        "Tyrrell", "Uchida", "Ugo", "Ulisse", "Ulrich",
-        "Ulugh", "Urbain", "Uriel", "Urry", "Usamah",
-        "Utpal", "Uwe", "Václav", "Vainu", "Valentin",
-        "Vanier", "Vannoccio", "Vaughan", "Venkatraman", "Vernon",
-        "Vickrey", "Vicky", "Victor", "Vidus", "Vijay",
-        "Vikram", "Viktor", "Vilhelm", "Vincent", "Vincenzo",
-        "VincenzoFederico", "Vinod", "Vinton", "Vito", "Vittorio",
-        "Vladimir", "Volker", "Waddah", "Walker", "Wallace",
-        "Waloddi", "Walter", "Walther", "Wang", "Waqidi",
-        "Ward", "Warder", "Warner", "Warren", "Wasylyk",
-        "Watson", "Wei", "Wendell", "Weng", "Weniamin",
-        "Werbowy", "Werner", "Wernher", "Weston", "Wickanninish",
-        "Wiktor", "Wilbur", "Wilfried", "Wilhelm", "Willem",
-        "William", "Williams", "Willson", "Willy", "Wilma",
-        "Wilson", "Win", "Winegard", "Wladimir", "Władysław",
-        "Wo", "Woldemar", "Wolfgang", "Wolfram", "Woodbine",
-        "Woodrow", "Woodward", "Wu", "Xavier", "Xiangzhong",
-        "Xiaobo", "Xie", "Xuong", "Yang", "Yao",
-        "Yaqūb", "YazdadYaqūb", "Ye", "Yehia", "Yehuda",
-        "Yellapragada", "Yingjie", "York", "Yoshihiro", "Young",
-        "Yu", "Yuanzhang", "Yumn", "Yusuf", "Zacharias",
-        "Zachary", "Zaghloul", "zahid", "ZaiyatZamakhshari", "Zarrin",
-        "Zayn", "Zhang", "Zhao", "Zheng", "Zhou",
-        "Zhu", "Zhuang", "Zimmer", "Zygmunt"};
+        "Suhrawardi", "Sujoy", "Sultan", "Sultana", "Sun", "Sunatori",
+        "Sundback", "Sunder", "Sunil", "Susanne", "Suzuki", "Svante",
+        "Sven", "Sydney", "Syed", "Sylvestre", "Symeon", "Symons",
+        "Sztybel", "Taché", "Taha", "Talgat", "Tamsin", "Tan", "Tanner",
+        "Taqi", "Taryn", "Taube", "Taylor", "Tej", "Tekakwitha",
+        "Terry", "Thatcher", "The", "Theo", "Theodigios", "Theodoghius",
+        "Theodor", "Theodore", "Theodoros", "Theofilos", "This", "Thomas",
+        "Thomson", "Thorvald", "Théodore", "Thériault", "Tiberius",
+        "Till", "Tilley", "Tim", "Timotheos", "Timothy", "Tipu",
+        "Tobias", "Todd", "Toffy", "Tom", "Tommaso", "Tong", "Tony",
+        "Torsten", "Traugott", "Trinh", "Trota", "Trueman", "Truscott",
+        "Tuan", "Tyrrell", "Uchida", "Ugo", "Ulisse", "Ulrich", "Ulugh",
+        "Urbain", "Uriel", "Urry", "Usamah", "Utpal", "Uwe", "Vainu",
+        "Valentin", "Vanier", "Vannoccio", "Vaughan", "Venkatraman",
+        "Vernon", "Vickrey", "Vicky", "Victor", "Vidus", "Vijay",
+        "Vikram", "Viktor", "Vilhelm", "Vincent", "Vincenzo", "Vinod",
+        "Vinton", "Virginia", "Vito", "Vittorio", "Vladimir", "Volker",
+        "Václav", "Waddah", "Walker", "Wallace", "Waloddi", "Walter",
+        "Walther", "Wang", "Wangari", "Waqidi", "Ward", "Warder",
+        "Warner", "Warren", "Wasylyk", "Watson", "Wei", "Wendell",
+        "Weng", "Weniamin", "Werbowy", "Werner", "Wernher", "Weston",
+        "Wickanninish", "Wiktor", "Wilbur", "Wilfried", "Wilhelm",
+        "Willem", "William", "Williams", "Willson", "Willy", "Wilma",
+        "Wilson", "Win", "Winegard", "Winifred", "Wladimir", "Wo",
+        "Woldemar", "Wolfgang", "Wolfram", "Woodbine", "Woodrow",
+        "Woodward", "Wu", "Władysław", "Xavier", "Xiangzhong", "Xiaobo",
+        "Xie", "Xilingshi", "Xuong", "Yang", "Yao", "Yaqūb", "Ye",
+        "Yehia", "Yehuda", "Yellapragada", "Yingjie", "York", "Yoshihiro",
+        "Young", "Yu", "Yuanzhang", "Yumn", "Yusuf", "Zacharias",
+        "Zachary", "Zaghloul", "Zarrin", "Zayn", "Zhang", "Zhao",
+        "Zheng", "Zhou", "Zhu", "Zhuang", "Zimmer", "Zygmunt",
+        "zahid", "Ányos", "Édouard", "Élie", "Émile",
+        "Émilie", "Étienne", "Évariste"};
+
+	/** About 3670 last names which we use as template to generate random first name + last name
+	 *  combinations.
+	 *  
+	 *  After changing this list please do what is described in the documentation of
+	 *  {@link #main(String[])}. */
     final static String[] lastnames = {
-        ".", "&", "—", "1.", "3.",
-        "a", "A.", "Abarth", "Abbas", "Abbās",
+        "A.", "Abarth", "Abbas", "Abbās",
         "Abbe", "Abdollah", "Abdul", "Abdulaziz", "Abel",
         "Abenragel", "Abhay", "Abhyankar", "abi", "Abi",
         "Abidi", "Abolfadl", "Abol-fath", "Abol-hasan", "Abouleish",
@@ -363,27 +406,27 @@ public class RandomName
         "Ahad", "Ahmad", "Ahmed", "Ahmet", "Aho",
         "Ahuja", "Aimee", "Airy",
         "Aitken", "a.k.a.", "Akhtar", "al", "Ala",
-        "Alabbas", "Alan", "Alana", "Baghdaadi", "Baghdadi",
+        "Alabbas", "Alan", "Alana", "Baghdaadi",
         "Baitar", "Balkhi", "Banna", "Battānī",
         "Albers", "Albert", "Bīrūnī", "Alboacen", "Būzjānī",
         "Alcock", "Darir", "Alderson", "Din", "Dīn",
         "Aldini", "Dowleh", "Aleksis", "Alexander", "Alexandre",
         "Alexandrinos", "Alexandrowitsch", "Alexejewitsch", "Fārisī", "Fazari",
         "Alfred", "Alfvén", "Gazzar", "Habib", "Hamīd",
-        "Harrānī", "Hasan", "Haytham", "Ali", "Alī",
-        "Idrisi", "Istikmal", "Alivisatos", "Jawharī", "Jazzar",
+        "Harrānī", "Ali", "Alī",
+        "Istikmal", "Alivisatos", "Jawharī", "Jazzar",
         "Jurajani", "Kāshī", "Khatib", "Khāzin", "Khujandi",
-        "Khwārizmī", "Allah", "Allan", "Latif", "Allee",
+        "Allah", "Allan", "Latif", "Allee",
         "Allègre", "Allen", "Allenby", "Allman", "Maghribī",
-        "Majusi", "Muqaddasi", "Mutaminwas", "Muwaffak",
+        "Majusi", "Muqaddasi", "Mutaminwas",
         "Nafis", "Alon", "Alonzo", "Aloysius", "Alpert",
         "Alphonse", "Qalasādī", "Qalqashandi", "Qasim", "Quff",
-        "Qūhī", "Rahman", "Rahman", "Rahwi", "Alroy",
-        "Rūmī", "Sadiq", "Safa", "Samarqandī", "Shatir",
-        "Alshaykh", "Shirazi", "also:", "Sufi:", "Alt",
-        "Tabari", "Alter", "Thahabi", "Althaus", "Altmeyer",
-        "Turabi", "Tusi", "Tūsī", "Uqlidisi",
-        "Alwall", "Yaman", "Zahrawi", "Zarqālī", "Alzinger",
+        "Qūhī", "Rahwi", "Alroy",
+        "Rūmī", "Safa", "Samarqandī", "Shatir",
+        "Alshaykh", "Alt",
+        "Alter", "Thahabi", "Althaus", "Altmeyer",
+        "Turabi", "Tūsī",
+        "Alwall", "Yaman", "Zarqālī", "Alzinger",
         "Amaldi", "Amandus", "Amara", "Ambroise", "Ambronn",
         "Ambrose", "Ambrosius", "Amdahl", "Amed", "Amedeo",
         "Amici", "Amin", "Amoretti", "Ampère", "Amsler-Laffon",
@@ -400,7 +443,7 @@ public class RandomName
         "Argand", "Argyros", "Arkani-Hamed", "Armstrong", "Arndt",
         "Arnett", "Arnold", "Aronhold", "Arora", "Arrhenius",
         "Arrighetti", "Arseneau", "Arsenjew", "Artemjew", "Arthur",
-        "article:", "articles:", "Artin", "artists", "Arturo",
+        "Artin", "artists", "Arturo",
         "Arzelà", "as", "Aschoff", "Ascoli", "Ashtekar",
         "Asker", "Aslam", "Aslihan", "Asperger",
         "Asplund", "astronomers", "Astrophysicist", "astrophysicists", "Atala",
@@ -414,7 +457,7 @@ public class RandomName
         "Badawi", "Baerwald", "Baghdadi", "Bailey", "Bain",
         "Bajjah", "Baker", "Balaram", "Baldwin", "Ball",
         "Balmer", "Baltzer", "Balzani", "Balzert", "Banda",
-        "bands", "Banerjee", "Banting", "Bappu", "Baptiste",
+        "bands", "Banerjee", "Banting", "Bappu",
         "Baptiste", "Baptiste-Charles-Joseph", "Baqillani", "Baqir", "Bar",
         "Baran", "Bárány", "Barbara", "Barclay", "Baril",
         "Barker", "Barlow", "Baron", "Barratt-Boyes", "Barrett",
@@ -426,7 +469,7 @@ public class RandomName
         "Beetz", "Beg", "Behçet", "Behlendorf", "Bélanger",
         "Belgrado", "Bell", "Bellard", "Belli", "Bellocchi",
         "Beltrami", "Bement", "Bemer", "Ben", "Ben-Abraham",
-        "Benacerraf", "Benedict", "Beneke", "Benischke", "Benjamin",
+        "Benacerraf", "Benedict", "Beneke", "Benischke",
         "Benjamin", "Bennett", "Benz", "Bergen", "Bergter",
         "Berkeley", "Berliner", "Berman", "Bernard", "Berners-Lee",
         "Bernhard", "Bernie", "Bernstein", "Berthelot", "Bertin",
@@ -610,7 +653,7 @@ public class RandomName
         "Förstemann", "Forsyth", "Forthomme", "Fortnow", "Fossel",
         "Fossey", "Foster", "Foucault", "Fourier", "Fowler",
         "Fox", "Frances", "Francesco", "Francis",
-        "Franck", "Francoeur", "François", "François", "Frank",
+        "Franck", "Francoeur", "François", "Frank",
         "Franke", "Frankel", "Frankenheim", "Frankl", "Franklin",
         "Frankston", "Franz", "Frattini", "Fraunhofer", "Frazer",
         "Frédéric", "Frederick", "Frederik", "Fredholm", "Freeden",
@@ -658,7 +701,7 @@ public class RandomName
         "Grotthuß", "Grunert", "Grünwald", "Gruson", "Gudermann",
         "Guérin", "Gugler", "Guha", "Guillaume", "Guillemin",
         "Guinier", "Guldberg", "Gullstrand", "Gumlich", "Gunanoot",
-        "Günther", "Guo", "Guozhi", "Gustaf", "Gustaf",
+        "Günther", "Guo", "Guozhi", "Gustaf",
         "Gustafson", "Gustav", "Gustave", "Guthrie", "Guy",
         "Guye", "Gwynne-Vaughan", "H.", "Haan",
         "Haas", "Haast", "Habachi", "Haber", "Habert",
@@ -856,7 +899,7 @@ public class RandomName
         "Munqidh", "Munro", "Murad", "Murphy", "Murray",
         "Musa", "Mūsā", "Musabayev", "Musgrave", "Musharafa",
         "musicians", "Musivand", "Muslim", "Muszaphar",
-        "Muwaffak:", "Myron", "Mystic-philosopher", "N.",
+        "Muwaffak", "Myron", "Mystic-philosopher", "N.",
         "Nabatiye", "Nagel", "Nahanee", "Nahar", "Nahavandi",
         "Nahum", "Nappi", "Naqi", "Naqvi", "Narasimha",
         "Narayana", "Nardelli", "Narlikar", "Nasawi", "Nason",
@@ -906,7 +949,7 @@ public class RandomName
         "Phong", "Photius", "Phragmén", "physician", "physicist",
         "Physicist", "Picard", "Pichon", "Pichot", "Pickel",
         "Pickering", "Pictet", "Piddington", "Pierce", "Pierpont",
-        "Pierre", "Pierre", "Piers", "Pike", "Pinart",
+        "Pierre", "Piers", "Pike", "Pinart",
         "Pincherle", "Pineo", "Piola", "pioneers", "Pirquet",
         "Pisa", "Pisani", "Pisidis", "Pispers",
         /* Yes, this is an easter egg. About one in 6 Million names
@@ -998,7 +1041,7 @@ public class RandomName
         "Shukla", "Shukor", "Shull", "Shuster", "Siacci",
         "Sibener", "Siddiqui", "Sidney", "Siegbahn", "Sigismund",
         "Sigmund", "Sijzi", "Sikelos", "Silberschlag", "Siliciano",
-        "Sim", "Šimerka", "Simon", "Simon", "Simonds",
+        "Sim", "Šimerka", "Simon", "Simonds",
         "Simpson", "Sina", "Singer", "Singh", "Sinsteden",
         "Sir", "Sirin", "Sixun", "Slobodkin", "Small",
         "Smith", "Smoluchowski", "Snell", "Śniadecki", "Sohncke",
@@ -1109,30 +1152,42 @@ public class RandomName
         "Zuckermandel", "Zuhr", "Zülicke", "Zwicker", "اخوان",
         "الصفا", "الوفا", "وخلان"};
     
-    /**
-     * Generate a random nickname consisting of firstname, a possible middle part and a lastname. They are separated using the given separator.
-     * Does not respect length limitation of nicknames. You need to repeat calling this function until {@link Identity#validateNickname(String)} does not throw.
-     */
-    static private String newNameBaseUnlimitedLength(String seperator) {
-        StringBuilder name = new StringBuilder();
+    /** The core generator function which actually generates names.
+     *  
+     *  NOTICE: This does **not** check if they're valid in terms of
+     *  {@link Identity#validateNickname(String)}! Use {@link #newNameBase(String)} instead.
+     *  
+     *  See {@link #newNickname()} for a description of what the names will look like.
+     *  
+     *  @param separator Used to separate first name, middle names and last name. */
+    static private String newNameBaseUnlimitedLength(String separator) {
         Random rand = new Random();
-        String nextpart = new String(firstnames[rand.nextInt(firstnames.length)]);
-        name.append(nextpart);
-        name.append(seperator);
-        nextpart = lastnames[rand.nextInt(lastnames.length)];
-        name.append(nextpart);
-        /* Append nameparts as long as the last part is either not
-         * sensible (ends with . [middle name] or is ibn ["son of"] or
-         * is al [arabic prefix for "the"] or is just 1 letter) or you
-         * roll 1 on a die :) */
-        while (nextpart.endsWith(".") || "ibn".equals(nextpart) || seperator.equals(nextpart) || "al".equals(nextpart) || rand.nextInt(6) == 1) {
-                name.append(seperator);
-                nextpart = lastnames[rand.nextInt(lastnames.length)];
-                name.append(nextpart);
-            }
+        StringBuilder name = new StringBuilder(Identity.MAX_NICKNAME_LENGTH);
+        String previousPart = firstnames[rand.nextInt(firstnames.length)];
+        name.append(previousPart);
+        
+        do {
+			name.append(separator);
+			previousPart = lastnames[rand.nextInt(lastnames.length)];
+			name.append(previousPart);
+			
+			// Append nameparts as long as the last part is either not sensible or you roll 1 on a
+			// die :)
+		} while (
+			previousPart.length() == 1 ||  // just 1 letter
+			rand.nextInt(6) == 1       ||  // roll a die
+			previousPart.endsWith(".") ||  // middle name
+			isAllLowercase(previousPart)   // middle name, things like "of", "the", "ibn", "al"
+		);
+		
         return name.toString();
     };
     
+    /** Wrapper around {@link #newNameBaseUnlimitedLength(String)} which generates names until
+     *  {@link Identity#validateNickname(String)} considers one a valid nickname.
+     * 
+     *  @param separator Used to separate first name, middle names and last name.
+     *      Use {@link #newNickname()} for the default separator. */
     static private String newNameBase(String separator) {
     	String name;
 		boolean invalidName = true;
@@ -1152,7 +1207,17 @@ public class RandomName
     	return name;
     }
 
-    /** Generate a Nickname: No spaces. */
+    /** Generates a random nickname which satisfies {@link Identity#validateNickname(String)}.
+     *  
+     *  Typically consists of the following, each separated by "_":
+     *  - a first name
+     *  - zero or more middle names
+     *  - a last name.
+     *  
+     *  Each of these three components are randomly chosen from sets of real human first and last
+     *  names.
+     *  
+     *  Gender-balance is roughly obeyed. */
     static public String newNickname() {
         return newNameBase("_");
     };
