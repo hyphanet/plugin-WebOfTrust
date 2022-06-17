@@ -1138,16 +1138,14 @@ public final class RandomName {
 			previousPart = lastnames[rand.nextInt(lastnames.length)];
 			name.append(previousPart);
 			
-			/* Append nameparts as long as the last part is either not
-			 * sensible (ends with . [middle name] or is ibn ["son of"] or
-			 * is al [arabic prefix for "the"] or is just 1 letter) or you
-			 * roll 1 on a die :) */
+			// Append nameparts as long as the last part is either not sensible or you roll 1 on a
+			// die :)
 		} while (
-			previousPart.endsWith(".") ||
-			previousPart.equals("ibn") ||
-			previousPart.equals("al") ||
-			previousPart.length() == 1 ||
-			rand.nextInt(6) == 1
+			previousPart.endsWith(".") ||  // middle name
+			previousPart.equals("ibn") ||  // "son of"
+			previousPart.equals("al") ||   // Arabic prefix for "the"
+			previousPart.length() == 1 ||  // just 1 letter
+			rand.nextInt(6) == 1           // roll a die
 		);
 		
         return name.toString();
