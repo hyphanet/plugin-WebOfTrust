@@ -337,6 +337,26 @@ CHANGELOG about stuff only interesting for developers
   Class DebugConfiguration has been added to contain the setting for
   this and possibly further similar settings to be added in the future.
 
+- 0007033: [Code quality] Speed up Travis CI builds: Don't recompile
+           fred if "git pull" changed nothing (xor)
+
+  The Travis CI build script of WoT usually obtains the most recent
+  development version of the Freenet core from GitHub and compiles it
+  before it compiles WoT itself against that.
+
+  Compilation of Freenet will now be omitted if its code has not changed
+  since the last build.
+  The execution time of a Travis CI build is thereby reduced by ~1
+  minute. That doesn't sound like much, but there is a time limit of
+  50 minutes per Travis build, so it is valuable.
+
+  What would be more beneficial is to obtain the Freenet JAR files from
+  the Maven repository which Freenet's Travis CI publishes them to.
+  I don't know whether publishing to Maven was implemented yet though,
+  the HTML of mvn.freenetproject.org sounds like it wasn't
+  - if it in fact was and someone knows how to use it please let me
+  know.
+
 THANKS TO
 
   - ArneBab
