@@ -1,0 +1,17 @@
+#!/bin/bash
+set -o pipefail
+set -o errexit
+set -o errtrace
+trap 'echo "Error at line $LINENO, exit code $?" >&2' ERR
+
+if [ $# != 1 ] ; then
+	echo "Syntax: $0 TRAVIS_CI_LOGFILE" >&2
+	exit 1
+fi
+
+awk '/\$ ant/ {p=1} ; /BUILD SUCCESSFUL/ {p=3} ; p==2 {print $0} ; p==1 {p=2}' < "$1" |
+tr -d '\r' |
+awk '
+	/\[junit\] Running (.*)/ { testsuite=$3 }
+	/\[junit\] Testcase: (.*) took (.*) sec/ { print $5,$6,testsuite "." $3 "()" }' |
+sort --numeric --key=1

@@ -272,6 +272,24 @@ CHANGELOG about stuff only interesting for developers
   test code for it shows that the metric for how long full unit tests
   are typically may be "twice as much as the tested code itself."
 
+- [Code quality] Unit tests: Add scripts to benchmark the tests, speed
+                 one up (xor)
+
+  Scripts were added to the tools/ directory which support:
+  - benchmarking unit tests locally when compiling.
+  - processing log files from Travis CI to produce benchmark results.
+
+  They produce sorted output like this:
+    1.234 sec package.ClassName1.testFunction1()
+    1.235 sec package.ClassName2.testFunction2()
+
+  Actual results (FIXME: Update once this build is finished):
+    https://gist.github.com/xor-freenet/28925cee6e44ad899060f91659250cd2
+
+  I will use this to speed up the tests.
+  A first improvement was done for testMaximalOwnIdentityXMLSize(), it
+  used to take 186 seconds on my machine, now takes 9.
+
 - 0006967: [Code quality] Unit tests: Introduce finite memory limit of
            512 MB (xor)
 
@@ -315,6 +333,22 @@ CHANGELOG about stuff only interesting for developers
   So if you want to provide another implementation with possible
   improvements over the heuristics of the one this release ships, go
   ahead, it should be easy :)
+
+- Code quality: Travis CI: Test against most recent Java versions (xor)
+
+  The cloud service now runs the unit tests periodically against:
+  - oraclejdk10 (new)
+  - oraclejdk9
+  - oraclejdk8
+  - openjdk10 (new)
+  - openjdk9 (new)
+  - openjdk8
+  - openjdk7
+
+  This is the maximal set of Java versions which are both supported by
+  Freenet and Travis CI as of 2018-09-26.
+  Notably the new Java 11 is not tested yet due to Freenet's Gradle not
+  working on it.
 
 - 0006934: [Code quality] Replace "WithoutCommit" function name suffixes
            with "@NeedsTransaction" annotation (xor)
