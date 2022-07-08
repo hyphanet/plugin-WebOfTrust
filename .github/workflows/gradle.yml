@@ -24,8 +24,11 @@ jobs:
         # 
         # 9, 10 excluded because: Building fred fails there, probably because they're EOL.
         # TODO: Trim the set of Java versions to respect GitHub's free service.
-        # FIXME: Add 17, 18.
-        java-version: [8, 11, 12, 13, 14, 15, 16]
+        # TODO: Code quality: Test against 19-ea (or 19 once released) as soon as Gradle supports
+        # it. Gradle bugtracker entry: https://github.com/gradle/gradle/issues/20372
+        # Notice: We do already test 19-ea with Ant, and exclude 19-ea on Windows, search for "19"
+        # below.
+        java-version: [8, 11, 12, 13, 14, 15, 16, 17, 18]
         fred-branch:  [next]
         # Use Gradle instead of Ant as it supports using multiple CPU cores on the unit tests.
         WoT-builder: [gradle]
@@ -54,7 +57,7 @@ jobs:
             os: ubuntu-latest
             WoT-builder: gradle
           
-          - java-version: 16
+          - java-version: 19-ea
             # Still use Ant on one Java version to ensure it keeps working.
             # Don't use it on the above job because deployment happens there which is slow, just
             # like Ant.
@@ -64,11 +67,21 @@ jobs:
             fred-branch: next
             upload-jar-to-freenet: false
         
+        # TODO: Bug: As of 2022-05-24 fred doesn't compile with Java >= 16 on Windows due to its
+        # Gradle version 4.10.3 not working there. Try again once fred uses a more recent one.
+        # TODO: Code quality: As of 2022-05-24 GHA wrongly parses arrays such as
+        # "java-version: [16, 17]" into their literal string value instead of expanding them.
+        # They'll likely add a different syntax for arrays here, use it then, see
+        # https://github.com/github/feedback/discussions/7835
         exclude:
           - os: windows-latest
-            # TODO: Bug: As of 2021-09-11 fred doesn't compile with Java 16 on Windows due to its
-            # Gradle version 4.10.3 not working there. Try again once fred uses a more recent one.
             java-version: 16
+          - os: windows-latest
+            java-version: 17
+          - os: windows-latest
+            java-version: 18
+          - os: windows-latest
+            java-version: 19-ea
     runs-on: ${{ matrix.os }}
     name: >-
         ${{matrix.os}}
@@ -93,9 +106,12 @@ jobs:
     - name: Install Java
       uses: actions/setup-java@v2
       with:
-        # FIXME: Choose a distribution.
-        # FIXME: Also test against Oracle's JDK once GHA supports it.
-        distribution: 'adopt'
+        # Using 'zulu' distribution because as of 2022-05-24 the other distributions either don't
+        # provide many old Java versions or lack an early access build of the upcoming version.
+        # For some overview of distributions see https://news.ycombinator.com/item?id=28820601
+        # TODO: Code quality: Also test against Oracle's JDK once it is available on GHA,
+        # upstream bugtracker issue: https://github.com/actions/setup-java/issues/69
+        distribution: 'zulu'
         java-version: ${{matrix.java-version}}
     
     - name: Checkout Freenet git repository
