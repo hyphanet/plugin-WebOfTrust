@@ -17,4 +17,4 @@ Therefore [xor-freenet](https://github.com/xor-freenet) hereby kindly requests f
 be kept as-is and followed in perpetuity to keep the codebase maximally coherent.
 
 Freetalk, where [xor-freenet](https://github.com/xor-freenet) also wrote most of the code, shall use
-the guideline of WoT, too, to avoid having to duplicate it in Freetalk's repository.
+this guideline of WoT, too, to avoid having to duplicate it in Freetalk's repository.
