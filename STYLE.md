@@ -2,7 +2,7 @@ FIXME: I've been obeying a consistent style when writing WoT/FT code for many ye
 Write it down here.
 # Web of Trust / Freetalk code style guideline
 
-WoT **thoroughly** follow this style guideline:
+WoT **thoroughly** follows this style guideline:
 
 The guideline has been written by `xor-freenet` *after* a decade of his work on the WoT codebase to
 accurately describe the style he had been following.
