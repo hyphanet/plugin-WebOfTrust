@@ -2,7 +2,7 @@ FIXME: I've been obeying a consistent style when writing WoT/FT code for many ye
 Write it down here.
 # Web of Trust / Freetalk code style guideline
 
-WoT **thoroughly** follows this style guideline:
+WoT **thoroughly** follows this style guideline, please keep obeying it:
 
 The guideline has been written by `xor-freenet` *after* a decade of his work on the WoT codebase to
 accurately describe the style he had been following.
@@ -16,4 +16,5 @@ should already be obeyed in most places.
 Therefore `xor-freenet` hereby kindly requests for this guideline to be kept as-is and followed in
 perpetuity to keep the codebase maximally coherent.
 
-Freetalk shall also use this guideline.
+Freetalk, where `xor-freenet` also wrote most of the code, shall use the guideline of WoT, too, to
+avoid having to duplicate it in Freetalk's repository.
