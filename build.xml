@@ -356,6 +356,8 @@
 				file="${build-test-coverage}/cobertura.ser" if:true="${test.coverage}"/>
 			<sysproperty key="extensiveTesting" value="${extensiveTesting}" />
 			<jvmarg value="-Djava.awt.headless=true"/>
+			<!-- See IS_UNIT_TEST at class Configuration -->
+			<jvmarg value="-Dis_WOT_unit_test=true"/>
 			<!-- Pass the name of the JAR to the tests so they can load it into a fred instance -->
 			<jvmarg value="-DWOT_test_jar=${build-test-jar}"/>
 		</junit>
@@ -394,6 +396,8 @@
 			
 			<sysproperty key="extensiveTesting" value="${extensiveTesting}" />
 			<jvmarg value="-Djava.awt.headless=true"/>
+			<!-- See IS_UNIT_TEST at class Configuration -->
+			<jvmarg value="-Dis_WOT_unit_test=true"/>
 			<!-- Pass the name of the JAR to the tests so they can load it into a fred instance -->
 			<jvmarg value="-DWOT_test_jar=${build-test-jar}"/>
 		</junit>

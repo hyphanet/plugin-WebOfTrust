@@ -51,6 +51,11 @@ import freenet.keys.InsertableClientSSK;
     +   "they likely won't be ignored. But then also check that to make sure.")
 public abstract class AbstractJUnit4BaseTest {
 
+	static {
+		assertTrue("Please launch the JVM with -Dis_WOT_unit_test=true",
+			Configuration.IS_UNIT_TEST);
+	}
+
     protected RandomSource mRandom;
     
     @Rule

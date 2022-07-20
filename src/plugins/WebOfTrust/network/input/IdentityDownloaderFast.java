@@ -6,6 +6,8 @@ package plugins.WebOfTrust.network.input;
 import static java.lang.Thread.currentThread;
 import static java.util.Objects.requireNonNull;
 import static java.util.concurrent.TimeUnit.MINUTES;
+import static java.util.concurrent.TimeUnit.SECONDS;
+import static plugins.WebOfTrust.Configuration.IS_UNIT_TEST;
 import static plugins.WebOfTrust.XMLTransformer.MAX_IDENTITY_XML_TRUSTEE_AMOUNT;
 import static plugins.WebOfTrust.util.AssertUtil.assertDidNotThrow;
 
@@ -110,7 +112,8 @@ public final class IdentityDownloaderFast implements
 	 * FIXME: Performance: Use a delay of 0 if no downloads are running currently, i.e. if
 	 * mDownloads.size() == 0.
 	 * TODO: Code quality: Make configurable. */
-	public static final long QUEUE_BATCHING_DELAY_MS = MINUTES.toMillis(1);
+	public static final long QUEUE_BATCHING_DELAY_MS
+		= IS_UNIT_TEST ? SECONDS.toMillis(1) : MINUTES.toMillis(1);
 
 	/**
 	 * Priority of USK subscription network requests, relative to {@link IdentityDownloaderSlow} as

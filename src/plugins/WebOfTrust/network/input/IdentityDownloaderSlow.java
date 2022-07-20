@@ -7,8 +7,10 @@ import static java.lang.Math.max;
 import static java.lang.Thread.currentThread;
 import static java.lang.Thread.sleep;
 import static java.util.Collections.sort;
+import static java.util.concurrent.TimeUnit.MILLISECONDS;
 import static java.util.concurrent.TimeUnit.MINUTES;
 import static java.util.concurrent.TimeUnit.SECONDS;
+import static plugins.WebOfTrust.Configuration.IS_UNIT_TEST;
 import static plugins.WebOfTrust.util.AssertUtil.assertDidThrow;
 
 import java.io.IOException;
@@ -191,14 +193,16 @@ public final class IdentityDownloaderSlow implements
 	 * FIXME: Performance: Use a delay of 0 if no downloads are running currently, i.e. if
 	 * mDownloads.size() == 0.
 	 * TODO: Code quality: Make configurable. */
-	public static final long QUEUE_BATCHING_DELAY_MS = MINUTES.toMillis(1);
+	public static final long QUEUE_BATCHING_DELAY_MS
+		= IS_UNIT_TEST ? SECONDS.toMillis(1) : MINUTES.toMillis(1);
 
 	/** If {@link #mOutputQueue}'s {@link IdentityFileQueue#getSize()} is above
 	 *  {@link IdentityFileQueue#getSizeSoftLimit()} we will delay scheduling further downloads for
 	 *  this delay of milliseconds.  
 	 *  FIXME: Adjust to a reasonable value before release, based on the time it takes to process
 	 *  the queue as measured on the {@link StatisticsPage}. */
-	public static final long OUTPUT_QUEUE_FULL_DELAY_MS = SECONDS.toMillis(30);
+	public static final long OUTPUT_QUEUE_FULL_DELAY_MS
+		= IS_UNIT_TEST ? MILLISECONDS.toMillis(500) : SECONDS.toMillis(30);
 
 	/**
 	 * Priority of network requests, relative to {@link IdentityDownloaderFast} as we use a single

@@ -140,13 +140,12 @@ public final class IdentityInserter extends TransferThread implements Daemon {
 						long maxDelayedInsertTime = identity.getLastInsertDate().getTime() + MAX_DELAY_BEFORE_INSERT; 
 						
 						if(CurrentTimeUTC.getInMillis() > Math.min(minDelayedInsertTime, maxDelayedInsertTime)) {
-							if(logDEBUG) Logger.debug(this, "Starting insert of " + identity.getNickname() + " (" + identity.getInsertURI() + ")");
 							insert(identity);
 						} else {
 							long lastChangeBefore = (CurrentTimeUTC.getInMillis() - identity.getLastChangeDate().getTime()) / (60*1000);
 							long lastInsertBefore = (CurrentTimeUTC.getInMillis() - identity.getLastInsertDate().getTime()) / (60*1000); 
 							
-							if(logDEBUG) Logger.debug(this, "Delaying insert of " + identity.getNickname() + " (" + identity.getInsertURI() + "), " +
+							if(logDEBUG) Logger.debug(this, "Delaying insert of identity '" + identity.getNickname() + "', " +
 									"last change: " + lastChangeBefore + "min ago, last insert: " + lastInsertBefore + "min ago");
 						}
 					} catch (Exception e) {
@@ -184,7 +183,10 @@ public final class IdentityInserter extends TransferThread implements Daemon {
 			addInsert(pu);
 			tempB = null;
 			
-			if(logDEBUG) Logger.debug(this, "Started insert of identity '" + identity.getNickname() + "'");
+			if(logDEBUG) {
+				Logger.debug(this, "Started insert of identity '" + identity.getNickname() + "' to "
+					+ ib.desiredURI.deriveRequestURIFromInsertURI());
+			}
 		}
 		catch(Exception e) {
 			Logger.error(this, "Error during insert of identity '" + identity.getNickname() + "'", e);

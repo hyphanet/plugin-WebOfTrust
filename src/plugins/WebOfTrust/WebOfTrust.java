@@ -115,13 +115,9 @@ public final class WebOfTrust extends WebOfTrustInterface
 
 	/** The relative path of the plugin on Freenet's web interface */
 	public static final String SELF_URI = "/WebOfTrust";
-
-	/** Package-private method to allow unit tests to bypass some assert()s */
 	
 	public static final String DATABASE_FILENAME =  WebOfTrustInterface.WOT_NAME + ".db4o"; 
 	public static final int DATABASE_FORMAT_VERSION = 8;
-	
-	
 
 	/* References from the node */
 	

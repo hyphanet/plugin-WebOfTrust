@@ -42,6 +42,11 @@ import freenet.keys.InsertableClientSSK;
 @Deprecated
 public class AbstractJUnit3BaseTest extends TestCase {
 
+	static {
+		assertTrue("Please launch the JVM with -Dis_WOT_unit_test=true",
+			Configuration.IS_UNIT_TEST);
+	}
+
 	protected WebOfTrust mWoT;
 	
 	protected RandomSource mRandom;
