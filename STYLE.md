@@ -18,3 +18,23 @@ be kept as-is and followed in perpetuity to keep the codebase maximally coherent
 
 Freetalk, where [xor-freenet](https://github.com/xor-freenet) also wrote most of the code, shall use
 this guideline of WoT, too, to avoid having to duplicate it in Freetalk's repository.
+
+## Git history
+
+**Git history is considered as part of the documentation of the codebase and therefore shall
+*NOT* be squashed / modified / deleted / tampered with!**
+
+Searching the history has aided fixing many bugs, it is unwise to tamper with it in any way!
+
+This especially means that you should **not** squash commits before merging a branch!
+
+To make the history more readable instead of squashing you should create sub-branches of your
+feature branch and merge them into the feature branch one after another.  
+Use `git merge --no-ff SUB_BRANCH` to ensure a merge commit is always created and use the merge
+commit to summarize the sub-branch.  
+Then the merge commits serve as a replacement for what would otherwise be squashed commits.
+
+For further details on Git usage see the [Git](#git) section below.  
+(This part here is a separate section to stress its importance.)
+
+## Git
