@@ -36,6 +36,13 @@ be built upon it. As of 2019 these are:
 
 For an in-depth explanation of how WoT works see the [whitepaper / core developer's manual](developer-documentation/core-developers-manual/OadSFfF-version1.2-non-print-edition.pdf).
 
+## Status
+
+As of 2022 WoT is actively maintained by [xor-freenet](https://github.com/xor-freenet).  
+Development news are posted about every 1-3 weeks on the
+[FMS](https://github.com/freenet/wiki/wiki/FMS) board `freenet` in threads called
+`Web of Trust development news YYYY-MM`.
+
 ## Contributing
 
 While the repository for the officially shipped WoT binary is hosted on
