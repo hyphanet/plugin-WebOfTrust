@@ -56,6 +56,11 @@ because:
 - After his review xor will submit your code to the official Freenet developers for inclusion in the
   main repository on Freenet's GitHub.
 
+## Usage
+
+WoT is bundled with Freenet as a plugin.  
+To enable it, go to `Configuration`, then `Plugins`, and use `Add an Official plugin`.
+
 ## Support
 
 You can:
