@@ -28,7 +28,7 @@ who they voted for or against.
 
 While WoT does have a user interface of its own which can be used to manage identites and trusts,
 it is intended to be used as a general-purpose library to allow actual Freenet applications to
-be built upon it. As of 2019 these are:
+be built upon it. As of 2022 these are:
 - [Sone](https://github.com/Bombe/Sone) - social networking
 - [FlogHelper](https://github.com/freenet/plugin-FlogHelper) - blogging
 - [Freemail](https://github.com/freenet/plugin-Freemail) - email
