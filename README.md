@@ -48,10 +48,13 @@ Development news are posted about every 1-3 weeks on the
 While the repository for the officially shipped WoT binary is hosted on
 [Freenet's GitHub](https://github.com/freenet), you may consider to instead create your pull
 requests at [xor-freenet's WoT repository](https://github.com/xor-freenet/plugin-WebOfTrust)
-to receive extended and accelerated review:  
-He wrote most of WoT's code and works on it every week.  
-After his review xor will submit your code to the official Freenet developers for inclusion in the
-main repository.
+because:
+- Freenet's repository may lag some months behind the one of xor-freenet and merge conflicts can
+  thus be avoided by using xor's repo.
+- You'll receive extended and accelerated review:  
+  xor wrote most of WoT's code and works on it every week.
+- After his review xor will submit your code to the official Freenet developers for inclusion in the
+  main repository on Freenet's GitHub.
 
 ## Support
 
