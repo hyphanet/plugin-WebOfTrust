@@ -59,7 +59,7 @@ because:
 ## Usage
 
 WoT is bundled with Freenet as a plugin.  
-To enable it, go to `Configuration`, then `Plugins`, and use `Add an Official plugin`.
+To enable it, go to `Configuration`, then `Plugins`, and use `Add an Official Plugin`.
 
 ## Support
 
