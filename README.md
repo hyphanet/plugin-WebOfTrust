@@ -67,7 +67,7 @@ You can:
 - mail `xor@freenetproject.org`
 - file a bug in the Web of Trust project on the [Freenet bugtracker](https://freenet.mantishub.io)
 - or, to remain anonymous by using Freenet, post on the
-   [FMS](https://github.com/freenet/wiki/wiki/FMS) board `freenet`.  
+  [FMS](https://github.com/freenet/wiki/wiki/FMS) board `freenet`.
 
 [xor-freenet](https://github.com/xor-freenet) will reply by these means within about a week.
 
