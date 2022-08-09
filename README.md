@@ -61,6 +61,10 @@ because:
 WoT is bundled with Freenet as a plugin.  
 To enable it, go to `Configuration`, then `Plugins`, and use `Add an Official Plugin`.
 
+It will add a `Community` menu to the web interface and can be accessed by that.
+
+Other plugins which use WoT as their backend may also provide UI to e.g. change trust values.
+
 ## Support / Contact
 
 You can:
