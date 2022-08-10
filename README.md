@@ -5,9 +5,10 @@
 # Web of Trust - a collaborative spam filter for Freenet
 
 The [Freenet](https://freenetproject.org) plugin Web of Trust (WoT) tries to solve the problem of
-spam being an important threat to address in an anonymous, censorship-resistant network:  
-Where an attacker cannot take down content they will attempt to get rid of it by drowning it in
-spam.
+spam being an important threat to address in an _anonymous_, _censorship-resistant_ network such
+as Freenet:  
+Where an attacker cannot take down content - because censorship is not possible on that network -
+they will attempt to get rid of it by drowning it in spam.
 
 Conventional spam filters cannot work in such an environment:
 - An attacker is anonymous like everyone else so they cannot be blocked by e.g. an IP address.
