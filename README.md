@@ -26,8 +26,8 @@ This is similar to the concept of [subsidiarity](https://en.wikipedia.org/wiki/S
 democracy.  
 The result of this poll decides if a particular identity is considered as legitimate or as a
 spammer. The content of spammers is completely ignored then, it won't cause any network traffic.  
-Thus each user has their own view and final decision on what they consider as spam, depending on
-who they voted for or against.
+Users can specify their own trust values to override the poll result, but they don't have to spend
+time upon that if they instead want to use what the community has collaboratively decided.
 
 While WoT does have a user interface of its own which can be used to manage identities and trusts,
 it is intended to be used as a general-purpose library to allow actual Freenet applications to
