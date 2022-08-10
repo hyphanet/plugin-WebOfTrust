@@ -28,7 +28,7 @@ spammer. The content of spammers is completely ignored then, it won't cause any 
 Thus each user has their own view and final decision on what they consider as spam, depending on
 who they voted for or against.
 
-While WoT does have a user interface of its own which can be used to manage identites and trusts,
+While WoT does have a user interface of its own which can be used to manage identities and trusts,
 it is intended to be used as a general-purpose library to allow actual Freenet applications to
 be built upon it. As of 2022 these are:
 - [Sone](https://github.com/Bombe/Sone) - social networking
@@ -65,7 +65,7 @@ To enable it, go to `Configuration`, then `Plugins`, and use `Add an Official Pl
 
 It will add a `Community` menu to the web interface and can be accessed by that.
 
-Other plugins which use WoT as their backend may also provide UI to e.g. change trust values.
+Other plugins which use WoT as their back end may also provide UI to e.g. change trust values.
 
 ## Support / Contact
 
