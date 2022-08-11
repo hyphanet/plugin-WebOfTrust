@@ -44,7 +44,7 @@ For an in-depth explanation of how WoT works see the [whitepaper / core develope
 
 As of 2022 WoT is actively maintained by [xor-freenet](https://github.com/xor-freenet).  
 Development news are posted about every 1-3 weeks on the
-[FMS](https://github.com/freenet/wiki/wiki/FMS) board `freenet` in threads called
+[FMS](https://github.com/freenet/wiki/wiki/FMS) board `freenet` in threads called  
 `Web of Trust development news YYYY-MM`.
 
 ## Contributing
