@@ -5,30 +5,34 @@
 # Web of Trust - a collaborative spam filter for Freenet
 
 The [Freenet](https://freenetproject.org) plugin Web of Trust (WoT) tries to solve the problem of
-spam being an important threat to address in an anonymous, censorship-resistant network:  
-Where an attacker cannot take down content they will attempt to get rid of it by drowning it in
-spam.
+spam being an important threat to prevent in an _anonymous_, _censorship-resistant_ network such
+as Freenet:  
+When an attacker wants to take down content but cannot do so because censorship is not possible on
+that network they will instead attempt to get rid of it by drowning it in spam.
 
 Conventional spam filters cannot work in such an environment:
 - An attacker is anonymous like everyone else so they cannot be blocked by e.g. an IP address.
 - Because Freenet is a peer-to-peer network its available bandwidth is scarce and thus spam must
   not even be downloaded before filtering it out in order to avoid
-  [denial of service](https://en.wikipedia.org/wiki/Denial-of-service_attack) - filtering spam by
-  e.g. lists of bad words won't work.
+  [denial of service](https://en.wikipedia.org/wiki/Denial-of-service_attack).  
+  Thus filtering spam by e.g. lists of bad words won't work because it would have to be downloaded
+  for that.
 
 WoT deals with these issues by allowing each user to create so-called _identities_ which can assign
-_trust values_ to the identities of other users and optionally publish these.  
-These constitute a democratic vote among users, where the distance of other users' identities in the
-social graph is used to weigh their votes in your local WoT. This is similar to the concept of
-[subsidiarity](https://en.wikipedia.org/wiki/Subsidiarity) in democracy.  
+_trust values_ to the identities of other users and publish these.  
+The trust values constitute a democratic vote among users, where the distance of other users'
+identities in the social graph of trust values is used to weigh their votes in your local WoT.  
+This is similar to the concept of [subsidiarity](https://en.wikipedia.org/wiki/Subsidiarity) in
+democracy.  
 The result of this poll decides if a particular identity is considered as legitimate or as a
 spammer. The content of spammers is completely ignored then, it won't cause any network traffic.  
-Thus each user has their own view and final decision on what they consider as spam, depending on
-who they voted for or against.
+Users can specify their own trust values to override the poll results, but they don't have to spend
+time upon that if they instead want to use what the community has collaboratively decided.
 
-While WoT does have a user interface of its own which can be used to manage identites and trusts,
+While WoT does have a user interface of its own which can be used to manage identities and trusts,
 it is intended to be used as a general-purpose library to allow actual Freenet applications to
-be built upon it. As of 2019 these are:
+be built upon it.  
+As of 2022 these are:
 - [Sone](https://github.com/Bombe/Sone) - social networking
 - [FlogHelper](https://github.com/freenet/plugin-FlogHelper) - blogging
 - [Freemail](https://github.com/freenet/plugin-Freemail) - email
@@ -36,25 +40,44 @@ be built upon it. As of 2019 these are:
 
 For an in-depth explanation of how WoT works see the [whitepaper / core developer's manual](developer-documentation/core-developers-manual/OadSFfF-version1.2-non-print-edition.pdf).
 
+## Status / News
+
+As of 2022 WoT is actively maintained by [xor-freenet](https://github.com/xor-freenet).  
+Development news are posted about every 1-3 weeks on the
+[FMS](https://github.com/freenet/wiki/wiki/FMS) board `freenet` in threads called  
+`Web of Trust development news YYYY-MM`.
+
 ## Contributing
 
 While the repository for the officially shipped WoT binary is hosted on
 [Freenet's GitHub](https://github.com/freenet), you may consider to instead create your pull
 requests at [xor-freenet's WoT repository](https://github.com/xor-freenet/plugin-WebOfTrust)
-to receive extended and accelerated review:  
-He wrote most of WoT's code and works on it every week.  
-After his review xor will submit your code to the official Freenet developers for inclusion in the
-main repository.
+because:
+- Freenet's repository may lag some months behind the one of xor-freenet and merge conflicts can
+  thus be avoided by using xor's repo.
+- You'll receive extended and accelerated review:  
+  xor wrote most of WoT's code and is actively working on it.
+- After his review xor will submit your code to the official Freenet developers for inclusion in the
+  main repository on Freenet's GitHub.
 
-## Support
+## Usage
+
+WoT is bundled with Freenet as a plugin.  
+To enable it, go to `Configuration`, then `Plugins`, and use `Add an Official Plugin`.
+
+It will add a `Community` menu to the web interface and can be accessed by that.
+
+Other plugins which use WoT as their back end may also provide UI to e.g. change trust values.
+
+## Support / Contact
 
 You can:
 - mail `xor@freenetproject.org`
 - file a bug in the Web of Trust project on the [Freenet bugtracker](https://freenet.mantishub.io)
 - or, to remain anonymous by using Freenet, post on the
-   [FMS](https://github.com/freenet/wiki/wiki/FMS) board `freenet`.  
+  [FMS](https://github.com/freenet/wiki/wiki/FMS) board `freenet`.
 
-By the way: News about the current WoT development are posted to that board about every week.
+[xor-freenet](https://github.com/xor-freenet) will reply by these means within about a week.
 
 ## Compiling
 
