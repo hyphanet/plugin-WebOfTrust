@@ -273,11 +273,14 @@ CHANGELOG about stuff only interesting for developers
   are typically may be "twice as much as the tested code itself."
 
 - [Code quality] Unit tests: Add scripts to benchmark the tests, speed
-                 one up (xor)
+                 three up (xor)
 
-  Scripts were added to the tools/ directory which support:
-  - benchmarking unit tests locally when compiling.
-  - processing log files from Travis CI to produce benchmark results.
+  The following scripts were added to the tools/ directory:
+  - benchmark-unit-tests: to benchmark all unit tests locally when
+    compiling.
+  - benchmark-unit-tests-from-travis: to process a log file from
+    Travis CI to produce the same output as the above local benchmark
+    script.
 
   They produce sorted output like this:
     1.234 sec package.ClassName1.testFunction1()
@@ -286,9 +289,20 @@ CHANGELOG about stuff only interesting for developers
   Actual results (FIXME: Update once this build is finished):
     https://gist.github.com/xor-freenet/28925cee6e44ad899060f91659250cd2
 
+  Additionally, in order to be able to tweak a single test after using
+  the above scripts to determine slow tests, the script
+  "benchmark-unit-test" was added. It allows running a single test for
+  an arbitrary amount of iterations and computes the average execution
+  time from those.
+
   I will use this to speed up the tests.
-  A first improvement was done for testMaximalOwnIdentityXMLSize(), it
-  used to take 186 seconds on my machine, now takes 9.
+  First improvements are done already:
+  - for testMaximalOwnIdentityXMLSize(), it used to take 186 seconds on
+    my machine, now takes 9.
+  - for the networked tests which were added by this release, they were
+    improved right away to take up to 14 minutes less of time to
+    execute. E.g. IdentityFetcherTest now takes less than 2 minutes to
+    run under optimal conditions.
 
 - 0006967: [Code quality] Unit tests: Introduce finite memory limit of
            512 MB (xor)

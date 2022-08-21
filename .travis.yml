@@ -84,6 +84,7 @@ before_script: |
 
 # Compile and test WoT
 script:
+  - set -o errexit
   - echo 'Checksums of dependencies:' ; sha256sum ../fred/build/output/*
   # Don't allow Travis to override the low memory limit we set in Ant with a higher one.
   - unset _JAVA_OPTIONS

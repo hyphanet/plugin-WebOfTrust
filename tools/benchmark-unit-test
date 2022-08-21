@@ -1,0 +1,21 @@
+#!/bin/bash
+set -o pipefail
+set -o errexit
+set -o errtrace
+trap 'echo "Error at line $LINENO, exit code $?" >&2' ERR
+
+if [ $# != 3 ] ||  [[ ! "$3" =~ ^[0-9]+$ ]]  ; then
+	echo "Syntax: $0 TEST_CLASS TEST_FUNCTION NUMBER_OF_ITERATIONS" >&2
+	exit 1
+fi
+
+if [ ! -e "build.xml" ] && [ -e "../build.xml" ] ; then
+	cd ..
+fi
+
+for((i=1; i<="$3"; ++i)) ; do
+	printf "Iteration $i: "
+
+	ant -Dtest.skip=false -Dtest.class="$1" |
+	fgrep --line-buffered "Testcase: $2"
+done | mawk -W interactive '{s+=$7; print $0 ", Average: " s/NR}'
