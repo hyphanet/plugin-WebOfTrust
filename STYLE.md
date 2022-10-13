@@ -31,7 +31,7 @@ This especially means that you should **not** squash commits before merging a br
 To make the history more readable instead of squashing you should create sub-branches of your
 feature branch and merge them into the feature branch one after another.  
 Use `git merge --no-ff SUB_BRANCH` to ensure a merge commit is always created and use the merge
-commit to summarize the sub-branch.  
+commit message to summarize the sub-branch.  
 Then the merge commits serve as a replacement for what would otherwise be squashed commits.
 
 For further details on Git usage see the [Git](#git) section below.  
