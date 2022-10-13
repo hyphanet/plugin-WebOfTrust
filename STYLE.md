@@ -16,8 +16,8 @@ should already be obeyed in most places.
 Therefore xor-freenet hereby kindly requests that this guideline will be kept as-is in perpetuity
 and followed in perpetuity to keep the codebase maximally coherent.
 
-Freetalk, where [xor-freenet](https://github.com/xor-freenet) also wrote most of the code, shall use
-this guideline of WoT, too, to avoid having to duplicate it in Freetalk's repository.
+Freetalk, where xor-freenet also wrote most of the code, shall use this guideline of WoT, too, to
+avoid having to duplicate it in Freetalk's repository.
 
 ## Git history
 
