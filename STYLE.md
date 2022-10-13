@@ -7,8 +7,8 @@ WoT **thoroughly** follows this style guideline, please keep obeying it:
 The guideline has been written by [xor-freenet](https://github.com/xor-freenet) *after* a decade of
 his work on the WoT codebase to accurately describe the style he had been following.
 
-Hence WoT is *not* in the typical sad situation of picking an arbitrary style guideline off the
-Internet after having tons of code at hand already and then trying to force the codebase into it
+Hence WoT is *not* in the typical unfortunate situation of picking an arbitrary style guideline off
+the Internet after having tons of code at hand already and then trying to force the codebase into it
 while it violates the guideline in most places.  
 Instead, *the guideline* was forced to reflect the codebase's as-is situation and thus it hopefully
 should already be obeyed in most places.
