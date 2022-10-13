@@ -13,8 +13,8 @@ while it violates the guideline in most places.
 Instead, *the guideline* was forced to reflect the codebase's as-is situation and thus it hopefully
 should already be obeyed in most places.
 
-Therefore [xor-freenet](https://github.com/xor-freenet) hereby kindly requests for this guideline to
-be kept as-is and followed in perpetuity to keep the codebase maximally coherent.
+Therefore xor-freenet hereby kindly requests that this guideline will be kept as-is in perpetuity
+and followed in perpetuity to keep the codebase maximally coherent.
 
 Freetalk, where [xor-freenet](https://github.com/xor-freenet) also wrote most of the code, shall use
 this guideline of WoT, too, to avoid having to duplicate it in Freetalk's repository.
