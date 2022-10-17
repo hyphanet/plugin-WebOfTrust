@@ -28,15 +28,17 @@ Engineers are trusted to make wise decisions behind how they format their code.
 Thus the below style guidelines may be violated in reasonable exceptions where it makes sense in
 order to improve the readability of the code.  
 
-An example of this is padding code with additional whitespace to align components of multiple lines
-so the alignment matches across those lines and certain parts of them are next to each other across
-those lines to aid readability.  
 E.g.:
 ```java
-double x = Math.random() *   1.1;
-double y = Math.random() *   1.105;
-double z = Math.random() * 101.1;
+double x = Math.random() *   1.123;
+double y = Math.random() *     123.456;
+double z = Math.random() * 101.123;
 ```
+
+Here excess whitespace was manually inserted to align the numbers with each others across multiple
+lines in order to stress their meaning, i.e. the common digits `123`.  
+This cannot be done by strict rules because it depends on the semantics of the code, not on the
+mere syntax.
 
 As a consequence of this, the **usage of automated code formatters on pre-existing code is
 prohibited** because it would destroy the above cases of well-chosen manual formatting.
