@@ -34,7 +34,8 @@ those lines to aid readability.
 E.g.:
 ```java
 double x = Math.random() *   1.1;
-double y = Math.random() * 101.1;
+double y = Math.random() *   1.105;
+double z = Math.random() * 101.1;
 ```
 
 As a consequence of this, the **usage of automated code formatters on pre-existing code is
