@@ -19,6 +19,26 @@ and followed in perpetuity to keep the codebase maximally coherent.
 Freetalk, where xor-freenet also wrote most of the code and thus the same style was followed, shall
 use this guideline of WoT, too, to avoid having to duplicate it in Freetalk's repository.
 
+## General conduct
+
+In general, WoT follows a "engineering first" style fashion.  
+This means that bikeshedding is discouraged in favor of spending more time actually writing code.  
+In practice, it translates to:  
+Engineers are trusted to make wise decisions behind how they format their code.  
+Thus the below style guidelines may be violated in reasonable exceptions where it makes sense in
+order to improve the readability of the code.  
+
+An example of this is padding code with additional whitespace to align components of multiple lines
+so the alignment matches across those lines and certain parts of them are next to each other across
+those lines to aid readability.  
+E.g.:
+```java
+double x = Math.random() *   1.1;
+double y = Math.random() * 101.1;
+```
+
+As a consequence of this, the **usage of automated code formatters on pre-existing code is
+prohibited** because it would destroy the above cases of well-chosen manual formatting.
 
 ## Git history
 
