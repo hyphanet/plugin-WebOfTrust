@@ -35,7 +35,7 @@ double y = Math.random() *     123.456;
 double z = Math.random() * 101.123;
 ```
 
-Here excess whitespace was manually inserted to align the numbers with each others across multiple
+Here excess whitespace was manually inserted to align the numbers with each other across multiple
 lines in order to stress their meaning, i.e. the common digits `123`.  
 This cannot be done by strict rules because it depends on the semantics of the code, not on the
 mere syntax.
