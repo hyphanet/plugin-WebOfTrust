@@ -30,13 +30,12 @@ order to improve the readability of the code.
 
 E.g.:
 ```java
-double x = Math.random() *   1.123;
-double y = Math.random() *     123.456;
-double z = Math.random() * 101.123;
+String a = "long_prefix" + "infix" + "long_suffix";
+String b =      "prefix" + "infix" +      "suffix";
 ```
 
-Here excess whitespace was manually inserted to align the numbers with each other across multiple
-lines in order to stress their meaning, i.e. the common digits `123`.  
+Here excess whitespace was manually inserted to align the strings with each other across multiple
+lines in order to stress their meaning, i.e. the common parts among them.  
 This cannot be done by strict rules because it depends on the semantics of the code, not on the
 mere syntax.
 
