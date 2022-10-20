@@ -72,4 +72,11 @@ For further details on Git usage see the [Git](#git) section below.
   These violations shall be fixed gradually once the affected code is modified for other reasons
   anyway.
 
+- Indentation of the Java part of the codebase is done with tabs.  
+  Configure your editor to use a tab width of 4 spaces to ensure the line length limit is obeyed.
+  
+  Some places may use spaces instead for legacy reasons.  
+  These violations shall be fixed gradually once the affected code is modified for other reasons
+  anyway, with 4 spaces = 1 tab.
+
 ## Git
