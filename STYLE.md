@@ -60,4 +60,16 @@ Then the merge commits serve as a replacement for what would otherwise be squash
 For further details on Git usage see the [Git](#git) section below.  
 (This part here is a separate section to stress its importance.)
 
+## Layout
+
+- Line length limit is 100 characters.
+  
+  The l10n files are an exception, there each `key=value` pair is on a single line, no matter how
+  long the line will be.
+  
+  The 100 char limit was introduced after a lot of WoT code was already written, hence it is violated
+  in some places for no good reason.  
+  These violations shall be fixed gradually once the affected code is modified for other reasons
+  anyway.
+
 ## Git
