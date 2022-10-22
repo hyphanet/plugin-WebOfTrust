@@ -75,8 +75,17 @@ For further details on Git usage see the [Git](#git) section below.
 - Indentation of the Java part of the codebase is done with tabs.  
   Configure your editor to use a tab width of 4 spaces to ensure the line length limit is obeyed.
   
-  Some places may use spaces instead for legacy reasons.  
+  Some places in the existing code may use spaces instead for legacy reasons.  
   These violations shall be fixed gradually once the affected code is modified for other reasons
   anyway, with 4 spaces = 1 tab.
+  
+  Spaces may be added to lines which are indented with tabs in order to align them to relevant code
+  at the above line.  
+  I.e. first use tabs for base alignment and then add spaces after the tabs for fine alignment.  
+  Make sure to start the indentation with the same count of tabs as the above line contains so that
+  the lines will align properly independent of a different tab-width which other developers may have
+  chosen in their IDE.
+
+- The GitHub Actions `.yml` files are indented with 2 spaces and shall stay like that.
 
 ## Git
