@@ -60,6 +60,11 @@ because:
 - After his review xor will submit your code to the official Freenet developers for inclusion in the
   main repository on Freenet's GitHub.
 
+WoT thoroughly obeys its [style guideline](STYLE.md).  
+For small PRs you do not have to read it, xor can point out violations during review if there are
+any.  
+However when doing larger contributions, or in case of change of maintainer, please **do read it**.
+
 ## Usage
 
 WoT is bundled with Freenet as a plugin.  
