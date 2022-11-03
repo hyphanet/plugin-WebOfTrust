@@ -90,11 +90,11 @@ For further details on Git usage see the [Git](#git) section below.
 
 - Empty lines inside of an indented block are indented to match the surrounding indentation. E.g:
   ```java
-  	void function() {
-  		a();
-  		
-  		b();
-  	}
+  void function() {
+  	a();
+  	
+  	b();
+  }
   ```
   The line between `a();` and `b();` is indented to the same level as those two calls.
 
