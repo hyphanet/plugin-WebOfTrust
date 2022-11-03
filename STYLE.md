@@ -88,4 +88,14 @@ For further details on Git usage see the [Git](#git) section below.
 
 - The GitHub Actions `.yml` files are indented with 2 spaces and shall stay like that.
 
+- Empty lines inside of an indented block are indented to match the surrounding indentation. E.g:
+  ```java
+  	void function() {
+  		a();
+  		
+  		b();
+  	}
+  ```
+  The line between `a();` and `b();` is indented to the same level as those two calls.
+
 ## Git
