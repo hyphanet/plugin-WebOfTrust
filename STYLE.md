@@ -98,4 +98,9 @@ For further details on Git usage see the [Git](#git) section below.
   ```
   The line between `a();` and `b();` is indented to the same level as those two calls.
 
+- Excess whitespace may be introduced inside of statements to make their meaning more apparent,
+  see [General conduct](#general-conduct) for an example.  
+  To ensure this manually chosen indentation is not destroyed, the **usage of automated code
+  formatters upon pre-existing code is disallowed**.
+
 ## Git
