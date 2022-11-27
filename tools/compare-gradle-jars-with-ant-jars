@@ -4,23 +4,25 @@ set -o errexit
 set -o errtrace
 trap 'echo "Error at line $LINENO, exit code $?" >&2' ERR
 
-from_ant="$(mktemp --directory --suffix=.from-ant)"
-from_gradle="$(mktemp --directory --suffix=.from-gradle)"
-trap 'rm -rf "$from_ant" "$from_gradle"' EXIT
+tmpdir="$(mktemp --directory)"
+trap 'rm -rf -- "$tmpdir"' EXIT
 
-# FIXME: Also validate the unit test JAR
-jar='dist/WebOfTrust.jar'
+check_jar() {
+local jar="$1"
+local from_ant="$(mktemp --tmpdir="$tmpdir" --directory --suffix=.from-ant)"
+local from_gradle="$(mktemp --tmpdir="$tmpdir" --directory --suffix=.from-gradle)"
 
+echo "Testing jar: $jar"
 echo "Building with Ant..."
 gradle clean &> /dev/null
-! [ -e "$jar" ]
+[ ! -e "$jar" ] # WARNING: ! must be inside for errexit to work here
 ant -Dtest.skip=true clean dist &> /dev/null
 unzip -qq "$jar" -d "$from_ant"
 
 echo "Building with Gradle..."
 ant clean &> /dev/null
-! [ -e "$jar" ]
-gradle clean jar &> /dev/null
+[ ! -e "$jar" ] # WARNING: ! must be inside for errexit to work here
+gradle clean jar testJar &> /dev/null
 unzip -qq "$jar" -d "$from_gradle"
 
 echo "Deleting files which only Ant bundles: package-info.class, Version.java (not .class)..."
@@ -45,11 +47,18 @@ sed --regexp-extended --expression='/^Ant(.*)$/d' \
 # To test whether the diff fails if it should:
 #echo a >> "$from_gradle/plugins/WebOfTrust/WebOfTrust.class"
 
-echo "Diffing..."
+echo "Diffing:"
+echo "Ant output:    $from_ant"
+echo "Gradle output: $from_gradle"
 if diff --recursive "$from_ant" "$from_gradle" ; then
 	echo "JARs are identical!"
-	exit 0
+	return 0
 else
-	echo "JARs do not match!" >&2
-	exit 1
+	echo "JARs do not match! Not deleting output so you can inspect it." >&2
+	trap - EXIT
+	return 1
 fi
+}
+
+check_jar 'dist/WebOfTrust.jar'
+check_jar 'build-test/WebOfTrust-with-unit-tests.jar'
