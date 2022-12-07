@@ -101,6 +101,9 @@ For further details on Git usage see the [Git](#git) section below.
 - Excess whitespace may be introduced inside of statements to make their meaning more apparent,
   see [General conduct](#general-conduct) for an example.  
   To ensure this manually chosen indentation is not destroyed, the **usage of automated code
-  formatters upon pre-existing code is disallowed**.
+  formatters upon pre-existing code is disallowed**.  
+  In practice this means: Use your IDE to format code as you write the code and thus immediately
+  review the formatting - but refrain from auto-formatting code afterwards for the mere sake of
+  auto-formatting code.
 
 ## Git
