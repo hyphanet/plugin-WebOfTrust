@@ -109,4 +109,9 @@ For further details on Git usage see the [Git](#git) section below.
 - If a function definition or a function call is too long for a single line, the line it is wrapped
   into is indented with an additional tab.
 
+- Line endings are `\n`. Some legacy files may use Windows' `\r\n` line endings instead. These shall
+  be kept as is while the Eclipse IDE does not support mixed line endings.  
+  Once it supports that you can gradually change them to `\n` as part of doing other non-whitespace
+  changes.
+
 ## Git
