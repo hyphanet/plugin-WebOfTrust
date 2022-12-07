@@ -106,4 +106,7 @@ For further details on Git usage see the [Git](#git) section below.
   review the formatting - but refrain from auto-formatting code afterwards for the mere sake of
   auto-formatting code.
 
+- If a function definition or a function call is too long for a single line, the line it is wrapped
+  into is indented with an additional tab.
+
 ## Git
