@@ -114,4 +114,13 @@ For further details on Git usage see the [Git](#git) section below.
   Once it supports that you can gradually change them to `\n` as part of doing other non-whitespace
   changes.
 
+- Multiple nested synchronized() blocks are formatted / indented as such:
+  ```java
+  synchronized(A) { // Comment on what needs the lock A
+  synchronized(B) { // Comment on what needs the lock B
+  synchronized(C) { // Comment on what needs the lock C
+  	code();
+  }}}
+  ```
+
 ## Git
