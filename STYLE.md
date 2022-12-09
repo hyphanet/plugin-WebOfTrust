@@ -150,9 +150,11 @@ For further details on Git usage see the [Git](#git) section below.
 ## Naming
 
 - Member variable names are prefixed with "m", unless the variables are static.  
-  The first letter after that is written in uppercase.
+  The first letters of *all* following words are written in uppercase.  
+  Example: `private int mSomeVariableName;`
 
-- Static member variable names are written all uppercase, with words separated by "_". Example:  
-  `public static final int THIS_IS_A_CONSTANT = 1;`
+- Names of static member variables are written all uppercase, with words separated by "_".  
+  Example: `public static final int THIS_IS_A_CONSTANT = 1;`
+
 
 ## Git
