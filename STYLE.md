@@ -147,4 +147,12 @@ For further details on Git usage see the [Git](#git) section below.
   This order ensures that when someone reads the class top to bottom then they will quickly get
   a rough overview of what it does before they get lost in technical details.
 
+## Naming
+
+- Member variable names are prefixed with "m", unless the variables are static.  
+  The first letter after that is written in uppercase.
+
+- Static member variable names are written all uppercase, with words separated by "_". Example:  
+  `public static final int THIS_IS_A_CONSTANT = 1;`
+
 ## Git
