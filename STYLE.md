@@ -124,26 +124,27 @@ For further details on Git usage see the [Git](#git) section below.
   ```
 
 - Ordering of functions inside classes: Put high-level functions first, then after the highest-level
-  functions put the low-level helper functions which the high-level functions use.
+  functions put the lower-level functions which the high-level functions use, and at the end put
+  very low-level helper functions.  
   E.g.:
   ```java
   class PizzaProducer {
-  	void makePizza() {     // Highest level
+  	public void makePizza() {     // Highest level
   		makeRawPizza();
   		bakePizza();
   	}
   
-  	void makeRawPizza() {  // Medium level
+  	private void makeRawPizza() {  // Medium level
   		makeDough();
   		putOnToppings();
   	}
   
-  	void makeDough()     { /* ... */ }  // Low level
-  	void putOnToppings() { /* ... */ }
-  	void bakePizza()     { /* ... */ }
+  	private void makeDough()     { /* ... */ }  // Low level
+  	private void putOnToppings() { /* ... */ }
+  	private void bakePizza()     { /* ... */ }
   }
   ```
-  This ordering ensures that when someone reads the class top to bottom then they will quickly get
+  This order ensures that when someone reads the class top to bottom then they will quickly get
   a rough overview of what it does before they get lost in technical details.
 
 ## Git
