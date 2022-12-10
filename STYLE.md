@@ -167,4 +167,9 @@ For further details on Git usage see the [Git](#git) section below.
   Example: `public static final int function() {}`  
   Example: `public static final <T> ArrayList<T> function(Set<T> input) {}`
 
+## Statements
+
+- `if(...)`, `while(...)`, `catch(...)`, `functionCall(...)` etc. are written without whitespace
+  before the brackets.
+
 ## Git
