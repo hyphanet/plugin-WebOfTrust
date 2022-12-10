@@ -147,14 +147,18 @@ For further details on Git usage see the [Git](#git) section below.
   This order ensures that when someone reads the class top to bottom then they will quickly get
   a rough overview of what it does before they get lost in technical details.
 
-## Naming
+## Variables
 
 - Member variable names are prefixed with "m", unless the variables are static.  
   The first letters of *all* following words are written in uppercase.  
   Example: `private int mSomeVariableName;`
 
 - Names of static member variables are written all uppercase, with words separated by "_".  
-  Example: `public static final int THIS_IS_A_CONSTANT = 1;`
+  Example: `static int STATIC_VARIABLE_NAME = 1;`
+
+- Keywords which modify variables are always sorted in the same order, which is specified by the
+  following sample.  
+  Example: `public static transient final int SOME_CONSTANT = 1;`  
 
 
 ## Git
