@@ -165,6 +165,6 @@ For further details on Git usage see the [Git](#git) section below.
 - Keywords which modify functions are always sorted in the same order, which is specified by the
   following samples.  
   Example: `public static final int function() {}`  
-  Example: `public static final <T> ArrayList<T> function() {}`
+  Example: `public static final <T> ArrayList<T> function(Set<T> input) {}`
 
 ## Git
