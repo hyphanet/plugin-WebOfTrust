@@ -170,6 +170,8 @@ For further details on Git usage see the [Git](#git) section below.
 ## Statements
 
 - `if(...)`, `while(...)`, `catch(...)`, `functionCall(...)` etc. are written without whitespace
-  before the parentheses.
+  before the parentheses.  
+  Curly brackets which may follow are added to the same line and separated with a single space.  
+  Example: `if(...) {`
 
 ## Git
