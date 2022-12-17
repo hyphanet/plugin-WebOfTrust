@@ -182,4 +182,13 @@ For further details on Git usage see the [Git](#git) section below.
   assertion fails.  
   Example: `assert(BOOLEAN) : VALUE;`
 
+- The `catch(...) {` of a try-catch block is written on the same line as the `}` which ends the
+  try-block:
+  ```java
+  try {
+  	stuff();
+  } catch(Exception e) {
+  	repair();
+  }
+  ```
 ## Git
