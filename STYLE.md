@@ -88,4 +88,107 @@ For further details on Git usage see the [Git](#git) section below.
 
 - The GitHub Actions `.yml` files are indented with 2 spaces and shall stay like that.
 
+- Empty lines inside of an indented block are indented to match the surrounding indentation. E.g:
+  ```java
+  void function() {
+  	a();
+  	
+  	b();
+  }
+  ```
+  The line between `a();` and `b();` is indented to the same level as those two calls.
+
+- Excess whitespace may be introduced inside of statements to make their meaning more apparent,
+  see [General conduct](#general-conduct) for an example.  
+  To ensure this manually chosen indentation is not destroyed, the **usage of automated code
+  formatters upon pre-existing code is disallowed**.  
+  In practice this means: Use your IDE to format code as you write the code and thus immediately
+  review the formatting - but refrain from auto-formatting code afterwards for the mere sake of
+  auto-formatting code.
+
+- If a function definition or a function call is too long for a single line, the line it is wrapped
+  into is indented with an additional tab.
+
+- Line endings are `\n`. Some legacy files may use Windows' `\r\n` line endings instead. These shall
+  be kept as is while the Eclipse IDE does not support mixed line endings.  
+  Once it supports that you can gradually change them to `\n` as part of doing other non-whitespace
+  changes.
+
+- Multiple nested synchronized() blocks are formatted / indented as such:
+  ```java
+  synchronized(A) { // Comment on what needs the lock A
+  synchronized(B) { // Comment on what needs the lock B
+  synchronized(C) { // Comment on what needs the lock C
+  	code();
+  }}}
+  ```
+
+- Ordering of functions inside classes: Put high-level functions first, then after the highest-level
+  functions put the lower-level functions which the high-level functions use, and at the end put
+  very low-level helper functions.  
+  E.g.:
+  ```java
+  class PizzaProducer {
+  	public void makePizza() {     // Highest level
+  		makeRawPizza();
+  		bakePizza();
+  	}
+  
+  	private void makeRawPizza() {  // Medium level
+  		makeDough();
+  		putOnToppings();
+  	}
+  
+  	private void makeDough()     { /* ... */ }  // Low level
+  	private void putOnToppings() { /* ... */ }
+  	private void bakePizza()     { /* ... */ }
+  }
+  ```
+  This order ensures that when someone reads the class top to bottom then they will quickly get
+  a rough overview of what it does before they get lost in technical details.
+
+## Variables
+
+- Member variable names are prefixed with "m", unless the variables are static.  
+  The first letters of *all* following words are written in uppercase.  
+  Example: `private int mSomeVariableName;`
+
+- Names of static member variables are written all uppercase, with words separated by "_".  
+  Example: `static int STATIC_VARIABLE_NAME = 1;`
+
+- Keywords which modify variables are always sorted in the same order, which is specified by the
+  following sample.  
+  Example: `public static transient final int SOME_CONSTANT = 1;`  
+
+## Functions
+
+- Keywords which modify functions are always sorted in the same order, which is specified by the
+  following samples.  
+  Example: `public static final int function() {}`  
+  Example: `public static final <T> ArrayList<T> function(Set<T> input) {}`
+
+## Statements
+
+- `if(...)`, `while(...)`, `catch(...)`, `functionCall(...)` etc. are written without whitespace
+  before the parentheses.  
+  Curly brackets which may follow are added to the same line and separated with a single space.  
+  Example: `if(...) {`
+
+- Assertions are written as `assert(BOOLEAN)` instead of `assert BOOLEAN` even though Java allows
+  the latter.  
+  This is to match e.g. `if(BOOLEAN) ...` also requiring parentheses.  
+  Notice that Java assertions also support adding a value as documentation which will be converted
+  to String and used as message of the AssertionError exception which is thrown in case the
+  assertion fails.  
+  Example: `assert(BOOLEAN) : VALUE;`
+
+- The `catch(...) {` of a try-catch block is written on the same line as the `}` which ends the
+  try-block:
+  ```java
+  try {
+  	stuff();
+  } catch(Exception e) {
+  	repair();
+  }
+  ```
 ## Git
