@@ -174,4 +174,12 @@ For further details on Git usage see the [Git](#git) section below.
   Curly brackets which may follow are added to the same line and separated with a single space.  
   Example: `if(...) {`
 
+- Assertions are written as `assert(BOOLEAN)` instead of `assert BOOLEAN` even though Java allows
+  the latter.  
+  This is to match e.g. `if(BOOLEAN) ...` also requiring parentheses.  
+  Notice that Java assertions also support adding a value as documentation which will be converted
+  to String and used as message of the AssertionError exception which is thrown in case the
+  assertion fails.  
+  Example: `assert(BOOLEAN) : VALUE;`
+
 ## Git
