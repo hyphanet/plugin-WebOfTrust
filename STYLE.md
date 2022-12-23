@@ -194,4 +194,10 @@ For further details on Git usage see the [Git](#git) section below.
   	alwaysDo();
   }
   ```
+
+- When checking a variable `actual` for whether it is of the correct value EXPECTED_CONSTANT (e.g.
+  a hardcoded String), do **not** use the shortcut of `if(!EXPECTED_CONSTANT.equals(actual)) {...}`
+  to avoid a null check.  
+  Instead, use `if(actual != null && !actual.equals(EXPECTED_CONSTANT)) {...}`.
+
 ## Git
