@@ -191,7 +191,7 @@ For further details on Git usage see the [Git](#git) section below.
   } catch(Exception e) {
   	repair();
   } finally {
-	alwaysDo();
+  	alwaysDo();
   }
   ```
 ## Git
