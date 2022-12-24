@@ -205,5 +205,16 @@ For further details on Git usage see the [Git](#git) section below.
   The human train of thought is "is the variable equal to what it should be?", not "is what it
   should be equal to what the variable is?".  
   The code should match the human train of thought for readability.
+  
+  If a variable ought not be null, you should use the following to ensure an exception is thrown if
+  it is null:
+  ```java
+  requireNonNull(actual); // Add a static import from class Objects to obtain this function.
+  
+  if(!actual.equals(EXPECTED)) {
+  	// Deal with wrong value
+  }
+  ```
+
 
 ## Git
