@@ -1,0 +1,41 @@
+#!/bin/bash
+set -o nounset
+set -o pipefail
+set -o errexit
+set -o errtrace
+trap 'echo "Error at line $LINENO, exit code $?" >&2' ERR
+
+tmpdir="$(mktemp --directory)"
+trap 'rm -rf -- "$tmpdir"' EXIT
+
+from_ant="$(mktemp --tmpdir="$tmpdir" --suffix=.from-ant)"
+from_gradle="$(mktemp --tmpdir="$tmpdir" --suffix=.from-gradle)"
+
+echo "Testing with Ant..."
+gradle clean &> /dev/null
+ant -Dtest.skip=false clean dist |&
+	awk '
+		/\[junit\] Running (.*)/ { testsuite=$3 }
+		/\[junit\] Testcase: (.*) took (.*) sec/ { print testsuite "." $3 "()" }' |
+	sort > "$from_ant"
+
+echo "Testing with Gradle..."
+ant clean &> /dev/null
+gradle clean test |&
+	awk '/^(.+) > (.+) PASSED$/ { print $1 "." $3 "()" }' |
+	sort > "$from_gradle"
+
+# To test whether the diff fails if it should:
+#echo a >> "$from_gradle"
+
+echo "Diffing:"
+echo "Ant output:    $from_ant"
+echo "Gradle output: $from_gradle"
+if diff "$from_ant" "$from_gradle" ; then
+	echo "Executed tests are identical!"
+	exit 0
+else
+	echo "Executed tests do not match! Not deleting output so you can inspect it." >&2
+	trap - EXIT
+	exit 1
+fi
