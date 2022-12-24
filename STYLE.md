@@ -199,5 +199,11 @@ For further details on Git usage see the [Git](#git) section below.
   a hardcoded String), do **not** use the shortcut of `if(!EXPECTED_CONSTANT.equals(actual)) {...}`
   to avoid a null check.  
   Instead, use `if(actual != null && !actual.equals(EXPECTED_CONSTANT)) {...}`.
+  
+  The additional null-check which this may require is accepted as a valid tradeoff in favor of
+  avoiding very unreadable code:  
+  The human train of thought is "is the variable equal to what it should be?", not "is what it
+  should be equal to what the variable is?".  
+  The code should match the human train of thought for readability.
 
 ## Git
