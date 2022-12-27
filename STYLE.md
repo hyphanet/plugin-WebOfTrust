@@ -216,5 +216,14 @@ For further details on Git usage see the [Git](#git) section below.
   }
   ```
 
+## Terminology
+
+- Freenet in general uses the word "fetch" when something is downloaded from Freenet, and "insert"
+  when something is uploaded to Freenet.  
+  This also applies to older parts of the WoT/FT source code.  
+  Since these words are never used for that purpose in other non-Freenet software, WoT and FT are
+  gradually being migrated to use the words "download" / "upload" instead.  
+  Thus please use them in newly written code.  
+  Existing code can be gradually changed to use them as it is modified for other reasons anyway.
 
 ## Git
