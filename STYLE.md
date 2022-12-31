@@ -235,14 +235,14 @@ For further details on Git usage see the [Git](#git) section below.
   But anything which is not obvious should be documented.
 
 - WoT's JavaDoc documentation uses Markdown syntax instead of HTML so it is more convenient to read
-  while editing the source code.  
+  while reading the source code.  
   (There currently is no tooling in place to render JavaDoc HTML files from that, and it does not
-  matter if tools for that even exist:  
+  matter if tools for that even exist yet:  
   During lots of WoT development I noticed that using Eclipse to navigate to the relevant JavaDoc
   code in the Java source code is fast enough, there is no need to read the JavaDoc externally using
   HTML files.)
   
-  Some places may still be using HTML instead of Markdown.  
+  Some places may still be using HTML syntax instead of Markdown.  
   These shall be gradually migrated to Markdown once they're modified anyway for other reasons.
 
 ## Git
