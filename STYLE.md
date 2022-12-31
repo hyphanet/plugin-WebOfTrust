@@ -226,4 +226,12 @@ For further details on Git usage see the [Git](#git) section below.
   Thus please use them in newly written code.  
   Existing code can be gradually changed to use them as it is modified for other reasons anyway.
 
+## Documentation
+
+- WoT's source code contains very much documentation. That shall stay as is.  
+  Hence please do not commit undocumented code.  
+  You should not add trivial documentation such as documenting getters which return trivial
+  values!  
+  But anything which is not obvious should be documented.
+
 ## Git
