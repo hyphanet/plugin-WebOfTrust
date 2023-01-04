@@ -233,8 +233,9 @@ For further details on Git usage see the [Git](#git) section below.
   easier than filing a bugtracker entry which explains it.  
   Stuff which needs not be fixed before a release but would be good to fix someday is documented
   with `TODO: ...`.  
-  FIXMEs and TODOs may be suffixed with `Bug:`, `Code quality:`, `Performance:`, `Usability:` such
-  as e.g. `FIXME: Bug: ...` to ease locating work which affects a particular of those categories.  
+  FIXMEs and TODOs should if possible be prefixed with `Bug:`, `Code quality:`, `Performance:`,
+  `Usability:` such as e.g. `FIXME: Bug: ...` to ease locating work which affects a particular one
+  of those categories.  
   Multiple such prefixes may be concatenated.
 
 - WoT's source code contains very much documentation. That shall stay as is.  
