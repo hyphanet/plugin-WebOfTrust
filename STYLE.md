@@ -245,4 +245,8 @@ For further details on Git usage see the [Git](#git) section below.
   Some places may still be using HTML syntax instead of Markdown.  
   These shall be gradually migrated to Markdown once they're modified anyway for other reasons.
 
+- JavaDoc fields to avoid:
+  - @author: Use `git blame` instead.  
+    Legacy instances of this field may still be present in the codebase. They can be removed.
+
 ## Git
