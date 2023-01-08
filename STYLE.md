@@ -238,6 +238,11 @@ For further details on Git usage see the [Git](#git) section below.
   `Bug:`, `Code quality:`, `Performance:`, `Usability:` such as e.g. `FIXME: Bug: ...` to ease
   locating work which affects a particular one of those categories.  
   Multiple such prefixes may be concatenated.
+  
+  Often TODOs and FIXMEs evolve. As their final goal is to have them removed, it is then usually
+  not worth the effort to rewrite their whole text body to adapt it to changes.  
+  Thus, when updating them, you may just leave the outdated part as-is and append the update to the
+  end in a new paragraph which starts with `EDIT: ...`.
 
 - WoT's source code contains very much documentation. That shall stay as is.  
   Hence please do not commit undocumented code.  
