@@ -265,13 +265,18 @@ For further details on Git usage see the [Git](#git) section below.
   - @author: Use `git blame` instead.  
     Legacy instances of this field may still be present in the codebase. They can be removed.
 
-- To not waste space, the line containing `/**` to start a JavaDoc section and `*/` to end it is
+- To not waste space, the lines containing `/**` to start a JavaDoc section and `*/` to end it are
   also used for containing the JavaDoc text body.  
   A single space separates the `/**` and `*/` from the text.  
   Lines in between start with ` *` and they have two spaces after the `*` to align the text to
   the `/**` line.  
-  Example:
+  It is also allowed and recommended to only use a single line for a whole JavaDoc section if it
+  fits.  
+  Examples:
   ```java
+  /** Short JavaDoc. */
+  int mSomeVariable;
+  
   /** First line.  
    *  Second line.  
    *  Third line. */
