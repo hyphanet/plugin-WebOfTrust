@@ -283,4 +283,7 @@ For further details on Git usage see the [Git](#git) section below.
   int getStuff();
   ```
 
+- Important comments are prefixed with `WARNING:`, `ATTENTION:`, or `NOTICE:`.  
+  The first two are very important comments, the latter is a bit less important.
+
 ## Git
