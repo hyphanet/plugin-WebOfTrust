@@ -183,12 +183,111 @@ For further details on Git usage see the [Git](#git) section below.
   Example: `assert(BOOLEAN) : VALUE;`
 
 - The `catch(...) {` of a try-catch block is written on the same line as the `}` which ends the
-  try-block:
+  try-block. Same applies to the `finally { ... }`.  
+  Example:
   ```java
   try {
   	stuff();
   } catch(Exception e) {
   	repair();
+  } finally {
+  	alwaysDo();
   }
   ```
+
+- When checking a variable `actual` for whether it is of the correct value EXPECTED_CONSTANT (e.g.
+  a hardcoded String), do **not** use the shortcut of `if(!EXPECTED_CONSTANT.equals(actual)) {...}`
+  to avoid a null check.  
+  Instead, use `if(actual != null && !actual.equals(EXPECTED_CONSTANT)) {...}`.
+  
+  The additional null-check which this may require is accepted as a valid tradeoff in favor of
+  avoiding very unreadable code:  
+  The human train of thought is "is the variable equal to what it should be?", not "is what it
+  should be equal to what the variable is?".  
+  The code should match the human train of thought for readability.
+  
+  If a variable ought not be null, you should use the following to ensure an exception is thrown if
+  it is null:
+  ```java
+  requireNonNull(actual); // Add a static import from class Objects to obtain this function.
+  
+  if(!actual.equals(EXPECTED)) {
+  	// Deal with wrong value
+  }
+  ```
+
+## Terminology
+
+- Freenet in general uses the word "fetch" when something is downloaded from Freenet, and "insert"
+  when something is uploaded to Freenet.  
+  This also applies to older parts of the WoT/FT source code.  
+  Since these words are never used for that purpose in other non-Freenet software, WoT and FT are
+  gradually being migrated to use the words "download" / "upload" instead.  
+  Thus please use them in newly written code.  
+  Existing code can be gradually changed to use them as it is modified for other reasons anyway.
+
+## Documentation
+
+- Stuff which **MUST** be fixed before a release (or at least reviewed for whether postponing it
+  until the next release is OK) is marked and explained with `FIXME: ...` in the code if that is
+  easier than filing a bugtracker entry which explains it.  
+  Stuff which needs not be fixed before a release but would be good to fix someday is documented
+  with `TODO: ...`.
+  
+  FIXMEs and especially TODOs (due to their long-term nature) should if possible be prefixed with
+  `Bug:`, `Code quality:`, `Performance:`, `Usability:` such as e.g. `FIXME: Bug: ...` to ease
+  locating work which affects a particular one of those categories.  
+  Multiple such prefixes may be concatenated.
+  
+  Often TODOs and FIXMEs evolve. As their final goal is to have them removed, it is then usually
+  not worth the effort to rewrite their whole text body to adapt it to changes.  
+  Thus, when updating them, you may just leave the outdated part as-is and append the update to the
+  end in a new paragraph which starts with `EDIT: ...`.
+
+- WoT's source code contains very much documentation. That shall stay as is.  
+  Hence please do not commit undocumented code.  
+  You should not add trivial documentation such as documenting getters which return trivial
+  values!  
+  But anything which is not obvious should be documented.
+
+- WoT's JavaDoc documentation uses Markdown syntax instead of HTML so it is more convenient to read
+  while reading the source code.  
+  (There currently is no tooling in place to render JavaDoc HTML files from that, and it does not
+  matter if tools for that even exist yet:  
+  During lots of WoT development I noticed that using Eclipse to navigate to the relevant JavaDoc
+  code in the Java source code is fast enough, there is no need to read the JavaDoc externally using
+  HTML files.)
+  
+  Some places may still be using HTML syntax instead of Markdown.  
+  These shall be gradually migrated to Markdown once they're modified anyway for other reasons.
+
+- JavaDoc fields to avoid:
+  - @author: Use `git blame` instead.  
+    Legacy instances of this field may still be present in the codebase. They can be removed.
+
+- To not waste space, the lines containing `/**` to start a JavaDoc section and `*/` to end it are
+  also used for containing the JavaDoc text body.  
+  A single space separates the `/**` and `*/` from the text.  
+  Lines in between start with ` *` and they have two spaces after the `*` to align the text to
+  the `/**` line.  
+  It is also allowed and recommended to only use a single line for a whole JavaDoc section if it
+  fits.  
+  Examples:
+  ```java
+  /** Short JavaDoc. */
+  int mSomeVariable;
+  
+  /** First line.  
+   *  Second line.  
+   *  Third line. */
+  int getStuff();
+  ```
+
+- Important comments are prefixed with `WARNING:`, `ATTENTION:`, or `NOTICE:`.  
+  The first two are very important comments, the last one is a bit less important.
+  
+  In JavaDoc, these may be surrounded with Markdown's `**` to make them bold, e.g. `**NOTICE:**`.  
+  However most of the JavaDoc is not like that yet.  
+  Existing instances shall be gradually converted as the code is modified for other reasons anyway.
+
 ## Git
