@@ -284,6 +284,10 @@ For further details on Git usage see the [Git](#git) section below.
   ```
 
 - Important comments are prefixed with `WARNING:`, `ATTENTION:`, or `NOTICE:`.  
-  The first two are very important comments, the latter is a bit less important.
+  The first two are very important comments, the last one is a bit less important.
+  
+  In JavaDoc, these may be surrounded with Markdown's `**` to make them bold, e.g. `**NOTICE:**`.  
+  However most of the JavaDoc is not like that yet.  
+  Existing instances shall be gradually converted as the code is modified for other reasons anyway.
 
 ## Git
