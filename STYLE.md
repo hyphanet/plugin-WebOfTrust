@@ -290,4 +290,10 @@ For further details on Git usage see the [Git](#git) section below.
   However most of the JavaDoc is not like that yet.  
   Existing instances shall be gradually converted as the code is modified for other reasons anyway.
 
+- If class names are used in documentation, their spelling and capitalization shall not be modified
+  in ways which would be meaning to take account for how it is typically done due to regular
+  English spelling / grammar.  
+  E.g. when talking about class `Identity`, you do not write `identity` or `identities` but
+  `Identity` and `Identitys` in the documentation.
+
 ## Git
