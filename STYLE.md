@@ -242,7 +242,9 @@ For further details on Git usage see the [Git](#git) section below.
   Often TODOs and FIXMEs evolve. As their final goal is to have them removed, it is then usually
   not worth the effort to rewrite their whole text body to adapt it to changes.  
   Thus, when updating them, you may just leave the outdated part as-is and append the update to the
-  end in a new paragraph which starts with `EDIT: ...`.
+  end in a new paragraph which starts with `EDIT: ...`.  
+  The `EDIT:` prefix makes it clear why the original comment might be in contradiction with the
+  added text.
 
 - WoT's source code contains very much documentation. That shall stay as is.  
   Hence please do not commit undocumented code.  
