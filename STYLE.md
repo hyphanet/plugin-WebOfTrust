@@ -296,4 +296,11 @@ For further details on Git usage see the [Git](#git) section below.
   E.g. when talking about class `Identity`, you do not write `identity` or `identities` but
   `Identity` and `Identitys` in the documentation.
 
+- When adding temporary measures to the code which can be removed once external libraries/services
+  fix the underlying issue document this with something similar to:  
+  `TODO: Code quality: As of YYYY-MM-DD this does not work due to bugs at <library and its version>.
+  Please try if a more recent version fixes this, and remove the workaround if yes.`  
+  Providing a date allows future developers to not have to dig into the Git history to decide if
+  enough time has elapsed that a test to see if the workaround can be removed is worth the effort.
+
 ## Git
