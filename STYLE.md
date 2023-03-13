@@ -66,6 +66,22 @@ For further details on Git usage see the [Git](#git) section below.
   Eclipse project configuration files are shipped in the repository.  
   See [the README](/README.md) for how to use them.
 
+- The single most code quality improving features of Eclipse are the `Open Call Hierarchy (Ctrl +
+  Alt + H)` and `References / Workspace (Shift + Ctrl + G)` features in the context menu.  
+  To use them, select the name of a function / class / variable / etc., right click and chose them
+  from the menu.  
+  
+  These features allow you to see where functions etc. are used/referenced in the codebase.  
+  
+  When refactoring, use them to make sure all relevant places are modified.  
+  E.g. when you change the behavior of a function, review all its callers for whether they can
+  cope with the new behavior, and all documentation which references it for whether it still is
+  accurate.
+  
+  This is a lot more powerful than merely doing a text search, because e.g. it can also deal with
+  things which have very short names such as `get()` for which a text search would yield a very
+  large amount of false search results.  
+
 ## Layout
 
 - Line length limit is 100 characters.
