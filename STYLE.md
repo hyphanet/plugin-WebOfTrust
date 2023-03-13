@@ -60,6 +60,12 @@ Then the merge commits serve as a replacement for what would otherwise be squash
 For further details on Git usage see the [Git](#git) section below.  
 (This part here is a separate section to stress its importance.)
 
+## Development environment
+
+- Usage of the Eclipse IDE is recommended to keep the style coherent.  
+  Eclipse project configuration files are shipped in the repository.  
+  See [the README](/README.md) for how to use them.
+
 ## Layout
 
 - Line length limit is 100 characters.
