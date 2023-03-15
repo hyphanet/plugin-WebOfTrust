@@ -7,6 +7,13 @@ trap 'echo "Error at line $LINENO, exit code $?" >&2' ERR
 tmpdir="$(mktemp --directory)"
 trap 'rm -rf -- "$tmpdir"' EXIT
 
+if [ -e "./gradlew" ] ; then
+	echo "Found ./gradlew, using it instead of system's Gradle."
+	shopt -s expand_aliases
+	unalias -a
+	alias gradle=./gradlew
+fi
+
 check_jar() {
 local jar="$1"
 local from_ant="$(mktemp --tmpdir="$tmpdir" --directory --suffix=.from-ant)"

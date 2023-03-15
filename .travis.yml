@@ -68,7 +68,10 @@ before_script: |
       ln -s '/etc/ssl/certs/java/cacerts' "${JAVA_HOME}/lib/security/cacerts"
     fi &&
     # TODO: freenet.jar won't contain class Version if we don't run the
-    # clean task in a separate execution of Gradle. Why?
+    # clean task in a separate execution of Gradle. I.e. this wouldn't work:
+    #   $ gradle clean jar
+    # This is due to a bug in fred's Gradle script which could be fixed
+    # like this WoT commit did: 06c007204f40c712a398f0b58671f77fd9aeffd1
     ./gradlew clean &&
     # "copyRuntimeLibs" copies the JAR *and* dependencies - which WoT also
     # needs - to build/output/
@@ -86,9 +89,17 @@ before_script: |
 script:
   - set -o errexit
   - echo 'Checksums of dependencies:' ; sha256sum ../fred/build/output/*
-  # Don't allow Travis to override the low memory limit we set in Ant with a higher one.
+  # Don't allow Travis to override the low memory limit which our builder sets with a higher one.
   - unset _JAVA_OPTIONS
-  - ant
+  # Use Gradle instead of Ant as it supports using multiple CPU cores on the unit tests.
+  # Use the same Gradle as fred to re-use the fixes we applied to it above and because Travis'
+  # Gradle version is too old for Java >= 9.
+  - ln -sf "$TRAVIS_BUILD_DIR/../fred/gradlew"
+  - ./gradlew clean test jar
+  # To test the Ant and Gradle builders against each other uncomment the following.
+  # FIXME: Do this one time as soon as branch issue-0003816-IdentityFetcher-rewrite is finished.
+  ## - tools/compare-gradle-jars-with-ant-jars
+  ## - tools/compare-gradle-tests-with-ant-tests
 
 jdk:
   - oraclejdk9
