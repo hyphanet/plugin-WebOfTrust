@@ -328,3 +328,7 @@ For further details on Git usage see the [Git](#git) section below.
   enough time has elapsed that a test to see if the workaround can be removed is worth the effort.
 
 ## Git
+
+- All commits should be gpg-signed.  
+  Use `git config --global commit.gpgsign true` to enable this for all repositories, remove the
+  `--global` to enable it for the current one only.
