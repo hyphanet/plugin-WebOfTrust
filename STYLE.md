@@ -325,9 +325,6 @@ prohibited** because it would destroy the above cases of well-chosen manual form
   commit message to summarize the sub-branch.  
   Then the merge commits serve as a replacement for what would otherwise be squashed commits.
 
-  For further details on Git usage see the [Git](#git) section below.  
-  (This part here is a separate section to stress its importance.)
-
 - All commits should be gpg-signed.  
   Use `git config --global commit.gpgsign true` to enable this for all repositories, remove the
   `--global` to enable it for the current one only.
