@@ -66,10 +66,10 @@ For further details on Git usage see the [Git](#git) section below.
   Eclipse project configuration files are shipped in the repository.  
   See [the README](/README.md) for how to use them.
 
-- The single most code quality improving features of Eclipse are the `Open Call Hierarchy (Ctrl +
-  Alt + H)` and `References / Workspace (Shift + Ctrl + G)` features in the context menu.  
-  To use them, select the name of a function / class / variable / etc., right click and chose them
-  from the menu.  
+- The most code quality improving features of Eclipse are the `Open Call Hierarchy (Ctrl + Alt + H)`
+  and `References / Workspace (Shift + Ctrl + G)` features in the context menu.  
+  To use them, select the name of a function / class / variable / etc., right click and choose the
+  feature from the menu.  
   
   These features allow you to see where functions etc. are used/referenced in the codebase.  
   
