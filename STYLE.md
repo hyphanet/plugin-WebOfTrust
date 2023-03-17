@@ -328,3 +328,8 @@ prohibited** because it would destroy the above cases of well-chosen manual form
 - All commits should be gpg-signed.  
   Use `git config --global commit.gpgsign true` to enable this for all repositories, remove the
   `--global` to enable it for the current one only.
+
+- Commits size should be "atomic", i.e. a commit should consist a single step of work.  
+  Do not create commits which span multiple hundred lines!  
+  Large pieces of work can typically be broken down into multiple steps and thus commits to make
+  each easy to understand **and** review.
