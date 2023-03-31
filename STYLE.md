@@ -334,3 +334,8 @@ prohibited** because it would destroy the above cases of well-chosen manual form
   Do **not** create commits which span multiple hundred lines!  
   Large pieces of work can typically be broken down into multiple steps and thus commits to make
   each easy to understand *and* review.
+
+- Commit messages however should not be too short, do explain very clearly what the commit aims to
+  do and especially **why** it does that.
+  
+  The "why" is very important for futher developers to be able to understand and debug the code!
