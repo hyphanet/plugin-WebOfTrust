@@ -340,3 +340,4 @@ prohibited** because it would destroy the above cases of well-chosen manual form
   
   The "why" is very important for future developers to be able to understand and debug the code!
 
+- Commit messages have a line length limit of 72 characters.
