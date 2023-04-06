@@ -350,3 +350,9 @@ prohibited** because it would destroy the above cases of well-chosen manual form
   email.  
   A blank line follows afterwards.  
   After the blank line the description of the commit follows.
+
+  `AREA_OF_CHANGES: SUB_AREA_OF_CHANGES: SUMMARY_OF_CHANGES` is also valid.
+
+  Examples:
+  - `GitHub Actions: Speed up runtime by ~ 1 minute`
+  - `GitHub Actions: MacOS: Fix syntax error in shell script`
