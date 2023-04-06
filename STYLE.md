@@ -343,3 +343,10 @@ prohibited** because it would destroy the above cases of well-chosen manual form
 - Commit messages have a line length limit of 72 characters.
 
 - When indenting things in commit messages use 2 spaces.
+
+- Commit messages start with a line `AREA_OF_CHANGES: SUMMARY_OF_CHANGES`.  
+  The summary may be wrapped into multiple lines.  
+  The first lines of the commit are the "subject" of the commit, like e.g. the subject of an
+  email.  
+  A blank line follows afterwards.  
+  After the blank line the description of the commit follows.
