@@ -42,23 +42,28 @@ mere syntax.
 As a consequence of this, the **usage of automated code formatters on pre-existing code is
 prohibited** because it would destroy the above cases of well-chosen manual formatting.
 
-## Git history
 
-**Git history is considered as part of the documentation of the codebase and therefore shall
-*NOT* be squashed / modified / deleted / tampered with!**
+## Development environment
 
-Searching the history has aided fixing many bugs, it is unwise to tamper with it in any way!
+- Usage of the Eclipse IDE is recommended to keep the style coherent.  
+  Eclipse project configuration files are shipped in the repository.  
+  See [the README](/README.md) for how to use them.
 
-This especially means that you should **not** squash commits before merging a branch!
-
-To make the history more readable instead of squashing you should create sub-branches of your
-feature branch and merge them into the feature branch one after another.  
-Use `git merge --no-ff SUB_BRANCH` to ensure a merge commit is always created and use the merge
-commit message to summarize the sub-branch.  
-Then the merge commits serve as a replacement for what would otherwise be squashed commits.
-
-For further details on Git usage see the [Git](#git) section below.  
-(This part here is a separate section to stress its importance.)
+- The most code quality improving features of Eclipse are the `Open Call Hierarchy (Ctrl + Alt + H)`
+  and `References / Workspace (Shift + Ctrl + G)` features in the context menu.  
+  To use them, select the name of a function / class / variable / etc., right click and choose the
+  feature from the menu.  
+  
+  These features allow you to see where functions etc. are used/referenced in the codebase.  
+  
+  When refactoring, use them to make sure all relevant places are modified.  
+  E.g. when you change the behavior of a function, review all its callers for whether they can
+  cope with the new behavior, and all documentation which references it for whether it still is
+  accurate.
+  
+  This is a lot more powerful than merely doing a text search, because e.g. it can also deal with
+  things which have very short names such as `get()` for which a text search would yield a very
+  large amount of false search results.  
 
 ## Layout
 
@@ -242,7 +247,9 @@ For further details on Git usage see the [Git](#git) section below.
   Often TODOs and FIXMEs evolve. As their final goal is to have them removed, it is then usually
   not worth the effort to rewrite their whole text body to adapt it to changes.  
   Thus, when updating them, you may just leave the outdated part as-is and append the update to the
-  end in a new paragraph which starts with `EDIT: ...`.
+  end in a new paragraph which starts with `EDIT: ...`.  
+  The `EDIT:` prefix makes it clear why the original comment might be in contradiction with the
+  added text.
 
 - WoT's source code contains very much documentation. That shall stay as is.  
   Hence please do not commit undocumented code.  
@@ -290,4 +297,62 @@ For further details on Git usage see the [Git](#git) section below.
   However most of the JavaDoc is not like that yet.  
   Existing instances shall be gradually converted as the code is modified for other reasons anyway.
 
+- If class names are used in documentation, their spelling and capitalization shall not be modified
+  in ways which would be meaning to take account for how it is typically done due to regular
+  English spelling / grammar.  
+  E.g. when talking about class `Identity`, you do not write `identity` or `identities` but
+  `Identity` and `Identitys` in the documentation.
+
+- When adding temporary measures to the code which can be removed once external libraries/services
+  fix the underlying issue document this with something similar to:  
+  `TODO: Code quality: As of YYYY-MM-DD this does not work due to bugs at <library and its version>.
+  Please try if a more recent version fixes this, and remove the workaround if yes.`  
+  Providing a date allows future developers to not have to dig into the Git history to decide if
+  enough time has elapsed that a test to see if the workaround can be removed is worth the effort.
+
 ## Git
+
+- **Git history is considered as part of the documentation of the codebase and therefore shall
+  *NOT* be squashed / modified / deleted / tampered with!**
+  
+  Searching the history has aided fixing many bugs, it is unwise to tamper with it in any way!
+  
+  This especially means that you should **not** squash commits before merging a branch!
+  
+  To make the history more readable instead of squashing you should create sub-branches of your
+  feature branch and merge them into the feature branch one after another.  
+  Use `git merge --no-ff SUB_BRANCH` to ensure a merge commit is always created and use the merge
+  commit message to summarize the sub-branch.  
+  Then the merge commits serve as a replacement for what would otherwise be squashed commits.
+
+- All commits should be gpg-signed.  
+  Use `git config --global commit.gpgsign true` to enable this for all repositories, remove the
+  `--global` to enable it for the current one only.
+
+- The size of commits should be "atomic", i.e. a single commit should consist of a single step of
+  work.  
+  Do **not** create commits which span multiple hundred lines!  
+  Large pieces of work can typically be broken down into multiple steps and thus commits to make
+  each easy to understand *and* review.
+
+- Commit messages however should not be too short, do explain very clearly what the commit aims to
+  do and especially **why** it does that.
+  
+  The "why" is very important for future developers to be able to understand and debug the code!
+
+- Commit messages have a line length limit of 72 characters.
+
+- When indenting things in commit messages use 2 spaces.
+
+- Commit messages start with a line `AREA_OF_CHANGES: SUMMARY_OF_CHANGES`.  
+  The summary may be wrapped into multiple lines.  
+  The first lines of the commit are the "subject" of the commit, like e.g. the subject of an
+  email.  
+  A blank line follows afterwards.  
+  After the blank line the description of the commit follows.
+
+  `AREA_OF_CHANGES: SUB_AREA_OF_CHANGES: SUMMARY_OF_CHANGES` is also valid.
+
+  Examples:
+  - `GitHub Actions: Speed up runtime by ~ 1 minute`
+  - `GitHub Actions: MacOS: Fix syntax error in shell script`
