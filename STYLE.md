@@ -368,8 +368,19 @@ prohibited** because it would destroy the above cases of well-chosen manual form
   - `CLASS: Add function()`
   - `CLASS: Implement function()`
   - `UNIT_TEST_CLASS: Add test for function()`
+  - `AREA: Amend the previous commit`.  
+    **NOTICE:** Use this instead of `git commit --amend ; git push --force`!  
+    I.e. never change a pushed commit, instead create an additional one to fix the bogus commit.
   - `AREA: Documentation`
   - `AREA: Documentation: What it is about`
   - `AREA: Document bug`
   - `AREA: Document potential bug`
   - `AREA: Clarify documentation`
+  - `AREA: Defensive programming`, when making code paranoidly safe against unlikely breakage.
+  - `AREA: Improve readability`
+  - `AREA: Wire-in THING` to state that THING is being connected to AREA to make it execute.
+  - `AREA: Indentation` - Committing indentation separate of other code makes it easy to review.
+  - `AREA: Recycle resolved FIXME/TODO into documentation`
+  - `AREA: Reduce LOC` - when simplifying things.
+  - `AREA: Obey line length limit`
+  - `Fix typo`
