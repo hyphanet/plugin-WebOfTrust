@@ -362,3 +362,14 @@ prohibited** because it would destroy the above cases of well-chosen manual form
   - `CLASS.functionName()`
   - `SUBSYSTEM`, e.g. "GitHub Actions".
   - `FILENAME`, e.g. name of a shell script.
+
+- Common commit subjects, where AREA is short for AREA_OF_CHANGES:
+  - `Add class CLASS`
+  - `CLASS: Add function()`
+  - `CLASS: Implement function()`
+  - `UNIT_TEST_CLASS: Add test for function()`
+  - `AREA: Documentation`
+  - `AREA: Documentation: What it is about`
+  - `AREA: Document bug`
+  - `AREA: Document potential bug`
+  - `AREA: Clarify documentation`
