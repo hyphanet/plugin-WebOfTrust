@@ -360,3 +360,5 @@ prohibited** because it would destroy the above cases of well-chosen manual form
 - Common values of AREA_OF_CHANGES:
   - `CLASS`, a class name.
   - `CLASS.functionName()`
+  - `SUBSYSTEM`, e.g. "GitHub Actions".
+  - `FILENAME`, e.g. name of a shell script.
