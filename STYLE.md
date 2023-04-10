@@ -356,3 +356,7 @@ prohibited** because it would destroy the above cases of well-chosen manual form
   Examples:
   - `GitHub Actions: Speed up runtime by ~ 1 minute`
   - `GitHub Actions: MacOS: Fix syntax error in shell script`
+
+- Common values of AREA_OF_CHANGES:
+  - `CLASS`, a class name.
+  - `CLASS.functionName()`
