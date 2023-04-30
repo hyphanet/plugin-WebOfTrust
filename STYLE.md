@@ -381,6 +381,7 @@ prohibited** because it would destroy the above cases of well-chosen manual form
   - `AREA: Improve readability`
   - `AREA: Wire-in THING` to state that THING is being connected to AREA to make it execute.
   - `AREA: Indentation` - Committing indentation separately of other code makes it easy to review.
+  - `AREA: Whitespace` - for non-indentation whitespace changes. See above.
   - `AREA: Recycle resolved FIXME/TODO into documentation`
   - `AREA: Reduce LOC` - when simplifying things.
   - `AREA: Obey line length limit`
