@@ -386,3 +386,8 @@ prohibited** because it would destroy the above cases of well-chosen manual form
   - `AREA: Reduce LOC` - when simplifying things.
   - `AREA: Obey line length limit`
   - `Fix typo`
+
+- Merge commits start with `Merge branch 'SUB_BRANCH' into TARGET_BRANCH`.  
+  TARGET_BRANCH must *not* be omitted:  
+  Git usually does this in the default message when you merge into branch `master`.  
+  Add it manually then.
