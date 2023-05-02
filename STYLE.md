@@ -391,3 +391,7 @@ prohibited** because it would destroy the above cases of well-chosen manual form
   TARGET_BRANCH must *not* be omitted:  
   Git usually does this in the default message when you merge into branch `master`.  
   Add it manually then.
+
+- The second line of the merge commit message shall be `= DESCRIPTION`, including the `= `,
+  where the description summarizes the work of the branch.  
+  It shall be the same as the title of the related pull request.
