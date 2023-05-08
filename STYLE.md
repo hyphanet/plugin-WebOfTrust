@@ -395,3 +395,14 @@ prohibited** because it would destroy the above cases of well-chosen manual form
 - The second line of the merge commit message shall be `= DESCRIPTION`, including the `= `,
   where the description summarizes the work of the branch.  
   It shall be the same as the title of the related pull request.
+
+- When submitting code via a pull request to the upstream repository `hyphanet/plugin-WebOfTrust`
+  it shall **include** a merge commit which merges the PR's branch into the target branch.  
+  I.e. the developer of a branch writes the merge commit already, not the maintainer who merges it
+  into the repository.  
+  Because the developers of branches write the merge commit messages themselves it is ensured
+  that they have the highest possible quality - nobody understands code better than the person who
+  wrote it.  
+  Further, merge conflicts are thereby resolved by someone who understands the code they have just
+  modified, which guarantees the conflicts are resolved in a fashion which is coherent with the
+  modifications.
