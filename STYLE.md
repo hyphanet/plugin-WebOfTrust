@@ -406,3 +406,7 @@ prohibited** because it would destroy the above cases of well-chosen manual form
   Further, merge conflicts are thereby resolved by someone who understands the code they have just
   modified, which guarantees the conflicts are resolved in a fashion which is coherent with the
   modifications.
+  
+  To always create a merge commit when merging branches, use `git merge --no-ff BRANCH`.  
+  The reviewer then merges it with `git merge --ff-only ...` in order to **not** create a merge
+  commit of their own.
