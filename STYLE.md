@@ -409,4 +409,6 @@ prohibited** because it would destroy the above cases of well-chosen manual form
   
   To always create a merge commit when merging branches, use `git merge --no-ff BRANCH`.  
   The reviewer then merges it with `git merge --ff-only ...` in order to **not** create a merge
-  commit of their own.
+  commit of their own: Duplicate merge commits would make the git history very unreadable.  
+  To signal to the reviewer that this approach has been followed, include the following message
+  in the PR: `Please merge with '--ff-only' into BRANCH_NAME.`
