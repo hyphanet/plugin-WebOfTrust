@@ -414,3 +414,8 @@ prohibited** because it would destroy the above cases of well-chosen manual form
   in the PR: `IMPORTANT: As requested by the style guideline, this already includes a merge commit!
   Thus please merge with '--ff-only' into BRANCH_NAME to not create a nested duplicate merge
   commit!`
+
+- The above also means that commits should not be put directly into the main branches (master,
+  next), but should always be shipped inside of sub-branches.  
+  This ensures the history is easy to read: Work is grouped by the branches, and a description of it
+  is available in the merge commits.
