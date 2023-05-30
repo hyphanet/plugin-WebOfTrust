@@ -426,3 +426,7 @@ prohibited** because it would destroy the above cases of well-chosen manual form
   yet.  
   It is valid to document such things as `FIXME` in the code and have the `Remaining work:` section
   tell that the FIXMEs which have been added by the branches need to be resolved.
+
+- If you used a website as documentation for obtaining info on how to do what the commit does then
+  please include a link in the commit message.
+  Specify it as: `Source: https://...` or `See: ...`.
