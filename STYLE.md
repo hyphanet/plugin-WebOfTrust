@@ -424,5 +424,5 @@ prohibited** because it would destroy the above cases of well-chosen manual form
   where X is a number starting at 1.  
   The merge commits must end with a section `Remaining work:` which lists what hasn't been done
   yet.  
-  It is valid document such things as `FIXME` in the code and have the `Remaining work:` section
+  It is valid to document such things as `FIXME` in the code and have the `Remaining work:` section
   tell that the FIXMEs which have been added by the branches need to be resolved.
