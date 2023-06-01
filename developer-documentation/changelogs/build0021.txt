@@ -402,6 +402,61 @@ CHANGELOG about stuff only interesting for developers
   Notably the new Java 11 is not tested yet due to Freenet's Gradle not
   working on it.
 
+- [Code quality] Travis CI: Speed up build time from 1 hour to
+                 20 minutes (xor)
+
+  Since build0020, the Travis CI build script has been uploading the
+  compiled WoT JAR directly to Freenet (as a CHK) from Travis CI.
+  The upload would start at the end of the build, and then take up to
+  half an hour, in addition to the time it took to run the build.
+
+  This has been improved by starting the Freenet node *before* the build
+  already.
+  As the build takes 10 minutes (was much more before the previous
+  optimization of using Gradle), the node has that time to establish
+  connectivity to the network before the upload is started at the end
+  of the build.
+  This greatly reduces the time of the upload because a well-connected
+  node will upload much more quickly I suppose.
+  A full "build, test and upload" cycle can now sometimes happen in as
+  little as ~ 20 minutes.
+
+  An important benefit of this is that builds should reach the 50 minute
+  time limit of Travis CI much less frequently now, if at all anymore.
+
+  Further, while previously the upload would happen on all Java versions
+  which Travis CI compiles for, currently 6 different ones, the upload
+  now only happens on the minimal Java version as required by Freenet
+  (currently Java 7).
+  This:
+  - ensures the resulting JAR will work on all Java versions
+  - cuts down our usage of Travis' free execution time
+  - further speeds up the time until a full build completes because
+    Travis only offers 5 parallel build jobs, but we compile for 6 Java
+    versions.
+    So previously the last job would have had to wait a long time for
+    one of the first ones to finish.
+
+  It has also been ensured that the Java 7 job, which takes the longest
+  due to the upload to Freenet, now is the first job which is started
+  in a build instead of the last one as it was previously.
+
+  Overall, including the previously shipped optimization of using Gradle
+  on Travis CI for parallel unit test execution, this yields the
+  following improvements (rough estimates) to the Travis build speed:
+  - Where compiling, testing and uploading a single WoT build, for all
+    Java versions, on Travis would previously finish after ~1 hour, it
+    now finishes in 20 min.
+    This means when a developer uploads new code to see if the tests
+    succeed they now only have to wait for 20 minutes for full
+    confirmation.
+  - Where the sum of Travis execution time for a single build, i.e.
+    sum of the time slots for the build jobs of all Java versions on
+    Travis, would previously be ~3 hours, it is now ~1 hour.
+    This isn't a direct benefit to Freenet developers, but a matter of
+    politeness towards Travis: They provide us with free computing
+    power, so we should try to not waste it.
+
 - 0006934: [Code quality] Replace "WithoutCommit" function name suffixes
            with "@NeedsTransaction" annotation (xor)
 
