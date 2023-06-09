@@ -430,3 +430,6 @@ prohibited** because it would destroy the above cases of well-chosen manual form
 - If you used a website as documentation for obtaining info on how to do what the commit does then
   please include a link in the commit message.
   Specify it as: `Source: https://...` or `See: ...`.
+
+- Quotes in commit messages are prefixed with "> " like quotes in emails.  
+  This includes citation of code.
