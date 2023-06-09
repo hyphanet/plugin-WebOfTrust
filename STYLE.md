@@ -433,3 +433,5 @@ prohibited** because it would destroy the above cases of well-chosen manual form
 
 - Quotes in commit messages are prefixed with "> " like quotes in emails.  
   This includes citation of code.
+  
+  Short quotes can alternatively be prefixed with two spaces.
