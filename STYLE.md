@@ -435,3 +435,11 @@ prohibited** because it would destroy the above cases of well-chosen manual form
   This includes citation of code.
   
   Short quotes can alternatively be prefixed with two spaces.
+
+- WoT and FT have some common code, e.g. the Gradle build script. Thus when modifying that code you
+  will encounter the situation where a certain set of commits in WoT or FT should be applied to
+  the other.  
+  When doing that, end the commit messages with one of:
+  - `Based on Freetalk commit COMMIT_HASH`
+  - `Based on WoT commit COMMIT_HASH`
+  The `.` to end the sentence is left out so the hash can be copied easily.
