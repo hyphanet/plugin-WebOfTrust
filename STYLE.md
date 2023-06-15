@@ -444,7 +444,16 @@ prohibited** because it would destroy the above cases of well-chosen manual form
   - `Based on WoT commit COMMIT_HASH`
   The `.` to end the sentence is left out so the hash can be copied easily.
 
-## Shell scripts / CI scripts
+## Binaries / shell scripts / CI scripts
 
 - When writing auxiliary shell scripts / CI scripts always use the long-form of parameters to
   improve readability, e.g. use `cp --archive` instead of `cp -a`.
+
+- Do not commit foreign code/libraries to the repository, e.g. a `gradlew` script:  
+  Duplicating foreign code is a bad thing to do because you also duplicate its current bugs.  
+  It would be inevitable that someone forgets to update the committed binaries when this has to be
+  done.  
+  If it is absolutely necessary to do so then at least put the foreign code in a git submodule, not
+  into the main repository. This avoids bloating the repo.  
+  Notice: The `katpcha` library which WoT currently contains violates this for legacy reasons.
+  It will be moved to a git submodule at some point in time.
