@@ -443,3 +443,8 @@ prohibited** because it would destroy the above cases of well-chosen manual form
   - `Based on Freetalk commit COMMIT_HASH`
   - `Based on WoT commit COMMIT_HASH`
   The `.` to end the sentence is left out so the hash can be copied easily.
+
+## Shell scripts / CI scripts
+
+- When writing auxiliary shell scripts / CI scripts always use the long-form of parameters to
+  improve readability, e.g. use `cp --archive` instead of `cp -a`.
