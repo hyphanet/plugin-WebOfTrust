@@ -356,3 +356,104 @@ prohibited** because it would destroy the above cases of well-chosen manual form
   Examples:
   - `GitHub Actions: Speed up runtime by ~ 1 minute`
   - `GitHub Actions: MacOS: Fix syntax error in shell script`
+
+- Common values of AREA_OF_CHANGES:
+  - `CLASS`, a class name.
+  - `CLASS.functionName()`
+  - `SUBSYSTEM`, e.g. "GitHub Actions".
+  - `FILENAME`, e.g. name of a shell script.
+
+- Common commit subjects, where AREA is short for AREA_OF_CHANGES:
+  - `Add class CLASS`
+  - `CLASS: Add function()`
+  - `CLASS: Implement function()`
+  - `UNIT_TEST_CLASS: Add test for function()`
+  - `AREA: Amend the previous commit`.  
+    **NOTICE:** Use this instead of `git commit --amend ; git push --force`!  
+    I.e. never change a pushed commit, instead create an additional one to fix the bogus commit.  
+    (This is because git history should never be modified.)
+  - `AREA: Documentation`
+  - `AREA: Documentation: What it is about`
+  - `AREA: Document bug`
+  - `AREA: Document potential bug`
+  - `AREA: Clarify documentation`
+  - `AREA: Defensive programming`, when making code paranoidly safe against unlikely breakage.
+  - `AREA: Improve readability`
+  - `AREA: Wire-in THING` to state that THING is being connected to AREA to make it execute.
+  - `AREA: Indentation` - Committing indentation separately of other code makes it easy to review.
+  - `AREA: Whitespace` - for non-indentation whitespace changes. See above.
+  - `AREA: Recycle resolved FIXME/TODO into documentation`
+  - `AREA: Reduce LOC` - when simplifying things.
+  - `AREA: Obey line length limit`
+  - `Fix typo`
+
+- Merge commits start with `Merge branch 'SUB_BRANCH' into TARGET_BRANCH`.  
+  TARGET_BRANCH must *not* be omitted:  
+  Git usually does this in the default message when you merge into branch `master`.  
+  Add it manually then.
+
+- The second line of the merge commit message shall be `= DESCRIPTION`, including the `= `,
+  where the description summarizes the work of the branch.  
+  It shall be the same as the title of the related pull request.
+
+- When submitting code via a pull request to the upstream repository `hyphanet/plugin-WebOfTrust`
+  it shall **include** a merge commit which merges the PR's branch into the target branch.  
+  I.e. the developer of a branch writes the merge commit already, not the maintainer who merges it
+  into the repository.  
+  Because the developers of branches write the merge commit messages themselves it is ensured
+  that they have the highest possible quality - nobody understands code better than the person who
+  wrote it.  
+  Further, merge conflicts are thereby resolved by someone who understands the code they have just
+  modified, which guarantees the conflicts are resolved in a fashion which is coherent with the
+  modifications.
+  
+  To always create a merge commit when merging branches, use `git merge --no-ff BRANCH`.  
+  The reviewer then merges it with `git merge --ff-only ...` in order to **not** create a merge
+  commit of their own: Duplicate merge commits would make the git history very unreadable.  
+  To signal to the reviewer that this approach has been followed, include the following message
+  in the PR: `IMPORTANT: As requested by the style guideline, this already includes a merge commit!
+  Thus please merge with '--ff-only' into BRANCH_NAME to not create a nested duplicate merge
+  commit!`
+
+- The above also means that commits should not be put directly into the main branches (master,
+  next), but should always be shipped inside of sub-branches.  
+  This ensures the history is easy to read: Work is grouped by the branches, and a description of it
+  is available in the merge commits.
+
+- When delivering a piece of work as multiple branches/PRs, the branch name is suffixed with "partX"
+  where X is a number starting at 1.  
+  The merge commits must end with a section `Remaining work:` which lists what hasn't been done
+  yet.  
+  It is valid to document such things as `FIXME` in the code and have the `Remaining work:` section
+  tell that the FIXMEs which have been added by the branches need to be resolved.
+
+- If you used a website as documentation for obtaining info on how to do what the commit does then
+  please include a link in the commit message.
+  Specify it as: `Source: https://...` or `See: ...`.
+
+- Quotes in commit messages are prefixed with "> " like quotes in emails.  
+  This includes citation of code.
+  
+  Short quotes can alternatively be prefixed with two spaces.
+
+- WoT and FT have some common code, e.g. the Gradle build script. Thus when modifying that code you
+  will encounter the situation where a certain set of commits in WoT or FT should be applied to
+  the other.  
+  When doing that, end the commit messages with one of:
+  - `Based on Freetalk commit COMMIT_HASH`
+  - `Based on WoT commit COMMIT_HASH`
+  The `.` to end the sentence is left out so the hash can be copied easily.
+
+## Binaries / shell scripts / CI scripts
+
+- When writing auxiliary shell scripts / CI scripts always use the long-form of parameters to
+  improve readability, e.g. use `cp --archive` instead of `cp -a`.
+
+- Do not commit foreign code/libraries to the repository, e.g. a `gradlew` script:  
+  Duplicating foreign code is a bad thing to do because you also duplicate its current bugs.  
+  It would be inevitable that someone forgets to update the committed binaries when this has to be
+  done.  
+  If it is absolutely necessary to do so then at least put the foreign code in a git submodule, not
+  into the main repository. This avoids bloating the repo.  
+  Notice: The `katpcha` library which WoT currently contains violates this for legacy reasons.
+  It will be moved to a git submodule at some point in time.
