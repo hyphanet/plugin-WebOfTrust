@@ -17,7 +17,7 @@ import com.db4o.ObjectSet;
 
 import freenet.keys.FreenetURI;
 import freenet.support.Base64;
-import freenet.support.CurrentTimeUTC;
+import plugins.WebOfTrust.util.CurrentTimeUTC;
 
 /**
  * @author xor (xor@freenetproject.org) where not specified otherwise

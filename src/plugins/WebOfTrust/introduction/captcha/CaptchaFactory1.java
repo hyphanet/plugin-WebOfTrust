@@ -26,7 +26,7 @@ import plugins.WebOfTrust.introduction.OwnIntroductionPuzzle;
 import plugins.WebOfTrust.introduction.captcha.kaptcha.Constants;
 import plugins.WebOfTrust.introduction.captcha.kaptcha.impl.DefaultKaptcha;
 import plugins.WebOfTrust.introduction.captcha.kaptcha.util.Config;
-import freenet.support.CurrentTimeUTC;
+import plugins.WebOfTrust.util.CurrentTimeUTC;
 import freenet.support.io.Closer;
 
 /**

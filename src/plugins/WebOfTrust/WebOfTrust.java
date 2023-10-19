@@ -75,7 +75,7 @@ import freenet.pluginmanager.FredPluginThreadless;
 import freenet.pluginmanager.FredPluginVersioned;
 import freenet.pluginmanager.PluginReplySender;
 import freenet.pluginmanager.PluginRespirator;
-import freenet.support.CurrentTimeUTC;
+import plugins.WebOfTrust.util.CurrentTimeUTC;
 import freenet.support.Executor;
 import freenet.support.IdentityHashSet;
 import freenet.support.Logger;

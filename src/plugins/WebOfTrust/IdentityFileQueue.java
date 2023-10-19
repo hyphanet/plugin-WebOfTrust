@@ -8,7 +8,7 @@ import java.io.InputStream;
 
 import plugins.WebOfTrust.util.jobs.BackgroundJob;
 import freenet.keys.FreenetURI;
-import freenet.support.CurrentTimeUTC;
+import plugins.WebOfTrust.util.CurrentTimeUTC;
 
 
 /**

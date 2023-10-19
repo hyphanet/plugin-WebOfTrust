@@ -27,7 +27,7 @@ import com.db4o.ext.ExtObjectSet;
 import com.db4o.ext.ObjectInfo;
 import com.db4o.query.Query;
 
-import freenet.support.CurrentTimeUTC;
+import plugins.WebOfTrust.util.CurrentTimeUTC;
 import freenet.support.Logger;
 import freenet.support.Logger.LogLevel;
 import freenet.support.io.Closer;

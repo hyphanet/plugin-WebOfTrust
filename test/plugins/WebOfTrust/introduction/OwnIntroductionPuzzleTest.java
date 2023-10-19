@@ -16,7 +16,7 @@ import plugins.WebOfTrust.Persistent;
 import plugins.WebOfTrust.exceptions.InvalidParameterException;
 import plugins.WebOfTrust.exceptions.UnknownIdentityException;
 import plugins.WebOfTrust.introduction.captcha.CaptchaFactory1;
-import freenet.support.CurrentTimeUTC;
+import plugins.WebOfTrust.util.CurrentTimeUTC;
 
 /**
  * @author xor (xor@freenetproject.org)

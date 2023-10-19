@@ -15,7 +15,7 @@ import plugins.WebOfTrust.Identity.IdentityID;
 import plugins.WebOfTrust.exceptions.InvalidParameterException;
 import plugins.WebOfTrust.util.AssertUtil;
 import plugins.WebOfTrust.util.ReallyCloneable;
-import freenet.support.CurrentTimeUTC;
+import plugins.WebOfTrust.util.CurrentTimeUTC;
 import freenet.support.StringValidityChecker;
 
 /**

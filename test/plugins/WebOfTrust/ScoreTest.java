@@ -28,7 +28,7 @@ import plugins.WebOfTrust.exceptions.UnknownIdentityException;
 import com.db4o.ext.ExtObjectContainer;
 
 import freenet.support.Base64;
-import freenet.support.CurrentTimeUTC;
+import plugins.WebOfTrust.util.CurrentTimeUTC;
 
 /** Tests {@link Score}. */
 public final class ScoreTest extends AbstractJUnit4BaseTest {

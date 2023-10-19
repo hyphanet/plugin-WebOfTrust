@@ -17,7 +17,7 @@ import java.util.UUID;
 import plugins.WebOfTrust.Identity.IdentityID;
 import plugins.WebOfTrust.Trust.TrustID;
 import plugins.WebOfTrust.util.ReallyCloneable;
-import freenet.support.CurrentTimeUTC;
+import plugins.WebOfTrust.util.CurrentTimeUTC;
 
 
 /**

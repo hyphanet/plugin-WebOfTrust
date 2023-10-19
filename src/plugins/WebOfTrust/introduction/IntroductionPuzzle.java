@@ -20,7 +20,7 @@ import plugins.WebOfTrust.exceptions.InvalidParameterException;
 import plugins.WebOfTrust.ui.fcp.DebugFCPClient;
 import plugins.WebOfTrust.util.ReallyCloneable;
 import freenet.keys.FreenetURI;
-import freenet.support.CurrentTimeUTC;
+import plugins.WebOfTrust.util.CurrentTimeUTC;
 import freenet.support.Logger;
 import freenet.support.TimeUtil;
 

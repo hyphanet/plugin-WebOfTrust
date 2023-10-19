@@ -7,7 +7,7 @@ import static java.lang.Math.max;
 
 import java.util.Date;
 
-import freenet.support.CurrentTimeUTC;
+import plugins.WebOfTrust.util.CurrentTimeUTC;
 
 public final class DateUtil {
 
