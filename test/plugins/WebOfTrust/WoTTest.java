@@ -28,7 +28,7 @@ import com.db4o.ObjectSet;
 import com.db4o.ext.ExtObjectContainer;
 
 import freenet.keys.FreenetURI;
-import freenet.support.CurrentTimeUTC;
+import plugins.WebOfTrust.util.CurrentTimeUTC;
 
 /**
  * Tests class {@link WebOfTrust}.

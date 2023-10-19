@@ -19,7 +19,7 @@ import com.db4o.query.Query;
 
 import freenet.keys.FreenetURI;
 import freenet.node.RequestClient;
-import freenet.support.CurrentTimeUTC;
+import plugins.WebOfTrust.util.CurrentTimeUTC;
 import freenet.support.Logger;
 import freenet.support.TimeUtil;
 

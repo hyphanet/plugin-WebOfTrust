@@ -5,7 +5,7 @@ package plugins.WebOfTrust;
 
 import java.net.MalformedURLException;
 
-import freenet.support.CurrentTimeUTC;
+import plugins.WebOfTrust.util.CurrentTimeUTC;
 
 import plugins.WebOfTrust.exceptions.DuplicateTrustException;
 import plugins.WebOfTrust.exceptions.InvalidParameterException;

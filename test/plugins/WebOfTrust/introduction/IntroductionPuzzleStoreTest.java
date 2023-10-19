@@ -19,7 +19,7 @@ import plugins.WebOfTrust.exceptions.UnknownPuzzleException;
 import plugins.WebOfTrust.introduction.IntroductionPuzzle.PuzzleType;
 import plugins.WebOfTrust.introduction.captcha.CaptchaFactory1;
 import freenet.keys.FreenetURI;
-import freenet.support.CurrentTimeUTC;
+import plugins.WebOfTrust.util.CurrentTimeUTC;
 
 /**
  * @author xor (xor@freenetproject.org)

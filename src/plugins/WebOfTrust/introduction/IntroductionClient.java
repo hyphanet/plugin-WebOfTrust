@@ -52,7 +52,7 @@ import freenet.client.async.ClientPutter;
 import freenet.keys.FreenetURI;
 import freenet.node.RequestClient;
 import freenet.node.RequestStarter;
-import freenet.support.CurrentTimeUTC;
+import plugins.WebOfTrust.util.CurrentTimeUTC;
 import freenet.support.LRUQueue;
 import freenet.support.Logger;
 import freenet.support.api.Bucket;

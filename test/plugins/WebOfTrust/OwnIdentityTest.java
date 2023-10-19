@@ -8,7 +8,7 @@ import java.util.ArrayList;
 
 import plugins.WebOfTrust.exceptions.InvalidParameterException;
 import freenet.keys.FreenetURI;
-import freenet.support.CurrentTimeUTC;
+import plugins.WebOfTrust.util.CurrentTimeUTC;
 
 /**
  * @author xor (xor@freenetproject.org)

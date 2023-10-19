@@ -7,7 +7,7 @@ import java.util.Date;
 import java.util.HashMap;
 import java.util.concurrent.TimeUnit;
 
-import freenet.support.CurrentTimeUTC;
+import plugins.WebOfTrust.util.CurrentTimeUTC;
 import freenet.support.codeshortification.IfNull;
 
 /* ATTENTION: This code is a duplicate of plugins.Freetalk.Config. Any changes there should also be done here! */
