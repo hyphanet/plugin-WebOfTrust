@@ -215,7 +215,6 @@
 			<include name="${version.src}"/>
 		</javac>
 
-		<!-- FIXME: remove the debug and replace with optimize -->
 		<javac srcdir="src/" destdir="${build}" debug="on" optimize="on" source="${source-version}" target="${target-version}" encoding="UTF-8">
 			<classpath>
 				<path refid="submodules.path"/>

@@ -280,7 +280,8 @@ CHANGELOG about stuff only interesting for developers
     compiling.
   - benchmark-unit-tests-from-travis: to process a log file from
     Travis CI to produce the same output as the above local benchmark
-    script.
+    script. To use this change .travis.yml to use the Ant builder
+    instead of Gradle as Gradle does not measure test runtime.
 
   They produce sorted output like this:
     1.234 sec package.ClassName1.testFunction1()
@@ -390,17 +391,18 @@ CHANGELOG about stuff only interesting for developers
 - [Code quality] Travis CI: Test against most recent Java versions (xor)
 
   The cloud service now runs the unit tests periodically against:
-  - oraclejdk9
+  - oraclejdk11 (new)
   - oraclejdk8
+  - openjdk12 (new)
+  - openjdk11 (new)
   - openjdk10 (new)
   - openjdk9 (new)
   - openjdk8
   - openjdk7
 
-  This is the maximal set of Java versions which are both supported by
-  Freenet and Travis CI as of 2018-10-31.
-  Notably the new Java 11 is not tested yet due to Freenet's Gradle not
-  working on it.
+  This is the maximal set of Java versions which are supported by
+  Freenet, Travis CI and Oracle as of 2019-05-04.
+  (OpenJDK might not provide security updates for all of these.)
 
 - [Code quality] Travis CI: Speed up build time from 1 hour to
                  20 minutes (xor)
@@ -480,6 +482,8 @@ CHANGELOG about stuff only interesting for developers
 
 - 0007033: [Code quality] Speed up Travis CI builds: Don't recompile
            fred if "git pull" changed nothing (xor)
+  0007068: [Code quality] Travis CI: Print the Version.java info of the
+           fred we compiled (xor)
 
   The Travis CI build script of WoT usually obtains the most recent
   development version of the Freenet core from GitHub and compiles it
@@ -497,6 +501,10 @@ CHANGELOG about stuff only interesting for developers
   the HTML of mvn.freenetproject.org sounds like it wasn't
   - if it in fact was and someone knows how to use it please let me
   know.
+
+  To ensure bugs in the decision whether to recompile can be spotted the
+  Travis script was also amended to print the version of the freenet.jar
+  the build is using (issue 7068).
 
 - 0006972: [Code quality] Rewrite README.md file for developers (xor)
 
