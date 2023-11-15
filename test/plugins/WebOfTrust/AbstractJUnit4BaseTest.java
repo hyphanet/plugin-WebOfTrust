@@ -24,6 +24,7 @@ import org.junit.Before;
 import org.junit.Ignore;
 import org.junit.Rule;
 import org.junit.rules.TemporaryFolder;
+import org.junit.rules.TestName;
 
 import com.db4o.ext.ExtObjectContainer;
 
@@ -56,6 +57,9 @@ public abstract class AbstractJUnit4BaseTest {
 			Configuration.IS_UNIT_TEST);
 	}
 
+
+    @Rule public final TestName mTestName = new TestName();
+
     protected RandomSource mRandom;
     
     @Rule
@@ -70,7 +74,8 @@ public abstract class AbstractJUnit4BaseTest {
         Random seedGenerator = new Random();
         long seed = seedGenerator.nextLong();
         mRandom = new DummyRandomSource(seed);
-        System.out.println(this + " Random seed: " + seed);
+        
+        System.out.println("Test " + mTestName.getMethodName() + "() using Random seed: " + seed);
     }
     
     /**

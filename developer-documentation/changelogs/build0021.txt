@@ -518,6 +518,11 @@ CHANGELOG about stuff only interesting for developers
   scripts and test coverage analysis.
   A concise yet complete description of the purpose of WoT was added.
 
+- 0006987: [Code quality] Fix JUnit4 tests to the print name of the
+           currently running test when they print the seed (xor)
+
+  Can be used to reproduce randomized test runs.
+
 THANKS TO
 
   - ArneBab
