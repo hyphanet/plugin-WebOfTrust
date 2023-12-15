@@ -63,14 +63,6 @@ before_script: |
       rm ./gradlew &&
       ln -s "$(which gradle)" ./gradlew
     fi &&
-    if [[ "$TRAVIS_JDK_VERSION" = "openjdk9" || "$TRAVIS_JDK_VERSION" = "openjdk10" ]] ; then
-      # Workaround for Gradle failing on openjdk9 and above with:
-      #   sun.security.validator.ValidatorException: PKIX path building failed: [...]
-      # TODO: Code quality: Added 2018-09-26, remove after some time and see if it works without this.
-      USE_SYSTEM_CERTS=1 &&
-      mv "${JAVA_HOME}/lib/security/cacerts" "${JAVA_HOME}/lib/security/cacerts.jdk" &&
-      ln -s '/etc/ssl/certs/java/cacerts' "${JAVA_HOME}/lib/security/cacerts"
-    fi &&
     # TODO: freenet.jar won't contain class Version if we don't run the
     # clean task in a separate execution of Gradle. I.e. this wouldn't work:
     #   $ gradle clean jar
@@ -80,10 +72,6 @@ before_script: |
     # "copyRuntimeLibs" copies the JAR *and* dependencies - which WoT also
     # needs - to build/output/
     ./gradlew jar copyRuntimeLibs -x test &&
-    if [ "$USE_SYSTEM_CERTS" = 1 ] ; then
-        rm "${JAVA_HOME}/lib/security/cacerts" &&
-        mv "${JAVA_HOME}/lib/security/cacerts.jdk" "${JAVA_HOME}/lib/security/cacerts"
-    fi &&
     cd "$TRAVIS_BUILD_DIR"
   else
     echo "No changes at fred, not recompiling."
@@ -104,7 +92,15 @@ script:
   # Use the same Gradle as fred to re-use the fixes we applied to it above and because Travis'
   # Gradle version is too old for Java >= 9.
   - ln -sf "$TRAVIS_BUILD_DIR/../fred/gradlew"
-  - ./gradlew clean test jar
+  # ... but still use Ant on one Java version to ensure it keeps working.
+  # And don't use it on the minimum Java version as there we will run the deployment - which takes
+  # long enough already, and Ant is slower than Gradle, so we would risk exhausting the time limit.
+  - |
+    if [ "$TRAVIS_JDK_VERSION" = "openjdk$((FREENET_MINIMUM_JAVA_VERSION + 1))" ] ; then
+        ant clean && ant
+    else
+        ./gradlew clean test jar
+    fi
   # To test the Ant and Gradle builders against each other uncomment the following.
   # FIXME: Do this one time as soon as branch issue-0003816-IdentityFetcher-rewrite is finished.
   ## - tools/compare-gradle-jars-with-ant-jars

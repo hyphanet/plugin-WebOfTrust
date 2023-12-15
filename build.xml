@@ -105,7 +105,7 @@
 
 	<presetdef name="javac">
 		<!--
-		Workaround for ant 1.8 misfeature. TODO: Remove when ant fixes this.
+		includeantruntime is a workaround for an ant 1.8 misfeature. TODO: Remove when ant fixes this.
 		
 		If we don't set this to false, we will get "warning: 'includeantruntime' was not set, defaulting to
 		build.sysclasspath=last; set to false for repeatable builds"
@@ -115,7 +115,7 @@
 		is not sensitive to the environment in which it is run."
 		Source: https://ant.apache.org/manual/Tasks/javac.html)
 		-->
-		<javac includeantruntime="false" />
+		<javac includeantruntime="false" encoding="UTF-8"/>
 	</presetdef>
 
 	<exec executable="git"
@@ -188,7 +188,7 @@
 	<target name="mkdir">
 		<mkdir dir="${build}"/>
 		<mkdir dir="${build-test}"/>
-		<mkdir dir="${build-test}/test"/>
+		<mkdir dir="${build-test}/classes"/>
 		<mkdir dir="${build-test-coverage}"/>
 		<mkdir dir="${dist}"/>
 	</target>
@@ -215,7 +215,7 @@
 			<include name="${version.src}"/>
 		</javac>
 
-		<javac srcdir="src/" destdir="${build}" debug="on" optimize="on" source="${source-version}" target="${target-version}" encoding="UTF-8">
+		<javac srcdir="src/" destdir="${build}" debug="on" optimize="on" source="${source-version}" target="${target-version}">
 			<classpath>
 				<path refid="submodules.path"/>
 				<path refid="lib.path"/>
@@ -240,8 +240,8 @@
 	</condition>
 
 	<target name="junit-compile" depends="compile" if="unit.dependencies">
-		<javac srcdir="test/" destdir="${build-test}/test" debug="on" optimize="on"
-				source="${source-version}" target="${target-version}" >
+		<javac srcdir="test/" destdir="${build-test}/classes" debug="on" optimize="on"
+				source="${source-version}" target="${target-version}">
 			
 			<classpath>
 				<path refid="submodules.path"/>
@@ -255,7 +255,7 @@
 		</javac>
 		
 		<!-- Copy main non-test classes to tests so we can produce a full working WoT JAR -->
-		<copy todir="${build-test}/test" overwrite="false">
+		<copy todir="${build-test}/classes" overwrite="false">
 			<fileset dir="${build}/"/>
 		</copy>
 	</target>
@@ -273,7 +273,7 @@
 				<path refid="lib.path"/>
 			</auxClasspath>
 			
-			<fileset dir="${build-test}/test">
+			<fileset dir="${build-test}/classes">
 				<include name="**/*.class" />
 				<!-- kaptcha is a third-party library -->
 				<exclude name="plugins/WebOfTrust/introduction/captcha/kaptcha/**/*"/>
@@ -292,22 +292,23 @@
 				<include name="*.txt"/> <!-- Include the GPL -->
 			</fileset>
 			
-			<fileset dir="${build-test}/test/"/> <!-- Separate directory to exclude the JAR -->
+			<fileset dir="${build-test}/classes/"/> <!-- Separate directory to exclude the JAR -->
 			<zipgroupfileset dir="${dependencies.location}" casesensitive="no" includes="*.jar"/>
 		</jar>
 	</target>
 
 	<target name="junit" depends="junit-package" unless="${test.skip}"
-			description="Runs all unit tests. Options:&#10;
+			description="Runs all unit tests. Options to specify with 'ant -D':&#10;
 		        - Set test.coverage=true to analyze test coverage. View by e.g.: firefox test-coverage/html/index.html&#10;
-		        - Set test.skip=true to skip&#10;
-		        - Set test.class=&lt;test class&gt; (e.g. test.class=plugins.WebOfTrust.WoTTest) to run a single test)&#10;
+		        - Set test.skip=true to skip. The tests will still be compiled so you can run them from e.g. Eclipse!&#10;
+		        - Set test.class=&lt;test class&gt; (e.g. test.class=plugins.WebOfTrust.WoTTest) to run a single test&#10;
 		        - Set test.benchmark=true to run benchmarks.&#10;
 		        - Set test.unreliable=true to run tests which may fail on slow machines.">
 		
 		<fail unless="${unit.dependencies}" message="One of the unit test dependencies not found:&#10;
 			${junit.location}&#10;
 			${hamcrest.location}&#10;
+			You can adjust these paths in file 'override.properties', see 'build.xml'.&#10;
 			Use parameter -Dtest.skip=true to compile without running the self-tests.&#10;
 			WARNING: Web of Trust uses lots of comprehensive tests, changing the code without&#10;
 			running them is a very bad idea!"/>
@@ -333,7 +334,7 @@
 			<assertions><enable/></assertions>
 			<formatter type="plain" usefile="false"/>
 			<test if="test.class" name="${test.class}"/>
-			<batchtest unless="test.class" fork="yes">
+			<batchtest unless="test.class">
 				<zipfileset src="${build-test-jar}">
 					<include name="**/*Test*.class"/>
 					<!-- Exclude member classes:
@@ -380,7 +381,7 @@
 			<assertions><disable/></assertions>
 			<formatter type="plain" usefile="false"/>
 			<test if="test.class" name="${test.class}"/>
-			<batchtest unless="test.class" fork="yes">
+			<batchtest unless="test.class">
 				<zipfileset src="${build-test-jar}">
 					<include name="**/*Benchmark*.class"/>
 					<!-- Exclude member classes:
